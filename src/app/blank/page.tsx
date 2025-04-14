@@ -1,6 +1,6 @@
 "use client";
 
-import CommonBtn from "@/components/CommonBtn";
+import CommonBtn from "@/shared/components/CommonBtn";
 import { useRouter } from "next/navigation";
 import { PiSmileySadLight } from "react-icons/pi";
 

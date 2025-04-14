@@ -1,8 +1,7 @@
 "use client";
 
-import CommonBtn from "@/components/CommonBtn";
-import Item from "@/components/Item";
-import Member from "@/components/Member";
+import Item from "@/shared/pages/Item";
+import Member from "@/shared/pages/Member";
 import { useState } from "react";
 
 interface Member {

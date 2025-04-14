@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import BackgroundLayout from "@/components/BackgroundLayout";
+import BackgroundLayout from "@/shared/components/BackgroundLayout";
 
 import "./globals.css";
 
