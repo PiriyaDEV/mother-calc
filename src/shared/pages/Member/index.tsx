@@ -64,6 +64,10 @@ export default function Member({ members, setMembers }: Props) {
     setName("");
   };
 
+  const removeMember = (index: number) => {
+    setMembers((prev) => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="flex items-center justify-center flex-col gap-10">
       <div>
@@ -78,9 +82,10 @@ export default function Member({ members, setMembers }: Props) {
           members.map((member, index) => (
             <div
               key={index}
-              className="w-16 h-16 rounded-full flex justify-center items-center"
+              className="w-16 h-16 rounded-full flex justify-center items-center cursor-pointer transition-transform hover:scale-110"
               style={{ backgroundColor: member.color, color: "#fff" }}
-              title={member.name}
+              title={`Click to remove ${member.name}`}
+              onClick={() => removeMember(index)}
             >
               <span className="text-xl font-semibold">
                 {getInitials(member.name)}

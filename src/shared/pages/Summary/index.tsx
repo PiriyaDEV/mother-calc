@@ -80,11 +80,11 @@ export default function Summary({ itemArr, members }: Props) {
           </tr>
         </thead>
         <tbody>
-          {members.map((member) => {
+          {members.map((member, index) => {
             const { name } = member;
             const { paid, shouldPay } = totals[name] || { paid: 0, shouldPay: 0 };
             return (
-              <tr key={name}>
+              <tr key={name + index}>
                 <td>{name}</td>
                 <td>{shouldPay.toFixed(2)}</td>
                 <td>{paid.toFixed(2)}</td>

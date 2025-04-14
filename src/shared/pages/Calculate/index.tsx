@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Member {
   name: string;
@@ -47,6 +47,16 @@ export default function Calculate({ members, itemArr, setItemArr }: Props) {
     setIsModalOpen(true);
   };
 
+  const handleDeleteItem = (index: number) => {
+    const updatedItems = [...itemArr];
+    updatedItems.splice(index, 1);
+    setItemArr(updatedItems);
+    if (selectedItemIndex === index) {
+      setSelectedItemIndex(null);
+      setIsModalOpen(false);
+    }
+  };
+
   const toggleSelectAll = () => {
     if (selectedItemIndex === null) return;
 
@@ -79,7 +89,7 @@ export default function Calculate({ members, itemArr, setItemArr }: Props) {
 
   const selectedMembers =
     selectedItemIndex !== null
-      ? itemArr[selectedItemIndex].selectedMembers
+      ? itemArr[selectedItemIndex]?.selectedMembers || []
       : [];
 
   return (
@@ -95,35 +105,45 @@ export default function Calculate({ members, itemArr, setItemArr }: Props) {
           <span>No items added</span>
         ) : (
           itemArr.map((item, index) => (
-            <span
+            <div
               key={index}
-              className="p-2 rounded bg-gray-100 text-sm !text-black cursor-pointer"
-              onClick={() => handleItemClick(index)}
+              className="p-2 rounded bg-gray-100 text-sm !text-black flex justify-between items-center"
             >
-              <strong>{item.itemName}</strong> — Paid by:{" "}
-              <span className="font-medium !text-black">{item.paidBy}</span> —
-              Price:{" "}
-              {item.price !== undefined
-                ? `$${item.price.toFixed(2)}`
-                : item.selectedMembers.length > 0
-                ? `$${item.selectedMembers
-                    .reduce((sum, m) => sum + (m.customPaid || 0), 0)
-                    .toFixed(2)}`
-                : "N/A"}{" "}
-              —{" "}
-              {item.selectedMembers.length > 0 ? (
-                <span className="font-medium !text-black">
-                  Members:{" "}
-                  <span className="selected-members">
-                    {item.selectedMembers.map((m) => m.name).join(", ")}
+              <div
+                className="flex-1 cursor-pointer"
+                onClick={() => handleItemClick(index)}
+              >
+                <strong>{item.itemName}</strong> — Paid by:{" "}
+                <span className="font-medium !text-black">{item.paidBy}</span> —
+                Price:{" "}
+                {item.price !== undefined
+                  ? `$${item.price.toFixed(2)}`
+                  : item.selectedMembers.length > 0
+                  ? `$${item.selectedMembers
+                      .reduce((sum, m) => sum + (m.customPaid || 0), 0)
+                      .toFixed(2)}`
+                  : "N/A"}{" "}
+                —{" "}
+                {item.selectedMembers.length > 0 ? (
+                  <span className="font-medium !text-black">
+                    Members:{" "}
+                    <span className="selected-members">
+                      {item.selectedMembers.map((m) => m.name).join(", ")}
+                    </span>
                   </span>
-                </span>
-              ) : (
-                <span className="font-medium !text-black">
-                  No members selected
-                </span>
-              )}
-            </span>
+                ) : (
+                  <span className="font-medium !text-black">
+                    No members selected
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => handleDeleteItem(index)}
+                className="btn btn-sm btn-error ml-2"
+              >
+                Delete
+              </button>
+            </div>
           ))
         )}
       </div>
@@ -136,7 +156,7 @@ export default function Calculate({ members, itemArr, setItemArr }: Props) {
               onClick={toggleSelectAll}
               className="btn btn-secondary mb-4 w-full"
             >
-              {selectAll ? "Deselect All" : "Select All"}
+              Select All
             </button>
             <ul className="space-y-2">
               {members.map((member, index) => {
@@ -157,7 +177,7 @@ export default function Calculate({ members, itemArr, setItemArr }: Props) {
                     >
                       {member.name}
                     </button>
-                    {itemArr[selectedItemIndex].price === undefined &&
+                    {itemArr[selectedItemIndex]?.price === undefined &&
                       isSelected && (
                         <input
                           type="number"

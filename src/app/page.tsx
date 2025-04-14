@@ -4,7 +4,7 @@ import Calculate from "@/shared/pages/Calculate";
 import Item from "@/shared/pages/Item";
 import Member from "@/shared/pages/Member";
 import Summary from "@/shared/pages/Summary";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface Member {
   name: string;
@@ -22,6 +22,33 @@ export default function App() {
   const [page, setPage] = useState(1);
   const [members, setMembers] = useState<Member[]>([]);
   const [itemArr, setItemArr] = useState<Item[]>([]);
+
+  useEffect(() => {
+    // Get the names of the currently active members
+    const activeMemberNames = members.map((member) => member.name);
+
+    setItemArr(
+      (prevItemArr) =>
+        prevItemArr
+          .map((item) => {
+            // Remove item if 'paidBy' is in removed members
+            if (!activeMemberNames.includes(item.paidBy)) {
+              return null; // This item should be removed
+            }
+
+            // Filter out removed members from selectedMembers
+            const updatedSelectedMembers = item.selectedMembers.filter(
+              (member) => activeMemberNames.includes(member.name)
+            );
+
+            return {
+              ...item,
+              selectedMembers: updatedSelectedMembers,
+            };
+          })
+          .filter((item) => item !== null) // Remove null values (items that are deleted)
+    );
+  }, [members]);
 
   return (
     <div className="flex items-center justify-center min-h-screen flex-col gap-10">
@@ -42,7 +69,7 @@ export default function App() {
       <Item members={members} setItemArr={setItemArr} />
       <Calculate members={members} itemArr={itemArr} setItemArr={setItemArr} />
 
-      <Summary members={members} itemArr={itemArr}/>
+      <Summary members={members} itemArr={itemArr} />
 
       {/* <div>{JSON.stringify(itemArr, null, 2)}</div> */}
     </div>
