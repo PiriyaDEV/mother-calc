@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "Mother Calc",
   description: "แม่ๆคิดเงินให้หน่อย 👩🏻🙏🏻",
   openGraph: {
-    images: `${window.location.origin}/images/metaImg.png`,
+    images: `https://mother-calc.netlify.app/images/metaImg.png`,
   },
 };
 
