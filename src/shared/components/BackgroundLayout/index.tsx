@@ -25,6 +25,9 @@ const BackgroundLayout: FC<BackgroundLayoutProps> = ({ children }) => {
         <div className="bg-cover bg-center">
           <div className="text-center font-bold py-4 mb-2 text-[22px] text-[#4366f4]">
             แม่ๆ คิดเงินให้หน่อย
+            <div className="text-xs text-center text-[#c5c6c7]">
+              Made by @pd.piriya 🤪✨
+            </div>
           </div>
           <div className="container mx-auto px-4">{children}</div>
         </div>
