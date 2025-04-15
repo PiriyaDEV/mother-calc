@@ -14,8 +14,8 @@ const sarabun = Sarabun({
 });
 
 export const metadata: Metadata = {
-  title: "IBMDT Outing 2025",
-  description: "Welcome to IBMDT Outing 2025",
+  title: "Mother Calc",
+  description: "แม่ๆคิดเงินให้หน่อย 👩🏻🙏🏻",
 };
 
 const BackgroundLayout: FC<BackgroundLayoutProps> = ({ children }) => {

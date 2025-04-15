@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Mother Calc",
-  description: "mother calc",
+  description: "แม่ๆคิดเงินให้หน่อย 👩🏻🙏🏻",
 };
 
 export default function AppLayout({
