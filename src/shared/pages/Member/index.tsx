@@ -10,9 +10,14 @@ import { MEMBER_COLORS } from "./constants";
 interface MemberProps {
   members: Member[];
   setMembers: React.Dispatch<React.SetStateAction<Member[]>>;
+  setIsMemberSet: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export default function Member({ members, setMembers }: MemberProps) {
+export default function Member({
+  members,
+  setMembers,
+  setIsMemberSet,
+}: MemberProps) {
   const [name, setName] = useState("");
   const [error, setError] = useState(false);
 
@@ -32,6 +37,8 @@ export default function Member({ members, setMembers }: MemberProps) {
 
   return (
     <div className="flex flex-col gap-10">
+      <h1 className="font-bold mt-3">สมาชิกมีใครบ้าง ?</h1>
+
       <div className="flex gap-4 flex-wrap w-full">
         {members.length ? (
           members.map((m, i) => (
@@ -57,7 +64,7 @@ export default function Member({ members, setMembers }: MemberProps) {
       </div>
 
       <div className="absolute bottom-0 left-0 bg-white py-5 w-full">
-        <div className="container mx-auto px-6 flex flex-col gap-7">
+        <div className="container mx-auto px-4 flex flex-col gap-7">
           <div className="flex items-center justify-center gap-2">
             <input
               type="text"
@@ -76,7 +83,11 @@ export default function Member({ members, setMembers }: MemberProps) {
           </div>
           <CommonBtn
             text="ไปต่อ >"
-            onClick={addMember}
+            type="secondary"
+            onClick={() => {
+              setIsMemberSet(true);
+            }}
+            disabled={members.length === 0}
             className="!max-w-none"
           />
         </div>

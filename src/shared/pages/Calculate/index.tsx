@@ -1,4 +1,7 @@
+import CommonBtn from "@/shared/components/CommonBtn";
 import { useState, useEffect } from "react";
+
+import { TiDelete } from "react-icons/ti";
 
 interface Member {
   name: string;
@@ -8,7 +11,7 @@ interface Member {
 
 interface Item {
   itemName: string;
-  paidBy: string;
+  paidBy: Member;
   price?: number;
   selectedMembers: Member[];
 }
@@ -94,115 +97,130 @@ export default function Calculate({ members, itemArr, setItemArr }: Props) {
 
   return (
     <div className="flex flex-col gap-4 max-w-md w-full">
-      <div>
-        <div>Step 3: Calculate</div>
-        <div>You can edit after this</div>
-      </div>
+      <h1 className="font-bold mt-3">กินอะไรไปบ้าง ?</h1>
 
-      <div className="flex flex-col gap-2 mt-4">
-        <div className="font-semibold">Items:</div>
-        {itemArr.length === 0 ? (
-          <span>No items added</span>
-        ) : (
-          itemArr.map((item, index) => (
-            <div
-              key={index}
-              className="p-2 rounded bg-gray-100 text-sm !text-black flex justify-between items-center"
-            >
-              <div
-                className="flex-1 cursor-pointer"
-                onClick={() => handleItemClick(index)}
-              >
-                <strong>{item.itemName}</strong> — Paid by:{" "}
-                <span className="font-medium !text-black">{item.paidBy}</span> —
-                Price:{" "}
-                {item.price !== undefined
-                  ? `$${item.price.toFixed(2)}`
-                  : item.selectedMembers.length > 0
-                  ? `$${item.selectedMembers
-                      .reduce((sum, m) => sum + (m.customPaid || 0), 0)
-                      .toFixed(2)}`
-                  : "N/A"}{" "}
-                —{" "}
-                {item.selectedMembers.length > 0 ? (
-                  <span className="font-medium !text-black">
-                    Members:{" "}
-                    <span className="selected-members">
-                      {item.selectedMembers.map((m) => m.name).join(", ")}
-                    </span>
-                  </span>
-                ) : (
-                  <span className="font-medium !text-black">
-                    No members selected
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={() => handleDeleteItem(index)}
-                className="btn btn-sm btn-error ml-2"
-              >
-                Delete
-              </button>
-            </div>
-          ))
+      <div>
+        {itemArr.length !== 0 && (
+          <div className="grid grid-cols-3 font-bold text-sm !text-[#c5c6c7]">
+            <span>ชื่อ</span>
+            <span>จ่ายโดย</span>
+            <span>ราคา</span>
+          </div>
         )}
+
+        <div className="flex flex-col gap-2 mt-2">
+          {itemArr.length === 0 ? (
+            <span>ยังไม่มีรายการ</span>
+          ) : (
+            itemArr.map((item, index) => (
+              <div key={index} className="flex justify-between my-2 gap-2">
+                <div className="w-full">
+                  <div
+                    onClick={() => handleItemClick(index)}
+                    className="p-2 rounded-[8px] bg-gray-100 text-sm !text-black grid grid-cols-3 items-center"
+                  >
+                    <strong>{item.itemName}</strong>
+
+                    <div
+                      className="relative p-2 h-7 w-14 rounded-full flex justify-center items-center"
+                      style={{ backgroundColor: item.paidBy.color }}
+                    >
+                      <span className="text-xs font-semibold truncate text-white">
+                        {item.paidBy.name}
+                      </span>
+                    </div>
+
+                    <div>
+                      {item.price !== undefined
+                        ? `${item.price.toFixed(2)} บาท`
+                        : item.selectedMembers.length > 0
+                        ? `${item.selectedMembers
+                            .reduce((sum, m) => sum + (m.customPaid || 0), 0)
+                            .toFixed(2)} บาท`
+                        : "N/A"}{" "}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {item.selectedMembers.map((memberItem, index) => (
+                      <div
+                        key={`${memberItem} ${index}`}
+                        className="relative p-2 h-5 w-fit rounded-full flex justify-center items-center"
+                        style={{ backgroundColor: memberItem.color }}
+                      >
+                        <span className="text-[10px] font-semibold truncate text-white">
+                          {memberItem.name}{" "}
+                          <span>
+                            :{" "}
+                            {item.price !== undefined
+                              ? `${(
+                                  item.price / item.selectedMembers.length
+                                ).toFixed(2)} บาท`
+                              : `${memberItem.customPaid} บาท`}
+                          </span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <TiDelete
+                  onClick={() => handleDeleteItem(index)}
+                  className="text-[28px] mt-2"
+                />
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {isModalOpen && selectedItemIndex !== null && (
-        <div className="modal modal-open !text-black">
+        <div
+          className="modal modal-open !text-black"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsModalOpen(false);
+            }
+          }}
+        >
           <div className="modal-box">
-            <h2 className="text-xl font-semibold mb-4">Select Members</h2>
-            <button
-              onClick={toggleSelectAll}
-              className="btn btn-secondary mb-4 w-full"
-            >
-              Select All
-            </button>
-            <ul className="space-y-2">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-md font-semibold">เลือกคนกิน</h2>
+
+              <CommonBtn
+                text="ทั้งหมด"
+                type="secondary"
+                onClick={toggleSelectAll}
+                disabled={members.length === 0}
+                className="!w-fit"
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
               {members.map((member, index) => {
                 const isSelected = selectedMembers.some(
                   (m) => m.name === member.name
                 );
-                const selectedMember = selectedMembers.find(
-                  (m) => m.name === member.name
-                );
 
                 return (
-                  <li key={index} className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleMemberSelection(member)}
-                      className={`btn btn-ghost w-full text-left ${
-                        isSelected ? "bg-blue-200 text-blue-800" : ""
-                      }`}
-                    >
+                  <div
+                    key={index}
+                    onClick={() => handleMemberSelection(member)}
+                    className={`relative w-16 h-16 rounded-full flex justify-center items-center cursor-pointer ${
+                      isSelected ? "border-2 border-[#80ef80]" : ""
+                    }`}
+                    style={{ backgroundColor: member.color }}
+                  >
+                    <span className="text-xs font-semibold truncate text-white">
                       {member.name}
-                    </button>
-                    {itemArr[selectedItemIndex]?.price === undefined &&
-                      isSelected && (
-                        <input
-                          type="number"
-                          placeholder="Custom Paid"
-                          value={selectedMember?.customPaid ?? ""}
-                          onChange={(e) =>
-                            handleCustomPaidChange(member, e.target.value)
-                          }
-                          className="input input-bordered w-24"
-                        />
-                      )}
-                  </li>
+                    </span>
+                  </div>
                 );
               })}
-            </ul>
-            <div className="modal-action">
-              <button className="btn" onClick={() => setIsModalOpen(false)}>
-                Close
-              </button>
             </div>
           </div>
         </div>
       )}
-
-      <div>{JSON.stringify(itemArr, null, 2)}</div>
     </div>
   );
 }
