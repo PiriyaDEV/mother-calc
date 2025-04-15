@@ -100,7 +100,7 @@ export default function Calculate({
 
       <div
         className="flex flex-col gap-2 mt-2"
-        style={{ height: "calc(100vh - 250px)", overflowY: "auto" }}
+        style={{ height: "calc(100vh - 280px)", overflowY: "auto" }}
       >
         {itemArr.length === 0 ? (
           <span>ยังไม่มีรายการ</span>
@@ -132,7 +132,9 @@ export default function Calculate({
 
                 <div className="flex flex-wrap gap-2 mt-2">
                   {item.selectedMembers.length === 0 && (
-                    <span className="text-xs !text-gray-400">* ยังไม่ได้เลือกสมาชิก</span>
+                    <span className="text-xs !text-gray-400">
+                      * ยังไม่ได้เลือกสมาชิก
+                    </span>
                   )}
                   {item.selectedMembers.map((memberItem, index) => (
                     <div
@@ -226,21 +228,20 @@ export default function Calculate({
                       </span>
                     </div>
 
-                    {itemArr[selectedItemIndex]?.price === undefined &&
-                      isSelected && (
-                        <input
-                          type="number"
-                          placeholder="ใส่จำนวน"
-                          value={
-                            selectedMembers.find((m) => m.name === member.name)
-                              ?.customPaid ?? ""
-                          }
-                          onChange={(e) =>
-                            handleCustomPaidChange(member, e.target.value)
-                          }
-                          className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm w-24"
-                        />
-                      )}
+                    {itemArr[selectedItemIndex]?.price === undefined && (
+                      <input
+                        type="number"
+                        placeholder="ใส่จำนวน"
+                        value={
+                          selectedMembers.find((m) => m.name === member.name)
+                            ?.customPaid ?? ""
+                        }
+                        onChange={(e) =>
+                          handleCustomPaidChange(member, e.target.value)
+                        }
+                        className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm w-24"
+                      />
+                    )}
                   </div>
                 );
               })}
