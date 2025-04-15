@@ -19,7 +19,9 @@ export default function Item({
   const [isEqualSplit, setIsEqualSplit] = useState(true);
 
   const handleAddItem = () => {
-    if (!itemName.trim() || !paidBy) return alert("กรุณากรอกข้อมูลให้ครบ");
+    if (!itemName.trim() || !paidBy || (!isEqualSplit && !price)) {
+      return alert("กรุณากรอกข้อมูลให้ครบ");
+    }
 
     // Retrieve the member object using the paidBy name
     const selectedMember = members.find((member) => member.name === paidBy);
