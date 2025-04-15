@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "Mother Calc",
   description: "แม่ๆคิดเงินให้หน่อย 👩🏻🙏🏻",
   openGraph: {
-    images: "/images/metaImg.png",
+    images: `${window.location.origin}/images/metaImg.png`,
   },
 };
 
