@@ -107,11 +107,7 @@ export default function Calculate({
           <span>ยังไม่มีรายการ</span>
         ) : (
           itemArr.map((item, index) => {
-            console.log("pitem.paidByad", item.paidBy);
-            console.log("mem", members);
             const paidByMember = getMemberObjByName(item.paidBy, members);
-
-            console.log("pad", paidByMember);
 
             return (
               <div key={index} className="flex justify-between my-2 gap-2">
@@ -245,21 +241,22 @@ export default function Calculate({
                       </span>
                     </div>
 
-                    {itemArr[selectedItemIndex]?.price === undefined && isSelected && (
-                      <input
-                        type="number"
-                        placeholder="ใส่จำนวน"
-                        disabled={!isSelected}
-                        value={
-                          selectedMembers.find((m) => m.name === member.name)
-                            ?.customPaid ?? ""
-                        }
-                        onChange={(e) =>
-                          handleCustomPaidChange(member, e.target.value)
-                        }
-                        className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm w-24"
-                      />
-                    )}
+                    {itemArr[selectedItemIndex]?.price === undefined &&
+                      isSelected && (
+                        <input
+                          type="number"
+                          placeholder="ใส่จำนวน"
+                          disabled={!isSelected}
+                          value={
+                            selectedMembers.find((m) => m.name === member.name)
+                              ?.customPaid ?? ""
+                          }
+                          onChange={(e) =>
+                            handleCustomPaidChange(member, e.target.value)
+                          }
+                          className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm w-24"
+                        />
+                      )}
                   </div>
                 );
               })}

@@ -42,3 +42,31 @@ export const getURLParams = () => {
     itemArr: itemArrParam ? decodeBase64(itemArrParam) : [],
   };
 };
+
+export const getShortUrl = async (longUrl: string): Promise<string> => {
+  const apiToken = process.env.TINY_TOKEN;
+
+  try {
+    const response = await fetch(`https://api.tinyurl.com/create`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiToken}`,
+      },
+      body: JSON.stringify({
+        url: longUrl,
+        domain: "tinyurl.com",
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`TinyURL error: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.data.tiny_url;
+  } catch (error) {
+    console.warn("Failed to shorten URL, using original:", error);
+    return longUrl;
+  }
+};

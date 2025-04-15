@@ -11,7 +11,7 @@ import Summary from "@/shared/pages/Summary";
 import { ItemObj, MemberObj } from "./lib/interface";
 import { PuffLoader } from "react-spinners";
 import { FaList, FaTable } from "react-icons/fa";
-import { encodeBase64, getURLParams } from "./lib/utils";
+import { encodeBase64, getShortUrl, getURLParams } from "./lib/utils";
 
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -63,24 +63,31 @@ export default function App() {
     setItemArr(updatedItems);
   };
 
-  const handleShare = () => {
-    const currentUrl = window.location.href;
+  const handleShare = async () => {
+    const longUrl = window.location.href;
+  
     if (navigator.share) {
-      navigator
-        .share({
-          title: "Check out this link!",
-          url: currentUrl,
-        })
-        .then(() => {
-          console.log("Thanks for sharing!");
-        })
-        .catch((error) => {
-          console.error("Error sharing:", error);
+      try {
+        const shortUrl = await getShortUrl(longUrl);
+  
+        await navigator.share({
+          title: "📤 มาจ่ายเงินด้วยจ้า!",
+          url: shortUrl,
         });
+  
+        console.log("Shared successfully");
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          console.log("User canceled the share.");
+        } else {
+          console.error("Share failed:", error);
+        }
+      }
     } else {
-      alert("Sharing not supported on this device.");
+      console.warn("Web Share API not supported.");
     }
   };
+  
 
   const renderHeader = () => (
     <div className="flex items-center gap-10 justify-center">
