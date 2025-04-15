@@ -43,30 +43,29 @@ export const getURLParams = () => {
   };
 };
 
-export const getShortUrl = async (longUrl: string): Promise<string> => {
-  const apiToken = process.env.TINY_TOKEN;
-
+// Function to call the /api/shorten endpoint
+export async function getShortUrl(longUrl: string) {
   try {
-    const response = await fetch(`https://api.tinyurl.com/create`, {
+    const response = await fetch("/api/shorten", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiToken}`,
       },
-      body: JSON.stringify({
-        url: longUrl,
-        domain: "tinyurl.com",
-      }),
+      body: JSON.stringify({ longUrl }),
     });
 
-    if (!response.ok) {
-      throw new Error(`TinyURL error: ${response.statusText}`);
+    // Handle the response from the API
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Shortened URL:", data.shortUrl);
+      return data.shortUrl; // Return the shortened URL
+    } else {
+      const errorData = await response.json();
+      console.error("Error shortening URL:", errorData);
+      throw new Error(errorData.error || "Unknown error");
     }
-
-    const result = await response.json();
-    return result.data.tiny_url;
   } catch (error) {
-    console.warn("Failed to shorten URL, using original:", error);
-    return longUrl;
+    console.error("Failed to shorten URL:", error);
+    return longUrl; // Return the original longUrl in case of error
   }
-};
+}
