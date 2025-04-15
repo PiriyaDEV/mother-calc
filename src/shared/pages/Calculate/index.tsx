@@ -1,35 +1,27 @@
+import { ItemObj, MemberObj } from "@/app/lib/interface";
 import CommonBtn from "@/shared/components/CommonBtn";
 import { useState } from "react";
 
 import { TiDelete } from "react-icons/ti";
 
-interface Member {
-  name: string;
-  color: string;
-  customPaid?: number;
+interface CalculateProps {
+  members: MemberObj[];
+  itemArr: ItemObj[];
+  setItemArr: React.Dispatch<React.SetStateAction<ItemObj[]>>;
 }
 
-interface Item {
-  itemName: string;
-  paidBy: Member;
-  price?: number;
-  selectedMembers: Member[];
-}
-
-interface Props {
-  members: Member[];
-  itemArr: Item[];
-  setItemArr: React.Dispatch<React.SetStateAction<Item[]>>;
-}
-
-export default function Calculate({ members, itemArr, setItemArr }: Props) {
+export default function Calculate({
+  members,
+  itemArr,
+  setItemArr,
+}: CalculateProps) {
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectAll, setSelectAll] = useState(false);
 
-  const handleMemberSelection = (member: Member) => {
+  const handleMemberSelection = (member: MemberObj) => {
     if (selectedItemIndex === null) return;
 
     const updatedItems = [...itemArr];
@@ -76,7 +68,7 @@ export default function Calculate({ members, itemArr, setItemArr }: Props) {
     setSelectAll(shouldSelectAll);
   };
 
-  const handleCustomPaidChange = (member: Member, customPaid: string) => {
+  const handleCustomPaidChange = (member: MemberObj, customPaid: string) => {
     if (selectedItemIndex === null) return;
 
     const updatedItems = [...itemArr];

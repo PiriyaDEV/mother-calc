@@ -4,12 +4,12 @@ import { useState } from "react";
 import { TiDelete } from "react-icons/ti";
 
 import CommonBtn from "@/shared/components/CommonBtn";
-import type { Member } from "@/interface";
 import { MEMBER_COLORS } from "./constants";
+import { MemberObj } from "@/app/lib/interface";
 
 interface MemberProps {
-  members: Member[];
-  setMembers: React.Dispatch<React.SetStateAction<Member[]>>;
+  members: MemberObj[];
+  setMembers: React.Dispatch<React.SetStateAction<MemberObj[]>>;
   setIsMemberSet: React.Dispatch<React.SetStateAction<boolean>>;
 }
 

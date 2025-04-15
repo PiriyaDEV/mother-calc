@@ -7,26 +7,15 @@ import Calculate from "@/shared/pages/Calculate";
 import Item from "@/shared/pages/Item";
 import Member from "@/shared/pages/Member";
 import Summary from "@/shared/pages/Summary";
-
-interface Member {
-  name: string;
-  color: string;
-}
-
-interface Item {
-  itemName: string;
-  paidBy: Member;
-  price?: number;
-  selectedMembers: Member[];
-}
+import { ItemObj, MemberObj } from "./lib/interface";
 
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false); // For hydration guard
   const [isMemberSet, setMemberSet] = useState(false);
   const [isItemModalOpen, setItemModalOpen] = useState(false);
   const [screen, setScreen] = useState<"list" | "summary">("list");
-  const [members, setMembers] = useState<Member[]>([]);
-  const [itemArr, setItemArr] = useState<Item[]>([]);
+  const [members, setMembers] = useState<MemberObj[]>([]);
+  const [itemArr, setItemArr] = useState<ItemObj[]>([]);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -56,7 +45,7 @@ export default function App() {
 
         return { ...item, selectedMembers: updatedSelectedMembers };
       })
-      .filter((item): item is Item => item !== null);
+      .filter((item): item is ItemObj => item !== null);
 
     setItemArr(filteredItems);
   }, [members, isLoaded]);
@@ -93,9 +82,8 @@ export default function App() {
           setItemArr={setItemArr}
         />
       );
-    }
-    else {
-      return <Summary members={members} itemArr={itemArr}/>
+    } else {
+      return <Summary members={members} itemArr={itemArr} />;
     }
 
     // Future: render summary

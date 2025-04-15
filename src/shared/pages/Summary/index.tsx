@@ -1,21 +1,8 @@
-import { useState } from "react";
+import { ItemObj, MemberObj } from "@/app/lib/interface";
 
-interface Member {
-  name: string;
-  color: string;
-  customPaid?: number;
-}
-
-interface Item {
-  itemName: string;
-  paidBy: Member;
-  price?: number;
-  selectedMembers: Member[];
-}
-
-interface Props {
-  itemArr: Item[];
-  members: Member[];
+interface SummaryProps {
+  itemArr: ItemObj[];
+  members: MemberObj[];
 }
 
 interface Totals {
@@ -31,7 +18,7 @@ interface DebtMatrix {
   };
 }
 
-export default function Summary({ itemArr, members }: Props) {
+export default function Summary({ itemArr, members }: SummaryProps) {
   const totals: Totals = {};
   const debtMatrix: DebtMatrix = {};
 

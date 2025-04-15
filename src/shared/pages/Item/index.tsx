@@ -1,35 +1,27 @@
+import { ItemObj, MemberObj } from "@/app/lib/interface";
 import CommonBtn from "@/shared/components/CommonBtn";
 import { useState } from "react";
 
-interface Member {
-  name: string;
-  color: string;
-  customPaid?: number;
-}
-
-interface Item {
-  itemName: string;
-  paidBy: Member;
-  price?: number;
-  selectedMembers: Member[];
-}
-
-interface Props {
-  members: Member[];
-  setItemArr: React.Dispatch<React.SetStateAction<Item[]>>;
+interface ItemProps {
+  members: MemberObj[];
+  setItemArr: React.Dispatch<React.SetStateAction<ItemObj[]>>;
   setItemModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export default function Item({ members, setItemArr, setItemModalOpen }: Props) {
+export default function Item({
+  members,
+  setItemArr,
+  setItemModalOpen,
+}: ItemProps) {
   const [itemName, setItemName] = useState("");
-  const [paidBy, setPaidBy] = useState<Member | null>(null);
+  const [paidBy, setPaidBy] = useState<MemberObj | null>(null);
   const [price, setPrice] = useState("");
 
   const handleAddItem = () => {
     if (!itemName.trim() || !paidBy)
       return alert("Please fill out all fields.");
 
-    const newItem: Item = {
+    const newItem: ItemObj = {
       itemName: itemName.trim(),
       paidBy,
       price: price ? parseFloat(price) : undefined,
