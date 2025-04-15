@@ -261,6 +261,16 @@ export default function Calculate({
                 );
               })}
             </div>
+
+            <div className="flex justify-end mt-6">
+              <CommonBtn
+                text="ตกลง"
+                onClick={() => {
+                  setIsModalOpen(false);
+                }}
+                disabled={members.length === 0}
+              />
+            </div>
           </div>
         </div>
       )}
