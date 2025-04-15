@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FaShareAlt } from "react-icons/fa"; // Import the share icon from react-icons
 import CommonBtn from "@/shared/components/CommonBtn";
 import CommonLoading from "@/shared/components/CommonLoading";
 import Calculate from "@/shared/pages/Calculate";
@@ -8,54 +9,83 @@ import Item from "@/shared/pages/Item";
 import Member from "@/shared/pages/Member";
 import Summary from "@/shared/pages/Summary";
 import { ItemObj, MemberObj } from "./lib/interface";
+import { PuffLoader } from "react-spinners";
+
+// Helper functions (encode and decode as before)
+const encodeBase64 = (data: any) => {
+  const jsonString = JSON.stringify(data);
+  const utf8Array = new TextEncoder().encode(jsonString);
+  let binary = "";
+  utf8Array.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary);
+};
+
+const decodeBase64 = (data: string) => {
+  try {
+    const decodedString = atob(data);
+    const utf8Array = Array.from(decodedString).map((char) =>
+      char.charCodeAt(0)
+    );
+    const jsonString = new TextDecoder().decode(new Uint8Array(utf8Array));
+    return JSON.parse(jsonString);
+  } catch (e) {
+    return [];
+  }
+};
+
+// Function to get URL parameters (Base64 encoded)
+const getURLParams = () => {
+  const params = new URLSearchParams(window.location.search);
+  const membersParam = params.get("members");
+  const itemArrParam = params.get("itemArr");
+
+  return {
+    members: membersParam ? decodeBase64(membersParam) : [],
+    itemArr: itemArrParam ? decodeBase64(itemArrParam) : [],
+  };
+};
 
 export default function App() {
-  const [isLoaded, setIsLoaded] = useState(false); // For hydration guard
+  const [isLoaded, setIsLoaded] = useState(false);
   const [isMemberSet, setMemberSet] = useState(false);
   const [isItemModalOpen, setItemModalOpen] = useState(false);
   const [screen, setScreen] = useState<"list" | "summary">("list");
   const [members, setMembers] = useState<MemberObj[]>([]);
   const [itemArr, setItemArr] = useState<ItemObj[]>([]);
+  const [copySuccess, setCopySuccess] = useState(false); // State to track copy success
 
-  // Load from localStorage on mount
+  // Load from URL parameters
   useEffect(() => {
-    const storedMembers = localStorage.getItem("members");
-    const storedItems = localStorage.getItem("itemArr");
-
-    if (storedMembers) setMembers(JSON.parse(storedMembers));
-    if (storedItems) setItemArr(JSON.parse(storedItems));
-
+    const { members: loadedMembers, itemArr: loadedItems } = getURLParams();
+    setMembers(loadedMembers);
+    setItemArr(loadedItems);
     setIsLoaded(true);
   }, []);
 
-  // Update localStorage and filter invalid items when members change
+  // Update URL parameters when members or itemArr change
   useEffect(() => {
     if (!isLoaded) return;
 
-    localStorage.setItem("members", JSON.stringify(members));
+    const params = new URLSearchParams();
+    params.set("members", encodeBase64(members));
+    params.set("itemArr", encodeBase64(itemArr));
+    window.history.replaceState({}, "", "?" + params.toString());
+  }, [members, itemArr, isLoaded]);
 
-    const activeNames = members.map((m) => m.name);
-    const filteredItems = itemArr
-      .map((item) => {
-        if (!activeNames.includes(item.paidBy.name)) return null;
-
-        const updatedSelectedMembers = item.selectedMembers.filter((m) =>
-          activeNames.includes(m.name)
-        );
-
-        return { ...item, selectedMembers: updatedSelectedMembers };
-      })
-      .filter((item): item is ItemObj => item !== null);
-
-    setItemArr(filteredItems);
-  }, [members, isLoaded]);
-
-  // Sync item array with localStorage
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem("itemArr", JSON.stringify(itemArr));
-    }
-  }, [itemArr, isLoaded]);
+  const handleCopyLink = () => {
+    const currentUrl = window.location.href; // Get the current URL
+    navigator.clipboard.writeText(currentUrl).then(
+      () => {
+        setCopySuccess(true); // Update state on successful copy
+        setTimeout(() => setCopySuccess(false), 2000); // Reset after 2 seconds
+      },
+      () => {
+        alert("Failed to copy the link!");
+      }
+    );
+  };
 
   const renderHeader = () => (
     <div className="flex items-center gap-6 justify-center">
@@ -85,9 +115,6 @@ export default function App() {
     } else {
       return <Summary members={members} itemArr={itemArr} />;
     }
-
-    // Future: render summary
-    return null;
   };
 
   const renderModal = () =>
@@ -144,6 +171,27 @@ export default function App() {
           {renderFooter()}
         </>
       )}
+
+      {/* Share Link Button */}
+      <div className="absolute top-4 right-4">
+        <button
+          onClick={handleCopyLink}
+          className="p-2 bg-[#c5c6c7] text-white rounded-full flex items-center gap-2"
+          title="Share link"
+        >
+          {!copySuccess ? (
+            <FaShareAlt className="text-xs" />
+          ) : (
+            <PuffLoader
+              color="white"
+              loading={true}
+              size={13}
+              aria-label="Loading Spinner"
+              data-testid="loader"
+            />
+          )}
+        </button>
+      </div>
     </div>
   );
 }
