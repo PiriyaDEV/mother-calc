@@ -1,5 +1,5 @@
 import CommonBtn from "@/shared/components/CommonBtn";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 import { TiDelete } from "react-icons/ti";
 
@@ -99,79 +99,68 @@ export default function Calculate({ members, itemArr, setItemArr }: Props) {
     <div className="flex flex-col gap-4 max-w-md w-full">
       <h1 className="font-bold mt-3">กินอะไรไปบ้าง ?</h1>
 
-      <div>
-        {itemArr.length !== 0 && (
-          <div className="grid grid-cols-3 font-bold text-sm !text-[#c5c6c7]">
-            <span>ชื่อ</span>
-            <span>จ่ายโดย</span>
-            <span>ราคา</span>
-          </div>
-        )}
-
-        <div className="flex flex-col gap-2 mt-2">
-          {itemArr.length === 0 ? (
-            <span>ยังไม่มีรายการ</span>
-          ) : (
-            itemArr.map((item, index) => (
-              <div key={index} className="flex justify-between my-2 gap-2">
-                <div className="w-full">
-                  <div
-                    onClick={() => handleItemClick(index)}
-                    className="p-2 rounded-[8px] bg-gray-100 text-sm !text-black grid grid-cols-3 items-center"
-                  >
-                    <strong>{item.itemName}</strong>
-
+      <div className="flex flex-col gap-2 mt-2">
+        {itemArr.length === 0 ? (
+          <span>ยังไม่มีรายการ</span>
+        ) : (
+          itemArr.map((item, index) => (
+            <div key={index} className="flex justify-between my-2 gap-2">
+              <div className="w-full">
+                <div
+                  onClick={() => handleItemClick(index)}
+                  className="p-2 rounded-[8px] bg-gray-100 text-sm !text-black grid grid-cols-2 items-center"
+                >
+                  <strong>
+                    {item.itemName}{" "}
                     <div
-                      className="relative p-2 h-7 w-14 rounded-full flex justify-center items-center"
-                      style={{ backgroundColor: item.paidBy.color }}
+                      className="text-xs font-semibold"
+                      style={{ color: item.paidBy.color }}
                     >
-                      <span className="text-xs font-semibold truncate text-white">
-                        {item.paidBy.name}
-                      </span>
+                      ({item.paidBy.name})
                     </div>
+                  </strong>
 
-                    <div>
-                      {item.price !== undefined
-                        ? `${item.price.toFixed(2)} บาท`
-                        : item.selectedMembers.length > 0
-                        ? `${item.selectedMembers
-                            .reduce((sum, m) => sum + (m.customPaid || 0), 0)
-                            .toFixed(2)} บาท`
-                        : "N/A"}{" "}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {item.selectedMembers.map((memberItem, index) => (
-                      <div
-                        key={`${memberItem} ${index}`}
-                        className="relative p-2 h-5 w-fit rounded-full flex justify-center items-center"
-                        style={{ backgroundColor: memberItem.color }}
-                      >
-                        <span className="text-[10px] font-semibold truncate text-white">
-                          {memberItem.name}{" "}
-                          <span>
-                            :{" "}
-                            {item.price !== undefined
-                              ? `${(
-                                  item.price / item.selectedMembers.length
-                                ).toFixed(2)} บาท`
-                              : `${memberItem.customPaid} บาท`}
-                          </span>
-                        </span>
-                      </div>
-                    ))}
+                  <div>
+                    {item.price !== undefined
+                      ? `${item.price.toFixed(2)} บาท`
+                      : item.selectedMembers.length > 0
+                      ? `${item.selectedMembers
+                          .reduce((sum, m) => sum + (m.customPaid || 0), 0)
+                          .toFixed(2)} บาท`
+                      : "N/A"}{" "}
                   </div>
                 </div>
 
-                <TiDelete
-                  onClick={() => handleDeleteItem(index)}
-                  className="text-[28px] mt-2"
-                />
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {item.selectedMembers.map((memberItem, index) => (
+                    <div
+                      key={`${memberItem} ${index}`}
+                      className="relative p-2 h-5 w-fit rounded-full flex justify-center items-center"
+                      style={{ backgroundColor: memberItem.color }}
+                    >
+                      <span className="text-[10px] font-semibold truncate text-white">
+                        {memberItem.name}{" "}
+                        <span>
+                          :{" "}
+                          {item.price !== undefined
+                            ? `${(
+                                item.price / item.selectedMembers.length
+                              ).toFixed(2)} บาท`
+                            : `${memberItem.customPaid ?? "0"} บาท`}
+                        </span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))
-          )}
-        </div>
+
+              <TiDelete
+                onClick={() => handleDeleteItem(index)}
+                className="text-[28px] mt-2"
+              />
+            </div>
+          ))
+        )}
       </div>
 
       {isModalOpen && selectedItemIndex !== null && (
@@ -203,17 +192,34 @@ export default function Calculate({ members, itemArr, setItemArr }: Props) {
                 );
 
                 return (
-                  <div
-                    key={index}
-                    onClick={() => handleMemberSelection(member)}
-                    className={`relative w-16 h-16 rounded-full flex justify-center items-center cursor-pointer ${
-                      isSelected ? "border-2 border-[#80ef80]" : ""
-                    }`}
-                    style={{ backgroundColor: member.color }}
-                  >
-                    <span className="text-xs font-semibold truncate text-white">
-                      {member.name}
-                    </span>
+                  <div key={index} className="flex items-center gap-2">
+                    <div
+                      onClick={() => handleMemberSelection(member)}
+                      className={`relative w-10 h-10 rounded-full flex justify-center items-center cursor-pointer`}
+                      style={{
+                        backgroundColor: isSelected ? member.color : "#d3d3d3",
+                      }}
+                    >
+                      <span className="text-xs font-semibold truncate text-white">
+                        {member.name}
+                      </span>
+                    </div>
+
+                    {itemArr[selectedItemIndex]?.price === undefined &&
+                      isSelected && (
+                        <input
+                          type="number"
+                          placeholder="ใส่จำนวน"
+                          value={
+                            selectedMembers.find((m) => m.name === member.name)
+                              ?.customPaid ?? ""
+                          }
+                          onChange={(e) =>
+                            handleCustomPaidChange(member, e.target.value)
+                          }
+                          className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm w-24"
+                        />
+                      )}
                   </div>
                 );
               })}

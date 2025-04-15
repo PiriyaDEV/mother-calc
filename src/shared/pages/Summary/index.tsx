@@ -8,7 +8,7 @@ interface Member {
 
 interface Item {
   itemName: string;
-  paidBy: string;
+  paidBy: Member;
   price?: number;
   selectedMembers: Member[];
 }
@@ -38,17 +38,17 @@ export default function Summary({ itemArr, members }: Props) {
     const { price, paidBy, selectedMembers } = item;
 
     // Ensure payer is initialized
-    totals[paidBy] = totals[paidBy] || { paid: 0, shouldPay: 0 };
+    totals[paidBy.name] = totals[paidBy.name] || { paid: 0, shouldPay: 0 };
 
     // Add to paid total
     if (price !== undefined) {
-      totals[paidBy].paid += price;
+      totals[paidBy.name].paid += price;
     } else {
       const customTotal = selectedMembers.reduce(
         (sum, m) => sum + (m.customPaid || 0),
         0
       );
-      totals[paidBy].paid += customTotal;
+      totals[paidBy.name].paid += customTotal;
     }
 
     // Calculate shouldPay
@@ -70,22 +70,23 @@ export default function Summary({ itemArr, members }: Props) {
   });
 
   return (
-    <div style={{ padding: "1rem", fontFamily: "sans-serif" }}>
-      <div>
-        <div>Step 4: Summary</div>
-        <div>You can edit after this</div>
-      </div>
-      <table
-        border={1}
-        cellPadding={8}
-        style={{ borderCollapse: "collapse", width: "100%" }}
-      >
+    <div
+      className="overflow-y-auto pb-5"
+      style={{ height: "calc(100vh - 200px)", overflowY: "auto" }}
+    >
+      <table className="min-w-full border border-gray-300 border-collapse text-sm">
         <thead>
-          <tr>
-            <th>Name</th>
-            <th>Must Pay</th>
-            <th>Paid</th>
-            <th>Balance</th>
+          <tr className="bg-[#4366f4] text-white">
+            <th className="px-2 py-1 text-left border border-gray-300">ชื่อ</th>
+            <th className="px-2 py-1 text-left border border-gray-300">
+              ต้องจ่าย
+            </th>
+            <th className="px-2 py-1 text-left border border-gray-300">
+              จ่ายไป
+            </th>
+            <th className="px-2 py-1 text-left border border-gray-300">
+              ทั้งหมด
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -96,11 +97,31 @@ export default function Summary({ itemArr, members }: Props) {
               shouldPay: 0,
             };
             return (
-              <tr key={name + index}>
-                <td>{name}</td>
-                <td>{shouldPay.toFixed(2)}</td>
-                <td>{paid.toFixed(2)}</td>
-                <td>{(paid - shouldPay).toFixed(2)}</td>
+              <tr
+                key={name + index}
+                className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+              >
+                <td
+                  className="px-2 py-1 border border-gray-300 font-semibold"
+                  style={{ background: member.color }}
+                >
+                  {name}
+                </td>
+                <td className="px-2 py-1 border border-gray-300">
+                  {shouldPay.toFixed(2)}
+                </td>
+                <td className="px-2 py-1 border border-gray-300">
+                  {paid.toFixed(2)}
+                </td>
+                <td
+                  className={`px-2 py-1 border border-gray-300 ${
+                    paid - shouldPay >= 0
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {(paid - shouldPay).toFixed(2)}
+                </td>
               </tr>
             );
           })}

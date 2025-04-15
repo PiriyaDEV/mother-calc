@@ -1,11 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import CommonBtn from "@/shared/components/CommonBtn";
+import CommonLoading from "@/shared/components/CommonLoading";
 import Calculate from "@/shared/pages/Calculate";
 import Item from "@/shared/pages/Item";
 import Member from "@/shared/pages/Member";
 import Summary from "@/shared/pages/Summary";
-import { useEffect, useState } from "react";
 
 interface Member {
   name: string;
@@ -20,101 +21,139 @@ interface Item {
 }
 
 export default function App() {
+  const [isLoaded, setIsLoaded] = useState(false); // For hydration guard
   const [isMemberSet, setMemberSet] = useState(false);
+  const [isItemModalOpen, setItemModalOpen] = useState(false);
+  const [screen, setScreen] = useState<"list" | "summary">("list");
   const [members, setMembers] = useState<Member[]>([]);
   const [itemArr, setItemArr] = useState<Item[]>([]);
-  const [isItemModalOpen, setItemModalOpen] = useState(false);
 
+  // Load from localStorage on mount
   useEffect(() => {
-    // Get the names of the currently active members
-    const activeMemberNames = members.map((member) => member.name);
+    const storedMembers = localStorage.getItem("members");
+    const storedItems = localStorage.getItem("itemArr");
 
-    setItemArr(
-      (prevItemArr) =>
-        prevItemArr
-          .map((item) => {
-            // Remove item if 'paidBy' is in removed members
-            if (!activeMemberNames.includes(item.paidBy.name)) {
-              return null; // This item should be removed
-            }
+    if (storedMembers) setMembers(JSON.parse(storedMembers));
+    if (storedItems) setItemArr(JSON.parse(storedItems));
 
-            // Filter out removed members from selectedMembers
-            const updatedSelectedMembers = item.selectedMembers.filter(
-              (member) => activeMemberNames.includes(member.name)
-            );
+    setIsLoaded(true);
+  }, []);
 
-            return {
-              ...item,
-              selectedMembers: updatedSelectedMembers,
-            };
-          })
-          .filter((item) => item !== null) // Remove null values (items that are deleted)
+  // Update localStorage and filter invalid items when members change
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    localStorage.setItem("members", JSON.stringify(members));
+
+    const activeNames = members.map((m) => m.name);
+    const filteredItems = itemArr
+      .map((item) => {
+        if (!activeNames.includes(item.paidBy.name)) return null;
+
+        const updatedSelectedMembers = item.selectedMembers.filter((m) =>
+          activeNames.includes(m.name)
+        );
+
+        return { ...item, selectedMembers: updatedSelectedMembers };
+      })
+      .filter((item): item is Item => item !== null);
+
+    setItemArr(filteredItems);
+  }, [members, isLoaded]);
+
+  // Sync item array with localStorage
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem("itemArr", JSON.stringify(itemArr));
+    }
+  }, [itemArr, isLoaded]);
+
+  const renderHeader = () => (
+    <div className="flex items-center gap-6 justify-center">
+      {["list", "summary"].map((view) => (
+        <h1
+          key={view}
+          onClick={() => setScreen(view as "list" | "summary")}
+          className={`font-bold cursor-pointer ${
+            screen === view ? "text-black" : "!text-gray-400"
+          }`}
+        >
+          {view === "list" ? "รายการ" : "ดูสรุป"}
+        </h1>
+      ))}
+    </div>
+  );
+
+  const renderBody = () => {
+    if (screen === "list") {
+      return (
+        <Calculate
+          members={members}
+          itemArr={itemArr}
+          setItemArr={setItemArr}
+        />
+      );
+    }
+    else {
+      return <Summary members={members} itemArr={itemArr}/>
+    }
+
+    // Future: render summary
+    return null;
+  };
+
+  const renderModal = () =>
+    isItemModalOpen && (
+      <div
+        className="modal modal-open !text-black"
+        onClick={(e) => e.target === e.currentTarget && setItemModalOpen(false)}
+      >
+        <div className="modal-box">
+          <Item
+            members={members}
+            setItemArr={setItemArr}
+            setItemModalOpen={setItemModalOpen}
+          />
+        </div>
+      </div>
     );
-  }, [members]);
+
+  const renderFooter = () => (
+    <div className="absolute bottom-0 left-0 bg-white py-5 w-full">
+      <div className="container mx-auto px-4 flex justify-between gap-7">
+        <CommonBtn
+          text="< ย้อนกลับ"
+          type="secondary"
+          onClick={() => setMemberSet(false)}
+          disabled={members.length === 0}
+          className="!w-fit"
+        />
+        <CommonBtn
+          text="เพิ่มรายการ"
+          onClick={() => setItemModalOpen(true)}
+          disabled={members.length === 0}
+          className="!w-fit"
+        />
+      </div>
+    </div>
+  );
+
+  if (!isLoaded) return <CommonLoading />;
 
   return (
-    <div className="flex flex-col gap-10">
-      {/* Member Screen */}
-      {!isMemberSet && (
+    <div className="flex flex-col gap-5">
+      {!isMemberSet ? (
         <Member
           members={members}
           setMembers={setMembers}
           setIsMemberSet={setMemberSet}
         />
-      )}
-
-      {/* Calculate Screen */}
-      {isMemberSet && (
+      ) : (
         <>
-          <Calculate
-            members={members}
-            itemArr={itemArr}
-            setItemArr={setItemArr}
-          />
-
-          {/* <Summary members={members} itemArr={itemArr} /> */}
-
-          {isItemModalOpen && (
-            <div
-              className="modal modal-open !text-black"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                  setItemModalOpen(false);
-                }
-              }}
-            >
-              <div className="modal-box">
-                <Item
-                  members={members}
-                  setItemArr={setItemArr}
-                  setItemModalOpen={setItemModalOpen}
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="absolute bottom-0 left-0 bg-white py-5 w-full">
-            <div className="container mx-auto px-4 flex justify-between gap-7">
-              <CommonBtn
-                text="< ย้อนกลับ"
-                type="secondary"
-                onClick={() => {
-                  setMemberSet(false);
-                }}
-                disabled={members.length === 0}
-                className="!w-fit"
-              />
-
-              <CommonBtn
-                text="เพิ่มรายการ"
-                onClick={() => {
-                  setItemModalOpen(true);
-                }}
-                disabled={members.length === 0}
-                className="!w-fit"
-              />
-            </div>
-          </div>
+          {renderHeader()}
+          {renderBody()}
+          {renderModal()}
+          {renderFooter()}
         </>
       )}
     </div>
