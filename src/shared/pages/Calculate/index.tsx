@@ -97,14 +97,16 @@ export default function Calculate({
 
   return (
     <div className="flex flex-col gap-4 w-full">
-      <h1 className="font-bold mt-3">กินอะไรไปบ้าง ?</h1>
+      {itemArr.length !== 0 && (
+        <h1 className="font-bold mt-3">กินอะไรไปบ้าง ?</h1>
+      )}
 
       <div
         className="flex flex-col gap-2 mt-2"
         style={{ height: "calc(100vh - 280px)", overflowY: "auto" }}
       >
         {itemArr.length === 0 ? (
-          <span>ยังไม่มีรายการ</span>
+          <span className="text-center">ยังไม่มีรายการ</span>
         ) : (
           itemArr.map((item, index) => {
             const paidByMember = getMemberObjByName(item.paidBy, members);

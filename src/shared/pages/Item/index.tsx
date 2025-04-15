@@ -19,7 +19,7 @@ export default function Item({
   const [isEqualSplit, setIsEqualSplit] = useState(true);
 
   const handleAddItem = () => {
-    if (!itemName.trim() || !paidBy || (!isEqualSplit && !price)) {
+    if (!itemName.trim() || !paidBy || (isEqualSplit && !price)) {
       return alert("กรุณากรอกข้อมูลให้ครบ");
     }
 
