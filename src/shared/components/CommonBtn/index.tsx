@@ -13,7 +13,7 @@ const CommonBtn: FC<CommonBtnProps> = ({
 }) => {
   return (
     <button
-      className={`btn btn-primary w-full max-w-xs font-bold text-xl bg-gradient-to-b from-[#3a2b77] to-[#261669] border-none ${className}`}
+      className={`btn btn-primary w-full px-5 max-w-xs font-bold text-md bg-[#4366f4] border-none ${className}`}
       onClick={onClick}
     >
       {text}

@@ -1,116 +1,86 @@
 "use client";
 
+import { useState } from "react";
+import { TiDelete } from "react-icons/ti";
+
 import CommonBtn from "@/shared/components/CommonBtn";
-import { ChangeEvent, useState } from "react";
+import type { Member } from "@/interface";
+import { MEMBER_COLORS } from "./constants";
 
-interface Member {
-  name: string;
-  color: string;
-}
-
-interface Props {
+interface MemberProps {
   members: Member[];
   setMembers: React.Dispatch<React.SetStateAction<Member[]>>;
 }
 
-export default function Member({ members, setMembers }: Props) {
-  const [name, setName] = useState<string>("");
-  const [errorMsg, setErrorMsg] = useState<boolean>(false);
+export default function Member({ members, setMembers }: MemberProps) {
+  const [name, setName] = useState("");
+  const [error, setError] = useState(false);
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setName(e.target.value);
-    setErrorMsg(false);
-  };
+  const getRandomColor = () =>
+    MEMBER_COLORS[Math.floor(Math.random() * MEMBER_COLORS.length)];
 
-  const getInitials = (name: string): string => {
+  const addMember = () => {
     const trimmed = name.trim();
-    const parts = trimmed.split(" ").filter(Boolean);
-
-    if (parts.length === 1) {
-      return parts[0].substring(0, 2).toUpperCase();
-    }
-
-    return parts
-      .map((word) => word.charAt(0).toUpperCase())
-      .join("")
-      .slice(0, 2);
-  };
-
-  const getRandomColor = (): string => {
-    const colors = [
-      "#F87171",
-      "#FBBF24",
-      "#34D399",
-      "#60A5FA",
-      "#A78BFA",
-      "#F472B6",
-      "#FCD34D",
-    ];
-    return colors[Math.floor(Math.random() * colors.length)];
-  };
-
-  const onAddMember = () => {
-    if (!name.trim()) {
-      setErrorMsg(true);
-      return;
-    }
-
-    const newMember: Member = {
-      name: name.trim(),
-      color: getRandomColor(),
-    };
-
-    setMembers((prev) => [...prev, newMember]);
+    if (!trimmed) return setError(true);
+    setMembers([...members, { name: trimmed, color: getRandomColor() }]);
     setName("");
+    setError(false);
   };
 
-  const removeMember = (index: number) => {
-    setMembers((prev) => prev.filter((_, i) => i !== index));
-  };
+  const removeMember = (index: number) =>
+    setMembers(members.filter((_, i) => i !== index));
 
   return (
-    <div className="flex items-center justify-center flex-col gap-10">
-      <div>
-        <div>Step 1: Add Member</div>
-        <div>You can edit after this</div>
-      </div>
-
-      <div className="flex gap-2 flex-wrap">
-        {members.length === 0 ? (
-          <span className="text-xl">No Member added</span>
-        ) : (
-          members.map((member, index) => (
+    <div className="flex flex-col gap-10">
+      <div className="flex gap-4 flex-wrap w-full">
+        {members.length ? (
+          members.map((m, i) => (
             <div
-              key={index}
-              className="w-16 h-16 rounded-full flex justify-center items-center cursor-pointer transition-transform hover:scale-110"
-              style={{ backgroundColor: member.color, color: "#fff" }}
-              title={`Click to remove ${member.name}`}
-              onClick={() => removeMember(index)}
+              key={i}
+              className="relative w-16 h-16 rounded-full flex justify-center items-center"
+              style={{ backgroundColor: m.color }}
             >
-              <span className="text-xl font-semibold">
-                {getInitials(member.name)}
+              <span className="text-xs font-semibold truncate text-white">
+                {m.name}
               </span>
+              <div
+                className="bg-white rounded-full absolute -top-1 -right-1 h-5 w-5 flex justify-center items-center cursor-pointer"
+                onClick={() => removeMember(i)}
+              >
+                <TiDelete className="text-red text-xl" />
+              </div>
             </div>
           ))
+        ) : (
+          <span className="text-sm text-center w-full">ยังไม่มีสมาชิก</span>
         )}
       </div>
 
-      <div className="flex items-center justify-center gap-2">
-        <input
-          type="text"
-          placeholder="Please enter member name"
-          className={`input input-bordered w-full max-w-xs ${
-            errorMsg ? "border-red-500" : ""
-          }`}
-          value={name}
-          onChange={handleInputChange}
-        />
-        <CommonBtn text="Add" onClick={onAddMember} className="!w-fit" />
+      <div className="absolute bottom-0 left-0 bg-white py-5 w-full">
+        <div className="container mx-auto px-6 flex flex-col gap-7">
+          <div className="flex items-center justify-center gap-2">
+            <input
+              type="text"
+              placeholder="ใส่ชื่อสมาชิก"
+              className={`input input-bordered w-full ${
+                error ? "border-red-500" : ""
+              }`}
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setError(false);
+              }}
+              onKeyDown={(e) => e.key === "Enter" && addMember()}
+            />
+            <CommonBtn text="เพิ่ม" onClick={addMember} className="!w-fit" />
+          </div>
+          <CommonBtn
+            text="ไปต่อ >"
+            onClick={addMember}
+            className="!max-w-none"
+          />
+        </div>
       </div>
-
-      <span>
-        Member list: {members.map((member) => member.name).join(", ")}
-      </span>
     </div>
   );
 }

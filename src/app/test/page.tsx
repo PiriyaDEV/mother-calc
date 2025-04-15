@@ -18,7 +18,7 @@ interface Item {
   selectedMembers: Member[];
 }
 
-export default function App() {
+export default function Test() {
   const [page, setPage] = useState(1);
   const [members, setMembers] = useState<Member[]>([]);
   const [itemArr, setItemArr] = useState<Item[]>([]);
@@ -51,9 +51,27 @@ export default function App() {
   }, [members]);
 
   return (
-    <div className="flex flex-col gap-10">
-      <h1 className="font-bold mt-3">สมาชิกมีใครบ้าง ?</h1>
+    <div className="flex items-center justify-center min-h-screen flex-col gap-10">
+      {/* {page === 1 && <Member members={members} setMembers={setMembers} />}
+
+      {page === 2 && <Item members={members} />} */}
+
+      {/* <CommonBtn
+        text="Next"
+        onClick={() => {
+          if (page < 3) {
+            setPage(page + 1);
+          }
+        }}
+      /> */}
+
       <Member members={members} setMembers={setMembers} />
+      <Item members={members} setItemArr={setItemArr} />
+      <Calculate members={members} itemArr={itemArr} setItemArr={setItemArr} />
+
+      <Summary members={members} itemArr={itemArr} />
+
+      {/* <div>{JSON.stringify(itemArr, null, 2)}</div> */}
     </div>
   );
 }

@@ -1,16 +1,16 @@
 import { FC } from "react";
-import { IBM_Plex_Sans } from "next/font/google";
+import { Sarabun } from "next/font/google";
 import type { Metadata } from "next";
 
 interface BackgroundLayoutProps {
   children: React.ReactNode;
 }
 
-const ibmPlexSans = IBM_Plex_Sans({
-  weight: ["300", "400", "500", "700"],
+const sarabun = Sarabun({
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800"],
   style: ["normal", "italic"],
-  variable: "--font-ibm-plex-sans",
-  subsets: ["latin"],
+  subsets: ["thai", "latin"],
+  variable: "--font-sarabun",
 });
 
 export const metadata: Metadata = {
@@ -20,9 +20,12 @@ export const metadata: Metadata = {
 
 const BackgroundLayout: FC<BackgroundLayoutProps> = ({ children }) => {
   return (
-    <html lang="en">
-      <body className={`${ibmPlexSans.variable} antialiased`}>
-        <div className="min-h-screen bg-cover bg-center bg-[url('../../public/images/mobileBg.png')] sm:bg-[url('../../public/images/desktopBg.png')]">
+    <html lang="en" className={sarabun.variable}>
+      <body className="antialiased">
+        <div className="bg-cover bg-center">
+          <div className="text-center font-bold py-4 mb-2 text-[22px] text-[#4366f4]">
+            แม่ๆ คิดเงินให้หน่อย
+          </div>
           <div className="container mx-auto px-6">{children}</div>
         </div>
       </body>

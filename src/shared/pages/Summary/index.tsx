@@ -52,10 +52,16 @@ export default function Summary({ itemArr, members }: Props) {
     }
 
     // Calculate shouldPay
-    const customMembers = selectedMembers.filter((m) => m.customPaid !== undefined);
-    const customTotal = customMembers.reduce((sum, m) => sum + (m.customPaid || 0), 0);
+    const customMembers = selectedMembers.filter(
+      (m) => m.customPaid !== undefined
+    );
+    const customTotal = customMembers.reduce(
+      (sum, m) => sum + (m.customPaid || 0),
+      0
+    );
     const others = selectedMembers.filter((m) => m.customPaid === undefined);
-    const splitAmount = price && others.length > 0 ? (price - customTotal) / others.length : 0;
+    const splitAmount =
+      price && others.length > 0 ? (price - customTotal) / others.length : 0;
 
     selectedMembers.forEach((member) => {
       totals[member.name] = totals[member.name] || { paid: 0, shouldPay: 0 };
@@ -65,7 +71,10 @@ export default function Summary({ itemArr, members }: Props) {
 
   return (
     <div style={{ padding: "1rem", fontFamily: "sans-serif" }}>
-      <h2>Summary</h2>
+      <div>
+        <div>Step 4: Summary</div>
+        <div>You can edit after this</div>
+      </div>
       <table
         border={1}
         cellPadding={8}
@@ -82,7 +91,10 @@ export default function Summary({ itemArr, members }: Props) {
         <tbody>
           {members.map((member, index) => {
             const { name } = member;
-            const { paid, shouldPay } = totals[name] || { paid: 0, shouldPay: 0 };
+            const { paid, shouldPay } = totals[name] || {
+              paid: 0,
+              shouldPay: 0,
+            };
             return (
               <tr key={name + index}>
                 <td>{name}</td>
