@@ -6,3 +6,39 @@ export const getMemberObjByName = (
 ): MemberObj | undefined => {
   return members.find((m) => m.name === name);
 };
+
+// Helper functions (encode and decode as before)
+export const encodeBase64 = (data: any) => {
+  const jsonString = JSON.stringify(data);
+  const utf8Array = new TextEncoder().encode(jsonString);
+  let binary = "";
+  utf8Array.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary);
+};
+
+export const decodeBase64 = (data: string) => {
+  try {
+    const decodedString = atob(data);
+    const utf8Array = Array.from(decodedString).map((char) =>
+      char.charCodeAt(0)
+    );
+    const jsonString = new TextDecoder().decode(new Uint8Array(utf8Array));
+    return JSON.parse(jsonString);
+  } catch (e) {
+    return [];
+  }
+};
+
+// Function to get URL parameters (Base64 encoded)
+export const getURLParams = () => {
+  const params = new URLSearchParams(window.location.search);
+  const membersParam = params.get("members");
+  const itemArrParam = params.get("itemArr");
+
+  return {
+    members: membersParam ? decodeBase64(membersParam) : [],
+    itemArr: itemArrParam ? decodeBase64(itemArrParam) : [],
+  };
+};
