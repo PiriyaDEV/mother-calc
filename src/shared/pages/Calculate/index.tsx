@@ -206,7 +206,15 @@ export default function Calculate({
         >
           <div className="modal-box">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-md font-semibold">เลือกคนกิน</h2>
+              <div>
+                <h2 className="text-md font-semibold">เลือกคนกิน</h2>
+
+                {itemArr[selectedItemIndex]?.price === undefined && (
+                  <span className="text-xs !text-[#c4c5c6]">
+                    เลือกคนกินก่อนใส่จำนวน
+                  </span>
+                )}
+              </div>
 
               <CommonBtn
                 text="ทั้งหมด"
@@ -237,7 +245,7 @@ export default function Calculate({
                       </span>
                     </div>
 
-                    {itemArr[selectedItemIndex]?.price === undefined && (
+                    {itemArr[selectedItemIndex]?.price === undefined && isSelected && (
                       <input
                         type="number"
                         placeholder="ใส่จำนวน"

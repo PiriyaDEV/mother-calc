@@ -92,7 +92,7 @@ export default function Item({
           </label>
         </div>
 
-        {isEqualSplit && (
+        {isEqualSplit ? (
           <div>
             <input
               type="number"
@@ -102,6 +102,10 @@ export default function Item({
               className="input input-bordered w-full"
             />
           </div>
+        ) : (
+          <span className="text-xs !text-[#c4c5c6]">
+            * กรอกราคารายบุคคลหลังจากสร้างรายการ
+          </span>
         )}
       </div>
 
