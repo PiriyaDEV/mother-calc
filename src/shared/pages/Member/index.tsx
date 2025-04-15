@@ -106,10 +106,10 @@ export default function Member({
             <CommonBtn text="เพิ่ม" onClick={addMember} className="!w-fit" />
           </div>
           <CommonBtn
-            text="ไปต่อ >"
+            text="กลับ >"
             type="secondary"
             onClick={() => {
-              setIsMemberSet(true);
+              setIsMemberSet(false);
             }}
             disabled={members.length === 0}
             className="!max-w-none"

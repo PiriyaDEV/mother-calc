@@ -50,7 +50,7 @@ const getURLParams = () => {
 
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isMemberSet, setMemberSet] = useState(false);
+  const [isMember, setMember] = useState(false);
   const [isItemModalOpen, setItemModalOpen] = useState(false);
   const [screen, setScreen] = useState<"list" | "summary">("list");
   const [members, setMembers] = useState<MemberObj[]>([]);
@@ -145,9 +145,9 @@ export default function App() {
     <div className="absolute bottom-0 left-0 bg-white py-5 w-full">
       <div className="container mx-auto px-4 flex justify-between gap-7">
         <CommonBtn
-          text="< ย้อนกลับ"
+          text="+ เพิ่มสมาชิก"
           type="secondary"
-          onClick={() => setMemberSet(false)}
+          onClick={() => setMember(true)}
           disabled={members.length === 0}
           className="!w-fit"
         />
@@ -165,11 +165,11 @@ export default function App() {
 
   return (
     <div className="flex flex-col gap-5">
-      {!isMemberSet ? (
+      {isMember ? (
         <Member
           members={members}
           setMembers={setMembers}
-          setIsMemberSet={setMemberSet}
+          setIsMemberSet={setMember}
         />
       ) : (
         <>

@@ -100,7 +100,7 @@ export default function Calculate({
 
       <div
         className="flex flex-col gap-2 mt-2"
-        style={{ height: "calc(100vh - 200px)", overflowY: "auto" }}
+        style={{ height: "calc(100vh - 250px)", overflowY: "auto" }}
       >
         {itemArr.length === 0 ? (
           <span>ยังไม่มีรายการ</span>

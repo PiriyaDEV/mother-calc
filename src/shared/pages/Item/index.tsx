@@ -16,10 +16,10 @@ export default function Item({
   const [itemName, setItemName] = useState("");
   const [paidBy, setPaidBy] = useState<MemberObj | null>(null);
   const [price, setPrice] = useState("");
+  const [isEqualSplit, setIsEqualSplit] = useState(true);
 
   const handleAddItem = () => {
-    if (!itemName.trim() || !paidBy)
-      return alert("กรุณากรอกข้อมูลให้ครบ");
+    if (!itemName.trim() || !paidBy) return alert("กรุณากรอกข้อมูลให้ครบ");
 
     const newItem: ItemObj = {
       itemName: itemName.trim(),
@@ -32,6 +32,7 @@ export default function Item({
     setItemName("");
     setPaidBy(null);
     setPrice("");
+    setIsEqualSplit(true);
     setItemModalOpen(false);
   };
 
@@ -63,14 +64,44 @@ export default function Item({
         ))}
       </select>
 
-      <span className="!text-[#4366f4] font-bold text-sm">ราคา</span>
-      <input
-        type="number"
-        placeholder="ราคา (ไม่จำเป็น)"
-        value={price}
-        onChange={(e) => setPrice(e.target.value)}
-        className="input input-bordered w-full"
-      />
+      <div>
+        <span className="!text-[#4366f4] font-bold text-sm">ราคา</span>
+
+        <div className="flex gap-4 my-2">
+          <label className="flex items-center gap-2 text-xs">
+            <input
+              type="radio"
+              name="split"
+              value="equal"
+              checked={isEqualSplit}
+              onChange={() => setIsEqualSplit(true)}
+            />
+            หารเท่า
+          </label>
+          <label className="flex items-center gap-2 text-xs">
+            <input
+              type="radio"
+              name="split"
+              value="unequal"
+              checked={!isEqualSplit}
+              onChange={() => setIsEqualSplit(false)}
+            />
+            หารไม่เท่า
+          </label>
+        </div>
+
+        {isEqualSplit && (
+          <div>
+            <input
+              type="number"
+              placeholder="กรอกราคา"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="input input-bordered w-full"
+            />
+          </div>
+        )}
+      </div>
 
       <div className="flex justify-end">
         <CommonBtn
