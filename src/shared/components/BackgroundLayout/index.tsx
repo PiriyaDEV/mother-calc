@@ -16,6 +16,9 @@ const sarabun = Sarabun({
 export const metadata: Metadata = {
   title: "Mother Calc",
   description: "แม่ๆคิดเงินให้หน่อย 👩🏻🙏🏻",
+  openGraph: {
+    images: "/public/images/metaImg.png",
+  },
 };
 
 const BackgroundLayout: FC<BackgroundLayoutProps> = ({ children }) => {
