@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FaShareAlt } from "react-icons/fa"; // Import the share icon from react-icons
+import { FaShareAlt } from "react-icons/fa";
 import CommonBtn from "@/shared/components/CommonBtn";
 import CommonLoading from "@/shared/components/CommonLoading";
 import Calculate from "@/shared/pages/Calculate";
@@ -74,6 +74,29 @@ export default function App() {
     params.set("itemArr", encodeBase64(itemArr));
     window.history.replaceState({}, "", "?" + params.toString());
   }, [members, itemArr, isLoaded]);
+
+  // Handle the deletion of a member
+  const handleDeleteMember = (deletedMember: MemberObj) => {
+    // Remove the member from the members list
+    const updatedMembers = members.filter(
+      (member) => member.name !== deletedMember.name
+    );
+    setMembers(updatedMembers);
+
+    // Remove items that are paid by the deleted member
+    const updatedItems = itemArr.filter(
+      (item) => item.paidBy !== deletedMember.name
+    );
+
+    // For items where the deleted member is selected, remove them from the selectedMembers list
+    updatedItems.forEach((item) => {
+      item.selectedMembers = item.selectedMembers.filter(
+        (selectedMember) => selectedMember.name !== deletedMember.name
+      );
+    });
+
+    setItemArr(updatedItems);
+  };
 
   const handleShare = () => {
     const currentUrl = window.location.href;
@@ -169,6 +192,7 @@ export default function App() {
           members={members}
           setMembers={setMembers}
           setIsMemberSet={setMember}
+          onDeleteMember={handleDeleteMember}
         />
       ) : (
         <>
@@ -182,7 +206,7 @@ export default function App() {
       {/* Share Link Button */}
       <div className="absolute top-4 right-4">
         <button
-          onClick={handleShare} // Change to trigger native share
+          onClick={handleShare}
           className="p-2 bg-[#c5c6c7] text-white rounded-full flex items-center gap-2"
           title="Share link"
         >

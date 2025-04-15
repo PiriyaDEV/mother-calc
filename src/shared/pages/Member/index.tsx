@@ -12,12 +12,14 @@ interface MemberProps {
   members: MemberObj[];
   setMembers: React.Dispatch<React.SetStateAction<MemberObj[]>>;
   setIsMemberSet: React.Dispatch<React.SetStateAction<boolean>>;
+  onDeleteMember: (memberToDelete: MemberObj) => void;
 }
 
 export default function Member({
   members,
   setMembers,
   setIsMemberSet,
+  onDeleteMember,
 }: MemberProps) {
   const [name, setName] = useState("");
   const [error, setError] = useState(false);
@@ -42,9 +44,6 @@ export default function Member({
     setName("");
     setError(false);
   };
-
-  const removeMember = (index: number) =>
-    setMembers(members.filter((_, i) => i !== index));
 
   return (
     <div className="flex flex-col gap-10">
@@ -73,7 +72,7 @@ export default function Member({
                   isOpen={true}
                   title={`ยืนยันการลบ "${m.name}" ?`}
                   onConfirm={() => {
-                    removeMember(i);
+                    onDeleteMember(m);
                     setConfirmDeleteIndex(null);
                   }}
                   onCancel={() => {

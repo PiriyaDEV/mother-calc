@@ -241,6 +241,7 @@ export default function Calculate({
                       <input
                         type="number"
                         placeholder="ใส่จำนวน"
+                        disabled={!isSelected}
                         value={
                           selectedMembers.find((m) => m.name === member.name)
                             ?.customPaid ?? ""
