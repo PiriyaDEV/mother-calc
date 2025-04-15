@@ -14,23 +14,28 @@ export default function Item({
   setItemModalOpen,
 }: ItemProps) {
   const [itemName, setItemName] = useState("");
-  const [paidBy, setPaidBy] = useState<MemberObj | null>(null);
+  const [paidBy, setPaidBy] = useState<string>(""); // Store only the name as string
   const [price, setPrice] = useState("");
   const [isEqualSplit, setIsEqualSplit] = useState(true);
 
   const handleAddItem = () => {
     if (!itemName.trim() || !paidBy) return alert("กรุณากรอกข้อมูลให้ครบ");
 
+    // Retrieve the member object using the paidBy name
+    const selectedMember = members.find((member) => member.name === paidBy);
+
+    if (!selectedMember) return alert("สมาชิกที่เลือกไม่ถูกต้อง");
+
     const newItem: ItemObj = {
       itemName: itemName.trim(),
-      paidBy,
+      paidBy: selectedMember.name,
       price: price ? parseFloat(price) : undefined,
       selectedMembers: [],
     };
 
     setItemArr((prev) => [...prev, newItem]);
     setItemName("");
-    setPaidBy(null);
+    setPaidBy(""); // Reset to empty string, not null
     setPrice("");
     setIsEqualSplit(true);
     setItemModalOpen(false);
@@ -49,11 +54,8 @@ export default function Item({
 
       <span className="!text-[#4366f4] font-bold text-sm">คนจ่าย</span>
       <select
-        value={paidBy ? paidBy.name : ""}
-        onChange={(e) => {
-          const selected = members.find((m) => m.name === e.target.value);
-          setPaidBy(selected ?? null);
-        }}
+        value={paidBy}
+        onChange={(e) => setPaidBy(e.target.value)}
         className="select select-bordered w-full text-black"
       >
         <option value="">เลือกคนจ่าย</option>

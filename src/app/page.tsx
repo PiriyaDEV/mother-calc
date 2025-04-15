@@ -148,7 +148,6 @@ export default function App() {
           text="+ เพิ่มสมาชิก"
           type="secondary"
           onClick={() => setMember(true)}
-          disabled={members.length === 0}
           className="!w-fit"
         />
         <CommonBtn

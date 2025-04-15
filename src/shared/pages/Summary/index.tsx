@@ -32,18 +32,18 @@ export default function Summary({ itemArr, members }: SummaryProps) {
   itemArr.forEach((item) => {
     const { price, paidBy, selectedMembers } = item;
 
-    // Ensure payer is initialized
-    totals[paidBy.name] = totals[paidBy.name] || { paid: 0, shouldPay: 0 };
+    // Ensure payer is initialized, using the name instead of full object
+    totals[paidBy] = totals[paidBy] || { paid: 0, shouldPay: 0 };
 
     // Add to paid total
     if (price !== undefined) {
-      totals[paidBy.name].paid += price;
+      totals[paidBy].paid += price;
     } else {
       const customTotal = selectedMembers.reduce(
         (sum, m) => sum + (m.customPaid || 0),
         0
       );
-      totals[paidBy.name].paid += customTotal;
+      totals[paidBy].paid += customTotal;
     }
 
     // Calculate shouldPay
@@ -63,11 +63,10 @@ export default function Summary({ itemArr, members }: SummaryProps) {
       totals[member.name].shouldPay += member.customPaid ?? splitAmount;
 
       // Update debt matrix
-      if (paidBy.name !== member.name) {
+      if (paidBy !== member.name) {
         const amount = price ? splitAmount : member.customPaid || 0;
-        debtMatrix[paidBy.name][member.name] =
-          debtMatrix[paidBy.name][member.name] || 0;
-        debtMatrix[paidBy.name][member.name] += amount;
+        debtMatrix[paidBy][member.name] = debtMatrix[paidBy][member.name] || 0;
+        debtMatrix[paidBy][member.name] += amount;
       }
     });
   });

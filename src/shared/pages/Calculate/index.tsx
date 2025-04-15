@@ -5,6 +5,7 @@ import { useState } from "react";
 import { TiTrash } from "react-icons/ti";
 import { FaUserCheck } from "react-icons/fa";
 import ConfirmPopup from "@/shared/components/ConfirmPopup";
+import { getMemberObjByName } from "@/app/lib/utils";
 
 interface CalculateProps {
   members: MemberObj[];
@@ -95,7 +96,7 @@ export default function Calculate({
       : [];
 
   return (
-    <div className="flex flex-col gap-4 max-w-md w-full">
+    <div className="flex flex-col gap-4 w-full">
       <h1 className="font-bold mt-3">กินอะไรไปบ้าง ?</h1>
 
       <div
@@ -105,84 +106,92 @@ export default function Calculate({
         {itemArr.length === 0 ? (
           <span>ยังไม่มีรายการ</span>
         ) : (
-          itemArr.map((item, index) => (
-            <div key={index} className="flex justify-between my-2 gap-2">
-              <div className="w-full">
-                <div className="p-2 rounded-[8px] bg-gray-100 text-sm !text-black grid grid-cols-2 items-center">
-                  <strong>
-                    {item.itemName}{" "}
-                    <div
-                      className="text-xs font-semibold"
-                      style={{ color: item.paidBy.color }}
-                    >
-                      ({item.paidBy.name})
-                    </div>
-                  </strong>
+          itemArr.map((item, index) => {
+            console.log("pitem.paidByad", item.paidBy);
+            console.log("mem", members);
+            const paidByMember = getMemberObjByName(item.paidBy, members);
 
-                  <div>
-                    {item.price !== undefined
-                      ? `${item.price.toFixed(2)} บาท`
-                      : item.selectedMembers.length > 0
-                      ? `${item.selectedMembers
-                          .reduce((sum, m) => sum + (m.customPaid || 0), 0)
-                          .toFixed(2)} บาท`
-                      : "N/A"}{" "}
+            console.log("pad", paidByMember);
+
+            return (
+              <div key={index} className="flex justify-between my-2 gap-2">
+                <div className="w-full">
+                  <div className="p-2 rounded-[8px] bg-gray-100 text-sm !text-black grid grid-cols-2 items-center">
+                    <strong>
+                      {item.itemName}
+                      <div
+                        className="text-xs font-semibold"
+                        style={{ color: paidByMember?.color || "black" }}
+                      >
+                        ({paidByMember?.name || item.paidBy})
+                      </div>
+                    </strong>
+
+                    <div>
+                      {item.price !== undefined
+                        ? `${item.price.toFixed(2)} บาท`
+                        : item.selectedMembers.length > 0
+                        ? `${item.selectedMembers
+                            .reduce((sum, m) => sum + (m.customPaid || 0), 0)
+                            .toFixed(2)} บาท`
+                        : "N/A"}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {item.selectedMembers.length === 0 && (
+                      <span className="text-xs !text-gray-400">
+                        * ยังไม่ได้เลือกสมาชิก
+                      </span>
+                    )}
+                    {item.selectedMembers.map((memberItem, index) => (
+                      <div
+                        key={`${memberItem.name}-${index}`}
+                        className="relative p-2 h-5 w-fit rounded-full flex justify-center items-center"
+                        style={{ backgroundColor: memberItem.color }}
+                      >
+                        <span className="text-[10px] font-semibold truncate text-white">
+                          {memberItem.name}
+                          <span>
+                            :{" "}
+                            {item.price !== undefined
+                              ? `${(
+                                  item.price / item.selectedMembers.length
+                                ).toFixed(2)} บาท`
+                              : `${memberItem.customPaid ?? "0"} บาท`}
+                          </span>
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {item.selectedMembers.length === 0 && (
-                    <span className="text-xs !text-gray-400">
-                      * ยังไม่ได้เลือกสมาชิก
-                    </span>
-                  )}
-                  {item.selectedMembers.map((memberItem, index) => (
-                    <div
-                      key={`${memberItem.name}-${index}`}
-                      className="relative p-2 h-5 w-fit rounded-full flex justify-center items-center"
-                      style={{ backgroundColor: memberItem.color }}
-                    >
-                      <span className="text-[10px] font-semibold truncate text-white">
-                        {memberItem.name}{" "}
-                        <span>
-                          :{" "}
-                          {item.price !== undefined
-                            ? `${(
-                                item.price / item.selectedMembers.length
-                              ).toFixed(2)} บาท`
-                            : `${memberItem.customPaid ?? "0"} บาท`}
-                        </span>
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <FaUserCheck
-                onClick={() => handleItemClick(index)}
-                className="text-[28px] mt-2 cursor-pointer"
-              />
-
-              <TiTrash
-                onClick={() => setConfirmDeleteIndex(index)}
-                className="text-[28px] mt-2 cursor-pointer"
-              />
-
-              {confirmDeleteIndex === index && (
-                <ConfirmPopup
-                  title={`ยืนยันการลบ "${item.itemName}" ?`}
-                  isOpen={true}
-                  onConfirm={() => {
-                    handleDeleteItem(index);
-                    setConfirmDeleteIndex(null);
-                  }}
-                  onCancel={() => {
-                    setConfirmDeleteIndex(null);
-                  }}
+                <FaUserCheck
+                  onClick={() => handleItemClick(index)}
+                  className="text-[28px] mt-2 cursor-pointer"
                 />
-              )}
-            </div>
-          ))
+
+                <TiTrash
+                  onClick={() => setConfirmDeleteIndex(index)}
+                  className="text-[28px] mt-2 cursor-pointer"
+                />
+
+                {confirmDeleteIndex === index && (
+                  <ConfirmPopup
+                    title={`ยืนยันการลบ "${item.itemName}" ?`}
+                    isOpen={true}
+                    onConfirm={() => {
+                      handleDeleteItem(index);
+                      setConfirmDeleteIndex(null);
+                    }}
+                    onCancel={() => {
+                      setConfirmDeleteIndex(null);
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })
         )}
       </div>
 

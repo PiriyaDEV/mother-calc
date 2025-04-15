@@ -6,7 +6,7 @@ export interface MemberObj {
 
 export interface ItemObj {
   itemName: string;
-  paidBy: MemberObj;
+  paidBy: string;
   price?: number;
   selectedMembers: MemberObj[];
 }

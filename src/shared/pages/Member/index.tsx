@@ -111,7 +111,6 @@ export default function Member({
             onClick={() => {
               setIsMemberSet(false);
             }}
-            disabled={members.length === 0}
             className="!max-w-none"
           />
         </div>
