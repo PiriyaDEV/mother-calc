@@ -19,7 +19,7 @@ export default function Item({
 
   const handleAddItem = () => {
     if (!itemName.trim() || !paidBy)
-      return alert("Please fill out all fields.");
+      return alert("กรุณากรอกข้อมูลให้ครบ");
 
     const newItem: ItemObj = {
       itemName: itemName.trim(),

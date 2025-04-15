@@ -10,6 +10,7 @@ import Member from "@/shared/pages/Member";
 import Summary from "@/shared/pages/Summary";
 import { ItemObj, MemberObj } from "./lib/interface";
 import { PuffLoader } from "react-spinners";
+import { FaList, FaTable } from "react-icons/fa";
 
 // Helper functions (encode and decode as before)
 const encodeBase64 = (data: any) => {
@@ -74,29 +75,36 @@ export default function App() {
     window.history.replaceState({}, "", "?" + params.toString());
   }, [members, itemArr, isLoaded]);
 
-  const handleCopyLink = () => {
-    const currentUrl = window.location.href; // Get the current URL
-    navigator.clipboard.writeText(currentUrl).then(
-      () => {
-        setCopySuccess(true); // Update state on successful copy
-        setTimeout(() => setCopySuccess(false), 2000); // Reset after 2 seconds
-      },
-      () => {
-        alert("Failed to copy the link!");
-      }
-    );
+  const handleShare = () => {
+    const currentUrl = window.location.href;
+    if (navigator.share) {
+      navigator
+        .share({
+          title: "Check out this link!",
+          url: currentUrl,
+        })
+        .then(() => {
+          console.log("Thanks for sharing!");
+        })
+        .catch((error) => {
+          console.error("Error sharing:", error);
+        });
+    } else {
+      alert("Sharing not supported on this device.");
+    }
   };
 
   const renderHeader = () => (
-    <div className="flex items-center gap-6 justify-center">
+    <div className="flex items-center gap-10 justify-center">
       {["list", "summary"].map((view) => (
         <h1
           key={view}
           onClick={() => setScreen(view as "list" | "summary")}
-          className={`font-bold cursor-pointer ${
+          className={`font-bold cursor-pointer flex items-center gap-2 ${
             screen === view ? "text-black" : "!text-gray-400"
           }`}
         >
+          {view === "list" ? <FaList /> : <FaTable />}
           {view === "list" ? "รายการ" : "ดูสรุป"}
         </h1>
       ))}
@@ -175,7 +183,7 @@ export default function App() {
       {/* Share Link Button */}
       <div className="absolute top-4 right-4">
         <button
-          onClick={handleCopyLink}
+          onClick={handleShare} // Change to trigger native share
           className="p-2 bg-[#c5c6c7] text-white rounded-full flex items-center gap-2"
           title="Share link"
         >

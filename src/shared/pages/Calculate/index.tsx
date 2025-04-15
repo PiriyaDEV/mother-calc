@@ -2,7 +2,9 @@ import { ItemObj, MemberObj } from "@/app/lib/interface";
 import CommonBtn from "@/shared/components/CommonBtn";
 import { useState } from "react";
 
-import { TiDelete } from "react-icons/ti";
+import { TiTrash } from "react-icons/ti";
+import { FaUserCheck } from "react-icons/fa";
+import ConfirmPopup from "@/shared/components/ConfirmPopup";
 
 interface CalculateProps {
   members: MemberObj[];
@@ -19,6 +21,9 @@ export default function Calculate({
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(
+    null
+  );
   const [selectAll, setSelectAll] = useState(false);
 
   const handleMemberSelection = (member: MemberObj) => {
@@ -46,6 +51,7 @@ export default function Calculate({
     const updatedItems = [...itemArr];
     updatedItems.splice(index, 1);
     setItemArr(updatedItems);
+
     if (selectedItemIndex === index) {
       setSelectedItemIndex(null);
       setIsModalOpen(false);
@@ -73,6 +79,7 @@ export default function Calculate({
 
     const updatedItems = [...itemArr];
     const currentItem = updatedItems[selectedItemIndex];
+
     currentItem.selectedMembers = currentItem.selectedMembers.map((m) =>
       m.name === member.name
         ? { ...m, customPaid: customPaid ? parseFloat(customPaid) : undefined }
@@ -91,17 +98,17 @@ export default function Calculate({
     <div className="flex flex-col gap-4 max-w-md w-full">
       <h1 className="font-bold mt-3">กินอะไรไปบ้าง ?</h1>
 
-      <div className="flex flex-col gap-2 mt-2">
+      <div
+        className="flex flex-col gap-2 mt-2"
+        style={{ height: "calc(100vh - 200px)", overflowY: "auto" }}
+      >
         {itemArr.length === 0 ? (
           <span>ยังไม่มีรายการ</span>
         ) : (
           itemArr.map((item, index) => (
             <div key={index} className="flex justify-between my-2 gap-2">
               <div className="w-full">
-                <div
-                  onClick={() => handleItemClick(index)}
-                  className="p-2 rounded-[8px] bg-gray-100 text-sm !text-black grid grid-cols-2 items-center"
-                >
+                <div className="p-2 rounded-[8px] bg-gray-100 text-sm !text-black grid grid-cols-2 items-center">
                   <strong>
                     {item.itemName}{" "}
                     <div
@@ -124,9 +131,12 @@ export default function Calculate({
                 </div>
 
                 <div className="flex flex-wrap gap-2 mt-2">
+                  {item.selectedMembers.length === 0 && (
+                    <span className="text-xs !text-gray-400">* ยังไม่ได้เลือกสมาชิก</span>
+                  )}
                   {item.selectedMembers.map((memberItem, index) => (
                     <div
-                      key={`${memberItem} ${index}`}
+                      key={`${memberItem.name}-${index}`}
                       className="relative p-2 h-5 w-fit rounded-full flex justify-center items-center"
                       style={{ backgroundColor: memberItem.color }}
                     >
@@ -146,10 +156,29 @@ export default function Calculate({
                 </div>
               </div>
 
-              <TiDelete
-                onClick={() => handleDeleteItem(index)}
-                className="text-[28px] mt-2"
+              <FaUserCheck
+                onClick={() => handleItemClick(index)}
+                className="text-[28px] mt-2 cursor-pointer"
               />
+
+              <TiTrash
+                onClick={() => setConfirmDeleteIndex(index)}
+                className="text-[28px] mt-2 cursor-pointer"
+              />
+
+              {confirmDeleteIndex === index && (
+                <ConfirmPopup
+                  title={`ยืนยันการลบ "${item.itemName}" ?`}
+                  isOpen={true}
+                  onConfirm={() => {
+                    handleDeleteItem(index);
+                    setConfirmDeleteIndex(null);
+                  }}
+                  onCancel={() => {
+                    setConfirmDeleteIndex(null);
+                  }}
+                />
+              )}
             </div>
           ))
         )}

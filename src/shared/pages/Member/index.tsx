@@ -6,6 +6,7 @@ import { TiDelete } from "react-icons/ti";
 import CommonBtn from "@/shared/components/CommonBtn";
 import { MEMBER_COLORS } from "./constants";
 import { MemberObj } from "@/app/lib/interface";
+import ConfirmPopup from "@/shared/components/ConfirmPopup";
 
 interface MemberProps {
   members: MemberObj[];
@@ -20,6 +21,9 @@ export default function Member({
 }: MemberProps) {
   const [name, setName] = useState("");
   const [error, setError] = useState(false);
+  const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(
+    null
+  );
 
   const getRandomColor = () =>
     MEMBER_COLORS[Math.floor(Math.random() * MEMBER_COLORS.length)];
@@ -27,6 +31,13 @@ export default function Member({
   const addMember = () => {
     const trimmed = name.trim();
     if (!trimmed) return setError(true);
+
+    const isDuplicate = members.some((member) => member.name === trimmed);
+    if (isDuplicate) {
+      alert("ชื่อสมาชิกนี้มีอยู่แล้ว");
+      return;
+    }
+
     setMembers([...members, { name: trimmed, color: getRandomColor() }]);
     setName("");
     setError(false);
@@ -52,10 +63,24 @@ export default function Member({
               </span>
               <div
                 className="bg-white rounded-full absolute -top-1 -right-1 h-5 w-5 flex justify-center items-center cursor-pointer"
-                onClick={() => removeMember(i)}
+                onClick={() => setConfirmDeleteIndex(i)}
               >
                 <TiDelete className="text-red text-xl" />
               </div>
+
+              {confirmDeleteIndex === i && (
+                <ConfirmPopup
+                  isOpen={true}
+                  title={`ยืนยันการลบ "${m.name}" ?`}
+                  onConfirm={() => {
+                    removeMember(i);
+                    setConfirmDeleteIndex(null);
+                  }}
+                  onCancel={() => {
+                    setConfirmDeleteIndex(null);
+                  }}
+                />
+              )}
             </div>
           ))
         ) : (
@@ -77,7 +102,6 @@ export default function Member({
                 setName(e.target.value);
                 setError(false);
               }}
-              onKeyDown={(e) => e.key === "Enter" && addMember()}
             />
             <CommonBtn text="เพิ่ม" onClick={addMember} className="!w-fit" />
           </div>
