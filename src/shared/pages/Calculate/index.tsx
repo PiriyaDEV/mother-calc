@@ -127,7 +127,7 @@ export default function Calculate({
             return (
               <div key={index} className="flex justify-between my-2 gap-2">
                 <div className="w-full">
-                  <div className="p-2 rounded-[8px] bg-gray-100 text-sm !text-black grid grid-cols-2 items-center">
+                  <div className="p-2 rounded-[8px] bg-gray-100 text-sm !text-black grid grid-cols-3 items-center">
                     <strong>
                       {item.itemName}
                       <div
@@ -146,6 +146,23 @@ export default function Calculate({
                             .reduce((sum, m) => sum + (m.customPaid || 0), 0)
                             .toFixed(2)} บาท`
                         : "N/A"}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-4 !text-[#333333]">
+                      <FaPen
+                        onClick={() => handleEditItemClick(index)}
+                        className="text-[18px] mr-1 cursor-pointer"
+                      />
+
+                      <FaUserCheck
+                        onClick={() => handleItemClick(index)}
+                        className="text-[24px] cursor-pointer"
+                      />
+
+                      <TiTrash
+                        onClick={() => setConfirmDeleteIndex(index)}
+                        className="text-[25px] cursor-pointer"
+                      />
                     </div>
                   </div>
 
@@ -176,21 +193,6 @@ export default function Calculate({
                     ))}
                   </div>
                 </div>
-
-                <FaPen
-                  onClick={() => handleEditItemClick(index)}
-                  className="text-[23px] mt-3 mr-1 cursor-pointer"
-                />
-
-                <FaUserCheck
-                  onClick={() => handleItemClick(index)}
-                  className="text-[28px] mt-2 cursor-pointer"
-                />
-
-                <TiTrash
-                  onClick={() => setConfirmDeleteIndex(index)}
-                  className="text-[28px] mt-2 cursor-pointer"
-                />
 
                 {confirmDeleteIndex === index && (
                   <ConfirmPopup
