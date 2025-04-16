@@ -47,9 +47,13 @@ export default function Member({
 
   return (
     <div className="flex flex-col gap-10">
-      <h1 className="font-bold mt-3">สมาชิกมีใครบ้าง ?</h1>
+      <h1 className="font-bold mt-3">สมาชิกมีใครบ้าง ? {members.length}</h1>
 
-      <div className="flex gap-4 flex-wrap w-full">
+      <div
+        className={`flex gap-4 flex-wrap w-full ${
+          members.length > 4 ? "justify-center" : ""
+        }`}
+      >
         {members.length ? (
           members.map((m, i) => (
             <div
