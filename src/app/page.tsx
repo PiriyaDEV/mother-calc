@@ -12,6 +12,7 @@ import { ItemObj, MemberObj } from "./lib/interface";
 import { PuffLoader } from "react-spinners";
 import { FaList, FaTable } from "react-icons/fa";
 import { encodeBase64, getShortUrl, getURLParams } from "./lib/utils";
+import ItemModal from "@/shared/components/ItemModal";
 
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -65,19 +66,19 @@ export default function App() {
 
   const handleShare = async () => {
     const longUrl = window.location.href;
-  
+
     if (navigator.share) {
       try {
         const shortUrl = await getShortUrl(longUrl);
-  
+
         await navigator.share({
           title: "📤 มาจ่ายเงินด้วยจ้า!",
           url: shortUrl,
         });
-  
+
         console.log("Shared successfully");
       } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') {
+        if (error instanceof DOMException && error.name === "AbortError") {
           console.log("User canceled the share.");
         } else {
           console.error("Share failed:", error);
@@ -87,7 +88,6 @@ export default function App() {
       console.warn("Web Share API not supported.");
     }
   };
-  
 
   const renderHeader = () => (
     <div className="flex items-center gap-10 justify-center">
@@ -122,18 +122,11 @@ export default function App() {
 
   const renderModal = () =>
     isItemModalOpen && (
-      <div
-        className="modal modal-open !text-black"
-        onClick={(e) => e.target === e.currentTarget && setItemModalOpen(false)}
-      >
-        <div className="modal-box">
-          <Item
-            members={members}
-            setItemArr={setItemArr}
-            setItemModalOpen={setItemModalOpen}
-          />
-        </div>
-      </div>
+      <ItemModal
+        members={members}
+        setItemArr={setItemArr}
+        setItemModalOpen={setItemModalOpen}
+      />
     );
 
   const renderFooter = () => (

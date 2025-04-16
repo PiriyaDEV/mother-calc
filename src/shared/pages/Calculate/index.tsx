@@ -3,9 +3,10 @@ import CommonBtn from "@/shared/components/CommonBtn";
 import { useState } from "react";
 
 import { TiTrash } from "react-icons/ti";
-import { FaUserCheck } from "react-icons/fa";
+import { FaPen, FaUserCheck } from "react-icons/fa";
 import ConfirmPopup from "@/shared/components/ConfirmPopup";
 import { getMemberObjByName } from "@/app/lib/utils";
+import ItemModal from "@/shared/components/ItemModal";
 
 interface CalculateProps {
   members: MemberObj[];
@@ -22,10 +23,12 @@ export default function Calculate({
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(
     null
   );
   const [selectAll, setSelectAll] = useState(false);
+  const [editingItem, setEditingItem] = useState<ItemObj | null>(null);
 
   const handleMemberSelection = (member: MemberObj) => {
     if (selectedItemIndex === null) return;
@@ -46,6 +49,16 @@ export default function Calculate({
   const handleItemClick = (index: number) => {
     setSelectedItemIndex(index);
     setIsModalOpen(true);
+  };
+
+  const handleEditItemClick = (index: number) => {
+    setSelectedItemIndex(index);
+
+    const updatedItems = [...itemArr];
+    const currentItem = updatedItems[index]; // Get the current item
+
+    setEditingItem(currentItem); // Set the current item as the editing item
+    setIsEditModalOpen(true); // Open the edit modal
   };
 
   const handleDeleteItem = (index: number) => {
@@ -114,7 +127,7 @@ export default function Calculate({
             return (
               <div key={index} className="flex justify-between my-2 gap-2">
                 <div className="w-full">
-                  <div className="p-2 rounded-[8px] bg-gray-100 text-sm !text-black grid grid-cols-2 items-center">
+                  <div className="p-2 rounded-[8px] bg-gray-100 text-sm !text-black grid grid-cols-3 items-center">
                     <strong>
                       {item.itemName}
                       <div
@@ -133,6 +146,23 @@ export default function Calculate({
                             .reduce((sum, m) => sum + (m.customPaid || 0), 0)
                             .toFixed(2)} บาท`
                         : "N/A"}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-4 !text-[#333333]">
+                      <FaPen
+                        onClick={() => handleEditItemClick(index)}
+                        className="text-[18px] mr-1 cursor-pointer"
+                      />
+
+                      <FaUserCheck
+                        onClick={() => handleItemClick(index)}
+                        className="text-[24px] cursor-pointer"
+                      />
+
+                      <TiTrash
+                        onClick={() => setConfirmDeleteIndex(index)}
+                        className="text-[25px] cursor-pointer"
+                      />
                     </div>
                   </div>
 
@@ -163,16 +193,6 @@ export default function Calculate({
                     ))}
                   </div>
                 </div>
-
-                <FaUserCheck
-                  onClick={() => handleItemClick(index)}
-                  className="text-[28px] mt-2 cursor-pointer"
-                />
-
-                <TiTrash
-                  onClick={() => setConfirmDeleteIndex(index)}
-                  className="text-[28px] mt-2 cursor-pointer"
-                />
 
                 {confirmDeleteIndex === index && (
                   <ConfirmPopup
@@ -276,6 +296,15 @@ export default function Calculate({
             </div>
           </div>
         </div>
+      )}
+
+      {isEditModalOpen && editingItem && (
+        <ItemModal
+          members={members}
+          setItemArr={setItemArr}
+          setItemModalOpen={setIsEditModalOpen}
+          editingItem={editingItem}
+        />
       )}
     </div>
   );
