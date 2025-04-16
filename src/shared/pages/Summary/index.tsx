@@ -185,7 +185,9 @@ export default function Summary({ itemArr, members }: SummaryProps) {
           </div>
         </>
       ) : (
-        <span className="text-center">ยังไม่มีข้อมูล</span>
+        <div className="flex justify-center">
+          <span className="text-center">ยังไม่มีข้อมูล</span>
+        </div>
       )}
     </div>
   );
