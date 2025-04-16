@@ -3,7 +3,7 @@ import CommonBtn from "@/shared/components/CommonBtn";
 import { useState } from "react";
 
 import { TiTrash } from "react-icons/ti";
-import { FaUserCheck } from "react-icons/fa";
+import { FaPen, FaUserCheck } from "react-icons/fa";
 import ConfirmPopup from "@/shared/components/ConfirmPopup";
 import { getMemberObjByName } from "@/app/lib/utils";
 
@@ -163,6 +163,11 @@ export default function Calculate({
                     ))}
                   </div>
                 </div>
+
+                <FaPen
+                  onClick={() => handleItemClick(index)}
+                  className="text-[23px] mt-3 mr-1 cursor-pointer"
+                />
 
                 <FaUserCheck
                   onClick={() => handleItemClick(index)}
