@@ -53,6 +53,11 @@ export default function Member({
         className={`flex gap-4 flex-wrap w-full ${
           members.length > 4 ? "justify-center" : ""
         }`}
+        style={{
+          padding: "5px",
+          height: "calc(100vh - 330px)",
+          overflowY: "auto",
+        }}
       >
         {members.length ? (
           members.map((m, i) => (
