@@ -6,6 +6,7 @@ import { TiTrash } from "react-icons/ti";
 import { FaPen, FaUserCheck } from "react-icons/fa";
 import ConfirmPopup from "@/shared/components/ConfirmPopup";
 import { getMemberObjByName } from "@/app/lib/utils";
+import ItemModal from "@/shared/components/ItemModal";
 
 interface CalculateProps {
   members: MemberObj[];
@@ -22,10 +23,12 @@ export default function Calculate({
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(
     null
   );
   const [selectAll, setSelectAll] = useState(false);
+  const [editingItem, setEditingItem] = useState<ItemObj | null>(null);
 
   const handleMemberSelection = (member: MemberObj) => {
     if (selectedItemIndex === null) return;
@@ -46,6 +49,16 @@ export default function Calculate({
   const handleItemClick = (index: number) => {
     setSelectedItemIndex(index);
     setIsModalOpen(true);
+  };
+
+  const handleEditItemClick = (index: number) => {
+    setSelectedItemIndex(index);
+
+    const updatedItems = [...itemArr];
+    const currentItem = updatedItems[index]; // Get the current item
+
+    setEditingItem(currentItem); // Set the current item as the editing item
+    setIsEditModalOpen(true); // Open the edit modal
   };
 
   const handleDeleteItem = (index: number) => {
@@ -165,7 +178,7 @@ export default function Calculate({
                 </div>
 
                 <FaPen
-                  onClick={() => handleItemClick(index)}
+                  onClick={() => handleEditItemClick(index)}
                   className="text-[23px] mt-3 mr-1 cursor-pointer"
                 />
 
@@ -281,6 +294,15 @@ export default function Calculate({
             </div>
           </div>
         </div>
+      )}
+
+      {isEditModalOpen && editingItem && (
+        <ItemModal
+          members={members}
+          setItemArr={setItemArr}
+          setItemModalOpen={setIsEditModalOpen}
+          editingItem={editingItem}
+        />
       )}
     </div>
   );

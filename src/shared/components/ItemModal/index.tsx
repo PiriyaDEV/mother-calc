@@ -6,12 +6,14 @@ type ItemModalProps = {
   members: any[];
   setItemArr: React.Dispatch<React.SetStateAction<ItemObj[]>>;
   setItemModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  editingItem?: ItemObj;
 };
 
 const ItemModal: React.FC<ItemModalProps> = ({
   members,
   setItemArr,
   setItemModalOpen,
+  editingItem,
 }) => {
   const onBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -26,6 +28,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
           members={members}
           setItemArr={setItemArr}
           setItemModalOpen={setItemModalOpen}
+          editingItem={editingItem}
         />
       </div>
     </div>

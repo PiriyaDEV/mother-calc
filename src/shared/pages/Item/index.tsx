@@ -1,22 +1,34 @@
 import { ItemObj, MemberObj } from "@/app/lib/interface";
 import CommonBtn from "@/shared/components/CommonBtn";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ItemProps {
   members: MemberObj[];
   setItemArr: React.Dispatch<React.SetStateAction<ItemObj[]>>;
   setItemModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  editingItem?: ItemObj;
 }
 
 export default function Item({
   members,
   setItemArr,
   setItemModalOpen,
+  editingItem,
 }: ItemProps) {
   const [itemName, setItemName] = useState("");
   const [paidBy, setPaidBy] = useState<string>(""); // Store only the name as string
   const [price, setPrice] = useState("");
   const [isEqualSplit, setIsEqualSplit] = useState(true);
+
+  // Effect to populate form fields if editing an item
+  useEffect(() => {
+    if (editingItem) {
+      setItemName(editingItem.itemName);
+      setPaidBy(editingItem.paidBy);
+      setPrice(editingItem.price ? editingItem.price.toString() : "");
+      setIsEqualSplit(editingItem.price !== undefined);
+    }
+  }, [editingItem]);
 
   const handleAddItem = () => {
     if (!itemName.trim() || !paidBy || (isEqualSplit && !price)) {
@@ -32,15 +44,34 @@ export default function Item({
       itemName: itemName.trim(),
       paidBy: selectedMember.name,
       price: price ? parseFloat(price) : undefined,
-      selectedMembers: [],
+      selectedMembers: editingItem ? editingItem.selectedMembers : [],
     };
 
-    setItemArr((prev) => [...prev, newItem]);
+    if (editingItem) {
+      // If in edit mode, update the existing item, keeping the selectedMembers intact
+      setItemArr((prev) =>
+        prev.map((item) =>
+          item === editingItem ? { ...item, ...newItem } : item
+        )
+      );
+    } else {
+      // Otherwise, add a new item
+      setItemArr((prev) => [...prev, newItem]);
+    }
+
+    // Reset form state
     setItemName("");
     setPaidBy(""); // Reset to empty string, not null
     setPrice("");
     setIsEqualSplit(true);
     setItemModalOpen(false);
+  };
+
+  const handleSplitChange = (isEqual: boolean) => {
+    setIsEqualSplit(isEqual);
+    if (!isEqual) {
+      setPrice(""); // Clear price if not equal split
+    }
   };
 
   return (
@@ -78,7 +109,7 @@ export default function Item({
               name="split"
               value="equal"
               checked={isEqualSplit}
-              onChange={() => setIsEqualSplit(true)}
+              onChange={() => handleSplitChange(true)}
             />
             หารเท่า
           </label>
@@ -88,7 +119,7 @@ export default function Item({
               name="split"
               value="unequal"
               checked={!isEqualSplit}
-              onChange={() => setIsEqualSplit(false)}
+              onChange={() => handleSplitChange(false)}
             />
             หารไม่เท่า
           </label>
@@ -113,7 +144,7 @@ export default function Item({
 
       <div className="flex justify-end">
         <CommonBtn
-          text="เพิ่ม"
+          text={editingItem ? "แก้ไข" : "เพิ่ม"}
           onClick={handleAddItem}
           disabled={members.length === 0}
           className="!w-fit"
