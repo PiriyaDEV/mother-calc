@@ -4,6 +4,7 @@ import { ItemObj } from "@/app/lib/interface";
 
 type ItemModalProps = {
   members: any[];
+  itemArr:  ItemObj[];
   setItemArr: React.Dispatch<React.SetStateAction<ItemObj[]>>;
   setItemModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   editingItem?: ItemObj;
@@ -11,6 +12,7 @@ type ItemModalProps = {
 
 const ItemModal: React.FC<ItemModalProps> = ({
   members,
+  itemArr,
   setItemArr,
   setItemModalOpen,
   editingItem,
@@ -26,6 +28,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
       <div className="modal-box">
         <Item
           members={members}
+          itemArr={itemArr}
           setItemArr={setItemArr}
           setItemModalOpen={setItemModalOpen}
           editingItem={editingItem}

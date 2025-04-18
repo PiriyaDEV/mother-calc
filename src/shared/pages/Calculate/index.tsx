@@ -22,34 +22,11 @@ export default function Calculate({
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(
     null
   );
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(
     null
   );
-  const [selectAll, setSelectAll] = useState(false);
   const [editingItem, setEditingItem] = useState<ItemObj | null>(null);
-
-  const handleMemberSelection = (member: MemberObj) => {
-    if (selectedItemIndex === null) return;
-
-    const updatedItems = [...itemArr];
-    const currentItem = updatedItems[selectedItemIndex];
-    const isSelected = currentItem.selectedMembers.some(
-      (m) => m.name === member.name
-    );
-
-    currentItem.selectedMembers = isSelected
-      ? currentItem.selectedMembers.filter((m) => m.name !== member.name)
-      : [...currentItem.selectedMembers, { ...member }];
-
-    setItemArr(updatedItems);
-  };
-
-  const handleItemClick = (index: number) => {
-    setSelectedItemIndex(index);
-    setIsModalOpen(true);
-  };
 
   const handleEditItemClick = (index: number) => {
     setSelectedItemIndex(index);
@@ -68,45 +45,8 @@ export default function Calculate({
 
     if (selectedItemIndex === index) {
       setSelectedItemIndex(null);
-      setIsModalOpen(false);
     }
   };
-
-  const toggleSelectAll = () => {
-    if (selectedItemIndex === null) return;
-
-    const updatedItems = [...itemArr];
-    const currentItem = updatedItems[selectedItemIndex];
-    const shouldSelectAll =
-      currentItem.selectedMembers.length !== members.length;
-
-    currentItem.selectedMembers = shouldSelectAll
-      ? members.map((m) => ({ ...m }))
-      : [];
-
-    setItemArr(updatedItems);
-    setSelectAll(shouldSelectAll);
-  };
-
-  const handleCustomPaidChange = (member: MemberObj, customPaid: string) => {
-    if (selectedItemIndex === null) return;
-
-    const updatedItems = [...itemArr];
-    const currentItem = updatedItems[selectedItemIndex];
-
-    currentItem.selectedMembers = currentItem.selectedMembers.map((m) =>
-      m.name === member.name
-        ? { ...m, customPaid: customPaid ? parseFloat(customPaid) : undefined }
-        : m
-    );
-
-    setItemArr(updatedItems);
-  };
-
-  const selectedMembers =
-    selectedItemIndex !== null
-      ? itemArr[selectedItemIndex]?.selectedMembers || []
-      : [];
 
   return (
     <div className="flex flex-col gap-4 w-full">
@@ -152,11 +92,6 @@ export default function Calculate({
                       <FaPen
                         onClick={() => handleEditItemClick(index)}
                         className="text-[18px] mr-1 cursor-pointer"
-                      />
-
-                      <FaUserCheck
-                        onClick={() => handleItemClick(index)}
-                        className="text-[24px] cursor-pointer"
                       />
 
                       <TiTrash
@@ -213,94 +148,10 @@ export default function Calculate({
         )}
       </div>
 
-      {isModalOpen && selectedItemIndex !== null && (
-        <div
-          className="modal modal-open !text-black"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setIsModalOpen(false);
-            }
-          }}
-        >
-          <div className="modal-box">
-            <div className="flex justify-between items-center mb-3">
-              <div>
-                <h2 className="text-md font-semibold">เลือกคนกิน</h2>
-
-                {itemArr[selectedItemIndex]?.price === undefined && (
-                  <span className="text-xs !text-[#c4c5c6]">
-                    เลือกคนกินก่อนใส่จำนวน
-                  </span>
-                )}
-              </div>
-
-              <CommonBtn
-                text="ทั้งหมด"
-                type="secondary"
-                onClick={toggleSelectAll}
-                disabled={members.length === 0}
-                className="!w-fit"
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {members.map((member, index) => {
-                const isSelected = selectedMembers.some(
-                  (m) => m.name === member.name
-                );
-
-                return (
-                  <div key={index} className="flex items-center gap-2">
-                    <div
-                      onClick={() => handleMemberSelection(member)}
-                      className={`relative w-10 h-10 rounded-full flex justify-center items-center cursor-pointer`}
-                      style={{
-                        backgroundColor: isSelected ? member.color : "#d3d3d3",
-                      }}
-                    >
-                      <span className="text-xs font-semibold truncate text-white">
-                        {member.name}
-                      </span>
-                    </div>
-
-                    {itemArr[selectedItemIndex]?.price === undefined &&
-                      isSelected && (
-                        <input
-                          type="number"
-                          placeholder="ใส่จำนวน"
-                          disabled={!isSelected}
-                          value={
-                            selectedMembers.find((m) => m.name === member.name)
-                              ?.customPaid ?? ""
-                          }
-                          onChange={(e) =>
-                            handleCustomPaidChange(member, e.target.value)
-                          }
-                          className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm w-24"
-                        />
-                      )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="flex w-full mt-6">
-              <CommonBtn
-                text="ตกลง"
-                onClick={() => {
-                  setIsModalOpen(false);
-                }}
-                disabled={members.length === 0}
-                className="!w-full !max-w-none"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
       {isEditModalOpen && editingItem && (
         <ItemModal
           members={members}
+          itemArr={itemArr}
           setItemArr={setItemArr}
           setItemModalOpen={setIsEditModalOpen}
           editingItem={editingItem}

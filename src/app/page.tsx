@@ -136,6 +136,7 @@ export default function App() {
     isItemModalOpen && (
       <ItemModal
         members={members}
+        itemArr={itemArr}
         setItemArr={setItemArr}
         setItemModalOpen={setItemModalOpen}
       />
