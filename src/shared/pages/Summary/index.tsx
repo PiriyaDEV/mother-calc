@@ -90,7 +90,7 @@ export default function Summary({ itemArr, members }: SummaryProps) {
       style={{
         maxHeight: "calc(100vh - 315px)",
         overflowY: "auto",
-        paddingBottom: "70px",
+        paddingBottom: "120px",
       }}
     >
       {itemArr.length !== 0 ? (
