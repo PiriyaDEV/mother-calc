@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FaShareAlt } from "react-icons/fa";
+import { FaCog, FaShareAlt } from "react-icons/fa";
 import CommonBtn from "@/shared/components/CommonBtn";
 import CommonLoading from "@/shared/components/CommonLoading";
 import Calculate from "@/shared/pages/Calculate";
@@ -14,6 +14,7 @@ import { FaList, FaTable } from "react-icons/fa";
 import { encodeBase64, getShortUrl, getURLParams } from "./lib/utils";
 import ItemModal from "@/shared/components/ItemModal";
 import { MODE } from "./lib/constants";
+import SettingsPopup from "@/shared/components/SettingPopup";
 
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -26,6 +27,16 @@ export default function App() {
   const [billName, setBillName] = useState("ชื่อสมาชิก");
   const [mode, setMode] = useState(MODE.EDIT);
 
+  const [isSettingOpen, setIsSettingOpen] = useState<boolean>(false);
+
+  const [settings, setSettings] = useState<{
+    vat: number;
+    serviceCharge: number;
+  }>({
+    vat: 7,
+    serviceCharge: 10,
+  });
+
   // Load from URL parameters
   useEffect(() => {
     const {
@@ -33,11 +44,13 @@ export default function App() {
       itemArr: loadedItems,
       billName: loadedBillName,
       mode: loadedMode,
+      setting: loadedSetting,
     } = getURLParams();
     setBillName(loadedBillName);
     setMembers(loadedMembers);
     setItemArr(loadedItems);
     setMode(loadedMode);
+    setSettings(loadedSetting);
     setIsLoaded(true);
   }, []);
 
@@ -50,8 +63,9 @@ export default function App() {
     params.set("members", encodeBase64(members));
     params.set("itemArr", encodeBase64(itemArr));
     params.set("mode", encodeBase64(mode));
+    params.set("setting", encodeBase64(settings));
     window.history.replaceState({}, "", "?" + params.toString());
-  }, [members, itemArr, billName, mode, isLoaded]);
+  }, [members, itemArr, billName, mode, settings, isLoaded]);
 
   // Handle the deletion of a member
   const handleDeleteMember = (deletedMember: MemberObj) => {
@@ -197,14 +211,23 @@ export default function App() {
         />
       ) : (
         <>
-          <div className="flex items-center gap-3 whitespace-nowrap">
-            <h1 className="font-bold">ชื่อบิล : </h1>
-            <input
-              type="text"
-              placeholder="ใส่ชื่อบิลที่นี่"
-              className="font-bold text-[18px] input input-bordered w-full"
-              value={billName}
-              onChange={(e) => setBillName(e.target.value)}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 whitespace-nowrap">
+              <h1 className="font-bold">ชื่อบิล : </h1>
+              <input
+                type="text"
+                placeholder="ใส่ชื่อบิลที่นี่"
+                className="font-bold text-[18px] input input-bordered w-fit"
+                value={billName}
+                onChange={(e) => setBillName(e.target.value)}
+              />
+            </div>
+
+            <FaCog
+              onClick={() => {
+                setIsSettingOpen(true);
+              }}
+              className="text-[24px] mr-1 cursor-pointer text-[#333333]"
             />
           </div>
 
@@ -212,6 +235,15 @@ export default function App() {
           {renderBody()}
           {renderModal()}
           {renderFooter()}
+
+          <SettingsPopup
+            isOpen={isSettingOpen}
+            settings={settings}
+            setSettings={setSettings}
+            onCancel={() => {
+              setIsSettingOpen(false);
+            }}
+          />
         </>
       )}
 

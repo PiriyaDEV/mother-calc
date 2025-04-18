@@ -121,7 +121,9 @@ export default function Item({
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="!text-[#4366f4] font-bold text-sm">รายการ</span>
+      <span className="!text-[#4366f4] font-bold text-sm">
+        รายการ <span className="!text-red-500">*</span>
+      </span>
       <input
         type="text"
         placeholder="ใส่ชื่อรายการ"
@@ -131,7 +133,7 @@ export default function Item({
       />
 
       <div>
-        <span className="!text-[#4366f4] font-bold text-sm">ราคา</span>
+        <span className="!text-[#4366f4] font-bold text-sm">ราคา <span className="!text-red-500">*</span></span>
 
         <div className="flex gap-4 my-2">
           <label className="flex items-center gap-2 text-xs">
@@ -176,7 +178,7 @@ export default function Item({
         )}
       </div>
 
-      <span className="!text-[#4366f4] font-bold text-sm mt-2">คนจ่าย</span>
+      <span className="!text-[#4366f4] font-bold text-sm mt-2">เลือกคนจ่าย <span className="!text-red-500">*</span></span>
       <select
         value={paidBy}
         onChange={(e) => setPaidBy(e.target.value)}
@@ -192,7 +194,7 @@ export default function Item({
 
       <div>
         <div className="flex justify-between items-center mb-5 mt-2">
-          <p className="!text-[#4366f4] font-bold text-sm">เลือกสมาชิก</p>
+          <p className="!text-[#4366f4] font-bold text-sm">เลือกสมาชิก <span className="!text-red-500">*</span></p>
 
           <CommonBtn
             text="ทั้งหมด"

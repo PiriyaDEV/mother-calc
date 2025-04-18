@@ -39,12 +39,19 @@ export const getURLParams = () => {
   const itemArrParam = params.get("itemArr");
   const billNameParam = params.get("billName");
   const modeParam = params.get("mode");
+  const settingParam = params.get("setting");
 
   return {
     members: membersParam ? decodeBase64(membersParam) : [],
     itemArr: itemArrParam ? decodeBase64(itemArrParam) : [],
     billName: billNameParam ? decodeBase64(billNameParam) : "",
     mode: modeParam ? decodeBase64(modeParam) : MODE.EDIT,
+    setting: settingParam
+      ? decodeBase64(settingParam)
+      : {
+          vat: 7,
+          serviceCharge: 10,
+        },
   };
 };
 
