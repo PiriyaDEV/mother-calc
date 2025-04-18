@@ -100,13 +100,13 @@ export default function Summary({ itemArr, members }: SummaryProps) {
                     ชื่อ
                   </th>
                   <th className="px-2 py-1 text-left border border-gray-300">
-                    ต้องจ่าย
+                    ค่าใช้จ่ายทั้งหมด
                   </th>
                   <th className="px-2 py-1 text-left border border-gray-300">
-                    จ่ายไป
+                    จำนวนเงินที่ออก
                   </th>
                   <th className="px-2 py-1 text-left border border-gray-300">
-                    ทั้งหมด
+                    เงินที่ต้องจ่าย
                   </th>
                 </tr>
               </thead>
@@ -128,18 +128,6 @@ export default function Summary({ itemArr, members }: SummaryProps) {
                       >
                         {name}
                       </td>
-                      <td className="px-2 py-1 border border-gray-300">
-                        {shouldPay.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td className="px-2 py-1 border border-gray-300">
-                        {paid.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
                       <td
                         className={`px-2 py-1 border border-gray-300 ${
                           paid - shouldPay >= 0
@@ -147,7 +135,21 @@ export default function Summary({ itemArr, members }: SummaryProps) {
                             : "bg-red-100 text-red-800"
                         }`}
                       >
+                        {paid - shouldPay > 0 && "+"}
                         {(paid - shouldPay).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+
+                      <td className="px-2 py-1 border border-gray-300">
+                        {paid.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td className="px-2 py-1 border border-gray-300">
+                        {shouldPay.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
@@ -159,16 +161,28 @@ export default function Summary({ itemArr, members }: SummaryProps) {
             </table>
           </div>
 
-          <h1 className="font-bold my-3">ตารางที่ต้องได้</h1>
+          <h1 className="font-bold my-3">ตารางต่อรายบุคคล</h1>
           <div className="overflow-x-auto pb-5">
             <table className="min-w-full border border-gray-300 border-collapse text-sm">
               <thead>
                 <tr className="bg-[#4366f4] text-white">
-                  <th className="px-2 py-1 text-left border border-gray-300"></th>
+                  <th className="border border-gray-300 bg-white"></th>
+                  <th
+                    colSpan={members.length}
+                    className="px-2 py-2 text-center border border-gray-300"
+                  >
+                    เงินที่ต้องจ่าย (-)
+                  </th>
+                </tr>
+                <tr className="bg-[#4366f4] text-white">
+                  <th className="px-2 py-1 text-left border border-gray-300 max-w-[80px]">
+                    เงินที่ต้องได้คืน (+)
+                  </th>
                   {members.map((member) => (
                     <th
                       key={member.name}
-                      className="px-2 py-1 text-left border border-gray-300"
+                      className="px-2 py-1 text-left border border-gray-300 text-black"
+                      style={{ background: member.color }}
                     >
                       {member.name}
                     </th>
@@ -195,10 +209,10 @@ export default function Summary({ itemArr, members }: SummaryProps) {
                         <td
                           key={colMember.name}
                           className={`px-2 py-1 border border-gray-300 ${
-                            debt > 0 ? "bg-green-100 text-green-800" : ""
+                            debt === 0 ? "bg-gray-100" : ""
                           }`}
                         >
-                          {debt > 0 ? `+${formattedDebt}` : formattedDebt}
+                          {debt > 0 ? formattedDebt : "-"}
                         </td>
                       );
                     })}

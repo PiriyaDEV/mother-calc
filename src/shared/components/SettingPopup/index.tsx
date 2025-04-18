@@ -106,7 +106,14 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
 
             <div className="pt-4">
               <p className="!text-[#4366f4] font-bold text-sm mb-2">
-                เปิดใช้งาน VAT
+                เปิดใช้งาน VAT{" "}
+                <span
+                  className={
+                    !tempSettings.isVat ? "!text-red-500" : "!text-green-500"
+                  }
+                >
+                  {!tempSettings.isVat ? "(ปิดอยู่)" : "(เปิดอยู่)"}
+                </span>
               </p>
               <label>
                 <input
@@ -138,7 +145,14 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
 
             <div className="pt-4">
               <p className="!text-[#4366f4] font-bold text-sm mb-2">
-                เปิดใช้งาน Service Charge
+                เปิดใช้งาน Service Charge{" "}
+                <span
+                  className={
+                    !tempSettings.isService ? "!text-red-500" : "!text-green-500"
+                  }
+                >
+                  {!tempSettings.isService ? "(ปิดอยู่)" : "(เปิดอยู่)"}
+                </span>
               </p>
               <label>
                 <input
