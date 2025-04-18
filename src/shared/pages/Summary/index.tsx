@@ -86,8 +86,8 @@ export default function Summary({ itemArr, members }: SummaryProps) {
 
   return (
     <div
-      className="overflow-y-auto pb-5"
-      style={{ height: "calc(100vh - 200px)", overflowY: "auto" }}
+      className="pb-5"
+      style={{ maxHeight: "calc(100vh - 315px)", overflowY: "auto" }}
     >
       {itemArr.length !== 0 ? (
         <>

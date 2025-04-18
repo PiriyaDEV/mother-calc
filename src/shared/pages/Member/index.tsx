@@ -62,7 +62,7 @@ export default function Member({
         }`}
         style={{
           padding: "5px",
-          height: "calc(100vh - 330px)",
+          maxHeight: "calc(100vh - 310px)",
           overflowY: "auto",
         }}
       >
