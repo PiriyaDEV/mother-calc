@@ -15,6 +15,7 @@ import { encodeBase64, getPrice, getShortUrl, getURLParams } from "./lib/utils";
 import ItemModal from "@/shared/components/ItemModal";
 import { MODE } from "./lib/constants";
 import SettingsPopup, { Settings } from "@/shared/components/SettingPopup";
+import SharePopup from "@/shared/components/SharedPopup";
 
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -25,9 +26,10 @@ export default function App() {
   const [itemArr, setItemArr] = useState<ItemObj[]>([]);
   const [copySuccess, setCopySuccess] = useState(false); // State to track copy success
   const [billName, setBillName] = useState("");
-  const [mode, setMode] = useState(null);
+  const [mode, setMode] = useState<"EDIT" | "VIEW" | null>(null);
 
   const [isSettingOpen, setIsSettingOpen] = useState<boolean>(false);
+  const [isSharedOpen, setIsSharedOpen] = useState<boolean>(false);
 
   const [settings, setSettings] = useState<Settings>({
     vat: 7,
@@ -89,26 +91,37 @@ export default function App() {
     setItemArr(updatedItems);
   };
 
-  const handleShare = async () => {
-    const longUrl = window.location.href;
+  const handleShareClick = (allowEdit: boolean) => {
+    const shareMode = allowEdit ? "EDIT" : "VIEW";
+
+    const params = new URLSearchParams();
+    params.set("billName", encodeBase64(billName));
+    params.set("members", encodeBase64(members));
+    params.set("itemArr", encodeBase64(itemArr));
+    params.set("mode", encodeBase64(shareMode));
+    params.set("setting", encodeBase64(settings));
+
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${baseUrl}?${params.toString()}`;
 
     if (navigator.share) {
-      try {
-        const shortUrl = await getShortUrl(longUrl);
-
-        await navigator.share({
-          title: "📤 มาจ่ายเงินด้วยจ้า!",
-          url: shortUrl,
+      getShortUrl(shareUrl)
+        .then((shortUrl) => {
+          return navigator.share({
+            title: "📤 มาจ่ายเงินด้วยจ้า!",
+            url: shortUrl,
+          });
+        })
+        .then(() => {
+          console.log("Shared successfully");
+        })
+        .catch((error) => {
+          if (error instanceof DOMException && error.name === "AbortError") {
+            console.log("User canceled the share.");
+          } else {
+            console.error("Share failed:", error);
+          }
         });
-
-        console.log("Shared successfully");
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          console.log("User canceled the share.");
-        } else {
-          console.error("Share failed:", error);
-        }
-      }
     } else {
       console.warn("Web Share API not supported.");
     }
@@ -199,20 +212,22 @@ export default function App() {
         </h1>
       </div>
 
-      {mode === MODE.EDIT && <div className="container mx-auto px-4 flex justify-between gap-7 mt-3">
-        <CommonBtn
-          text="+ เพิ่มสมาชิก"
-          type="secondary"
-          onClick={() => setMember(true)}
-          className="!w-fit"
-        />
-        <CommonBtn
-          text="เพิ่มรายการ"
-          onClick={() => setItemModalOpen(true)}
-          disabled={members.length === 0}
-          className="!w-fit"
-        />
-      </div>}
+      {mode === MODE.EDIT && (
+        <div className="container mx-auto px-4 flex justify-between gap-7 mt-3">
+          <CommonBtn
+            text="+ เพิ่มสมาชิก"
+            type="secondary"
+            onClick={() => setMember(true)}
+            className="!w-fit"
+          />
+          <CommonBtn
+            text="เพิ่มรายการ"
+            onClick={() => setItemModalOpen(true)}
+            disabled={members.length === 0}
+            className="!w-fit"
+          />
+        </div>
+      )}
     </div>
   );
 
@@ -274,6 +289,15 @@ export default function App() {
               setIsSettingOpen(false);
             }}
           />
+
+          <SharePopup
+            billName={billName}
+            isOpen={isSharedOpen}
+            onShare={handleShareClick}
+            onCancel={() => {
+              setIsSharedOpen(false);
+            }}
+          />
         </>
       )}
 
@@ -281,7 +305,9 @@ export default function App() {
       {mode === MODE.EDIT && (
         <div className="absolute top-4 right-4">
           <button
-            onClick={handleShare}
+            onClick={() => {
+              setIsSharedOpen(true);
+            }}
             className="p-2 bg-[#c5c6c7] text-white rounded-full flex items-center gap-2"
             title="Share link"
           >
