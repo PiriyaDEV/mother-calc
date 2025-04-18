@@ -23,9 +23,9 @@ export const metadata: Metadata = {
 
 const BackgroundLayout: FC<BackgroundLayoutProps> = ({ children }) => {
   return (
-    <html lang="en" className={sarabun.variable}>
-      <body className="antialiased">
-        <div className="bg-cover bg-center h-screen overflow-hidden">
+    <html lang="en" className={`${sarabun.variable} h-full overflow-hidden`}>
+      <body className="antialiased h-full overflow-hidden">
+        <div className="bg-cover bg-center h-full overflow-hidden">
           <div className="text-center font-bold py-4 mb-2 text-[22px] text-[#4366f4]">
             แม่ๆ คิดเงินให้หน่อย
             <div className="text-xs text-center text-[#c5c6c7]">
