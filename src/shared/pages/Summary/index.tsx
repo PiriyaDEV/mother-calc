@@ -227,7 +227,7 @@ export default function Summary({ itemArr, members }: SummaryProps) {
           <div className="text-center">
             <p className="!font-bold">ยังไม่มีข้อมูล</p>
             <p className="mt-1 !text-gray-400">
-              กรุณาเพิ่มรายการที่แท็บ "รายการ"
+              กรุณาเพิ่มรายการที่ปุ่ม "เพิ่มรายการ"
             </p>
           </div>
         </div>
