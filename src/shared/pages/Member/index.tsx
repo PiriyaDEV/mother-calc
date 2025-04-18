@@ -52,7 +52,8 @@ export default function Member({
   return (
     <div className="flex flex-col gap-10">
       <h1 className="font-bold mt-3">
-        สมาชิกมีใครบ้าง ? <span className="!text-gray-400">({members.length} คน)</span>
+        สมาชิกมีใครบ้าง ?{" "}
+        <span className="!text-gray-400">({members.length} คน)</span>
       </h1>
 
       <div
@@ -98,7 +99,12 @@ export default function Member({
             </div>
           ))
         ) : (
-          <span className="text-sm text-center w-full">ยังไม่มีสมาชิก</span>
+          <div className="text-center w-full">
+            <p className="!font-bold text-sm">ยังไม่มีสมาชิก</p>
+            <p className="mt-1 !text-gray-400 text-sm">
+              กรุณาเพิ่มสมาชิกด้านล่าง
+            </p>
+          </div>
         )}
       </div>
 

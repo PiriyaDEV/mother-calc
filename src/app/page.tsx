@@ -115,18 +115,22 @@ export default function App() {
   };
 
   const renderHeader = () => (
-    <div className="flex items-center gap-10 justify-center">
+    <div className="grid grid-cols-2 text-center">
       {["list", "summary"].map((view) => (
-        <h1
+        <div
           key={view}
           onClick={() => setScreen(view as "list" | "summary")}
-          className={`font-bold cursor-pointer flex items-center gap-2 ${
-            screen === view ? "text-black" : "!text-gray-400"
+          className={`mx-4 cursor-pointer pb-2 transition-colors duration-200 border-b-2 ${
+            screen === view
+              ? "!text-[#4366f4] font-bold border-[#4366f4]"
+              : "!text-gray-500 border-transparent"
           }`}
         >
-          {view === "list" ? <FaList /> : <FaTable />}
-          {view === "list" ? "รายการ" : "ดูสรุป"}
-        </h1>
+          <div className="flex justify-center items-center gap-4">
+            {view === "list" ? <FaList /> : <FaTable />}
+            {view === "list" ? "รายการ" : "ดูสรุป"}
+          </div>
+        </div>
       ))}
     </div>
   );

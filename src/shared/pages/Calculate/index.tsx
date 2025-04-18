@@ -61,8 +61,38 @@ export default function Calculate({
         className="flex flex-col gap-2 mt-2"
         style={{ height: "calc(100vh - 280px)", overflowY: "auto" }}
       >
-        {itemArr.length === 0 ? (
-          <span className="text-center">ยังไม่มีรายการ</span>
+        {itemArr.length === 0 || members.length === 0 ? (
+          <>
+            {members.length === 0 ? (
+              <div className="text-center">
+                <p className="!font-bold">ยังไม่มีสมาชิก</p>
+                <p className="mt-1 !text-gray-400">
+                  กรุณาเพิ่มสมาชิกที่ปุ่ม "+ เพิ่มสมาชิก" ซ้ายล่าง
+                </p>
+              </div>
+            ) : itemArr.length === 0 ? (
+              <div className="text-center">
+                <div className="flex justify-center mb-7 gap-3">
+                  {members.map((m, i) => (
+                    <div
+                      key={i}
+                      className="relative w-10 h-10 rounded-full flex justify-center items-center"
+                      style={{ backgroundColor: m.color }}
+                    >
+                      <span className="text-[8px] font-semibold truncate text-white">
+                        {m.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="!font-bold">คุณมีสมาชิกแล้ว! แต่ยังไม่มีรายการ</p>
+                <p className="mt-1 !text-gray-400">
+                  กรุณาเพิ่มสมาชิกที่ปุ่ม "เพิ่มรายการ" ซ้ายล่าง
+                </p>
+              </div>
+            ) : null}
+          </>
         ) : (
           itemArr.map((item, index) => {
             const paidByMember = getMemberObjByName(item.paidBy, members);

@@ -224,7 +224,12 @@ export default function Summary({ itemArr, members }: SummaryProps) {
         </>
       ) : (
         <div className="flex justify-center">
-          <span className="text-center">ยังไม่มีข้อมูล</span>
+          <div className="text-center">
+            <p className="!font-bold">ยังไม่มีข้อมูล</p>
+            <p className="mt-1 !text-gray-400">
+              กรุณาเพิ่มรายการที่แท็บ "รายการ"
+            </p>
+          </div>
         </div>
       )}
     </div>
