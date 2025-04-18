@@ -21,39 +21,63 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
   setSettings,
   onCancel,
 }) => {
-  const [tempSettings, setTempSettings] = useState<Settings>({
-    vat: settings.vat ?? 0,
-    serviceCharge: settings.serviceCharge ?? 0,
+  const [tempSettings, setTempSettings] = useState<{
+    vat: string;
+    serviceCharge: string;
+    isVat: boolean;
+    isService: boolean;
+  }>({
+    vat: settings.vat.toString(),
+    serviceCharge: settings.serviceCharge.toString(),
     isVat: settings.isVat ?? false,
     isService: settings.isService ?? false,
   });
 
   useEffect(() => {
     setTempSettings({
-      vat: settings.vat ?? 0,
-      serviceCharge: settings.serviceCharge ?? 0,
+      vat: settings.vat.toString(),
+      serviceCharge: settings.serviceCharge.toString(),
       isVat: settings.isVat ?? false,
       isService: settings.isService ?? false,
     });
   }, [settings]);
 
   const handleSave = () => {
-    setSettings(tempSettings);
+    if (tempSettings.serviceCharge === "") {
+      alert("กรุณาใส่ Service Charge ให้ครบถ้วน");
+      return;
+    }
+
+    if (tempSettings.vat === "") {
+      alert("กรุณาใส่ VAT ให้ครบถ้วน");
+      return;
+    }
+
+    setSettings({
+      vat: parseFloat(tempSettings.vat),
+      serviceCharge: parseFloat(tempSettings.serviceCharge),
+      isVat: tempSettings.isVat,
+      isService: tempSettings.isService,
+    });
     onCancel();
   };
 
   const handleCancel = () => {
-    setTempSettings(settings);
+    setTempSettings({
+      vat: settings.vat.toString(),
+      serviceCharge: settings.serviceCharge.toString(),
+      isVat: settings.isVat,
+      isService: settings.isService,
+    });
     onCancel();
   };
 
   const handleChange =
-    (field: keyof Pick<Settings, "vat" | "serviceCharge">) =>
+    (field: "vat" | "serviceCharge") =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
       setTempSettings((prev) => ({
         ...prev,
-        [field]: value === "" ? 0 : Number(value),
+        [field]: e.target.value,
       }));
     };
 
@@ -105,11 +129,10 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
                     e.preventDefault();
                   }
                 }}
-                value={tempSettings.vat.toString()}
+                value={tempSettings.vat}
                 onChange={handleChange("vat")}
                 placeholder="กรุณาใส่ VAT"
                 className="input input-bordered w-full"
-                disabled={!tempSettings.isVat}
               />
             </div>
 
@@ -140,11 +163,10 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
                     e.preventDefault();
                   }
                 }}
-                value={tempSettings.serviceCharge.toString()}
+                value={tempSettings.serviceCharge}
                 onChange={handleChange("serviceCharge")}
                 placeholder="กรุณาใส่ Service Charge"
                 className="input input-bordered w-full"
-                disabled={!tempSettings.isService}
               />
             </div>
 

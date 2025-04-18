@@ -5,7 +5,7 @@ import { useState } from "react";
 import { TiTrash } from "react-icons/ti";
 import { FaPen, FaUserCheck } from "react-icons/fa";
 import ConfirmPopup from "@/shared/components/ConfirmPopup";
-import { getMemberObjByName } from "@/app/lib/utils";
+import { getMemberObjByName, getPrice } from "@/app/lib/utils";
 import ItemModal from "@/shared/components/ItemModal";
 import { Settings } from "@/shared/components/SettingPopup";
 
@@ -81,20 +81,47 @@ export default function Calculate({
                       </div>
                     </strong>
 
-                    <div>
-                      {item.price !== undefined
-                        ? `${item.price.toLocaleString("en-US", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })} บาท`
-                        : item.selectedMembers.length > 0
-                        ? `${item.selectedMembers
-                            .reduce((sum, m) => sum + (m.customPaid || 0), 0)
-                            .toLocaleString("en-US", {
+                    <div className="flex flex-col gap-1">
+                      <div className="font-bold">
+                        {item.price !== undefined
+                          ? `${getPrice(
+                              item.price,
+                              item.vatRate,
+                              item.serviceChargeRate
+                            ).toLocaleString("en-US", {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })} บาท`
-                        : "N/A"}
+                          : item.selectedMembers.length > 0
+                          ? `${getPrice(
+                              item.selectedMembers.reduce(
+                                (sum, m) => sum + (m.customPaid || 0),
+                                0
+                              ),
+                              item.vatRate,
+                              item.serviceChargeRate
+                            ).toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })} บาท`
+                          : "N/A"}
+                      </div>
+                      {(item.vatRate || item.serviceChargeRate) && (
+                        <div className="text-gray-500">
+                          <span className="text-[10px]">รวม</span>
+                          {item.vatRate && item.vatRate !== null && (
+                            <span className="ml-1 text-[10px]">
+                              VAT({item.vatRate}%)
+                            </span>
+                          )}
+                          {item.serviceChargeRate &&
+                            item.serviceChargeRate !== null && (
+                              <span className="ml-1 text-[10px]">
+                                Service Charge({item.serviceChargeRate}%)
+                              </span>
+                            )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-end gap-4 !text-[#333333]">
@@ -128,18 +155,23 @@ export default function Calculate({
                             :{" "}
                             {item.price !== undefined
                               ? `${(
-                                  item.price / item.selectedMembers.length
+                                  getPrice(
+                                    item.price,
+                                    item.vatRate,
+                                    item.serviceChargeRate
+                                  ) / item.selectedMembers.length
                                 ).toLocaleString("en-US", {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
                                 })} บาท`
-                              : `${(memberItem.customPaid ?? 0).toLocaleString(
-                                  "en-US",
-                                  {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  }
-                                )} บาท`}
+                              : `${getPrice(
+                                  memberItem.customPaid ?? 0,
+                                  item.vatRate,
+                                  item.serviceChargeRate
+                                ).toLocaleString("en-US", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })} บาท`}
                           </span>
                         </span>
                       </div>

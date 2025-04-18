@@ -11,7 +11,7 @@ import Summary from "@/shared/pages/Summary";
 import { ItemObj, MemberObj } from "./lib/interface";
 import { PuffLoader } from "react-spinners";
 import { FaList, FaTable } from "react-icons/fa";
-import { encodeBase64, getShortUrl, getURLParams } from "./lib/utils";
+import { encodeBase64, getPrice, getShortUrl, getURLParams } from "./lib/utils";
 import ItemModal from "@/shared/components/ItemModal";
 import { MODE } from "./lib/constants";
 import SettingsPopup, { Settings } from "@/shared/components/SettingPopup";
@@ -156,21 +156,34 @@ export default function App() {
       />
     );
 
+  const calculateTotalPrice = (itemArr: ItemObj[]): number => {
+    return itemArr.reduce((sum, item) => {
+      if (typeof item.price === "number") {
+        return sum + getPrice(item.price, item.vatRate, item.serviceChargeRate);
+      } else {
+        // Sum customPaid from all selectedMembers if price is undefined
+        const customTotal = item.selectedMembers.reduce((subSum, member) => {
+          return subSum + (member.customPaid ?? 0);
+        }, 0);
+        return (
+          sum + getPrice(customTotal, item.vatRate, item.serviceChargeRate)
+        );
+      }
+    }, 0);
+  };
+
+  const total = calculateTotalPrice(itemArr);
+  const totalFormatted = `${total.toLocaleString()} `;
+
   const renderFooter = () => (
     <div className="absolute bottom-0 left-0 bg-white py-5 w-full">
       <div className="container mx-auto px-4 flex items-center justify-between gap-7">
         <h1 className="font-bold">ยอดรวมบิล : </h1>
         <h1 className="font-bold text-[24px]">
-          {itemArr
-            .reduce((sum, item) => sum + (item.price ?? 0), 0)
-            .toLocaleString()}{" "}
+          {totalFormatted}
           บาท
           <span className="ml-2">
             {(() => {
-              const total = itemArr.reduce(
-                (sum, item) => sum + (item.price ?? 0),
-                0
-              );
               if (total >= 1_000_000) return "💀";
               if (total >= 100_000) return "🤑";
               if (total >= 10_000) return "🫠";

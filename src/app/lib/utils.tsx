@@ -81,3 +81,20 @@ export async function getShortUrl(longUrl: string) {
     return longUrl; // Return the original longUrl in case of error
   }
 }
+
+export function getPrice(
+  price: number,
+  vat?: number | null,
+  serviceCharge?: number | null
+): number {
+  let total = price;
+
+  if (vat != null) {
+    total += price * (vat / 100);
+  }
+  if (serviceCharge != null) {
+    total += price * (serviceCharge / 100);
+  }
+
+  return total;
+}

@@ -43,7 +43,7 @@ export default function Item({
 
   const [vatRate, setVatRate] = useState(() => {
     if (isEditing) {
-      return editingItem.vatRate != null ? editingItem.vatRate.toString() : "0";
+      return editingItem.vatRate != null ? editingItem.vatRate.toString() : settings.vat.toString();
     }
     return settings.vat != null ? settings.vat.toString() : "0";
   });
@@ -52,7 +52,7 @@ export default function Item({
     if (isEditing) {
       return editingItem.serviceChargeRate != null
         ? editingItem.serviceChargeRate.toString()
-        : "0";
+        : settings.serviceCharge.toString();
     }
     return settings.serviceCharge != null
       ? settings.serviceCharge.toString()
