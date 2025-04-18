@@ -1,21 +1,22 @@
 import React from "react";
 import Item from "@/shared/pages/Item";
 import { ItemObj } from "@/app/lib/interface";
+import { Settings } from "../SettingPopup";
 
 type ItemModalProps = {
   members: any[];
-  itemArr:  ItemObj[];
   setItemArr: React.Dispatch<React.SetStateAction<ItemObj[]>>;
   setItemModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   editingItem?: ItemObj;
+  settings: Settings
 };
 
 const ItemModal: React.FC<ItemModalProps> = ({
   members,
-  itemArr,
   setItemArr,
   setItemModalOpen,
   editingItem,
+  settings
 }) => {
   const onBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -28,7 +29,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
       <div className="modal-box">
         <Item
           members={members}
-          itemArr={itemArr}
+          settings={settings}
           setItemArr={setItemArr}
           setItemModalOpen={setItemModalOpen}
           editingItem={editingItem}

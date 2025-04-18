@@ -1,27 +1,66 @@
 import { ItemObj, MemberObj } from "@/app/lib/interface";
 import CommonBtn from "@/shared/components/CommonBtn";
+import { Settings } from "@/shared/components/SettingPopup";
 import { useState, useEffect } from "react";
+import { FaChevronDown } from "react-icons/fa";
 
 interface ItemProps {
   members: MemberObj[];
-  itemArr: ItemObj[];
   setItemArr: React.Dispatch<React.SetStateAction<ItemObj[]>>;
   setItemModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   editingItem?: ItemObj;
+  settings: Settings;
 }
 
 export default function Item({
   members,
-  itemArr,
   setItemArr,
   setItemModalOpen,
   editingItem,
+  settings,
 }: ItemProps) {
   const [itemName, setItemName] = useState("");
   const [paidBy, setPaidBy] = useState<string>("");
   const [price, setPrice] = useState("");
   const [isEqualSplit, setIsEqualSplit] = useState(true);
   const [selectedMembers, setSelectedMembers] = useState<MemberObj[]>([]);
+
+  const isEditing = !!editingItem;
+
+  const [isVatChecked, setIsVatChecked] = useState(() => {
+    if (isEditing) {
+      return editingItem.vatRate != null;
+    }
+    return settings.isVat || false;
+  });
+
+  const [isServiceChargeChecked, setIsServiceChargeChecked] = useState(() => {
+    if (isEditing) {
+      return editingItem.serviceChargeRate != null;
+    }
+    return settings.isService || false;
+  });
+
+  const [vatRate, setVatRate] = useState(() => {
+    if (isEditing) {
+      return editingItem.vatRate != null ? editingItem.vatRate.toString() : "0";
+    }
+    return settings.vat != null ? settings.vat.toString() : "0";
+  });
+
+  const [serviceChargeRate, setServiceChargeRate] = useState(() => {
+    if (isEditing) {
+      return editingItem.serviceChargeRate != null
+        ? editingItem.serviceChargeRate.toString()
+        : "0";
+    }
+    return settings.serviceCharge != null
+      ? settings.serviceCharge.toString()
+      : "0";
+  });
+
+  const [isAdditionalSettingsVisible, setIsAdditionalSettingsVisible] =
+    useState(false);
 
   useEffect(() => {
     if (editingItem) {
@@ -66,7 +105,14 @@ export default function Item({
     if (!isEqual) setPrice("");
   };
 
-  // Inside handleAddItem
+  const handleVatChange = (isChecked: boolean) => {
+    setIsVatChecked(isChecked);
+  };
+
+  const handleServiceChargeChange = (isChecked: boolean) => {
+    setIsServiceChargeChecked(isChecked);
+  };
+
   const handleAddItem = () => {
     if (
       !itemName.trim() ||
@@ -93,11 +139,23 @@ export default function Item({
       }
     }
 
+    if (isVatChecked && !vatRate) {
+      return alert(`กรุณาใส่ค่า VAT`);
+    }
+
+    if (isServiceChargeChecked && !serviceChargeRate) {
+      return alert(`กรุณาใส่ค่า Service Charge`);
+    }
+
     const newItem: ItemObj = {
       itemName: itemName.trim(),
       paidBy: selectedMember.name,
       price: isEqualSplit && price ? parseFloat(price) : undefined,
       selectedMembers,
+      vatRate: isVatChecked ? parseInt(vatRate) : undefined,
+      serviceChargeRate: isServiceChargeChecked
+        ? parseInt(serviceChargeRate)
+        : undefined,
     };
 
     if (editingItem) {
@@ -116,7 +174,12 @@ export default function Item({
     setPrice("");
     setIsEqualSplit(true);
     setSelectedMembers([]);
+    setIsVatChecked(false);
+    setVatRate(settings.vat.toString());
+    setIsServiceChargeChecked(false);
+    setServiceChargeRate(settings.serviceCharge.toString());
     setItemModalOpen(false);
+    setIsAdditionalSettingsVisible(false);
   };
 
   return (
@@ -133,7 +196,9 @@ export default function Item({
       />
 
       <div>
-        <span className="!text-[#4366f4] font-bold text-sm">ราคา <span className="!text-red-500">*</span></span>
+        <span className="!text-[#4366f4] font-bold text-sm">
+          ราคา <span className="!text-red-500">*</span>
+        </span>
 
         <div className="flex gap-4 my-2">
           <label className="flex items-center gap-2 text-xs">
@@ -178,7 +243,73 @@ export default function Item({
         )}
       </div>
 
-      <span className="!text-[#4366f4] font-bold text-sm mt-2">เลือกคนจ่าย <span className="!text-red-500">*</span></span>
+      <div>
+        {/* Toggle for additional settings */}
+        <div
+          className="my-4 flex items-center justify-between cursor-pointer"
+          onClick={() => {
+            setIsAdditionalSettingsVisible(!isAdditionalSettingsVisible);
+          }}
+        >
+          <span className="!text-gray-500 font-bold text-xs">
+            ตั้งค่าเพิ่มเติม
+          </span>
+          <FaChevronDown
+            className={`!text-gray-500 ${
+              isAdditionalSettingsVisible ? "rotate-180" : ""
+            }`}
+          />
+        </div>
+
+        {/* Conditionally render additional settings */}
+        {isAdditionalSettingsVisible && (
+          <div className="flex gap-4 my-2 flex-col">
+            <label className="flex items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                name="vat"
+                checked={isVatChecked}
+                onChange={() => handleVatChange(!isVatChecked)}
+              />
+              ค่า VAT
+              {isVatChecked && (
+                <input
+                  type="number"
+                  placeholder="กรอก VAT"
+                  value={vatRate ?? 0}
+                  onChange={(e) => setVatRate(e.target.value)}
+                  className="input input-bordered w-full max-w-[150px]"
+                />
+              )}
+            </label>
+
+            <label className="flex items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                name="serviceCharge"
+                checked={isServiceChargeChecked}
+                onChange={() =>
+                  handleServiceChargeChange(!isServiceChargeChecked)
+                }
+              />
+              ค่า Service Charge
+              {isServiceChargeChecked && (
+                <input
+                  type="number"
+                  placeholder="กรอก Service Charge"
+                  value={serviceChargeRate ?? 0}
+                  onChange={(e) => setServiceChargeRate(e.target.value)}
+                  className="input input-bordered w-full max-w-[150px]"
+                />
+              )}
+            </label>
+          </div>
+        )}
+      </div>
+
+      <span className="!text-[#4366f4] font-bold text-sm mt-2">
+        เลือกคนจ่าย <span className="!text-red-500">*</span>
+      </span>
       <select
         value={paidBy}
         onChange={(e) => setPaidBy(e.target.value)}
@@ -194,7 +325,9 @@ export default function Item({
 
       <div>
         <div className="flex justify-between items-center mb-5 mt-2">
-          <p className="!text-[#4366f4] font-bold text-sm">เลือกสมาชิก <span className="!text-red-500">*</span></p>
+          <p className="!text-[#4366f4] font-bold text-sm">
+            เลือกสมาชิก <span className="!text-red-500">*</span>
+          </p>
 
           <CommonBtn
             text="ทั้งหมด"

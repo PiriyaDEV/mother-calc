@@ -14,7 +14,7 @@ import { FaList, FaTable } from "react-icons/fa";
 import { encodeBase64, getShortUrl, getURLParams } from "./lib/utils";
 import ItemModal from "@/shared/components/ItemModal";
 import { MODE } from "./lib/constants";
-import SettingsPopup from "@/shared/components/SettingPopup";
+import SettingsPopup, { Settings } from "@/shared/components/SettingPopup";
 
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -29,12 +29,11 @@ export default function App() {
 
   const [isSettingOpen, setIsSettingOpen] = useState<boolean>(false);
 
-  const [settings, setSettings] = useState<{
-    vat: number;
-    serviceCharge: number;
-  }>({
+  const [settings, setSettings] = useState<Settings>({
     vat: 7,
     serviceCharge: 10,
+    isVat: false,
+    isService: false,
   });
 
   // Load from URL parameters
@@ -136,6 +135,7 @@ export default function App() {
     if (screen === "list") {
       return (
         <Calculate
+          settings={settings}
           members={members}
           itemArr={itemArr}
           setItemArr={setItemArr}
@@ -150,7 +150,7 @@ export default function App() {
     isItemModalOpen && (
       <ItemModal
         members={members}
-        itemArr={itemArr}
+        settings={settings}
         setItemArr={setItemArr}
         setItemModalOpen={setItemModalOpen}
       />

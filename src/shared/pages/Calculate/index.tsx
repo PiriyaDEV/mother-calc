@@ -7,17 +7,20 @@ import { FaPen, FaUserCheck } from "react-icons/fa";
 import ConfirmPopup from "@/shared/components/ConfirmPopup";
 import { getMemberObjByName } from "@/app/lib/utils";
 import ItemModal from "@/shared/components/ItemModal";
+import { Settings } from "@/shared/components/SettingPopup";
 
 interface CalculateProps {
   members: MemberObj[];
   itemArr: ItemObj[];
   setItemArr: React.Dispatch<React.SetStateAction<ItemObj[]>>;
+  settings: Settings;
 }
 
 export default function Calculate({
   members,
   itemArr,
   setItemArr,
+  settings,
 }: CalculateProps) {
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(
     null
@@ -165,8 +168,8 @@ export default function Calculate({
 
       {isEditModalOpen && editingItem && (
         <ItemModal
+          settings={settings}
           members={members}
-          itemArr={itemArr}
           setItemArr={setItemArr}
           setItemModalOpen={setIsEditModalOpen}
           editingItem={editingItem}

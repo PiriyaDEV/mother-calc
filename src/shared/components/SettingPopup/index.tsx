@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from "react";
+import "./styles.css";
+
+export interface Settings {
+  vat: number;
+  serviceCharge: number;
+  isVat: boolean;
+  isService: boolean;
+}
 
 interface SettingsPopupProps {
   isOpen: boolean;
-  settings: { vat: number; serviceCharge: number };
-  setSettings: (settings: { vat: number; serviceCharge: number }) => void;
+  settings: Settings;
+  setSettings: (settings: Settings) => void;
   onCancel: () => void;
 }
 
@@ -13,11 +21,20 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
   setSettings,
   onCancel,
 }) => {
-  const [tempSettings, setTempSettings] = useState(settings);
+  const [tempSettings, setTempSettings] = useState<Settings>({
+    vat: settings.vat ?? 0,
+    serviceCharge: settings.serviceCharge ?? 0,
+    isVat: settings.isVat ?? false,
+    isService: settings.isService ?? false,
+  });
 
-  // Update the tempSettings state if the settings prop changes
   useEffect(() => {
-    setTempSettings(settings);
+    setTempSettings({
+      vat: settings.vat ?? 0,
+      serviceCharge: settings.serviceCharge ?? 0,
+      isVat: settings.isVat ?? false,
+      isService: settings.isService ?? false,
+    });
   }, [settings]);
 
   const handleSave = () => {
@@ -31,12 +48,21 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
   };
 
   const handleChange =
-    (field: keyof typeof tempSettings) =>
+    (field: keyof Pick<Settings, "vat" | "serviceCharge">) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value === "" ? "" : Number(e.target.value);
+      const value = e.target.value;
+      setTempSettings((prev) => ({
+        ...prev,
+        [field]: value === "" ? 0 : Number(value),
+      }));
+    };
+
+  const handleToggleChange =
+    (field: "isVat" | "isService") =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       setTempSettings({
         ...tempSettings,
-        [field]: value,
+        [field]: e.target.checked,
       });
     };
 
@@ -53,6 +79,22 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
         >
           <div className="bg-base-100 p-6 rounded-xl shadow-lg w-96 m-4">
             <h3 className="font-bold text-lg text-center">ตั้งค่าเริ่มต้น</h3>
+
+            <div className="pt-4">
+              <p className="!text-[#4366f4] font-bold text-sm mb-2">
+                เปิดใช้งาน VAT
+              </p>
+              <label>
+                <input
+                  className="toggle"
+                  type="checkbox"
+                  checked={tempSettings.isVat}
+                  onChange={handleToggleChange("isVat")}
+                />
+                <span className="toggle-switch"></span>
+              </label>
+            </div>
+
             <div className="py-4">
               <p className="!text-[#4366f4] font-bold text-sm mb-2">VAT (%)</p>
               <input
@@ -63,12 +105,29 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
                     e.preventDefault();
                   }
                 }}
-                value={tempSettings.vat === 0 ? "" : tempSettings.vat}
+                value={tempSettings.vat.toString()}
                 onChange={handleChange("vat")}
                 placeholder="กรุณาใส่ VAT"
                 className="input input-bordered w-full"
+                disabled={!tempSettings.isVat}
               />
             </div>
+
+            <div className="pt-4">
+              <p className="!text-[#4366f4] font-bold text-sm mb-2">
+                เปิดใช้งาน Service Charge
+              </p>
+              <label>
+                <input
+                  className="toggle"
+                  type="checkbox"
+                  checked={tempSettings.isService}
+                  onChange={handleToggleChange("isService")}
+                />
+                <span className="toggle-switch"></span>
+              </label>
+            </div>
+
             <div className="py-4">
               <p className="!text-[#4366f4] font-bold text-sm mb-2">
                 Service Charge (%)
@@ -81,14 +140,11 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
                     e.preventDefault();
                   }
                 }}
-                value={
-                  tempSettings.serviceCharge === 0
-                    ? ""
-                    : tempSettings.serviceCharge
-                }
+                value={tempSettings.serviceCharge.toString()}
                 onChange={handleChange("serviceCharge")}
                 placeholder="กรุณาใส่ Service Charge"
                 className="input input-bordered w-full"
+                disabled={!tempSettings.isService}
               />
             </div>
 
