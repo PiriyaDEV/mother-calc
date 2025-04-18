@@ -33,7 +33,20 @@ input {
     1px 1px 0 #000;
 }
 
-.input, .btn {
+.input,
+.btn {
   height: 2.5rem !important;
   min-height: 2.5rem !important;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  position: relative;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
