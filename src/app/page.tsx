@@ -307,7 +307,7 @@ export default function App() {
 
       {/* Share Link Button */}
       {mode === MODE.EDIT && (
-        <div className="fixed top-4 right-4 z-[100]">
+        <div className="fixed top-4 right-4 z-[99]">
           <button
             onClick={() => {
               setIsSharedOpen(true);

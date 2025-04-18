@@ -7,7 +7,7 @@ interface CommonLoadingProps {
 
 const CommonLoading: FC<CommonLoadingProps> = ({ isLoading = true }) => {
   return (
-    <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center">
+    <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-[102]">
       <PuffLoader
         color="white"
         loading={isLoading}

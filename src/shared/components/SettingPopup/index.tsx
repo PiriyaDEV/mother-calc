@@ -94,7 +94,7 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[100]"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               handleCancel();
