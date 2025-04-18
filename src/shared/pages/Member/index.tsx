@@ -50,13 +50,15 @@ export default function Member({
   };
 
   return (
-    <div className="flex flex-col gap-10 pb-20">
+    <div className="flex flex-col gap-10 pb-20 mt-[140px]">
       {" "}
       {/* Added padding-bottom for the fixed footer */}
-      <h1 className="font-bold mt-3">
-        สมาชิกมีใครบ้าง ?{" "}
-        <span className="!text-gray-400">({members.length} คน)</span>
-      </h1>
+      <div className="fixed z-[50] top-[80px] bg-white w-full">
+        <h1 className="font-bold mt-3 pb-2">
+          สมาชิกมีใครบ้าง ?{" "}
+          <span className="!text-gray-400">({members.length} คน)</span>
+        </h1>
+      </div>
       <div
         className={`flex gap-4 flex-wrap w-full ${
           members.length > 4 ? "justify-center" : ""

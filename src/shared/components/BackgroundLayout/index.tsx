@@ -26,7 +26,7 @@ const BackgroundLayout: FC<BackgroundLayoutProps> = ({ children }) => {
     <html lang="en" className={`${sarabun.variable}`}>
       <body className="antialiased">
         <div className="bg-cover bg-center flex flex-col">
-          <div className="sticky top-0 bg-white z-[99] text-center font-bold py-4 mb-2 text-[22px] text-[#4366f4]">
+          <div className="fixed w-full top-0 bg-white z-[99] text-center font-bold py-4 mb-2 text-[22px] text-[#4366f4]">
             แม่ๆ คิดเงินให้หน่อย
             <div className="text-xs text-center text-[#c5c6c7]">
               Made by @pd.piriya 🤪✨

@@ -54,11 +54,7 @@ export default function Calculate({
   };
 
   return (
-    <div className="flex flex-col gap-4 w-full mt-[94px]">
-      {itemArr.length !== 0 && (
-        <h1 className="font-bold mt-3">มีรายการอะไรไปบ้าง ?</h1>
-      )}
-
+    <div className="flex flex-col gap-4 w-full mt-[185px]">
       <div
         style={{
           paddingBottom: "150px",
