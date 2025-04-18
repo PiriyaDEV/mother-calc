@@ -8,12 +8,14 @@ import ConfirmPopup from "@/shared/components/ConfirmPopup";
 import { getMemberObjByName, getPrice } from "@/app/lib/utils";
 import ItemModal from "@/shared/components/ItemModal";
 import { Settings } from "@/shared/components/SettingPopup";
+import { MODE } from "@/app/lib/constants";
 
 interface CalculateProps {
   members: MemberObj[];
   itemArr: ItemObj[];
   setItemArr: React.Dispatch<React.SetStateAction<ItemObj[]>>;
   settings: Settings;
+  mode: "VIEW" | "EDIT";
 }
 
 export default function Calculate({
@@ -21,6 +23,7 @@ export default function Calculate({
   itemArr,
   setItemArr,
   settings,
+  mode,
 }: CalculateProps) {
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(
     null
@@ -100,7 +103,11 @@ export default function Calculate({
             return (
               <div key={index} className="flex justify-between my-2 gap-2">
                 <div className="w-full">
-                  <div className="p-2 rounded-[8px] bg-gray-100 text-sm !text-black grid grid-cols-3 items-center">
+                  <div
+                    className={`p-2 rounded-[8px] bg-gray-100 text-sm !text-black grid ${
+                      mode === MODE.EDIT ? "grid-cols-3" : "grid-cols-2"
+                    } items-center`}
+                  >
                     <strong>
                       {item.itemName}
                       <div
@@ -154,17 +161,19 @@ export default function Calculate({
                       )}
                     </div>
 
-                    <div className="flex items-center justify-end gap-4 !text-[#333333]">
-                      <FaPen
-                        onClick={() => handleEditItemClick(index)}
-                        className="text-[18px] mr-1 cursor-pointer"
-                      />
+                    {mode === MODE.EDIT && (
+                      <div className="flex items-center justify-end gap-4 !text-[#333333]">
+                        <FaPen
+                          onClick={() => handleEditItemClick(index)}
+                          className="text-[18px] mr-1 cursor-pointer"
+                        />
 
-                      <TiTrash
-                        onClick={() => setConfirmDeleteIndex(index)}
-                        className="text-[25px] cursor-pointer"
-                      />
-                    </div>
+                        <TiTrash
+                          onClick={() => setConfirmDeleteIndex(index)}
+                          className="text-[25px] cursor-pointer"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-2 mt-2">

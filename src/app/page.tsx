@@ -24,8 +24,8 @@ export default function App() {
   const [members, setMembers] = useState<MemberObj[]>([]);
   const [itemArr, setItemArr] = useState<ItemObj[]>([]);
   const [copySuccess, setCopySuccess] = useState(false); // State to track copy success
-  const [billName, setBillName] = useState("ชื่อสมาชิก");
-  const [mode, setMode] = useState(MODE.EDIT);
+  const [billName, setBillName] = useState("");
+  const [mode, setMode] = useState(null);
 
   const [isSettingOpen, setIsSettingOpen] = useState<boolean>(false);
 
@@ -143,6 +143,7 @@ export default function App() {
           members={members}
           itemArr={itemArr}
           setItemArr={setItemArr}
+          mode={mode!}
         />
       );
     } else {
@@ -198,7 +199,7 @@ export default function App() {
         </h1>
       </div>
 
-      <div className="container mx-auto px-4 flex justify-between gap-7 mt-3">
+      {mode === MODE.EDIT && <div className="container mx-auto px-4 flex justify-between gap-7 mt-3">
         <CommonBtn
           text="+ เพิ่มสมาชิก"
           type="secondary"
@@ -211,7 +212,7 @@ export default function App() {
           disabled={members.length === 0}
           className="!w-fit"
         />
-      </div>
+      </div>}
     </div>
   );
 
@@ -231,21 +232,33 @@ export default function App() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 whitespace-nowrap">
               <h1 className="font-bold">ชื่อบิล : </h1>
-              <input
-                type="text"
-                placeholder="ใส่ชื่อบิลที่นี่"
-                className="font-bold text-[18px] input input-bordered w-fit"
-                value={billName}
-                onChange={(e) => setBillName(e.target.value)}
-              />
+              {mode === MODE.EDIT ? (
+                <input
+                  type="text"
+                  placeholder="ใส่ชื่อบิลที่นี่"
+                  className="font-bold text-[18px] input input-bordered w-fit"
+                  value={billName}
+                  onChange={(e) => setBillName(e.target.value)}
+                />
+              ) : (
+                <div
+                  className={`text-[18px] font-bold ${
+                    billName === "" ? "!text-gray-400" : ""
+                  }`}
+                >
+                  {billName !== "" ? billName : "ไม่มีชื่อบิล"}
+                </div>
+              )}
             </div>
 
-            <FaCog
-              onClick={() => {
-                setIsSettingOpen(true);
-              }}
-              className="text-[24px] mr-1 cursor-pointer text-[#333333]"
-            />
+            {mode === MODE.EDIT && (
+              <FaCog
+                onClick={() => {
+                  setIsSettingOpen(true);
+                }}
+                className="text-[24px] mr-1 cursor-pointer text-[#333333]"
+              />
+            )}
           </div>
 
           {renderHeader()}
@@ -265,25 +278,27 @@ export default function App() {
       )}
 
       {/* Share Link Button */}
-      <div className="absolute top-4 right-4">
-        <button
-          onClick={handleShare}
-          className="p-2 bg-[#c5c6c7] text-white rounded-full flex items-center gap-2"
-          title="Share link"
-        >
-          {!copySuccess ? (
-            <FaShareAlt className="text-xs" />
-          ) : (
-            <PuffLoader
-              color="white"
-              loading={true}
-              size={13}
-              aria-label="Loading Spinner"
-              data-testid="loader"
-            />
-          )}
-        </button>
-      </div>
+      {mode === MODE.EDIT && (
+        <div className="absolute top-4 right-4">
+          <button
+            onClick={handleShare}
+            className="p-2 bg-[#c5c6c7] text-white rounded-full flex items-center gap-2"
+            title="Share link"
+          >
+            {!copySuccess ? (
+              <FaShareAlt className="text-xs" />
+            ) : (
+              <PuffLoader
+                color="white"
+                loading={true}
+                size={13}
+                aria-label="Loading Spinner"
+                data-testid="loader"
+              />
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
