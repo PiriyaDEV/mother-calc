@@ -1,3 +1,5 @@
+"use client";
+
 import { FC } from "react";
 import { Sarabun } from "next/font/google";
 import type { Metadata } from "next";
@@ -29,7 +31,19 @@ const BackgroundLayout: FC<BackgroundLayoutProps> = ({ children }) => {
           <div className="fixed w-full top-0 bg-white z-[98] text-center font-bold py-4 mb-2 text-[22px] text-[#4366f4]">
             แม่ๆ คิดเงินให้หน่อย
             <div className="text-xs text-center text-[#c5c6c7]">
-              Made by @pd.piriya 🤪✨
+              Made by{" "}
+              <span
+              className="!text-[#FFC107] underline"
+                onClick={() => {
+                  window.open(
+                    "https://www.instagram.com/pd.piriya/#",
+                    "_blank"
+                  );
+                }}
+              >
+                @pd.piriya
+              </span>{" "}
+              🤪✨
             </div>
           </div>
           <div className="container mx-auto px-4 flex-grow">{children}</div>
@@ -38,6 +52,5 @@ const BackgroundLayout: FC<BackgroundLayoutProps> = ({ children }) => {
     </html>
   );
 };
-
 
 export default BackgroundLayout;
