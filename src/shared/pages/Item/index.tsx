@@ -66,18 +66,37 @@ export default function Item({
     if (!isEqual) setPrice("");
   };
 
+  // Inside handleAddItem
   const handleAddItem = () => {
-    if (!itemName.trim() || !paidBy || (isEqualSplit && !price)) {
+    if (
+      !itemName.trim() ||
+      !paidBy ||
+      (isEqualSplit && !price) ||
+      selectedMembers.length === 0
+    ) {
       return alert("กรุณากรอกข้อมูลให้ครบ");
     }
 
     const selectedMember = members.find((m) => m.name === paidBy);
     if (!selectedMember) return alert("สมาชิกที่เลือกไม่ถูกต้อง");
 
+    // Add validation for unequal split
+    if (!isEqualSplit) {
+      for (const member of selectedMembers) {
+        if (
+          member.customPaid === undefined ||
+          member.customPaid === null ||
+          isNaN(member.customPaid)
+        ) {
+          return alert(`กรุณาใส่ค่าใช้จ่ายของสมาชิก ${member.name}`);
+        }
+      }
+    }
+
     const newItem: ItemObj = {
       itemName: itemName.trim(),
       paidBy: selectedMember.name,
-      price: price ? parseFloat(price) : undefined,
+      price: isEqualSplit && price ? parseFloat(price) : undefined,
       selectedMembers,
     };
 
@@ -143,6 +162,11 @@ export default function Item({
             placeholder="กรอกราคา"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "-" || e.key === "e") {
+                e.preventDefault();
+              }
+            }}
             className="input input-bordered w-full"
           />
         ) : (
