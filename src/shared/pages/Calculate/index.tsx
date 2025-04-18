@@ -91,7 +91,7 @@ export default function Calculate({
 
                 <p className="!font-bold">คุณมีสมาชิกแล้ว! แต่ยังไม่มีรายการ</p>
                 <p className="mt-1 !text-gray-400">
-                  กรุณาเพิ่มสมาชิกที่ปุ่ม "เพิ่มรายการ" ซ้ายล่าง
+                  กรุณาเพิ่มสมาชิกที่ปุ่ม "เพิ่มรายการ" ขวาล่าง
                 </p>
               </div>
             ) : null}
