@@ -1,4 +1,5 @@
 import { MemberObj } from "@/app/lib/interface";
+import { MODE } from "./constants";
 
 export const getMemberObjByName = (
   name: string,
@@ -36,10 +37,14 @@ export const getURLParams = () => {
   const params = new URLSearchParams(window.location.search);
   const membersParam = params.get("members");
   const itemArrParam = params.get("itemArr");
+  const billNameParam = params.get("billName");
+  const modeParam = params.get("mode");
 
   return {
     members: membersParam ? decodeBase64(membersParam) : [],
     itemArr: itemArrParam ? decodeBase64(itemArrParam) : [],
+    billName: billNameParam ? decodeBase64(billNameParam) : "",
+    mode: modeParam ? decodeBase64(modeParam) : MODE.EDIT,
   };
 };
 

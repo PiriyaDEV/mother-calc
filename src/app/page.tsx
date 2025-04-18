@@ -13,6 +13,7 @@ import { PuffLoader } from "react-spinners";
 import { FaList, FaTable } from "react-icons/fa";
 import { encodeBase64, getShortUrl, getURLParams } from "./lib/utils";
 import ItemModal from "@/shared/components/ItemModal";
+import { MODE } from "./lib/constants";
 
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -22,12 +23,21 @@ export default function App() {
   const [members, setMembers] = useState<MemberObj[]>([]);
   const [itemArr, setItemArr] = useState<ItemObj[]>([]);
   const [copySuccess, setCopySuccess] = useState(false); // State to track copy success
+  const [billName, setBillName] = useState("ชื่อสมาชิก");
+  const [mode, setMode] = useState(MODE.EDIT);
 
   // Load from URL parameters
   useEffect(() => {
-    const { members: loadedMembers, itemArr: loadedItems } = getURLParams();
+    const {
+      members: loadedMembers,
+      itemArr: loadedItems,
+      billName: loadedBillName,
+      mode: loadedMode,
+    } = getURLParams();
+    setBillName(loadedBillName);
     setMembers(loadedMembers);
     setItemArr(loadedItems);
+    setMode(loadedMode);
     setIsLoaded(true);
   }, []);
 
@@ -36,10 +46,12 @@ export default function App() {
     if (!isLoaded) return;
 
     const params = new URLSearchParams();
+    params.set("billName", encodeBase64(billName));
     params.set("members", encodeBase64(members));
     params.set("itemArr", encodeBase64(itemArr));
+    params.set("mode", encodeBase64(mode));
     window.history.replaceState({}, "", "?" + params.toString());
-  }, [members, itemArr, isLoaded]);
+  }, [members, itemArr, billName, mode, isLoaded]);
 
   // Handle the deletion of a member
   const handleDeleteMember = (deletedMember: MemberObj) => {
@@ -161,6 +173,17 @@ export default function App() {
         />
       ) : (
         <>
+          <div className="flex items-center gap-3 whitespace-nowrap">
+            <h1 className="font-bold">ชื่อบิล</h1>
+            <input
+              type="text"
+              placeholder="ใส่ชื่อบิลที่นี่"
+              className="font-bold text-[18px] input input-bordered w-full"
+              value={billName}
+              onChange={(e) => setBillName(e.target.value)}
+            />
+          </div>
+
           {renderHeader()}
           {renderBody()}
           {renderModal()}

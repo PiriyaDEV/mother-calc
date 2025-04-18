@@ -4,7 +4,7 @@ import { useState } from "react";
 import { TiDelete } from "react-icons/ti";
 
 import CommonBtn from "@/shared/components/CommonBtn";
-import { MEMBER_COLORS } from "./constants";
+import { MEMBER_COLORS } from "@/app/lib/constants";
 import { MemberObj } from "@/app/lib/interface";
 import ConfirmPopup from "@/shared/components/ConfirmPopup";
 
@@ -27,8 +27,9 @@ export default function Member({
     null
   );
 
-  const getRandomColor = () =>
-    MEMBER_COLORS[Math.floor(Math.random() * MEMBER_COLORS.length)];
+  const getColorByIndex = (index: number): string => {
+    return MEMBER_COLORS[index % MEMBER_COLORS.length];
+  };
 
   const addMember = () => {
     const trimmed = name.trim();
@@ -40,7 +41,10 @@ export default function Member({
       return;
     }
 
-    setMembers([...members, { name: trimmed, color: getRandomColor() }]);
+    setMembers([
+      ...members,
+      { name: trimmed, color: getColorByIndex(members.length) },
+    ]);
     setName("");
     setError(false);
   };
