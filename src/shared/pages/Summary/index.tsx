@@ -132,10 +132,8 @@ export default function Summary({ itemArr, members }: SummaryProps) {
                       >
                         {name}
                       </td>
-                      <td
-                        className={`px-2 py-1 border border-gray-300`}
-                      >
-                        {(paid - shouldPay).toLocaleString("en-US", {
+                      <td className={`px-2 py-1 border border-gray-300`}>
+                        {(paid + shouldPay).toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
@@ -147,16 +145,20 @@ export default function Summary({ itemArr, members }: SummaryProps) {
                           maximumFractionDigits: 2,
                         })}
                       </td>
-                      <td className={`px-2 py-1 border border-gray-300 ${
+                      <td
+                        className={`px-2 py-1 border border-gray-300 ${
                           paid - shouldPay >= 0
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
-                        }`}>
-                        { paid - shouldPay >= 0 ? "+" : "-"}
+                        }`}
+                      >
+                        {paid - shouldPay >= 0 ? "+" : "-"}
                         {shouldPay.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
+
+                        {paid - shouldPay >= 0 && " (ได้คืน)"}
                       </td>
                     </tr>
                   );
