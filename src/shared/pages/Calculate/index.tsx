@@ -80,11 +80,17 @@ export default function Calculate({
 
                     <div>
                       {item.price !== undefined
-                        ? `${item.price.toFixed(2)} บาท`
+                        ? `${item.price.toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })} บาท`
                         : item.selectedMembers.length > 0
                         ? `${item.selectedMembers
                             .reduce((sum, m) => sum + (m.customPaid || 0), 0)
-                            .toFixed(2)} บาท`
+                            .toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })} บาท`
                         : "N/A"}
                     </div>
 
@@ -120,8 +126,17 @@ export default function Calculate({
                             {item.price !== undefined
                               ? `${(
                                   item.price / item.selectedMembers.length
-                                ).toFixed(2)} บาท`
-                              : `${memberItem.customPaid ?? "0"} บาท`}
+                                ).toLocaleString("en-US", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })} บาท`
+                              : `${(memberItem.customPaid ?? 0).toLocaleString(
+                                  "en-US",
+                                  {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  }
+                                )} บาท`}
                           </span>
                         </span>
                       </div>

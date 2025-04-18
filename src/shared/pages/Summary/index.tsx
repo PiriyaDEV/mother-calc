@@ -117,10 +117,16 @@ export default function Summary({ itemArr, members }: SummaryProps) {
                         {name}
                       </td>
                       <td className="px-2 py-1 border border-gray-300">
-                        {shouldPay.toFixed(2)}
+                        {shouldPay.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </td>
                       <td className="px-2 py-1 border border-gray-300">
-                        {paid.toFixed(2)}
+                        {paid.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </td>
                       <td
                         className={`px-2 py-1 border border-gray-300 ${
@@ -129,7 +135,10 @@ export default function Summary({ itemArr, members }: SummaryProps) {
                             : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {(paid - shouldPay).toFixed(2)}
+                        {(paid - shouldPay).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </td>
                     </tr>
                   );
@@ -167,6 +176,10 @@ export default function Summary({ itemArr, members }: SummaryProps) {
                     {members.map((colMember) => {
                       const debt =
                         debtMatrix[rowMember.name][colMember.name] ?? 0;
+                      const formattedDebt = debt.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      });
                       return (
                         <td
                           key={colMember.name}
@@ -174,7 +187,7 @@ export default function Summary({ itemArr, members }: SummaryProps) {
                             debt > 0 ? "bg-green-100 text-green-800" : ""
                           }`}
                         >
-                          {debt > 0 ? `+${debt.toFixed(2)}` : debt.toFixed(2)}
+                          {debt > 0 ? `+${formattedDebt}` : formattedDebt}
                         </td>
                       );
                     })}

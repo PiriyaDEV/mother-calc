@@ -144,7 +144,30 @@ export default function App() {
 
   const renderFooter = () => (
     <div className="absolute bottom-0 left-0 bg-white py-5 w-full">
-      <div className="container mx-auto px-4 flex justify-between gap-7">
+      <div className="container mx-auto px-4 flex items-center justify-between gap-7">
+        <h1 className="font-bold">ยอดรวมบิล : </h1>
+        <h1 className="font-bold text-[24px]">
+          {itemArr
+            .reduce((sum, item) => sum + (item.price ?? 0), 0)
+            .toLocaleString()}{" "}
+          บาท
+          <span className="ml-2">
+            {(() => {
+              const total = itemArr.reduce(
+                (sum, item) => sum + (item.price ?? 0),
+                0
+              );
+              if (total >= 1_000_000) return "💀";
+              if (total >= 100_000) return "🤑";
+              if (total >= 10_000) return "🫠";
+              if (total >= 1_000) return "😅";
+              return "😍";
+            })()}
+          </span>
+        </h1>
+      </div>
+
+      <div className="container mx-auto px-4 flex justify-between gap-7 mt-3">
         <CommonBtn
           text="+ เพิ่มสมาชิก"
           type="secondary"
@@ -175,7 +198,7 @@ export default function App() {
       ) : (
         <>
           <div className="flex items-center gap-3 whitespace-nowrap">
-            <h1 className="font-bold">ชื่อบิล</h1>
+            <h1 className="font-bold">ชื่อบิล : </h1>
             <input
               type="text"
               placeholder="ใส่ชื่อบิลที่นี่"
