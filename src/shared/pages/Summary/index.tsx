@@ -1,4 +1,5 @@
 import { ItemObj, MemberObj } from "@/app/lib/interface";
+import { getPrice } from "@/app/lib/utils";
 
 interface SummaryProps {
   itemArr: ItemObj[];
@@ -22,51 +23,63 @@ export default function Summary({ itemArr, members }: SummaryProps) {
   const totals: Totals = {};
   const debtMatrix: DebtMatrix = {};
 
-  // Initialize totals for all members with zero
   members.forEach((member) => {
     totals[member.name] = { paid: 0, shouldPay: 0 };
     debtMatrix[member.name] = {};
   });
 
-  // Process items
   itemArr.forEach((item) => {
-    const { price, paidBy, selectedMembers } = item;
+    const {
+      price,
+      vatRate: vat,
+      serviceChargeRate: serviceCharge,
+      paidBy,
+      selectedMembers,
+    } = item;
 
-    // Ensure payer is initialized, using the name instead of full object
     totals[paidBy] = totals[paidBy] || { paid: 0, shouldPay: 0 };
 
-    // Add to paid total
+    let itemTotal = 0;
+
     if (price !== undefined) {
-      totals[paidBy].paid += price;
+      itemTotal = getPrice(price, vat, serviceCharge);
+      totals[paidBy].paid += itemTotal;
     } else {
-      const customTotal = selectedMembers.reduce(
-        (sum, m) => sum + (m.customPaid || 0),
-        0
-      );
+      const customTotal = selectedMembers.reduce((sum, m) => {
+        const value = m.customPaid ?? 0;
+        return sum + getPrice(value, vat, serviceCharge);
+      }, 0);
       totals[paidBy].paid += customTotal;
+      itemTotal = customTotal;
     }
 
-    // Calculate shouldPay
     const customMembers = selectedMembers.filter(
       (m) => m.customPaid !== undefined
     );
-    const customTotal = customMembers.reduce(
-      (sum, m) => sum + (m.customPaid || 0),
-      0
-    );
+
+    const customTotal = customMembers.reduce((sum, m) => {
+      const value = m.customPaid ?? 0;
+      return sum + getPrice(value, vat, serviceCharge);
+    }, 0);
+
     const others = selectedMembers.filter((m) => m.customPaid === undefined);
     const splitAmount =
-      price && others.length > 0 ? (price - customTotal) / others.length : 0;
+      price && others.length > 0
+        ? (itemTotal - customTotal) / others.length
+        : 0;
 
     selectedMembers.forEach((member) => {
       totals[member.name] = totals[member.name] || { paid: 0, shouldPay: 0 };
-      totals[member.name].shouldPay += member.customPaid ?? splitAmount;
+      const shouldPayAmount =
+        member.customPaid !== undefined
+          ? getPrice(member.customPaid, vat, serviceCharge)
+          : splitAmount;
 
-      // Update debt matrix
+      totals[member.name].shouldPay += shouldPayAmount;
+
       if (paidBy !== member.name) {
-        const amount = price ? splitAmount : member.customPaid || 0;
         debtMatrix[paidBy][member.name] = debtMatrix[paidBy][member.name] || 0;
-        debtMatrix[paidBy][member.name] += amount;
+        debtMatrix[paidBy][member.name] += shouldPayAmount;
       }
     });
   });
@@ -78,7 +91,6 @@ export default function Summary({ itemArr, members }: SummaryProps) {
     >
       {itemArr.length !== 0 ? (
         <>
-          {/* Summary Table */}
           <h1 className="font-bold my-3">ตารางสรุป</h1>
           <div className="overflow-x-auto pb-5">
             <table className="min-w-full border border-gray-300 border-collapse text-sm">
@@ -147,7 +159,6 @@ export default function Summary({ itemArr, members }: SummaryProps) {
             </table>
           </div>
 
-          {/* Debt Matrix Table */}
           <h1 className="font-bold my-3">ตารางที่ต้องได้</h1>
           <div className="overflow-x-auto pb-5">
             <table className="min-w-full border border-gray-300 border-collapse text-sm">
