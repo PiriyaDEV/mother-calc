@@ -65,7 +65,7 @@ export default function Member({
           padding: "5px",
           maxHeight: "calc(100vh - 310px)",
           overflowY: "auto",
-          paddingBottom: "30px",
+          paddingBottom: "70px",
         }}
       >
         {members.length ? (

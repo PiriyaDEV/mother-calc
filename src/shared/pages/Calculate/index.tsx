@@ -64,7 +64,7 @@ export default function Calculate({
         style={{
           maxHeight: "calc(100vh - 380px)",
           overflowY: "auto",
-          paddingBottom: "30px",
+          paddingBottom: "70px",
         }}
       >
         <div className="flex flex-col gap-2 mt-2">
