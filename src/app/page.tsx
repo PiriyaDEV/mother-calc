@@ -133,7 +133,7 @@ export default function App() {
         <div
           key={view}
           onClick={() => setScreen(view as "list" | "summary")}
-          className={`mx-4 cursor-pointer pb-2 transition-colors duration-200 border-b-2 ${
+          className={`mx-4 cursor-pointer pb-2 transition-colors duration-200 border-b-[3px] ${
             screen === view
               ? "!text-[#4366f4] font-bold border-[#4366f4]"
               : "!text-gray-500 border-transparent"
@@ -244,39 +244,43 @@ export default function App() {
         />
       ) : (
         <>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 whitespace-nowrap">
-              <h1 className="font-bold">ชื่อบิล : </h1>
-              {mode === MODE.EDIT ? (
-                <input
-                  type="text"
-                  placeholder="ใส่ชื่อบิลที่นี่"
-                  className="font-bold text-[18px] input input-bordered w-fit"
-                  value={billName}
-                  onChange={(e) => setBillName(e.target.value)}
-                />
-              ) : (
-                <div
-                  className={`text-[18px] font-bold ${
-                    billName === "" ? "!text-gray-400" : ""
-                  }`}
-                >
-                  {billName !== "" ? billName : "ไม่มีชื่อบิล"}
+          <div className="fixed top-[81px] z-50 bg-white w-[calc(100vw-32px)]">
+            <div className="flex-col flex gap-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 whitespace-nowrap">
+                  <h1 className="font-bold">ชื่อบิล : </h1>
+                  {mode === MODE.EDIT ? (
+                    <input
+                      type="text"
+                      placeholder="ใส่ชื่อบิลที่นี่"
+                      className="font-bold text-[18px] input input-bordered w-fit"
+                      value={billName}
+                      onChange={(e) => setBillName(e.target.value)}
+                    />
+                  ) : (
+                    <div
+                      className={`text-[18px] font-bold ${
+                        billName === "" ? "!text-gray-400" : ""
+                      }`}
+                    >
+                      {billName !== "" ? billName : "ไม่มีชื่อบิล"}
+                    </div>
+                  )}
                 </div>
-              )}
+
+                {mode === MODE.EDIT && (
+                  <FaCog
+                    onClick={() => {
+                      setIsSettingOpen(true);
+                    }}
+                    className="text-[24px] mr-1 cursor-pointer text-[#333333]"
+                  />
+                )}
+              </div>
+
+              {renderHeader()}
             </div>
-
-            {mode === MODE.EDIT && (
-              <FaCog
-                onClick={() => {
-                  setIsSettingOpen(true);
-                }}
-                className="text-[24px] mr-1 cursor-pointer text-[#333333]"
-              />
-            )}
           </div>
-
-          {renderHeader()}
           {renderBody()}
           {renderModal()}
           {renderFooter()}
@@ -303,7 +307,7 @@ export default function App() {
 
       {/* Share Link Button */}
       {mode === MODE.EDIT && (
-        <div className="absolute top-4 right-4">
+        <div className="fixed top-4 right-4 z-[100]">
           <button
             onClick={() => {
               setIsSharedOpen(true);

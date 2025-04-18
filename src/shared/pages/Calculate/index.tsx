@@ -1,9 +1,8 @@
 import { ItemObj, MemberObj } from "@/app/lib/interface";
-import CommonBtn from "@/shared/components/CommonBtn";
 import { useState } from "react";
 
 import { TiTrash } from "react-icons/ti";
-import { FaPen, FaUserCheck } from "react-icons/fa";
+import { FaPen } from "react-icons/fa";
 import ConfirmPopup from "@/shared/components/ConfirmPopup";
 import { getMemberObjByName, getPrice } from "@/app/lib/utils";
 import ItemModal from "@/shared/components/ItemModal";
@@ -55,15 +54,13 @@ export default function Calculate({
   };
 
   return (
-    <div className="flex flex-col gap-4 w-full">
+    <div className="flex flex-col gap-4 w-full mt-[94px]">
       {itemArr.length !== 0 && (
         <h1 className="font-bold mt-3">มีรายการอะไรไปบ้าง ?</h1>
       )}
 
       <div
         style={{
-          maxHeight: "calc(100vh - 360px)",
-          overflowY: "auto",
           paddingBottom: "150px",
         }}
       >

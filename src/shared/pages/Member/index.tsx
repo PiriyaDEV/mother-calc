@@ -63,8 +63,6 @@ export default function Member({
         }`}
         style={{
           padding: "5px",
-          maxHeight: "calc(100vh - 310px)",
-          overflowY: "auto",
           paddingBottom: "120px",
         }}
       >
