@@ -50,12 +50,13 @@ export default function Member({
   };
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-10 pb-20">
+      {" "}
+      {/* Added padding-bottom for the fixed footer */}
       <h1 className="font-bold mt-3">
         สมาชิกมีใครบ้าง ?{" "}
         <span className="!text-gray-400">({members.length} คน)</span>
       </h1>
-
       <div
         className={`flex gap-4 flex-wrap w-full ${
           members.length > 4 ? "justify-center" : ""
@@ -64,6 +65,7 @@ export default function Member({
           padding: "5px",
           maxHeight: "calc(100vh - 310px)",
           overflowY: "auto",
+          paddingBottom: "30px",
         }}
       >
         {members.length ? (
@@ -107,8 +109,8 @@ export default function Member({
           </div>
         )}
       </div>
-
-      <div className="absolute bottom-0 left-0 bg-white py-5 w-full">
+      {/* Fixed Button Section */}
+      <div className="fixed bottom-0 left-0 bg-white py-5 w-full z-10">
         <div className="container mx-auto px-4 flex flex-col gap-7">
           <div className="flex items-center justify-center gap-2">
             <input

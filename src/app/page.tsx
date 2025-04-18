@@ -194,7 +194,7 @@ export default function App() {
   const totalFormatted = `${total.toLocaleString()} `;
 
   const renderFooter = () => (
-    <div className="absolute bottom-0 left-0 bg-white py-5 w-full">
+    <div className="fixed bottom-0 left-0 bg-white py-5 w-full">
       <div className="container mx-auto px-4 flex items-center justify-between gap-7">
         <h1 className="font-bold">ยอดรวมบิล : </h1>
         <h1 className="font-bold text-[24px]">

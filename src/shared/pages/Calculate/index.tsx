@@ -60,7 +60,13 @@ export default function Calculate({
         <h1 className="font-bold mt-3">มีรายการอะไรไปบ้าง ?</h1>
       )}
 
-      <div style={{ maxHeight: "calc(100vh - 380px)", overflowY: "auto" }}>
+      <div
+        style={{
+          maxHeight: "calc(100vh - 380px)",
+          overflowY: "auto",
+          paddingBottom: "30px",
+        }}
+      >
         <div className="flex flex-col gap-2 mt-2">
           {itemArr.length === 0 || members.length === 0 ? (
             <>
