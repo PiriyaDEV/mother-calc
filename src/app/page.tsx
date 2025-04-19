@@ -191,7 +191,10 @@ export default function App() {
   };
 
   const total = calculateTotalPrice(itemArr);
-  const totalFormatted = `${total.toLocaleString()} `;
+  const totalFormatted = `${total.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} `;
 
   const renderFooter = () => (
     <div className="fixed bottom-0 left-0 bg-white py-5 w-full">
