@@ -153,7 +153,6 @@ export default function Summary({ itemArr, members }: SummaryProps) {
                         }`}
                       >
                         {paid - shouldPay > 0 && "+"}
-                        {paid - shouldPay < 0 && "-"}
                         {shouldPay.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
