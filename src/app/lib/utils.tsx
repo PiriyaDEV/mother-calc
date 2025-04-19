@@ -87,14 +87,17 @@ export function getPrice(
   vat?: number | null,
   serviceCharge?: number | null
 ): number {
-  let total = price;
+  let basePrice = price;
 
-  if (vat != null) {
-    total += price * (vat / 100);
-  }
+  // Add service charge first
   if (serviceCharge != null) {
-    total += price * (serviceCharge / 100);
+    basePrice += price * (serviceCharge / 100);
   }
 
-  return total;
+  // Apply VAT on top of the price + service charge
+  if (vat != null) {
+    basePrice += basePrice * (vat / 100);
+  }
+
+  return basePrice;
 }
