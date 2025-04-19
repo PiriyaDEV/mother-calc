@@ -244,7 +244,7 @@ export default function App() {
         />
       ) : (
         <>
-          <div className="fixed top-[81px] z-50 bg-white w-[calc(100vw-32px)]">
+          <div className="fixed top-[81px] z-50 bg-white w-[calc(100vw-32px)] pt-2">
             <div className="flex-col flex gap-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 whitespace-nowrap">
