@@ -247,8 +247,8 @@ export default function App() {
         />
       ) : (
         <>
-          <div className="fixed top-[81px] left-[20px] z-50 bg-white w-[calc(100%-35px)] pt-2">
-            <div className="flex-col flex gap-5">
+          <div className="fixed top-[81px] left-0 z-50 bg-white w-full pt-2">
+            <div className="container mx-auto px-4 flex-col flex gap-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 whitespace-nowrap">
                   <h1 className="font-bold">ชื่อบิล : </h1>
