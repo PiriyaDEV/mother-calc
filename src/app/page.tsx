@@ -205,10 +205,14 @@ export default function App() {
           บาท
           <span className="ml-2">
             {(() => {
-              if (total >= 1_000_000) return "💀";
-              if (total >= 100_000) return "🤑";
-              if (total >= 10_000) return "🫠";
+              if (total >= 150_000) return "💀";
+              if (total >= 100_000) return "🤯";
+              if (total >= 75_000) return "😱";
+              if (total >= 50_000) return "🤑";
+              if (total >= 10_000) return "😵‍💫";
+              if (total >= 5_000) return "🫠";
               if (total >= 1_000) return "😅";
+              if (total >= 500) return "🥱";
               return "😍";
             })()}
           </span>
