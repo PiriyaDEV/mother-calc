@@ -207,10 +207,10 @@ export default function App() {
             {(() => {
               if (total >= 150_000) return "💀";
               if (total >= 100_000) return "🤯";
-              if (total >= 75_000) return "😱";
-              if (total >= 50_000) return "🤑";
-              if (total >= 10_000) return "😵‍💫";
-              if (total >= 5_000) return "🫠";
+              if (total >= 50_000) return "😱";
+              if (total >= 10_000) return "🤑";
+              if (total >= 5_000) return "😵‍💫";
+              if (total >= 3_000) return "🫠";
               if (total >= 1_000) return "😅";
               if (total >= 500) return "🥱";
               return "😍";
