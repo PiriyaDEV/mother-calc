@@ -33,7 +33,7 @@ const BackgroundLayout: FC<BackgroundLayoutProps> = ({ children }) => {
             <div className="text-xs text-center text-[#c5c6c7]">
               Made by{" "}
               <span
-              className="!text-[#FFC107] underline"
+              className="!text-[#FFC107] underline cursor-pointer"
                 onClick={() => {
                   window.open(
                     "https://www.instagram.com/pd.piriya/#",
