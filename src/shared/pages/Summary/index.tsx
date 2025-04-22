@@ -86,7 +86,7 @@ export default function Summary({ itemArr, members }: SummaryProps) {
 
   return (
     <div
-      className="pb-5 mt-[205px]"
+      className="pb-5 mt-[225px]"
       style={{
         paddingBottom: "120px",
       }}

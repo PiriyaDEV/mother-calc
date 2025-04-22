@@ -247,7 +247,7 @@ export default function App() {
         />
       ) : (
         <>
-          <div className="fixed top-[81px] z-50 bg-white w-[calc(100vw-32px)] pt-2">
+          <div className="fixed top-[81px] left-[20px] z-50 bg-white w-[calc(100%-35px)] pt-2">
             <div className="flex-col flex gap-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 whitespace-nowrap">
@@ -256,7 +256,7 @@ export default function App() {
                     <input
                       type="text"
                       placeholder="ใส่ชื่อบิลที่นี่"
-                      className="font-bold text-[18px] input input-bordered w-fit"
+                      className="font-bold text-[18px] input input-bordered w-full"
                       value={billName}
                       onChange={(e) => setBillName(e.target.value)}
                     />

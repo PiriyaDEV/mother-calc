@@ -54,7 +54,7 @@ export default function Calculate({
   };
 
   return (
-    <div className="flex flex-col gap-4 w-full mt-[205px]">
+    <div className="flex flex-col gap-4 w-full mt-[225px]">
       <div
         style={{
           paddingBottom: "150px",
