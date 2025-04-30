@@ -222,7 +222,7 @@ export default function App() {
       {mode === MODE.EDIT && (
         <div className="container mx-auto px-4 flex justify-between gap-7 mt-3">
           <CommonBtn
-            text="+ เพิ่มสมาชิก"
+            text={members.length === 0 ? "+ เพิ่มสมาชิก" : "จัดการสมาชิก"}
             type="secondary"
             onClick={() => setMember(true)}
             className="!w-fit"

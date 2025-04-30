@@ -181,39 +181,49 @@ export default function Calculate({
                           * ยังไม่ได้เลือกสมาชิก
                         </span>
                       )}
-                      {item.selectedMembers.map((memberItem, index) => (
-                        <div
-                          key={`${memberItem.name}-${index}`}
-                          className="relative p-2 h-5 w-fit rounded-full flex justify-center items-center"
-                          style={{ backgroundColor: memberItem.color }}
-                        >
-                          <span className="text-[10px] font-semibold truncate text-white">
-                            {memberItem.name}
-                            <span>
-                              :{" "}
-                              {item.price !== undefined
-                                ? `${(
-                                    getPrice(
-                                      item.price,
+                      {item.selectedMembers
+                        .sort((a, b) => {
+                          const indexA = members.findIndex(
+                            (m) => m.name === a.name
+                          ); // Use the 'members' array to find the correct order
+                          const indexB = members.findIndex(
+                            (m) => m.name === b.name
+                          );
+                          return indexA - indexB;
+                        })
+                        .map((memberItem, index) => (
+                          <div
+                            key={`${memberItem.name}-${index}`}
+                            className="relative p-2 h-5 w-fit rounded-full flex justify-center items-center"
+                            style={{ backgroundColor: memberItem.color }}
+                          >
+                            <span className="text-[10px] font-semibold truncate text-white">
+                              {memberItem.name}
+                              <span>
+                                :{" "}
+                                {item.price !== undefined
+                                  ? `${(
+                                      getPrice(
+                                        item.price,
+                                        item.vatRate,
+                                        item.serviceChargeRate
+                                      ) / item.selectedMembers.length
+                                    ).toLocaleString("en-US", {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })} บาท`
+                                  : `${getPrice(
+                                      memberItem.customPaid ?? 0,
                                       item.vatRate,
                                       item.serviceChargeRate
-                                    ) / item.selectedMembers.length
-                                  ).toLocaleString("en-US", {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })} บาท`
-                                : `${getPrice(
-                                    memberItem.customPaid ?? 0,
-                                    item.vatRate,
-                                    item.serviceChargeRate
-                                  ).toLocaleString("en-US", {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })} บาท`}
+                                    ).toLocaleString("en-US", {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })} บาท`}
+                              </span>
                             </span>
-                          </span>
-                        </div>
-                      ))}
+                          </div>
+                        ))}
                     </div>
                   </div>
 
