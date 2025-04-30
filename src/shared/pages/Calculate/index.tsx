@@ -54,13 +54,13 @@ export default function Calculate({
   };
 
   return (
-    <div className="flex flex-col gap-4 w-full mt-[225px]">
+    <div className="flex flex-col gap-4 w-full mt-[190px]">
       <div
         style={{
           paddingBottom: "150px",
         }}
       >
-        <div className="flex flex-col gap-2 mt-2">
+        <div className="flex flex-col gap-4 mt-2">
           {itemArr.length === 0 || members.length === 0 ? (
             <>
               {members.length === 0 ? (
