@@ -104,10 +104,10 @@ export default function Calculate({
                   <div className="w-full">
                     <div
                       className={`p-2 rounded-[8px] bg-gray-100 text-sm !text-black grid ${
-                        mode === MODE.EDIT ? "grid-cols-3" : "grid-cols-2"
+                        mode === MODE.EDIT ? "grid-cols-4" : "grid-cols-3"
                       } items-center`}
                     >
-                      <strong>
+                      <strong className="col-span-2">
                         {item.itemName}
                         <div
                           className="text-xs font-semibold"
