@@ -131,7 +131,7 @@ export default function Summary({ itemArr, members }: SummaryProps) {
                         {name}
                       </td>
                       <td className={`px-2 py-1 border border-gray-300`}>
-                        {(paid + shouldPay).toLocaleString("en-US", {
+                        {shouldPay.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
@@ -153,7 +153,8 @@ export default function Summary({ itemArr, members }: SummaryProps) {
                         }`}
                       >
                         {paid - shouldPay > 0 && "+"}
-                        {shouldPay.toLocaleString("en-US", {
+
+                        {Math.abs(paid - shouldPay).toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
