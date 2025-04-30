@@ -173,7 +173,7 @@ export default function Summary({ itemArr, members }: SummaryProps) {
             <table className="min-w-full border border-gray-300 border-collapse text-sm">
               <thead>
                 <tr className="bg-[#4366f4] text-white">
-                  <th className="border border-gray-300 bg-white"></th>
+                  <th className="border border-gray-300 bg-white min-w-[130px]"></th>
                   <th
                     colSpan={members.length}
                     className="px-2 py-2 text-center border border-gray-300"
