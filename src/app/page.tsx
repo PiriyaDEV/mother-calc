@@ -253,7 +253,7 @@ export default function App() {
         <>
           <div className="fixed top-[81px] left-1/2 -translate-x-1/2 z-50 bg-white w-full sm:w-[450px] pt-2">
             <div className="container mx-auto px-4 flex-col flex gap-5">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3 whitespace-nowrap">
                   <h1 className="font-bold">ชื่อบิล : </h1>
                   {mode === MODE.EDIT ? (
