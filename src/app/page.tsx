@@ -314,26 +314,28 @@ export default function App() {
 
       {/* Share Link Button */}
       {mode === MODE.EDIT && (
-        <div className="fixed top-4 right-4 z-[99]">
-          <button
-            onClick={() => {
-              setIsSharedOpen(true);
-            }}
-            className="p-2 bg-[#c5c6c7] text-white rounded-full flex items-center gap-2"
-            title="Share link"
-          >
-            {!copySuccess ? (
-              <FaShareAlt className="text-xs" />
-            ) : (
-              <PuffLoader
-                color="white"
-                loading={true}
-                size={13}
-                aria-label="Loading Spinner"
-                data-testid="loader"
-              />
-            )}
-          </button>
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 w-full sm:w-[450px] z-[99]">
+          <div className="flex justify-end px-4">
+            <button
+              onClick={() => {
+                setIsSharedOpen(true);
+              }}
+              className="p-2 bg-[#c5c6c7] text-white rounded-full flex items-center gap-2"
+              title="Share link"
+            >
+              {!copySuccess ? (
+                <FaShareAlt className="text-xs" />
+              ) : (
+                <PuffLoader
+                  color="white"
+                  loading={true}
+                  size={13}
+                  aria-label="Loading Spinner"
+                  data-testid="loader"
+                />
+              )}
+            </button>
+          </div>
         </div>
       )}
     </div>
