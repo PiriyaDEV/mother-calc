@@ -197,7 +197,7 @@ export default function App() {
   })} `;
 
   const renderFooter = () => (
-    <div className="fixed bottom-0 left-0 bg-white py-5 w-full">
+    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 bg-white py-5 w-full sm:w-[450px]">
       <div className="container mx-auto px-4 flex items-center justify-between gap-7">
         <h1 className="font-bold">ยอดรวมบิล : </h1>
         <h1 className="font-bold text-[24px]">
@@ -251,7 +251,7 @@ export default function App() {
         />
       ) : (
         <>
-          <div className="fixed top-[81px] left-0 z-50 bg-white w-full pt-2">
+          <div className="fixed top-[81px] left-1/2 -translate-x-1/2 z-50 bg-white w-full sm:w-[450px] pt-2">
             <div className="container mx-auto px-4 flex-col flex gap-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 whitespace-nowrap">

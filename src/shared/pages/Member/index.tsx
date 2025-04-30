@@ -53,7 +53,7 @@ export default function Member({
     <div className="flex flex-col gap-10 pb-20 mt-[140px]">
       {" "}
       {/* Added padding-bottom for the fixed footer */}
-      <div className="fixed z-[50] top-[80px] bg-white w-full">
+      <div className="fixed z-[50] top-[80px] left-1/2 -translate-x-1/2 bg-white w-full sm:w-[450px] px-4">
         <h1 className="font-bold mt-3 pb-2">
           สมาชิกมีใครบ้าง ?{" "}
           <span className="!text-gray-400">({members.length} คน)</span>
@@ -110,7 +110,7 @@ export default function Member({
         )}
       </div>
       {/* Fixed Button Section */}
-      <div className="fixed bottom-0 left-0 bg-white py-5 w-full z-10">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 bg-white py-5 w-full sm:w-[450px] z-10">
         <div className="container mx-auto px-4 flex flex-col gap-7">
           <div className="flex items-center justify-center gap-2">
             <input
