@@ -43,7 +43,9 @@ export default function Item({
 
   const [vatRate, setVatRate] = useState(() => {
     if (isEditing) {
-      return editingItem.vatRate != null ? editingItem.vatRate.toString() : settings.vat.toString();
+      return editingItem.vatRate != null
+        ? editingItem.vatRate.toString()
+        : settings.vat.toString();
     }
     return settings.vat != null ? settings.vat.toString() : "0";
   });
@@ -123,20 +125,45 @@ export default function Item({
       return alert("กรุณากรอกข้อมูลให้ครบ");
     }
 
-    const selectedMember = members.find((m) => m.name === paidBy);
+    let selectedMember = members.find((m) => m.name === paidBy);
     if (!selectedMember) return alert("สมาชิกที่เลือกไม่ถูกต้อง");
+
+    let validSelectedMembers = selectedMembers;
 
     // Add validation for unequal split
     if (!isEqualSplit) {
-      for (const member of selectedMembers) {
-        if (
+      const invalidMembers = selectedMembers.filter(
+        (member) =>
           member.customPaid === undefined ||
           member.customPaid === null ||
+          member.customPaid == 0 ||
           isNaN(member.customPaid)
-        ) {
-          return alert(`กรุณาใส่ค่าใช้จ่ายของสมาชิก ${member.name}`);
+      );
+
+      if (invalidMembers.length > 0) {
+        const names = invalidMembers.map((m) => m.name);
+        let formattedNames = "";
+
+        if (names.length === 1) {
+          formattedNames = names[0];
+        } else if (names.length === 2) {
+          formattedNames = `${names[0]} และ ${names[1]}`;
+        } else {
+          formattedNames =
+            names.slice(0, -1).join(", ") + ", และ " + names[names.length - 1];
         }
+
+        alert(
+          `สมาชิกต่อไปนี้ถูกลบออกเนื่องจากไม่มีการใส่ค่าใช้จ่ายที่ถูกต้อง: ${formattedNames}`
+        );
       }
+
+      validSelectedMembers = selectedMembers.filter(
+        (member) =>
+          member.customPaid !== undefined &&
+          member.customPaid !== null &&
+          !isNaN(member.customPaid)
+      );
     }
 
     if (isVatChecked && !vatRate) {
@@ -151,7 +178,7 @@ export default function Item({
       itemName: itemName.trim(),
       paidBy: selectedMember.name,
       price: isEqualSplit && price ? parseFloat(price) : undefined,
-      selectedMembers,
+      selectedMembers: validSelectedMembers,
       vatRate: isVatChecked ? parseInt(vatRate) : undefined,
       serviceChargeRate: isServiceChargeChecked
         ? parseInt(serviceChargeRate)
