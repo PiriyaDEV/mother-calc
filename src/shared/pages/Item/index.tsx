@@ -103,8 +103,23 @@ export default function Item({
   };
 
   const handleSplitChange = (isEqual: boolean) => {
+    const confirmChange = window.confirm(
+      "การเปลี่ยนประเภทการหารจะรีเซ็ตข้อมูลที่กรอกไว้ทั้งหมด (ยกเว้นชื่อรายการ)\nคุณแน่ใจหรือไม่?"
+    );
+
+    if (!confirmChange) return;
+
     setIsEqualSplit(isEqual);
-    if (!isEqual) setPrice("");
+
+    // Clear all fields except itemName
+    setPaidBy("");
+    setPrice("");
+    setSelectedMembers([]);
+    setIsVatChecked(false);
+    setVatRate(settings.vat.toString());
+    setIsServiceChargeChecked(false);
+    setServiceChargeRate(settings.serviceCharge.toString());
+    setIsAdditionalSettingsVisible(false);
   };
 
   const handleVatChange = (isChecked: boolean) => {
