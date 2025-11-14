@@ -33,6 +33,8 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
     isService: settings.isService ?? false,
   });
 
+  const [showConfirmClear, setShowConfirmClear] = useState(false);
+
   useEffect(() => {
     setTempSettings({
       vat: settings.vat.toString(),
@@ -90,6 +92,10 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
       });
     };
 
+  const handleClearAll = () => {
+    window.location.href = "/";
+  };
+
   return (
     <>
       {isOpen && (
@@ -103,7 +109,6 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
         >
           <div className="bg-base-100 p-6 rounded-xl shadow-lg w-96 m-4">
             <h3 className="font-bold text-lg text-center">ตั้งค่าเริ่มต้น</h3>
-
             <div className="pt-4">
               <p className="!text-[#4366f4] font-bold text-sm mb-2">
                 เปิดใช้งาน VAT{" "}
@@ -125,7 +130,6 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
                 <span className="toggle-switch"></span>
               </label>
             </div>
-
             <div className="py-4">
               <p className="!text-[#4366f4] font-bold text-sm mb-2">VAT (%)</p>
               <input
@@ -142,13 +146,14 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
                 className="input input-bordered w-full"
               />
             </div>
-
             <div className="pt-4">
               <p className="!text-[#4366f4] font-bold text-sm mb-2">
                 เปิดใช้งาน Service Charge{" "}
                 <span
                   className={
-                    !tempSettings.isService ? "!text-red-500" : "!text-green-500"
+                    !tempSettings.isService
+                      ? "!text-red-500"
+                      : "!text-green-500"
                   }
                 >
                   {!tempSettings.isService ? "(ปิดอยู่)" : "(เปิดอยู่)"}
@@ -164,7 +169,6 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
                 <span className="toggle-switch"></span>
               </label>
             </div>
-
             <div className="py-4">
               <p className="!text-[#4366f4] font-bold text-sm mb-2">
                 Service Charge (%)
@@ -184,7 +188,25 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({
               />
             </div>
 
-            <div className="flex justify-between mt-4">
+            <p className="!text-red-500 font-bold text-sm mb-2">
+              * รีเซ็ตข้อมูล (ทุกอย่าง)
+            </p>
+            <div className="flex justify-between mt-4 flex-col gap-12">
+              {!showConfirmClear ? (
+                <button
+                  className="btn btn-sm text-red-500 border border-red-500 flex-1 bg-white"
+                  onClick={() => setShowConfirmClear(true)}
+                >
+                  ล้างทั้งหมด
+                </button>
+              ) : (
+                <button
+                  className="btn btn-sm bg-red-500 text-white flex-1"
+                  onClick={handleClearAll}
+                >
+                  ยืนยันล้างทั้งหมด
+                </button>
+              )}
               <button
                 className="btn bg-[#4366f4] btn-sm text-white w-full"
                 onClick={handleSave}
