@@ -9,6 +9,12 @@ export const metadata: Metadata = {
   openGraph: {
     images: `https://mother-calc.netlify.app/images/metaImg.png`,
   },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 export default function AppLayout({

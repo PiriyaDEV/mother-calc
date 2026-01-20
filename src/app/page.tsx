@@ -52,6 +52,33 @@ export default function App() {
     isService: false,
   });
 
+  useEffect(() => {
+    const handleStart = (e: Event) => {
+      e.preventDefault();
+      document.body.style.zoom = "0.99";
+    };
+
+    const handleChange = (e: Event) => {
+      e.preventDefault();
+      document.body.style.zoom = "0.99";
+    };
+
+    const handleEnd = (e: Event) => {
+      e.preventDefault();
+      document.body.style.zoom = "1";
+    };
+
+    document.addEventListener("gesturestart", handleStart);
+    document.addEventListener("gesturechange", handleChange);
+    document.addEventListener("gestureend", handleEnd);
+
+    return () => {
+      document.removeEventListener("gesturestart", handleStart);
+      document.removeEventListener("gesturechange", handleChange);
+      document.removeEventListener("gestureend", handleEnd);
+    };
+  }, []);
+
   // Load from URL parameters
   useEffect(() => {
     const {
