@@ -82,13 +82,37 @@ export default function Payment({
     });
   });
 
+  // Simplify debts by netting out mutual obligations
+  const simplifiedDebtMatrix: DebtMatrix = {};
+  members.forEach((member) => {
+    simplifiedDebtMatrix[member.name] = {};
+  });
+
+  members.forEach((personA) => {
+    members.forEach((personB) => {
+      if (personA.name !== personB.name) {
+        const aOwesB = debtMatrix[personB.name]?.[personA.name] ?? 0;
+        const bOwesA = debtMatrix[personA.name]?.[personB.name] ?? 0;
+
+        if (aOwesB > bOwesA) {
+          // A owes B the net amount
+          simplifiedDebtMatrix[personB.name][personA.name] = aOwesB - bOwesA;
+        } else if (bOwesA > aOwesB) {
+          // B owes A the net amount
+          simplifiedDebtMatrix[personA.name][personB.name] = bOwesA - aOwesB;
+        }
+        // If equal, both debts cancel out (no entry needed)
+      }
+    });
+  });
+
   // Get payment details for selected payer
   const paymentDetails: PaymentDetail[] = [];
   let totalToPay = 0;
 
   if (payer) {
     members.forEach((member) => {
-      const amount = debtMatrix[member.name]?.[payer] ?? 0;
+      const amount = simplifiedDebtMatrix[member.name]?.[payer] ?? 0;
       if (amount > 0) {
         paymentDetails.push({
           receiver: member.name,
