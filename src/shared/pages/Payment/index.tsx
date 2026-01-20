@@ -156,7 +156,7 @@ export default function Payment({
                       return (
                         <div
                           key={`${detail.receiver}-${index}`}
-                          className={`flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200
+                          className={`p-4 bg-white rounded-lg border border-gray-200 shadow-sm
           ${hasPhoneNumber ? "hover:shadow-md cursor-pointer" : ""}
           transition-shadow`}
                           onClick={() => {
@@ -169,44 +169,86 @@ export default function Payment({
                             }
                           }}
                         >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm"
-                              style={{ background: detail.color }}
-                            >
-                              {detail.receiver.charAt(0)}
+                          {/* Top Section: Avatar, Name, Amount */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg text-white"
+                                style={{ background: detail.color }}
+                              >
+                                {detail.receiver.charAt(0)}
+                              </div>
+
+                              <div>
+                                <p className="font-bold text-xl text-gray-800">
+                                  {detail.receiver}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {hasPhoneNumber
+                                    ? "คนรับเงิน"
+                                    : "กรุณาใส่เบอร์พร้อมเพย์เพื่อชำระเงิน"}
+                                </p>
+                              </div>
                             </div>
 
-                            <div>
-                              <p className="font-semibold text-gray-800">
-                                {detail.receiver}
+                            <div className="text-right">
+                              <p className="text-3xl font-bold text-gray-800">
+                                {detail.amount.toLocaleString("en-US", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
                               </p>
-                              <p className="text-sm text-gray-500">
-                                {hasPhoneNumber
-                                  ? "คนรับเงิน"
-                                  : "กรุณาใส่เบอร์พร้อมเพย์เพื่อชำระเงิน"}
-                              </p>
+                              <p className="text-sm text-gray-500">บาท</p>
                             </div>
                           </div>
 
-                          <div className="text-right">
-                            <p className="text-2xl font-bold text-blue-600">
-                              {detail.amount.toLocaleString("en-US", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
-                            </p>
-                            <p className="text-sm text-gray-500">บาท</p>
-                          </div>
-
-                          {/* ✅ Only render QR when phone number exists */}
+                          {/* QR Code Section - Thai QR Payment Style */}
                           {hasPhoneNumber && (
-                            <div>
-                              <img
-                                src={`https://promptpay.io/${receiverMember!.phoneNumber}/${detail.amount.toFixed(2)}.png`}
-                                alt="PromptPay QR"
-                                className="w-24 h-24"
+                            <div className="mt-4 bg-gradient-to-b from-blue-700 to-blue-800 rounded-lg overflow-hidden">
+                              {/* Header */}
+                              <div
+                                className="h-[80px] bg-center bg-no-repeat bg-cover"
+                                style={{
+                                  backgroundImage: "url('/images/payment.png')",
+                                }}
                               />
+
+                              {/* QR Code Container */}
+                              <div className="bg-white p-6">
+                                {/* PromptPay Logo */}
+                                <div className="flex justify-center mb-3">
+                                  <img
+                                    src="/images/prompt-pay-logo.png"
+                                    alt="PromptPay"
+                                    className="w-[100px]"
+                                  />
+                                </div>
+
+                                {/* QR Code */}
+                                <div className="flex justify-center mb-4">
+                                  <img
+                                    src={`https://promptpay.io/${receiverMember!.phoneNumber}/${detail.amount.toFixed(2)}.png`}
+                                    alt="PromptPay QR Code"
+                                    className="w-48 h-48"
+                                  />
+                                </div>
+
+                                {/* Text Information */}
+                                <div className="text-center space-y-1">
+                                  <p className="text-teal-500 font-semibold text-sm">
+                                    สแกน QR เพื่อโอนเข้าบัญชีพร้อมเพย์
+                                  </p>
+                                  <p className="text-gray-800 font-semibold">
+                                    {detail.receiver}
+                                  </p>
+                                  <p className="text-gray-600 text-sm">
+                                    {receiverMember?.phoneNumber?.replace(
+                                      /^(\d{3})(\d{3})(\d{4})$/,
+                                      "$1-$2-$3",
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
