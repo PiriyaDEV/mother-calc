@@ -215,15 +215,6 @@ export default function Payment({
                         className={`p-4 bg-white rounded-lg border border-gray-200
         ${hasPhoneNumber ? "hover:shadow-md cursor-pointer" : ""}
         transition-shadow`}
-                        onClick={() => {
-                          if (hasPhoneNumber) {
-                            window.open(
-                              `https://promptpay.io/${receiverMember!.phoneNumber}/${detail.amount.toFixed(2)}.png`,
-                              "_blank",
-                              "noopener,noreferrer",
-                            );
-                          }
-                        }}
                       >
                         {/* Top Section: Avatar, Name, Amount */}
                         <div className="flex items-center justify-between mb-4">
