@@ -126,18 +126,16 @@ export default function Payment({
             {paymentDetails.length > 0 ? (
               <>
                 {/* Total Summary */}
-                <div className="p-4 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border-2 border-red-200">
-                  <p className="text-gray-700 text-center mb-2">
-                    <span className="font-semibold text-lg">{payer}</span>{" "}
-                    ต้องจ่ายเงินทั้งหมด
-                  </p>
-                  <p className="text-4xl font-bold text-red-600 text-center">
+                <div className="p-3 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-200 flex items-center justify-center gap-2 text-red-600">
+                  <span className="font-semibold text-gray-700">{payer}</span>
+                  <span className="text-gray-700">ต้องจ่าย</span>
+                  <span className="font-bold text-lg">
                     {totalToPay.toLocaleString("en-US", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
-                    })}{" "}
-                    <span className="text-2xl">บาท</span>
-                  </p>
+                    })}
+                  </span>
+                  <span className="text-sm">บาท</span>
                 </div>
 
                 {/* Individual Payments */}
@@ -146,52 +144,81 @@ export default function Payment({
                     รายละเอียดการจ่ายเงิน
                   </h2>
                   <div className="space-y-3">
-                    {paymentDetails.map((detail) => (
-                      <div
-                        key={detail.receiver}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
-                        onClick={() => {
-                          window.open(
-                            "https://promptpay.io/0896832465/123",
-                            "_blank",
-                            "noopener,noreferrer",
-                          );
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm"
-                            style={{ background: detail.color }}
-                          >
-                            {detail.receiver.charAt(0)}
+                    {paymentDetails.map((detail, index) => {
+                      const receiverMember = members.find(
+                        (m) => m.name === detail.receiver,
+                      );
+
+                      const hasPhoneNumber =
+                        receiverMember?.phoneNumber &&
+                        receiverMember.phoneNumber.trim() !== "";
+
+                      return (
+                        <div
+                          key={`${detail.receiver}-${index}`}
+                          className={`flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200
+          ${hasPhoneNumber ? "hover:shadow-md cursor-pointer" : ""}
+          transition-shadow`}
+                          onClick={() => {
+                            if (hasPhoneNumber) {
+                              window.open(
+                                `https://promptpay.io/${receiverMember!.phoneNumber}/${detail.amount.toFixed(2)}.png`,
+                                "_blank",
+                                "noopener,noreferrer",
+                              );
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm"
+                              style={{ background: detail.color }}
+                            >
+                              {detail.receiver.charAt(0)}
+                            </div>
+
+                            <div>
+                              <p className="font-semibold text-gray-800">
+                                {detail.receiver}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {hasPhoneNumber
+                                  ? "คนรับเงิน"
+                                  : "กรุณาใส่เบอร์พร้อมเพย์เพื่อชำระเงิน"}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-semibold text-gray-800">
-                              {detail.receiver}
+
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-blue-600">
+                              {detail.amount.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
                             </p>
-                            <p className="text-sm text-gray-500">คนรับเงิน</p>
+                            <p className="text-sm text-gray-500">บาท</p>
                           </div>
+
+                          {/* ✅ Only render QR when phone number exists */}
+                          {hasPhoneNumber && (
+                            <div>
+                              <img
+                                src={`https://promptpay.io/${receiverMember!.phoneNumber}/${detail.amount.toFixed(2)}.png`}
+                                alt="PromptPay QR"
+                                className="w-24 h-24"
+                              />
+                            </div>
+                          )}
                         </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-blue-600">
-                            {detail.amount.toLocaleString("en-US", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
-                          </p>
-                          <p className="text-sm text-gray-500">บาท</p>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </>
             ) : (
-              <div className="text-center py-8 bg-green-50 rounded-lg border-2 border-green-200">
-                <p className="text-xl font-semibold text-green-600">
-                  🎉 {payer} ไม่มีหนี้ที่ต้องจ่าย
-                </p>
-                <p className="text-gray-600 mt-2">ยอดเยี่ยม!</p>
+              <div className="p-3 bg-green-50 rounded-lg border border-green-200 flex items-center justify-center gap-2 text-green-600">
+                <span className="font-semibold">🎉 {payer}</span>
+                <span>ไม่มีหนี้ที่ต้องจ่าย</span>
               </div>
             )}
           </div>

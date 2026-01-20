@@ -33,6 +33,16 @@ export default function Member({
     return MEMBER_COLORS[index % MEMBER_COLORS.length];
   };
 
+  const isValidThaiPhone = (phone: string): boolean => {
+    if (!phone.trim()) return true; // Empty is valid (optional field)
+    const cleaned = phone.replace(/\s|-/g, ""); // Remove spaces and dashes
+    return /^(08|09|06|02)\d{8}$/.test(cleaned);
+  };
+
+  const isFormValid = (): boolean => {
+    return name.trim() !== "" && isValidThaiPhone(phoneNumber);
+  };
+
   const addMember = () => {
     const trimmed = name.trim();
     if (!trimmed) return setError(true);
@@ -126,9 +136,11 @@ export default function Member({
                 <p className="text-sm font-bold truncate text-white px-1">
                   {m.name}
                 </p>
-                {m.phoneNumber && <p className="text-[10px] font-normal truncate text-white px-1">
-                  ({m.phoneNumber})
-                </p>}
+                {m.phoneNumber && (
+                  <p className="text-[10px] font-normal truncate text-white px-1">
+                    ({m.phoneNumber})
+                  </p>
+                )}
               </div>
               <div
                 className="bg-white rounded-full absolute -top-1 -right-1 h-6 w-6 flex justify-center items-center cursor-pointer shadow-md hover:shadow-lg transition-shadow"
@@ -192,6 +204,7 @@ export default function Member({
               className={`input input-bordered w-full ${
                 error ? "!bg-red-50 !border-red-500" : ""
               }`}
+              disabled={editingIndex !== null}
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -202,10 +215,21 @@ export default function Member({
             <input
               type="tel"
               placeholder="เบอร์โทร (ไม่บังคับ)"
-              className="input input-bordered w-full"
+              className={`input input-bordered w-full ${
+                phoneNumber.trim() && !isValidThaiPhone(phoneNumber)
+                  ? "!bg-red-50 !border-red-500"
+                  : ""
+              }`}
+              maxLength={10}
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
             />
+            {phoneNumber.trim() && !isValidThaiPhone(phoneNumber) && (
+              <p className="text-red-500 text-xs mt-1">
+                กรุณาใส่เบอร์โทรศัพท์ไทยที่ถูกต้อง (เริ่มต้นด้วย 08, 09, 06,
+                หรือ 02)
+              </p>
+            )}
           </div>
 
           {editingIndex !== null ? (
@@ -221,6 +245,7 @@ export default function Member({
                 type="primary"
                 onClick={addMember}
                 className="flex-1"
+                disabled={!isFormValid()}
               />
             </div>
           ) : (
@@ -228,6 +253,7 @@ export default function Member({
               text="เพิ่ม"
               onClick={addMember}
               className="!max-w-none"
+              disabled={!isFormValid()}
             />
           )}
 
