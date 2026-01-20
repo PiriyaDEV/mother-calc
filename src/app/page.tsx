@@ -313,7 +313,7 @@ export default function App() {
           </div>
           {renderBody()}
           {renderModal()}
-          {renderFooter()}
+          {screen !== "payment" && renderFooter()}
 
           <SettingsPopup
             isOpen={isSettingOpen}

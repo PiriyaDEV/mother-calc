@@ -211,10 +211,10 @@ export default function Member({
                 setError(false);
               }}
             />
-            <label className="text-sm font-medium">เบอร์โทร</label>
+            <label className="text-sm font-medium">เบอร์พร้อมเพย์</label>
             <input
               type="tel"
-              placeholder="เบอร์โทร (ไม่บังคับ)"
+              placeholder="เบอร์พร้อมเพย์ (ไม่บังคับ)"
               className={`input input-bordered w-full ${
                 phoneNumber.trim() && !isValidThaiPhone(phoneNumber)
                   ? "!bg-red-50 !border-red-500"

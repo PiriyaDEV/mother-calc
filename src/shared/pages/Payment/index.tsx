@@ -101,11 +101,15 @@ export default function Payment({
   }
 
   return (
-    <div className="pb-5 mt-[190px]" style={{ paddingBottom: "120px" }}>
-      <div>
+    <div
+      className="fixed inset-0 flex flex-col bg-white"
+      style={{ top: "190px" }}
+    >
+      {/* Fixed Header Section */}
+      <div className="flex-shrink-0 bg-white border-b border-gray-200 shadow-sm">
         {/* Payer Selection */}
-        <div className="mb-6">
-          <h1 className="font-bold my-3">คนจ่ายเงิน</h1>
+        <div className="p-4 pt-2">
+          <h1 className="font-bold mb-3">คนจ่ายเงิน</h1>
           <select
             value={payer}
             onChange={(e) => setPayer(e.target.value)}
@@ -120,145 +124,145 @@ export default function Payment({
           </select>
         </div>
 
-        {/* Payment Details */}
+        {/* Total Summary - Fixed */}
+        {payer && paymentDetails.length > 0 && (
+          <div className="px-4 pb-4">
+            <div className="p-1 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-200 flex items-center justify-center gap-2 text-red-600">
+              <span className="font-semibold text-gray-700">{payer}</span>
+              <span className="text-gray-700">ต้องจ่าย</span>
+              <span className="font-bold text-lg">
+                {totalToPay.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+              <span className="text-sm">บาท</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Scrollable Payment Details Section */}
+      <div className="flex-1 overflow-y-auto">
         {payer && (
-          <div className="space-y-4">
+          <div className="p-4">
             {paymentDetails.length > 0 ? (
-              <>
-                {/* Total Summary */}
-                <div className="p-3 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-200 flex items-center justify-center gap-2 text-red-600">
-                  <span className="font-semibold text-gray-700">{payer}</span>
-                  <span className="text-gray-700">ต้องจ่าย</span>
-                  <span className="font-bold text-lg">
-                    {totalToPay.toLocaleString("en-US", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
-                  <span className="text-sm">บาท</span>
-                </div>
+              <div>
+                <div className="space-y-3">
+                  {paymentDetails.map((detail, index) => {
+                    const receiverMember = members.find(
+                      (m) => m.name === detail.receiver,
+                    );
 
-                {/* Individual Payments */}
-                <div className="mt-6">
-                  <h2 className="font-semibold text-gray-700 mb-3">
-                    รายละเอียดการจ่ายเงิน
-                  </h2>
-                  <div className="space-y-3">
-                    {paymentDetails.map((detail, index) => {
-                      const receiverMember = members.find(
-                        (m) => m.name === detail.receiver,
-                      );
+                    const hasPhoneNumber =
+                      receiverMember?.phoneNumber &&
+                      receiverMember.phoneNumber.trim() !== "";
 
-                      const hasPhoneNumber =
-                        receiverMember?.phoneNumber &&
-                        receiverMember.phoneNumber.trim() !== "";
-
-                      return (
-                        <div
-                          key={`${detail.receiver}-${index}`}
-                          className={`p-4 bg-white rounded-lg border border-gray-200 shadow-sm
-          ${hasPhoneNumber ? "hover:shadow-md cursor-pointer" : ""}
-          transition-shadow`}
-                          onClick={() => {
-                            if (hasPhoneNumber) {
-                              window.open(
-                                `https://promptpay.io/${receiverMember!.phoneNumber}/${detail.amount.toFixed(2)}.png`,
-                                "_blank",
-                                "noopener,noreferrer",
-                              );
-                            }
-                          }}
-                        >
-                          {/* Top Section: Avatar, Name, Amount */}
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg text-white"
-                                style={{ background: detail.color }}
-                              >
-                                {detail.receiver.charAt(0)}
-                              </div>
-
-                              <div>
-                                <p className="font-bold text-xl text-gray-800">
-                                  {detail.receiver}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  {hasPhoneNumber
-                                    ? "คนรับเงิน"
-                                    : "กรุณาใส่เบอร์พร้อมเพย์เพื่อชำระเงิน"}
-                                </p>
-                              </div>
+                    return (
+                      <div
+                        key={`${detail.receiver}-${index}`}
+                        className={`p-4 bg-white rounded-lg border border-gray-200 shadow-sm
+        ${hasPhoneNumber ? "hover:shadow-md cursor-pointer" : ""}
+        transition-shadow`}
+                        onClick={() => {
+                          if (hasPhoneNumber) {
+                            window.open(
+                              `https://promptpay.io/${receiverMember!.phoneNumber}/${detail.amount.toFixed(2)}.png`,
+                              "_blank",
+                              "noopener,noreferrer",
+                            );
+                          }
+                        }}
+                      >
+                        {/* Top Section: Avatar, Name, Amount */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg text-white"
+                              style={{ background: detail.color }}
+                            >
+                              {detail.receiver.charAt(0)}
                             </div>
 
-                            <div className="text-right">
-                              <p className="text-3xl font-bold text-gray-800">
-                                {detail.amount.toLocaleString("en-US", {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })}
+                            <div>
+                              <p className="font-bold text-xl text-gray-800">
+                                {detail.receiver}
                               </p>
-                              <p className="text-sm text-gray-500">บาท</p>
+                              <p className="text-sm text-gray-500">
+                                {hasPhoneNumber
+                                  ? "คนรับเงิน"
+                                  : "กรุณาใส่เบอร์พร้อมเพย์เพื่อชำระเงิน"}
+                              </p>
                             </div>
                           </div>
 
-                          {/* QR Code Section - Thai QR Payment Style */}
-                          {hasPhoneNumber && (
-                            <div className="mt-4 bg-gradient-to-b from-blue-700 to-blue-800 rounded-lg overflow-hidden">
-                              {/* Header */}
-                              <div
-                                className="h-[80px] bg-center bg-no-repeat bg-cover"
-                                style={{
-                                  backgroundImage: "url('/images/payment.png')",
-                                }}
-                              />
+                          <div className="text-right">
+                            <p className="text-3xl font-bold text-gray-800">
+                              {detail.amount.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </p>
+                            <p className="text-sm text-gray-500">บาท</p>
+                          </div>
+                        </div>
 
-                              {/* QR Code Container */}
-                              <div className="bg-white p-6">
-                                {/* PromptPay Logo */}
-                                <div className="flex justify-center mb-3">
-                                  <img
-                                    src="/images/prompt-pay-logo.png"
-                                    alt="PromptPay"
-                                    className="w-[100px]"
-                                  />
-                                </div>
+                        {/* QR Code Section - Thai QR Payment Style */}
+                        {hasPhoneNumber && (
+                          <div className="mt-4 bg-gradient-to-b from-blue-700 to-blue-800 rounded-lg overflow-hidden">
+                            {/* Header */}
+                            <div
+                              className="h-[80px] bg-center bg-no-repeat bg-cover"
+                              style={{
+                                backgroundImage: "url('/images/payment.png')",
+                              }}
+                            />
 
-                                {/* QR Code */}
-                                <div className="flex justify-center mb-4">
-                                  <img
-                                    src={`https://promptpay.io/${receiverMember!.phoneNumber}/${detail.amount.toFixed(2)}.png`}
-                                    alt="PromptPay QR Code"
-                                    className="w-48 h-48"
-                                  />
-                                </div>
+                            {/* QR Code Container */}
+                            <div className="bg-white p-6">
+                              {/* PromptPay Logo */}
+                              <div className="flex justify-center mb-3">
+                                <img
+                                  src="/images/prompt-pay-logo.png"
+                                  alt="PromptPay"
+                                  className="w-[100px]"
+                                />
+                              </div>
 
-                                {/* Text Information */}
-                                <div className="text-center space-y-1">
-                                  <p className="text-teal-500 font-semibold text-sm">
-                                    สแกน QR เพื่อโอนเข้าบัญชีพร้อมเพย์
-                                  </p>
-                                  <p className="text-gray-800 font-semibold">
-                                    {detail.receiver}
-                                  </p>
-                                  <p className="text-gray-600 text-sm">
-                                    {receiverMember?.phoneNumber?.replace(
-                                      /^(\d{3})(\d{3})(\d{4})$/,
-                                      "$1-$2-$3",
-                                    )}
-                                  </p>
-                                </div>
+                              {/* QR Code */}
+                              <div className="flex justify-center mb-4">
+                                <img
+                                  src={`https://promptpay.io/${receiverMember!.phoneNumber}/${detail.amount.toFixed(2)}.png`}
+                                  alt="PromptPay QR Code"
+                                  className="w-48 h-48"
+                                />
+                              </div>
+
+                              {/* Text Information */}
+                              <div className="text-center space-y-1">
+                                <p className="text-teal-500 font-semibold text-sm">
+                                  สแกน QR เพื่อโอนเข้าบัญชีพร้อมเพย์
+                                </p>
+                                <p className="text-gray-800 font-semibold">
+                                  ชื่อ : {detail.receiver}
+                                </p>
+                                <p className="text-gray-600 text-sm">
+                                  {receiverMember?.phoneNumber?.replace(
+                                    /^(\d{3})(\d{3})(\d{4})$/,
+                                    "$1-$2-$3",
+                                  )}
+                                </p>
                               </div>
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              </>
+              </div>
             ) : (
-              <div className="p-3 bg-green-50 rounded-lg border border-green-200 flex items-center justify-center gap-2 text-green-600">
+              <div className="p-1 bg-green-50 rounded-lg border border-green-200 flex items-center justify-center gap-2 text-green-600">
                 <span className="font-semibold">🎉 {payer}</span>
                 <span>ไม่มีหนี้ที่ต้องจ่าย</span>
               </div>
