@@ -33,14 +33,21 @@ export default function Member({
     return MEMBER_COLORS[index % MEMBER_COLORS.length];
   };
 
-  const isValidThaiPhone = (phone: string): boolean => {
-    if (!phone.trim()) return true; // Empty is valid (optional field)
-    const cleaned = phone.replace(/\s|-/g, ""); // Remove spaces and dashes
-    return /^(08|09|06|02)\d{8}$/.test(cleaned);
+  const isValidThaiPhoneOrID = (input: string): boolean => {
+    if (!input.trim()) return true; // Empty is valid (optional field)
+    const cleaned = input.replace(/\s|-/g, ""); // Remove spaces and dashes
+
+    // Check if it's a valid Thai phone number (10 digits starting with 08, 09, 06, or 02)
+    const isPhone = /^(08|09|06|02)\d{8}$/.test(cleaned);
+
+    // Check if it's a valid Thai ID (13 digits)
+    const isThaiID = /^\d{13}$/.test(cleaned);
+
+    return isPhone || isThaiID;
   };
 
   const isFormValid = (): boolean => {
-    return name.trim() !== "" && isValidThaiPhone(phoneNumber);
+    return name.trim() !== "" && isValidThaiPhoneOrID(phoneNumber);
   };
 
   const addMember = () => {
@@ -105,6 +112,25 @@ export default function Member({
     setError(false);
   };
 
+  function formatThaiNumberOrId(value: any) {
+    if (!value) return "";
+
+    const digits = value.replace(/\D/g, "");
+
+    // Thai mobile phone (10 digits)
+    if (digits.length === 10) {
+      return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+
+    // Thai national ID (13 digits)
+    if (digits.length === 13) {
+      return `${digits[0]}-${digits.slice(1, 5)}-${digits.slice(5, 10)}-${digits.slice(10, 12)}-${digits[12]}`;
+    }
+
+    // fallback (unknown length)
+    return value;
+  }
+
   return (
     <div className="flex flex-col gap-10 pb-20 mt-[140px]">
       <div className="fixed z-[50] top-[80px] left-1/2 -translate-x-1/2 bg-white w-full sm:w-[450px] px-4">
@@ -137,8 +163,12 @@ export default function Member({
                   {m.name}
                 </p>
                 {m.phoneNumber && (
-                  <p className="text-[10px] font-normal truncate text-white px-1">
-                    ({m.phoneNumber})
+                  <p
+                    className={`font-semibold truncate text-white px-1 ${
+                      m.phoneNumber.length === 13 ? "text-[7px]" : "text-[8px]"
+                    }`}
+                  >
+                    ({formatThaiNumberOrId(m.phoneNumber)})
                   </p>
                 )}
               </div>
@@ -211,23 +241,25 @@ export default function Member({
                 setError(false);
               }}
             />
-            <label className="text-sm font-medium">เบอร์พร้อมเพย์</label>
+            <label className="text-sm font-medium">
+              เบอร์พร้อมเพย์ / รหัสบัตรประชาชน
+            </label>
             <input
               type="tel"
-              placeholder="เบอร์พร้อมเพย์ (ไม่บังคับ)"
+              placeholder="เบอร์พร้อมเพย์ / รหัสบัตรประชาชน (ไม่บังคับ)"
               className={`input input-bordered w-full ${
-                phoneNumber.trim() && !isValidThaiPhone(phoneNumber)
+                phoneNumber.trim() && !isValidThaiPhoneOrID(phoneNumber)
                   ? "!bg-red-50 !border-red-500"
                   : ""
               }`}
-              maxLength={10}
+              maxLength={13}
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
             />
-            {phoneNumber.trim() && !isValidThaiPhone(phoneNumber) && (
+            {phoneNumber.trim() && !isValidThaiPhoneOrID(phoneNumber) && (
               <p className="text-red-500 text-xs mt-1">
-                กรุณาใส่เบอร์โทรศัพท์ไทยที่ถูกต้อง (เริ่มต้นด้วย 08, 09, 06,
-                หรือ 02)
+                กรุณาใส่เบอร์โทรศัพท์ไทย (08, 09, 06, 02) หรือรหัสบัตรประชาชน 13
+                หลัก
               </p>
             )}
           </div>

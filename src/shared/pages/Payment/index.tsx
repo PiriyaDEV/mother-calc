@@ -1,5 +1,6 @@
 import { ItemObj, MemberObj } from "@/app/lib/interface";
 import { getPrice } from "@/app/lib/utils";
+import { useEffect } from "react";
 
 interface PaymentProps {
   itemArr: ItemObj[];
@@ -28,6 +29,12 @@ export default function Payment({
 }: PaymentProps) {
   // Calculate debt matrix
   const debtMatrix: DebtMatrix = {};
+
+  useEffect(() => {
+    if (!payer && members.length > 0) {
+      setPayer(members[0].name);
+    }
+  }, [members, payer, setPayer]);
 
   members.forEach((member) => {
     debtMatrix[member.name] = {};
@@ -122,6 +129,24 @@ export default function Payment({
         totalToPay += amount;
       }
     });
+  }
+
+  function maskThaiContact(value?: string) {
+    if (!value) return "";
+
+    const digits = value.replace(/\D/g, "");
+
+    // Phone number (10 digits) → 081-xxx-x678
+    if (digits.length === 10) {
+      return digits.replace(/^(\d{3})\d{3}(\d{4})$/, "$1-xxx-$2");
+    }
+
+    // Thai ID card (13 digits) → 1-234x-xxxxx-xx-7
+    if (digits.length === 13) {
+      return "";
+    }
+
+    return value;
   }
 
   return (
@@ -271,10 +296,7 @@ export default function Payment({
                                   ชื่อ : {detail.receiver}
                                 </p>
                                 <p className="text-gray-600 text-sm">
-                                  {receiverMember?.phoneNumber?.replace(
-                                    /^(\d{3})(\d{3})(\d{4})$/,
-                                    "$1-$2-$3",
-                                  )}
+                                  {maskThaiContact(receiverMember?.phoneNumber)}
                                 </p>
                               </div>
                             </div>
