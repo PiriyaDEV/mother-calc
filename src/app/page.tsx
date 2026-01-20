@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { FaCog, FaShareAlt } from "react-icons/fa";
+import { JSX, useEffect, useState } from "react";
+import { FaCog, FaCreditCard, FaShareAlt } from "react-icons/fa";
 import CommonBtn from "@/shared/components/CommonBtn";
 import CommonLoading from "@/shared/components/CommonLoading";
 import Calculate from "@/shared/pages/Calculate";
@@ -16,17 +16,31 @@ import ItemModal from "@/shared/components/ItemModal";
 import { MODE } from "./lib/constants";
 import SettingsPopup, { Settings } from "@/shared/components/SettingPopup";
 import SharePopup from "@/shared/components/SharedPopup";
+import Payment from "@/shared/pages/Payment";
+
+type Screen = "list" | "summary" | "payment";
+
+const TABS: {
+  key: Screen;
+  label: string;
+  icon: JSX.Element;
+}[] = [
+  { key: "list", label: "รายการ", icon: <FaList /> },
+  { key: "summary", label: "ดูสรุป", icon: <FaTable /> },
+  { key: "payment", label: "ชำระเงิน", icon: <FaCreditCard /> },
+];
 
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isMember, setMember] = useState(false);
   const [isItemModalOpen, setItemModalOpen] = useState(false);
-  const [screen, setScreen] = useState<"list" | "summary">("list");
+  const [screen, setScreen] = useState<Screen>("list");
   const [members, setMembers] = useState<MemberObj[]>([]);
   const [itemArr, setItemArr] = useState<ItemObj[]>([]);
   const [copySuccess, setCopySuccess] = useState(false); // State to track copy success
   const [billName, setBillName] = useState("");
   const [mode, setMode] = useState<"EDIT" | "VIEW" | null>(null);
+  const [payer, setPayer] = useState<string>("");
 
   const [isSettingOpen, setIsSettingOpen] = useState<boolean>(false);
   const [isSharedOpen, setIsSharedOpen] = useState<boolean>(false);
@@ -72,19 +86,19 @@ export default function App() {
   const handleDeleteMember = (deletedMember: MemberObj) => {
     // Remove the member from the members list
     const updatedMembers = members.filter(
-      (member) => member.name !== deletedMember.name
+      (member) => member.name !== deletedMember.name,
     );
     setMembers(updatedMembers);
 
     // Remove items that are paid by the deleted member
     const updatedItems = itemArr.filter(
-      (item) => item.paidBy !== deletedMember.name
+      (item) => item.paidBy !== deletedMember.name,
     );
 
     // For items where the deleted member is selected, remove them from the selectedMembers list
     updatedItems.forEach((item) => {
       item.selectedMembers = item.selectedMembers.filter(
-        (selectedMember) => selectedMember.name !== deletedMember.name
+        (selectedMember) => selectedMember.name !== deletedMember.name,
       );
     });
 
@@ -128,20 +142,20 @@ export default function App() {
   };
 
   const renderHeader = () => (
-    <div className="grid grid-cols-2 text-center">
-      {["list", "summary"].map((view) => (
+    <div className="grid grid-cols-3 text-center">
+      {TABS.map(({ key, label, icon }) => (
         <div
-          key={view}
-          onClick={() => setScreen(view as "list" | "summary")}
+          key={key}
+          onClick={() => setScreen(key)}
           className={`mx-4 cursor-pointer pb-2 transition-colors duration-200 border-b-[3px] ${
-            screen === view
-              ? "!text-[#4366f4] font-bold border-[#4366f4]"
-              : "!text-gray-500 border-transparent"
+            screen === key
+              ? "text-[#4366f4] font-bold border-[#4366f4]"
+              : "text-gray-500 border-transparent"
           }`}
         >
-          <div className="flex justify-center items-center gap-4">
-            {view === "list" ? <FaList /> : <FaTable />}
-            {view === "list" ? "รายการ" : "ดูสรุป"}
+          <div className="flex items-center justify-center gap-4">
+            {icon}
+            {label}
           </div>
         </div>
       ))}
@@ -159,8 +173,17 @@ export default function App() {
           mode={mode!}
         />
       );
-    } else {
+    } else if (screen === "summary") {
       return <Summary members={members} itemArr={itemArr} />;
+    } else {
+      return (
+        <Payment
+          itemArr={itemArr}
+          members={members}
+          payer={payer}
+          setPayer={setPayer}
+        />
+      );
     }
   };
 

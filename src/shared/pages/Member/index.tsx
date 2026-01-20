@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { TiDelete } from "react-icons/ti";
+import { FiEdit2, FiTrash } from "react-icons/fi";
 
 import CommonBtn from "@/shared/components/CommonBtn";
 import { MEMBER_COLORS } from "@/app/lib/constants";
@@ -22,10 +22,12 @@ export default function Member({
   onDeleteMember,
 }: MemberProps) {
   const [name, setName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState(false);
   const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(
-    null
+    null,
   );
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   const getColorByIndex = (index: number): string => {
     return MEMBER_COLORS[index % MEMBER_COLORS.length];
@@ -35,24 +37,66 @@ export default function Member({
     const trimmed = name.trim();
     if (!trimmed) return setError(true);
 
-    const isDuplicate = members.some((member) => member.name === trimmed);
+    const isDuplicate = members.some(
+      (member, idx) => member.name === trimmed && idx !== editingIndex,
+    );
     if (isDuplicate) {
       alert("ชื่อสมาชิกนี้มีอยู่แล้ว");
       return;
     }
 
-    setMembers([
-      ...members,
-      { name: trimmed, color: getColorByIndex(members.length) },
-    ]);
+    if (editingIndex !== null) {
+      // Edit existing member
+      const updatedMembers = [...members];
+      updatedMembers[editingIndex] = {
+        ...updatedMembers[editingIndex],
+        name: trimmed,
+        phoneNumber: phoneNumber.trim() || undefined,
+      };
+      setMembers(updatedMembers);
+      setEditingIndex(null);
+    } else {
+      // Add new member
+      const newMember: any = {
+        name: trimmed,
+        color: getColorByIndex(members.length),
+      };
+
+      if (phoneNumber.trim()) {
+        newMember.phoneNumber = phoneNumber.trim();
+      }
+
+      setMembers([...members, newMember]);
+    }
+
     setName("");
+    setPhoneNumber("");
+    setError(false);
+  };
+
+  const handleEdit = (index: number) => {
+    if (editingIndex === index) {
+      // Toggle off - cancel edit
+      cancelEdit();
+    } else {
+      // Toggle on - start edit
+      const member = members[index];
+      setName(member.name);
+      setPhoneNumber(member.phoneNumber || "");
+      setEditingIndex(index);
+      setError(false);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingIndex(null);
+    setName("");
+    setPhoneNumber("");
     setError(false);
   };
 
   return (
     <div className="flex flex-col gap-10 pb-20 mt-[140px]">
-      {" "}
-      {/* Added padding-bottom for the fixed footer */}
       <div className="fixed z-[50] top-[80px] left-1/2 -translate-x-1/2 bg-white w-full sm:w-[450px] px-4">
         <h1 className="font-bold mt-3 pb-2">
           สมาชิกมีใครบ้าง ?{" "}
@@ -65,39 +109,36 @@ export default function Member({
         }`}
         style={{
           padding: "5px",
-          paddingBottom: "120px",
+          paddingBottom: "180px",
         }}
       >
         {members.length ? (
           members.map((m, i) => (
             <div
               key={i}
-              className="relative w-16 h-16 rounded-full flex justify-center items-center"
+              className={`relative w-[80px] h-[80px] rounded-full flex justify-center items-center ${
+                editingIndex === i ? "ring-4 ring-blue-400" : ""
+              }`}
               style={{ backgroundColor: m.color }}
+              onClick={() => handleEdit(i)}
             >
-              <span className="text-xs font-semibold truncate text-white">
-                {m.name}
-              </span>
-              <div
-                className="bg-white rounded-full absolute -top-1 -right-1 h-5 w-5 flex justify-center items-center cursor-pointer"
-                onClick={() => setConfirmDeleteIndex(i)}
-              >
-                <TiDelete className="text-red text-xl" />
+              <div className="flex flex-col items-center">
+                <p className="text-sm font-bold truncate text-white px-1">
+                  {m.name}
+                </p>
+                {m.phoneNumber && <p className="text-[10px] font-normal truncate text-white px-1">
+                  ({m.phoneNumber})
+                </p>}
               </div>
-
-              {confirmDeleteIndex === i && (
-                <ConfirmPopup
-                  isOpen={true}
-                  title={`ยืนยันการลบ "${m.name}" ?`}
-                  onConfirm={() => {
-                    onDeleteMember(m);
-                    setConfirmDeleteIndex(null);
-                  }}
-                  onCancel={() => {
-                    setConfirmDeleteIndex(null);
-                  }}
-                />
-              )}
+              <div
+                className="bg-white rounded-full absolute -top-1 -right-1 h-6 w-6 flex justify-center items-center cursor-pointer shadow-md hover:shadow-lg transition-shadow"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(i);
+                }}
+              >
+                <FiEdit2 className="text-blue-500 text-sm" />
+              </div>
             </div>
           ))
         ) : (
@@ -109,15 +150,47 @@ export default function Member({
           </div>
         )}
       </div>
+
+      {confirmDeleteIndex !== null && (
+        <ConfirmPopup
+          isOpen={true}
+          title={`ยืนยันการลบ "${members[confirmDeleteIndex].name}" ?`}
+          onConfirm={() => {
+            onDeleteMember(members[confirmDeleteIndex]);
+            if (editingIndex === confirmDeleteIndex) {
+              cancelEdit();
+            }
+            setConfirmDeleteIndex(null);
+          }}
+          onCancel={() => {
+            setConfirmDeleteIndex(null);
+          }}
+        />
+      )}
+
       {/* Fixed Button Section */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 bg-white py-5 w-full sm:w-[450px] z-10">
-        <div className="container mx-auto px-4 flex flex-col gap-7">
-          <div className="flex items-center justify-center gap-2">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 bg-white py-4 w-full sm:w-[450px] z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+        <div className="container mx-auto px-4 flex flex-col gap-3">
+          <div className="flex flex-col gap-2 w-full">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">
+                ชื่อสมาชิก <span className="!text-red-500">(*)</span>
+              </label>
+
+              {editingIndex !== null && (
+                <label
+                  onClick={() => setConfirmDeleteIndex(editingIndex)}
+                  className=" py-2 text-sm font-medium text-red-500 flex items-center gap-2 border border-red-500 rounded-xl w-fit py-1 px-2"
+                >
+                  ลบสมาชิกนี้ <FiTrash />
+                </label>
+              )}
+            </div>
             <input
               type="text"
               placeholder="ใส่ชื่อสมาชิก"
               className={`input input-bordered w-full ${
-                error ? "border-red-500" : ""
+                error ? "!bg-red-50 !border-red-500" : ""
               }`}
               value={name}
               onChange={(e) => {
@@ -125,8 +198,39 @@ export default function Member({
                 setError(false);
               }}
             />
-            <CommonBtn text="เพิ่ม" onClick={addMember} className="!w-fit" />
+            <label className="text-sm font-medium">เบอร์โทร</label>
+            <input
+              type="tel"
+              placeholder="เบอร์โทร (ไม่บังคับ)"
+              className="input input-bordered w-full"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+            />
           </div>
+
+          {editingIndex !== null ? (
+            <div className="flex gap-2">
+              <CommonBtn
+                text="ยกเลิก"
+                type="secondary"
+                onClick={cancelEdit}
+                className="flex-1"
+              />
+              <CommonBtn
+                text="แก้ไข"
+                type="primary"
+                onClick={addMember}
+                className="flex-1"
+              />
+            </div>
+          ) : (
+            <CommonBtn
+              text="เพิ่ม"
+              onClick={addMember}
+              className="!max-w-none"
+            />
+          )}
+
           <CommonBtn
             text="กลับ >"
             type="secondary"
