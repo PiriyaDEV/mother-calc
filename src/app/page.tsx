@@ -220,7 +220,7 @@ export default function App() {
   })} `;
 
   const renderFooter = () => (
-    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 bg-white py-5 w-full sm:w-[450px]">
+    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 bg-white py-5 w-full sm:w-[450px] border border-gray-200">
       <div className="container mx-auto px-4 flex items-center justify-between gap-7">
         <h1 className="font-bold">ยอดรวมบิล : </h1>
         <h1 className="font-bold text-[24px]">

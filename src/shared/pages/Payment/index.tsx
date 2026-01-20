@@ -151,11 +151,13 @@ export default function Payment({
 
   return (
     <div
-      className="fixed inset-0 flex flex-col bg-white"
+      className="fixed inset-0 flex flex-col bg-white
+             w-full sm:max-w-[450px]
+             left-1/2 -translate-x-1/2"
       style={{ top: "190px" }}
     >
       {/* Fixed Header Section */}
-      <div className="flex-shrink-0 bg-white border-b border-gray-200 shadow-sm">
+      <div className="flex-shrink-0 bg-white border-b border-gray-200">
         {/* Payer Selection */}
         <div className="p-4 pt-2">
           <h1 className="font-bold mb-3">คนจ่ายเงิน</h1>
@@ -210,7 +212,7 @@ export default function Payment({
                     return (
                       <div
                         key={`${detail.receiver}-${index}`}
-                        className={`p-4 bg-white rounded-lg border border-gray-200 shadow-sm
+                        className={`p-4 bg-white rounded-lg border border-gray-200
         ${hasPhoneNumber ? "hover:shadow-md cursor-pointer" : ""}
         transition-shadow`}
                         onClick={() => {
@@ -227,7 +229,7 @@ export default function Payment({
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-3">
                             <div
-                              className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg text-white"
+                              className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg text-white"
                               style={{ background: detail.color }}
                             >
                               {detail.receiver.charAt(0)}
@@ -246,7 +248,7 @@ export default function Payment({
                           </div>
 
                           <div className="text-right">
-                            <p className="text-3xl font-bold text-gray-800">
+                            <p className="text-2xl font-bold text-gray-800">
                               {detail.amount.toLocaleString("en-US", {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
@@ -256,34 +258,37 @@ export default function Payment({
                           </div>
                         </div>
 
-                        {/* QR Code Section - Thai QR Payment Style */}
+                        {/* QR Code Section - Medium Thai QR Payment */}
                         {hasPhoneNumber && (
                           <div className="mt-4 bg-gradient-to-b from-blue-700 to-blue-800 rounded-lg overflow-hidden">
                             {/* Header */}
                             <div
-                              className="h-[80px] bg-center bg-no-repeat bg-cover"
+                              className="h-[64px]"
                               style={{
                                 backgroundImage: "url('/images/payment.png')",
+                                backgroundPosition: "center",
+                                backgroundRepeat: "no-repeat",
+                                backgroundSize: "cover",
                               }}
                             />
 
                             {/* QR Code Container */}
-                            <div className="bg-white p-6">
+                            <div className="bg-white p-4">
                               {/* PromptPay Logo */}
                               <div className="flex justify-center mb-3">
                                 <img
                                   src="/images/prompt-pay-logo.png"
                                   alt="PromptPay"
-                                  className="w-[100px]"
+                                  className="w-[85px]"
                                 />
                               </div>
 
                               {/* QR Code */}
-                              <div className="flex justify-center mb-4">
+                              <div className="flex justify-center mb-3">
                                 <img
                                   src={`https://promptpay.io/${receiverMember!.phoneNumber}/${detail.amount.toFixed(2)}.png`}
                                   alt="PromptPay QR Code"
-                                  className="w-48 h-48"
+                                  className="w-40 h-40"
                                 />
                               </div>
 
@@ -292,11 +297,10 @@ export default function Payment({
                                 <p className="text-teal-500 font-semibold text-sm">
                                   สแกน QR เพื่อโอนเข้าบัญชีพร้อมเพย์
                                 </p>
-                                <p className="text-gray-800 font-semibold">
-                                  ชื่อ : {detail.receiver}
-                                </p>
-                                <p className="text-gray-600 text-sm">
+                                <p className="text-gray-800 font-semibold text-sm">
+                                  ชื่อ : {detail.receiver} (
                                   {maskThaiContact(receiverMember?.phoneNumber)}
+                                  )
                                 </p>
                               </div>
                             </div>
