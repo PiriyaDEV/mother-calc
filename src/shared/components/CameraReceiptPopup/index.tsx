@@ -2,15 +2,7 @@
 
 import { ItemObj, MemberObj } from "@/app/lib/interface";
 import { useRef, useState, useCallback, useEffect } from "react";
-import {
-  FaCamera,
-  FaTimes,
-  FaCrop,
-  FaCheck,
-  FaRedo,
-  FaTrash,
-  FaPlus,
-} from "react-icons/fa";
+import { FaCamera, FaTimes, FaCrop, FaCheck, FaRedo, FaTrash, FaPlus } from "react-icons/fa";
 
 interface CameraReceiptPopupProps {
   isOpen: boolean;
@@ -44,15 +36,8 @@ export default function CameraReceiptPopup({
   const [error, setError] = useState<string | null>(null);
   const [pendingItems, setPendingItems] = useState<ItemObj[]>([]);
 
-  const [cropStart, setCropStart] = useState<{ x: number; y: number } | null>(
-    null,
-  );
-  const [cropRect, setCropRect] = useState<{
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-  } | null>(null);
+  const [cropStart, setCropStart] = useState<{ x: number; y: number } | null>(null);
+  const [cropRect, setCropRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -60,11 +45,7 @@ export default function CameraReceiptPopup({
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false,
       });
       streamRef.current = stream;
@@ -87,9 +68,7 @@ export default function CameraReceiptPopup({
 
   useEffect(() => {
     if (isOpen && stage === "camera") startCamera();
-    return () => {
-      if (!isOpen) stopCamera();
-    };
+    return () => { if (!isOpen) stopCamera(); };
   }, [isOpen, stage, startCamera, stopCamera]);
 
   useEffect(() => {
@@ -129,11 +108,7 @@ export default function CameraReceiptPopup({
         ctx.drawImage(img, 0, 0);
         const id = ctx.getImageData(0, 0, off.width, off.height);
         for (let i = 0; i < id.data.length; i += 4) {
-          const g = Math.round(
-            0.299 * id.data[i] +
-              0.587 * id.data[i + 1] +
-              0.114 * id.data[i + 2],
-          );
+          const g = Math.round(0.299 * id.data[i] + 0.587 * id.data[i + 1] + 0.114 * id.data[i + 2]);
           id.data[i] = id.data[i + 1] = id.data[i + 2] = g;
         }
         ctx.putImageData(id, 0, 0);
@@ -148,19 +123,50 @@ export default function CameraReceiptPopup({
     const img = new Image();
     img.onload = async () => {
       const off = document.createElement("canvas");
-      let sx = 0,
-        sy = 0,
-        sw = img.width,
-        sh = img.height;
+      let sx = 0, sy = 0, sw = img.width, sh = img.height;
+
       if (cropRect && overlayRef.current) {
         const r = overlayRef.current.getBoundingClientRect();
-        sx = cropRect.x * (img.width / r.width);
-        sy = cropRect.y * (img.height / r.height);
-        sw = cropRect.w * (img.width / r.width);
-        sh = cropRect.h * (img.height / r.height);
+
+        // object-contain: image is scaled to fit inside container, preserving aspect ratio
+        // Calculate the actual rendered image size and its offset within the container
+        const containerW = r.width;
+        const containerH = r.height;
+        const imgAspect = img.width / img.height;
+        const containerAspect = containerW / containerH;
+
+        let renderedW: number, renderedH: number, offsetX: number, offsetY: number;
+        if (imgAspect > containerAspect) {
+          // Image is wider — letterboxed top/bottom
+          renderedW = containerW;
+          renderedH = containerW / imgAspect;
+          offsetX = 0;
+          offsetY = (containerH - renderedH) / 2;
+        } else {
+          // Image is taller — pillarboxed left/right
+          renderedH = containerH;
+          renderedW = containerH * imgAspect;
+          offsetX = (containerW - renderedW) / 2;
+          offsetY = 0;
+        }
+
+        // Map crop coords (relative to container) → relative to rendered image → image pixels
+        const scaleX = img.width / renderedW;
+        const scaleY = img.height / renderedH;
+
+        sx = (cropRect.x - offsetX) * scaleX;
+        sy = (cropRect.y - offsetY) * scaleY;
+        sw = cropRect.w * scaleX;
+        sh = cropRect.h * scaleY;
+
+        // Clamp to image bounds
+        sx = Math.max(0, sx);
+        sy = Math.max(0, sy);
+        sw = Math.min(sw, img.width - sx);
+        sh = Math.min(sh, img.height - sy);
       }
-      off.width = sw;
-      off.height = sh;
+
+      off.width = sw; off.height = sh;
       off.getContext("2d")!.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
       const gray = await toGrayscale(off.toDataURL("image/jpeg", 0.95));
       setGrayscaleImage(gray);
@@ -172,17 +178,13 @@ export default function CameraReceiptPopup({
 
   const parseLine = (line: string): ItemObj | null => {
     // Strip noise but keep Thai, Chinese, English, digits, spaces, dots, hyphens
-    const cleaned = line
-      .replace(/[^\u0E00-\u0E7F\u4E00-\u9FFFa-zA-Z0-9\s.\-]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
+    const cleaned = line.replace(/[^\u0E00-\u0E7F\u4E00-\u9FFFa-zA-Z0-9\s.\-]/g, " ").replace(/\s+/g, " ").trim();
     // Price at end: digits optionally with .xx
     const match = cleaned.match(/^(.+?)\s+(\d{1,6}(?:\.\d{1,2})?)\s*$/);
     if (!match) return null;
     const itemName = match[1].trim();
     const price = parseFloat(match[2]);
-    if (!itemName || itemName.length < 2 || isNaN(price) || price <= 0)
-      return null;
+    if (!itemName || itemName.length < 2 || isNaN(price) || price <= 0) return null;
     const currentMembers = membersRef.current;
     const firstMember = currentMembers[0] ?? null;
     return {
@@ -208,13 +210,8 @@ export default function CameraReceiptPopup({
       const rawText = result.data.text;
       console.log("OCR raw text:", rawText);
 
-      const lines = rawText
-        .split("\n")
-        .map((l: string) => l.trim())
-        .filter(Boolean);
-      const items: ItemObj[] = lines
-        .map(parseLine)
-        .filter((i): i is ItemObj => i !== null);
+      const lines = rawText.split("\n").map((l: string) => l.trim()).filter(Boolean);
+      const items: ItemObj[] = lines.map(parseLine).filter((i): i is ItemObj => i !== null);
       console.log("parsed items:", items);
 
       if (items.length === 0) {
@@ -235,7 +232,7 @@ export default function CameraReceiptPopup({
 
   const handleFinalConfirm = () => {
     const invalid = pendingItems.some(
-      (item) => !item.itemName.trim() || !item.price || item.price <= 0,
+      (item) => !item.itemName.trim() || !item.price || item.price <= 0
     );
     if (invalid) {
       setError("กรุณากรอกชื่อและราคาให้ครบทุกรายการ");
@@ -250,11 +247,7 @@ export default function CameraReceiptPopup({
     setPendingItems((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateItem = (
-    index: number,
-    field: "itemName" | "price",
-    value: string,
-  ) => {
+  const updateItem = (index: number, field: "itemName" | "price", value: string) => {
     setPendingItems((prev) =>
       prev.map((item, i) => {
         if (i !== index) return item;
@@ -263,7 +256,7 @@ export default function CameraReceiptPopup({
           return { ...item, price: isNaN(price) ? 0 : price };
         }
         return { ...item, itemName: value };
-      }),
+      })
     );
   };
 
@@ -284,10 +277,7 @@ export default function CameraReceiptPopup({
     ]);
   };
 
-  const getRelativePos = (
-    e: React.MouseEvent | React.TouchEvent,
-    el: HTMLElement,
-  ) => {
+  const getRelativePos = (e: React.MouseEvent | React.TouchEvent, el: HTMLElement) => {
     const rect = el.getBoundingClientRect();
     const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
     const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
@@ -306,10 +296,8 @@ export default function CameraReceiptPopup({
     if (!isDragging || !cropStart || !overlayRef.current) return;
     const pos = getRelativePos(e, overlayRef.current);
     setCropRect({
-      x: Math.min(cropStart.x, pos.x),
-      y: Math.min(cropStart.y, pos.y),
-      w: Math.abs(pos.x - cropStart.x),
-      h: Math.abs(pos.y - cropStart.y),
+      x: Math.min(cropStart.x, pos.x), y: Math.min(cropStart.y, pos.y),
+      w: Math.abs(pos.x - cropStart.x), h: Math.abs(pos.y - cropStart.y),
     });
   };
   const handleCropEnd = () => setIsDragging(false);
@@ -341,16 +329,14 @@ export default function CameraReceiptPopup({
               <p className="text-gray-400 text-xs">{stageLabel[stage]}</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors p-1">
             <FaTimes className="text-lg" />
           </button>
         </div>
 
         {/* Body */}
         <div className="flex-1 overflow-hidden flex flex-col">
+
           {error && (
             <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-500 text-sm text-center">
               {error}
@@ -360,23 +346,10 @@ export default function CameraReceiptPopup({
           {/* CAMERA */}
           {stage === "camera" && (
             <div className="flex flex-col flex-1">
-              <div
-                className="relative bg-gray-900 flex-1 flex items-center justify-center overflow-hidden"
-                style={{ minHeight: 260 }}
-              >
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                  style={{ maxHeight: 380 }}
-                />
+              <div className="relative bg-gray-900 flex-1 flex items-center justify-center overflow-hidden" style={{ minHeight: 260 }}>
+                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ maxHeight: 380 }} />
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <div
-                    className="border-2 border-dashed border-white/50 rounded-lg"
-                    style={{ width: "75%", height: "85%" }}
-                  >
+                  <div className="border-2 border-dashed border-white/50 rounded-lg" style={{ width: "75%", height: "85%" }}>
                     <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-[#4366f4] rounded-tl-lg -translate-x-0.5 -translate-y-0.5" />
                     <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-[#4366f4] rounded-tr-lg translate-x-0.5 -translate-y-0.5" />
                     <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-[#4366f4] rounded-bl-lg -translate-x-0.5 translate-y-0.5" />
@@ -385,10 +358,7 @@ export default function CameraReceiptPopup({
                 </div>
               </div>
               <div className="px-5 py-5 flex justify-center bg-white">
-                <button
-                  onClick={capturePhoto}
-                  className="w-16 h-16 rounded-full bg-white border-4 border-[#4366f4] flex items-center justify-center shadow-lg active:scale-95 transition-transform"
-                >
+                <button onClick={capturePhoto} className="w-16 h-16 rounded-full bg-white border-4 border-[#4366f4] flex items-center justify-center shadow-lg active:scale-95 transition-transform">
                   <div className="w-11 h-11 rounded-full bg-[#4366f4]" />
                 </button>
               </div>
@@ -398,85 +368,39 @@ export default function CameraReceiptPopup({
           {/* CROP */}
           {stage === "crop" && capturedImage && (
             <div className="flex flex-col flex-1">
-              <div
-                className="relative flex-1 bg-gray-900 overflow-hidden select-none"
-                style={{ minHeight: 280, cursor: "crosshair" }}
+              <div className="relative flex-1 bg-gray-900 overflow-hidden select-none" style={{ minHeight: 280, cursor: "crosshair" }}
                 ref={overlayRef}
-                onMouseDown={handleCropStart}
-                onMouseMove={handleCropMove}
-                onMouseUp={handleCropEnd}
-                onMouseLeave={handleCropEnd}
-                onTouchStart={handleCropStart}
-                onTouchMove={handleCropMove}
-                onTouchEnd={handleCropEnd}
+                onMouseDown={handleCropStart} onMouseMove={handleCropMove} onMouseUp={handleCropEnd} onMouseLeave={handleCropEnd}
+                onTouchStart={handleCropStart} onTouchMove={handleCropMove} onTouchEnd={handleCropEnd}
               >
-                <img
-                  src={capturedImage}
-                  alt="captured"
-                  className="w-full h-full object-contain pointer-events-none"
-                  style={{ maxHeight: 380 }}
-                  draggable={false}
-                />
+                <img src={capturedImage} alt="captured" className="w-full h-full object-contain pointer-events-none" style={{ maxHeight: 380 }} draggable={false} />
                 {cropRect && cropRect.w > 5 && cropRect.h > 5 && (
                   <>
                     <div className="absolute inset-0 bg-black/50 pointer-events-none" />
-                    <div
-                      className="absolute border-2 border-[#4366f4] pointer-events-none"
-                      style={{
-                        left: cropRect.x,
-                        top: cropRect.y,
-                        width: cropRect.w,
-                        height: cropRect.h,
-                        background: "transparent",
-                        boxShadow: "0 0 0 9999px rgba(0,0,0,0.5)",
-                      }}
-                    >
-                      {[
-                        ["top-0 left-0", "-translate-x-1/2 -translate-y-1/2"],
-                        ["top-0 right-0", "translate-x-1/2 -translate-y-1/2"],
-                        ["bottom-0 left-0", "-translate-x-1/2 translate-y-1/2"],
-                        ["bottom-0 right-0", "translate-x-1/2 translate-y-1/2"],
-                      ].map(([pos, tr], i) => (
-                        <div
-                          key={i}
-                          className={`absolute ${pos} w-3 h-3 bg-[#4366f4] rounded-full transform ${tr}`}
-                        />
-                      ))}
+                    <div className="absolute border-2 border-[#4366f4] pointer-events-none"
+                      style={{ left: cropRect.x, top: cropRect.y, width: cropRect.w, height: cropRect.h, background: "transparent", boxShadow: "0 0 0 9999px rgba(0,0,0,0.5)" }}>
+                      {[["top-0 left-0", "-translate-x-1/2 -translate-y-1/2"], ["top-0 right-0", "translate-x-1/2 -translate-y-1/2"],
+                        ["bottom-0 left-0", "-translate-x-1/2 translate-y-1/2"], ["bottom-0 right-0", "translate-x-1/2 translate-y-1/2"]]
+                        .map(([pos, tr], i) => <div key={i} className={`absolute ${pos} w-3 h-3 bg-[#4366f4] rounded-full transform ${tr}`} />)}
                     </div>
                   </>
                 )}
                 {!cropRect && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <p className="text-white text-sm bg-black/50 px-3 py-1.5 rounded-full">
-                      ลากเพื่อเลือกพื้นที่
-                    </p>
+                    <p className="text-white text-sm bg-black/50 px-3 py-1.5 rounded-full">ลากเพื่อเลือกพื้นที่</p>
                   </div>
                 )}
               </div>
               <div className="px-5 py-4 flex gap-3 bg-white">
-                <button
-                  onClick={() => {
-                    setCapturedImage(null);
-                    setCropRect(null);
-                    setStage("camera");
-                    startCamera();
-                  }}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
-                >
+                <button onClick={() => { setCapturedImage(null); setCropRect(null); setStage("camera"); startCamera(); }}
+                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors">
                   <FaRedo className="text-xs" /> ถ่ายใหม่
                 </button>
-                <button
-                  onClick={applyCrop}
-                  disabled={isLoading}
-                  className="flex-1 py-3 rounded-xl bg-[#4366f4] text-white text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#3355e0] transition-colors disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <FaCrop className="text-xs" /> ยืนยันการตัด
-                    </>
-                  )}
+                <button onClick={applyCrop} disabled={isLoading}
+                  className="flex-1 py-3 rounded-xl bg-[#4366f4] text-white text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#3355e0] transition-colors disabled:opacity-50">
+                  {isLoading
+                    ? <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    : <><FaCrop className="text-xs" /> ยืนยันการตัด</>}
                 </button>
               </div>
             </div>
@@ -486,68 +410,34 @@ export default function CameraReceiptPopup({
           {stage === "processing" && (
             <div className="flex flex-col flex-1 items-center justify-center gap-4 py-16 bg-white">
               <div className="w-12 h-12 border-4 border-gray-100 border-t-[#4366f4] rounded-full animate-spin" />
-              <p className="text-gray-600 text-sm font-medium">
-                กำลังอ่านใบเสร็จ...
-              </p>
-              <p className="text-gray-400 text-xs">
-                Tesseract กำลังวิเคราะห์รายการ
-              </p>
+              <p className="text-gray-600 text-sm font-medium">กำลังอ่านใบเสร็จ...</p>
+              <p className="text-gray-400 text-xs">Tesseract กำลังวิเคราะห์รายการ</p>
             </div>
           )}
 
           {/* PREVIEW */}
           {stage === "preview" && grayscaleImage && (
             <div className="flex flex-col flex-1">
-              <div
-                className="flex-1 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100"
-                style={{ minHeight: 280 }}
-              >
-                <img
-                  src={grayscaleImage}
-                  alt="grayscale receipt"
-                  className="w-full h-full object-contain"
-                  style={{ maxHeight: 380 }}
-                />
+              <div className="flex-1 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100" style={{ minHeight: 280 }}>
+                <img src={grayscaleImage} alt="grayscale receipt" className="w-full h-full object-contain" style={{ maxHeight: 380 }} />
               </div>
               <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 text-center">
-                <p className="text-gray-400 text-xs">
-                  ภาพ Grayscale พร้อมสำหรับการอ่าน OCR
-                </p>
+                <p className="text-gray-400 text-xs">ภาพ Grayscale พร้อมสำหรับการอ่าน OCR</p>
               </div>
               <div className="px-5 py-4 flex gap-3 bg-white">
-                <button
-                  onClick={() => {
-                    setCapturedImage(null);
-                    setGrayscaleImage(null);
-                    setCropRect(null);
-                    setStage("camera");
-                    startCamera();
-                  }}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
-                >
+                <button onClick={() => { setCapturedImage(null); setGrayscaleImage(null); setCropRect(null); setStage("camera"); startCamera(); }}
+                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors">
                   <FaRedo className="text-xs" /> ถ่ายใหม่
                 </button>
-                <button
-                  onClick={() => {
-                    setGrayscaleImage(null);
-                    setStage("crop");
-                  }}
-                  className="flex-1 py-3 rounded-xl border border-[#4366f4] text-[#4366f4] text-sm flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
-                >
+                <button onClick={() => { setGrayscaleImage(null); setStage("crop"); }}
+                  className="flex-1 py-3 rounded-xl border border-[#4366f4] text-[#4366f4] text-sm flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors">
                   <FaCrop className="text-xs" /> ตัดใหม่
                 </button>
-                <button
-                  onClick={handleConfirm}
-                  disabled={isLoading}
-                  className="flex-1 py-3 rounded-xl bg-[#4366f4] text-white text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#3355e0] transition-colors disabled:opacity-60"
-                >
-                  {isLoading ? (
-                    <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <FaCheck className="text-xs" /> อ่านใบเสร็จ
-                    </>
-                  )}
+                <button onClick={handleConfirm} disabled={isLoading}
+                  className="flex-1 py-3 rounded-xl bg-[#4366f4] text-white text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#3355e0] transition-colors disabled:opacity-60">
+                  {isLoading
+                    ? <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    : <><FaCheck className="text-xs" /> อ่านใบเสร็จ</>}
                 </button>
               </div>
             </div>
@@ -557,12 +447,8 @@ export default function CameraReceiptPopup({
           {stage === "confirm" && (
             <div className="flex flex-col flex-1 overflow-hidden">
               <div className="px-5 pt-4 pb-2 flex items-center justify-between">
-                <p className="text-gray-700 font-semibold text-sm">
-                  พบ {pendingItems.length} รายการ
-                </p>
-                <p className="text-gray-400 text-xs">
-                  กด 🗑 เพื่อลบรายการที่ไม่ต้องการ
-                </p>
+                <p className="text-gray-700 font-semibold text-sm">พบ {pendingItems.length} รายการ</p>
+                <p className="text-gray-400 text-xs">กด 🗑 เพื่อลบรายการที่ไม่ต้องการ</p>
               </div>
 
               <div className="flex-1 overflow-y-auto px-5 pb-2 flex flex-col gap-2">
@@ -572,17 +458,12 @@ export default function CameraReceiptPopup({
                   </div>
                 )}
                 {pendingItems.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2"
-                  >
+                  <div key={idx} className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2">
                     {/* Name input */}
                     <input
                       type="text"
                       value={item.itemName}
-                      onChange={(e) =>
-                        updateItem(idx, "itemName", e.target.value)
-                      }
+                      onChange={(e) => updateItem(idx, "itemName", e.target.value)}
                       placeholder="ชื่อรายการ"
                       className={`flex-1 min-w-0 text-sm text-gray-800 bg-transparent border-b outline-none py-1 px-0 focus:border-[#4366f4] ${!item.itemName.trim() ? "border-red-400 placeholder-red-300" : "border-gray-200"}`}
                     />
@@ -614,19 +495,13 @@ export default function CameraReceiptPopup({
               </div>
 
               <div className="px-5 py-4 flex gap-3 bg-white border-t border-gray-100">
-                <button
-                  onClick={() => setStage("preview")}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
-                >
+                <button onClick={() => setStage("preview")}
+                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors">
                   <FaRedo className="text-xs" /> ถ่ายใหม่
                 </button>
-                <button
-                  onClick={handleFinalConfirm}
-                  disabled={pendingItems.length === 0}
-                  className="flex-1 py-3 rounded-xl bg-[#4366f4] text-white text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#3355e0] transition-colors disabled:opacity-40"
-                >
-                  <FaCheck className="text-xs" /> เพิ่ม {pendingItems.length}{" "}
-                  รายการ
+                <button onClick={handleFinalConfirm} disabled={pendingItems.length === 0}
+                  className="flex-1 py-3 rounded-xl bg-[#4366f4] text-white text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#3355e0] transition-colors disabled:opacity-40">
+                  <FaCheck className="text-xs" /> เพิ่ม {pendingItems.length} รายการ
                 </button>
               </div>
             </div>
