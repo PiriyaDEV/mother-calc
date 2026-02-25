@@ -386,8 +386,8 @@ export default function CameraReceiptPopup({
                   </>
                 )}
                 {!cropRect && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <p className="text-white text-sm bg-black/50 px-3 py-1.5 rounded-full">ลากเพื่อเลือกพื้นที่</p>
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
+                    <p className="text-white text-sm bg-white px-3 py-1.5 rounded-full">ลากเพื่อเลือกพื้นที่</p>
                   </div>
                 )}
               </div>
