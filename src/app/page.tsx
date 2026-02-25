@@ -17,6 +17,8 @@ import { MODE } from "./lib/constants";
 import SettingsPopup, { Settings } from "@/shared/components/SettingPopup";
 import SharePopup from "@/shared/components/SharedPopup";
 import Payment from "@/shared/pages/Payment";
+import { FaCamera } from "react-icons/fa6";
+import CameraReceiptPopup from "@/shared/components/CameraReceiptPopup";
 
 type Screen = "list" | "summary" | "payment";
 
@@ -33,6 +35,7 @@ const TABS: {
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isMember, setMember] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isItemModalOpen, setItemModalOpen] = useState(false);
   const [screen, setScreen] = useState<Screen>("list");
   const [members, setMembers] = useState<MemberObj[]>([]);
@@ -170,7 +173,10 @@ export default function App() {
 
   const renderHeader = () => (
     <div className="grid grid-cols-3 text-center">
-      {TABS.map(({ key, label, icon }) => (
+      {(itemArr.length === 0 || members.length === 0
+        ? TABS.slice(0, 1)
+        : TABS
+      ).map(({ key, label, icon }) => (
         <div
           key={key}
           onClick={() => setScreen(key)}
@@ -325,14 +331,25 @@ export default function App() {
                   )}
                 </div>
 
-                {mode === MODE.EDIT && (
-                  <FaCog
-                    onClick={() => {
-                      setIsSettingOpen(true);
-                    }}
-                    className="text-[24px] mr-1 cursor-pointer text-[#333333]"
-                  />
-                )}
+                <div className="flex gap-6">
+                  {members.length !== 0 && (
+                    <FaCamera
+                      onClick={() => {
+                        setIsCameraOpen(true);
+                      }}
+                      className="text-[24px] mr-1 cursor-pointer text-[#333333]"
+                    />
+                  )}
+
+                  {mode === MODE.EDIT && (
+                    <FaCog
+                      onClick={() => {
+                        setIsSettingOpen(true);
+                      }}
+                      className="text-[24px] mr-1 cursor-pointer text-[#333333]"
+                    />
+                  )}
+                </div>
               </div>
 
               {renderHeader()}
@@ -341,6 +358,16 @@ export default function App() {
           {renderBody()}
           {renderModal()}
           {screen !== "payment" && renderFooter()}
+
+          <CameraReceiptPopup
+            isOpen={isCameraOpen}
+            members={members}
+            onClose={() => setIsCameraOpen(false)}
+            onConfirm={(newItems) => {
+              setItemArr((prev) => [...prev, ...newItems]);
+              setIsCameraOpen(false);
+            }}
+          />
 
           <SettingsPopup
             isOpen={isSettingOpen}
