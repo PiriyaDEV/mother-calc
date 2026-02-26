@@ -44,9 +44,7 @@ export default function CameraReceiptPopup({
   const [error, setError] = useState<string | null>(null);
   const [pendingItems, setPendingItems] = useState<ItemObj[]>([]);
 
-  const [cropStart, setCropStart] = useState<{ x: number; y: number } | null>(
-    null,
-  );
+  const [cropStart, setCropStart] = useState<{ x: number; y: number } | null>(null);
   const [cropRect, setCropRect] = useState<{
     x: number;
     y: number;
@@ -56,7 +54,7 @@ export default function CameraReceiptPopup({
   const [isDragging, setIsDragging] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // FIX 1 & 2: stopCamera clears srcObject too; defined before startCamera so startCamera can depend on it
+  // stopCamera: always clears srcObject so the camera LED turns off
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
@@ -67,11 +65,31 @@ export default function CameraReceiptPopup({
     }
   }, []);
 
-  // FIX 1: Always stop existing stream before starting a new one to prevent
-  // "camera already in use" errors when the user hits "ถ่ายใหม่"
+  // handleRetake: force-stops camera, wipes ALL state, then transitions to
+  // "camera" stage which triggers the useEffect below to restart the camera
+  const handleRetake = useCallback(() => {
+    stopCamera();
+    setCapturedImage(null);
+    setGrayscaleImage(null);
+    setCropRect(null);
+    setCropStart(null);
+    setIsDragging(false);
+    setError(null);
+    setPendingItems([]);
+    setIsLoading(false);
+    setStage("camera");
+  }, [stopCamera]);
+
+  // handleClose: force-stop camera first, then call parent onClose
+  const handleClose = useCallback(() => {
+    stopCamera();
+    onClose();
+  }, [stopCamera, onClose]);
+
+  // startCamera: always kills any lingering stream before requesting a new one
   const startCamera = useCallback(async () => {
     setError(null);
-    stopCamera(); // ensure any lingering stream is killed first
+    stopCamera();
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -121,7 +139,6 @@ export default function CameraReceiptPopup({
     if (!ctx) return;
     ctx.drawImage(video, 0, 0);
     setCapturedImage(canvas.toDataURL("image/jpeg", 0.95));
-    // FIX 2: stop camera immediately after capture
     stopCamera();
     setStage("crop");
   };
@@ -228,7 +245,6 @@ export default function CameraReceiptPopup({
       price,
       vatRate: undefined,
       serviceChargeRate: undefined,
-      // FIX 3: only assign the first member, not all members
       selectedMembers: firstMember ? [{ ...firstMember, customPaid: 0 }] : [],
       isEqualSplit: true,
     };
@@ -237,7 +253,6 @@ export default function CameraReceiptPopup({
   const handleConfirm = async () => {
     if (!grayscaleImage) return;
     setIsLoading(true);
-    // FIX 2: ensure camera is stopped before OCR processing
     stopCamera();
     setStage("processing");
     try {
@@ -318,7 +333,6 @@ export default function CameraReceiptPopup({
         price: 0,
         vatRate: undefined,
         serviceChargeRate: undefined,
-        // FIX 3: only assign first member for new empty items too
         selectedMembers: firstMember ? [{ ...firstMember, customPaid: 0 }] : [],
         isEqualSplit: true,
       },
@@ -382,8 +396,9 @@ export default function CameraReceiptPopup({
               <p className="text-gray-400 text-xs">{stageLabel[stage]}</p>
             </div>
           </div>
+          {/* Close button: force-stops camera before closing */}
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition-colors p-1"
           >
             <FaTimes className="text-lg" />
@@ -398,11 +413,10 @@ export default function CameraReceiptPopup({
             </div>
           )}
 
-          {/* CAMERA — portrait receipt ratio 3:4 */}
+          {/* CAMERA */}
           {stage === "camera" && (
             <div className="flex flex-col flex-1">
               <div className="relative bg-gray-900 overflow-hidden flex items-center justify-center">
-                {/* 3:4 portrait aspect ratio container */}
                 <div
                   className="relative w-full"
                   style={{ aspectRatio: "3/4", maxHeight: "60dvh" }}
@@ -414,7 +428,6 @@ export default function CameraReceiptPopup({
                     muted
                     className="absolute inset-0 w-full h-full object-cover"
                   />
-                  {/* Receipt outline guide */}
                   <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                     <div
                       className="relative border-2 border-dashed border-white/50 rounded-lg"
@@ -439,11 +452,10 @@ export default function CameraReceiptPopup({
             </div>
           )}
 
-          {/* CROP — portrait receipt ratio 3:4 */}
+          {/* CROP */}
           {stage === "crop" && capturedImage && (
             <div className="flex flex-col flex-1">
               <div className="bg-gray-900 overflow-hidden flex items-center justify-center">
-                {/* 3:4 portrait aspect ratio container */}
                 <div
                   className="relative w-full select-none"
                   style={{
@@ -483,14 +495,8 @@ export default function CameraReceiptPopup({
                         {[
                           ["top-0 left-0", "-translate-x-1/2 -translate-y-1/2"],
                           ["top-0 right-0", "translate-x-1/2 -translate-y-1/2"],
-                          [
-                            "bottom-0 left-0",
-                            "-translate-x-1/2 translate-y-1/2",
-                          ],
-                          [
-                            "bottom-0 right-0",
-                            "translate-x-1/2 translate-y-1/2",
-                          ],
+                          ["bottom-0 left-0", "-translate-x-1/2 translate-y-1/2"],
+                          ["bottom-0 right-0", "translate-x-1/2 translate-y-1/2"],
                         ].map(([pos, tr], i) => (
                           <div
                             key={i}
@@ -511,12 +517,7 @@ export default function CameraReceiptPopup({
               </div>
               <div className="px-5 py-4 flex gap-3 bg-white">
                 <button
-                  onClick={() => {
-                    setCapturedImage(null);
-                    setCropRect(null);
-                    setStage("camera");
-                    startCamera();
-                  }}
+                  onClick={handleRetake}
                   className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
                 >
                   <FaRedo className="text-xs" /> ถ่ายใหม่
@@ -572,13 +573,7 @@ export default function CameraReceiptPopup({
               </div>
               <div className="px-5 py-4 flex gap-3 bg-white">
                 <button
-                  onClick={() => {
-                    setCapturedImage(null);
-                    setGrayscaleImage(null);
-                    setCropRect(null);
-                    setStage("camera");
-                    startCamera();
-                  }}
+                  onClick={handleRetake}
                   className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
                 >
                   <FaRedo className="text-xs" /> ถ่ายใหม่
@@ -586,6 +581,7 @@ export default function CameraReceiptPopup({
                 <button
                   onClick={() => {
                     setGrayscaleImage(null);
+                    setError(null);
                     setStage("crop");
                   }}
                   className="flex-1 py-3 rounded-xl border border-[#4366f4] text-[#4366f4] text-sm flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
@@ -667,7 +663,7 @@ export default function CameraReceiptPopup({
 
               <div className="px-5 py-4 flex gap-3 bg-white border-t border-gray-100">
                 <button
-                  onClick={() => setStage("preview")}
+                  onClick={handleRetake}
                   className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
                 >
                   <FaRedo className="text-xs" /> ถ่ายใหม่
