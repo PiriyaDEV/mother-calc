@@ -332,7 +332,7 @@ export default function App() {
                 </div>
 
                 <div className="flex gap-6">
-                  {members.length !== 0 && (
+                  {(members.length !== 0 && mode !== MODE.VIEW) && (
                     <FaCamera
                       onClick={() => {
                         setIsCameraOpen(true);
