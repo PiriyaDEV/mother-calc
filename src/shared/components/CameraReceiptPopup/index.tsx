@@ -56,8 +56,22 @@ export default function CameraReceiptPopup({
   const [isDragging, setIsDragging] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
+  // FIX 1 & 2: stopCamera clears srcObject too; defined before startCamera so startCamera can depend on it
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }, []);
+
+  // FIX 1: Always stop existing stream before starting a new one to prevent
+  // "camera already in use" errors when the user hits "ถ่ายใหม่"
   const startCamera = useCallback(async () => {
     setError(null);
+    stopCamera(); // ensure any lingering stream is killed first
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -76,14 +90,7 @@ export default function CameraReceiptPopup({
       setError("ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตการใช้งานกล้อง");
       console.error("Camera error:", err);
     }
-  }, []);
-
-  const stopCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-  }, []);
+  }, [stopCamera]);
 
   useEffect(() => {
     if (isOpen && stage === "camera") startCamera();
@@ -114,6 +121,7 @@ export default function CameraReceiptPopup({
     if (!ctx) return;
     ctx.drawImage(video, 0, 0);
     setCapturedImage(canvas.toDataURL("image/jpeg", 0.95));
+    // FIX 2: stop camera immediately after capture
     stopCamera();
     setStage("crop");
   };
@@ -220,7 +228,8 @@ export default function CameraReceiptPopup({
       price,
       vatRate: undefined,
       serviceChargeRate: undefined,
-      selectedMembers: currentMembers.map((m) => ({ ...m, customPaid: 0 })),
+      // FIX 3: only assign the first member, not all members
+      selectedMembers: firstMember ? [{ ...firstMember, customPaid: 0 }] : [],
       isEqualSplit: true,
     };
   };
@@ -228,6 +237,8 @@ export default function CameraReceiptPopup({
   const handleConfirm = async () => {
     if (!grayscaleImage) return;
     setIsLoading(true);
+    // FIX 2: ensure camera is stopped before OCR processing
+    stopCamera();
     setStage("processing");
     try {
       const Tesseract = (await import("tesseract.js")).default;
@@ -307,7 +318,8 @@ export default function CameraReceiptPopup({
         price: 0,
         vatRate: undefined,
         serviceChargeRate: undefined,
-        selectedMembers: currentMembers.map((m) => ({ ...m, customPaid: 0 })),
+        // FIX 3: only assign first member for new empty items too
+        selectedMembers: firstMember ? [{ ...firstMember, customPaid: 0 }] : [],
         isEqualSplit: true,
       },
     ]);
