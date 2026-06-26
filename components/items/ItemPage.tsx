@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { IoAdd, IoPencil, IoTrash, IoReceiptOutline } from "react-icons/io5";
+import { IoPencil, IoTrash, IoReceiptOutline } from "react-icons/io5";
 import { BillItem, BillMember } from "@/lib/types";
 import { formatNumber, getTotalEmoji } from "@/lib/utils";
 import ItemFormModal from "./ItemFormModal";
@@ -9,29 +9,32 @@ import ItemFormModal from "./ItemFormModal";
 interface ItemPageProps {
   items: BillItem[];
   members: BillMember[];
-  onAdd: (data: { name: string; price: number; shares: Record<string, number>; paid_by: string | null }) => Promise<void>;
-  onEdit: (itemId: string, updates: Partial<Pick<BillItem, "name" | "price" | "shares" | "paid_by">>) => Promise<void>;
-  onDelete: (itemId: string) => Promise<void>;
+  onAdd?: (data: { name: string; price: number; shares: Record<string, number>; paid_by: string | null }) => Promise<void>;
+  onEdit?: (itemId: string, updates: Partial<Pick<BillItem, "name" | "price" | "shares" | "paid_by">>) => Promise<void>;
+  onDelete?: (itemId: string) => Promise<void>;
+  readOnly?: boolean;
 }
 
-export default function ItemPage({ items, members, onAdd, onEdit, onDelete }: ItemPageProps) {
+export default function ItemPage({ items, members, onAdd, onEdit, onDelete, readOnly = false }: ItemPageProps) {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<BillItem | null>(null);
 
   const handleSave = async (data: { name: string; price: number; shares: Record<string, number>; paid_by: string | null }) => {
     if (editItem) {
-      await onEdit(editItem.id, data);
+      await onEdit?.(editItem.id, data);
     } else {
-      await onAdd(data);
+      await onAdd?.(data);
     }
   };
 
   const openEdit = (item: BillItem) => {
+    if (readOnly) return;
     setEditItem(item);
     setShowModal(true);
   };
 
   const openAdd = () => {
+    if (readOnly) return;
     setEditItem(null);
     setShowModal(true);
   };
@@ -42,14 +45,16 @@ export default function ItemPage({ items, members, onAdd, onEdit, onDelete }: It
   return (
     <div className="flex flex-col gap-3">
       {/* Sticky pill add-button */}
-      <div className="sticky top-0 z-10 pt-1 pb-2 bg-white dark:bg-gray-950">
-        <button
-          onClick={openAdd}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#4366f4] hover:bg-[#3355e0] text-white text-sm font-semibold shadow-sm shadow-blue-200/60 dark:shadow-none transition-all active:scale-95"
-        >
-          รายการใหม่
-        </button>
-      </div>
+      {!readOnly && (
+        <div className="sticky top-0 z-10 pt-1 pb-2 bg-white dark:bg-gray-950">
+          <button
+            onClick={openAdd}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#4366f4] hover:bg-[#3355e0] text-white text-sm font-semibold shadow-sm shadow-blue-200/60 dark:shadow-none transition-all active:scale-95"
+          >
+            รายการใหม่
+          </button>
+        </div>
+      )}
 
       {/* Empty state */}
       {items.length === 0 && (
@@ -86,12 +91,25 @@ export default function ItemPage({ items, members, onAdd, onEdit, onDelete }: It
           const weights = Object.values(item.shares);
           const isUnequal = weights.length > 0 && !weights.every((w) => w === 1);
 
+          const paidByMember = item.paid_by ? members.find((m) => m.id === item.paid_by) : null;
+
           return (
             <div key={item.id} className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl px-4 py-3">
               <div className="flex items-start gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.name}</p>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {paidByMember && (
+                        <div
+                          title={`จ่ายโดย ${paidByMember.name}`}
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
+                          style={{ backgroundColor: paidByMember.color }}
+                        >
+                          {paidByMember.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.name}</p>
+                    </div>
                     <p className="text-sm font-bold text-gray-900 dark:text-white flex-shrink-0">
                       {formatNumber(item.price)} บาท
                     </p>
@@ -124,33 +142,37 @@ export default function ItemPage({ items, members, onAdd, onEdit, onDelete }: It
                     </div>
                   )}
                 </div>
-                <div className="flex gap-1 flex-shrink-0">
-                  <button
-                    onClick={() => openEdit(item)}
-                    className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <IoPencil size={14} />
-                  </button>
-                  <button
-                    onClick={() => onDelete(item.id)}
-                    className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                  >
-                    <IoTrash size={14} />
-                  </button>
-                </div>
+                {!readOnly && (
+                  <div className="flex gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => openEdit(item)}
+                      className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <IoPencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => onDelete?.(item.id)}
+                      className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    >
+                      <IoTrash size={14} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           );
         })}
       </div>
 
-      <ItemFormModal
-        isOpen={showModal}
-        onClose={() => { setShowModal(false); setEditItem(null); }}
-        members={members}
-        editItem={editItem}
-        onSave={handleSave}
-      />
+      {!readOnly && (
+        <ItemFormModal
+          isOpen={showModal}
+          onClose={() => { setShowModal(false); setEditItem(null); }}
+          members={members}
+          editItem={editItem}
+          onSave={handleSave}
+        />
+      )}
     </div>
   );
 }

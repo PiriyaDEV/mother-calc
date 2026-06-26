@@ -7,6 +7,7 @@ export type RoundingMode = "none" | "nearest" | "up" | "down";
 export type MemberRole = "owner" | "member";
 export type MemberStatus = "pending" | "accepted" | "declined";
 export type NotificationType = "group_invite";
+export type BillStatus = "draft" | "completed";
 
 // ── Settings ──────────────────────────────────────────────────
 export interface Settings {
@@ -100,6 +101,8 @@ export interface Bill {
   settings: Settings;
   tip: number;
   discount: number;
+  status: BillStatus;
+  paid_member_ids: string[];   // bill_member_ids that have paid
   created_at: string;
   updated_at: string;
   // joined via query

@@ -599,3 +599,50 @@ export async function updateBillSettings(
     .eq("id", billId);
   if (error) throw error;
 }
+
+// ── Bill status & payment tracking ───────────────────────────
+
+/** Mark a bill as completed (locked for editing). Owner only. */
+export async function completeBill(billId: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("bills")
+    .update({ status: "completed" })
+    .eq("id", billId);
+  if (error) throw error;
+}
+
+/** Reopen a completed bill back to draft. Owner only. */
+export async function reopenBill(billId: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("bills")
+    .update({ status: "draft" })
+    .eq("id", billId);
+  if (error) throw error;
+}
+
+/**
+ * Toggle a bill_member as paid/unpaid.
+ * Adds or removes the memberId from the paid_member_ids JSON array.
+ * Uses a simple read-modify-write since Supabase JS doesn't support
+ * jsonb array operations directly.
+ */
+export async function toggleMemberPaid(
+  billId: string,
+  memberId: string,
+  currentPaidIds: string[]
+): Promise<string[]> {
+  const supabase = createClient();
+  const alreadyPaid = currentPaidIds.includes(memberId);
+  const newPaidIds = alreadyPaid
+    ? currentPaidIds.filter((id) => id !== memberId)
+    : [...currentPaidIds, memberId];
+
+  const { error } = await supabase
+    .from("bills")
+    .update({ paid_member_ids: newPaidIds })
+    .eq("id", billId);
+  if (error) throw error;
+  return newPaidIds;
+}

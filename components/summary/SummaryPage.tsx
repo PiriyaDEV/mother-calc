@@ -1,15 +1,25 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef } from "react";
-import { IoArrowForward, IoQrCodeOutline, IoChevronDown, IoChevronUp } from "react-icons/io5";
+import {
+  IoArrowForward,
+  IoQrCodeOutline,
+  IoChevronDown,
+  IoChevronUp,
+  IoCheckmarkCircle,
+  IoEllipseOutline,
+} from "react-icons/io5";
 import { Bill, BillMember } from "@/lib/types";
 import { calculateBill, formatCurrency, formatNumber, getTotalEmoji, simplifyDebtsPerItem } from "@/lib/utils";
+import { toggleMemberPaid } from "@/lib/db";
 import QRCode from "qrcode";
 
 interface SummaryPageProps {
   bill: Bill;
   members?: BillMember[];
   currentUserId?: string | null;
+  /** Called after paid_member_ids changes so parent can update local state */
+  onPaidIdsChange?: (newIds: string[]) => void;
 }
 
 // ── PromptPay QR helpers ──────────────────────────────────────
@@ -84,7 +94,7 @@ function PromptPayQR({ promptpay, amount, name }: { promptpay: string; amount: n
   );
 }
 
-export default function SummaryPage({ bill, members: membersProp, currentUserId }: SummaryPageProps) {
+export default function SummaryPage({ bill, members: membersProp, currentUserId, onPaidIdsChange }: SummaryPageProps) {
   // Prefer explicit members prop (always up-to-date from parent state)
   const members = membersProp ?? bill.members ?? [];
   // Build a bill object with the correct members + items for calculation
@@ -96,6 +106,29 @@ export default function SummaryPage({ bill, members: membersProp, currentUserId 
   );
   const calc = useMemo(() => calculateBill(billForCalc), [billForCalc]);
   const currency = bill.settings?.currency ?? "THB";
+
+  // ── Paid member IDs (local mirror of bill.paid_member_ids) ──
+  const [paidIds, setPaidIds] = useState<string[]>(bill.paid_member_ids ?? []);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  // Sync when bill prop changes (e.g. after reopen)
+  useEffect(() => {
+    setPaidIds(bill.paid_member_ids ?? []);
+  }, [bill.paid_member_ids]);
+
+  const handleTogglePaid = async (memberId: string) => {
+    if (togglingId) return;
+    setTogglingId(memberId);
+    try {
+      const newIds = await toggleMemberPaid(bill.id, memberId, paidIds);
+      setPaidIds(newIds);
+      onPaidIdsChange?.(newIds);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   // ── Selected member (default = current user's bill member) ──
   const defaultMemberId = useMemo(() => {
@@ -113,6 +146,7 @@ export default function SummaryPage({ bill, members: membersProp, currentUserId 
 
   const [expandedQR, setExpandedQR] = useState<string | null>(null);
 
+  // Global simplified debts (for AllMembersSection overview)
   const debts = useMemo(
     () => simplifyDebtsPerItem(calc.memberSummaries, members, null),
     [calc.memberSummaries, members]
@@ -126,11 +160,47 @@ export default function SummaryPage({ bill, members: membersProp, currentUserId 
     [calc.memberSummaries, selectedMemberId]
   );
 
-  // Debts that the selected member needs to pay (from = selected)
-  const myDebts = useMemo(
-    () => debts.filter((d) => d.from.id === selectedMemberId),
-    [debts, selectedMemberId]
-  );
+  // ── Per-payer debts for selected member ──────────────────
+  // Compute directly from items: for each item with paid_by,
+  // the selected member owes that payer their share of that item.
+  // Group by payer and sum — no greedy simplification.
+  const myDebts = useMemo(() => {
+    if (!selectedMemberId) return [];
+    const selectedMs = calc.memberSummaries.find((s) => s.member.id === selectedMemberId);
+    if (!selectedMs) return [];
+
+    // Accumulate amount owed to each payer
+    const owedTo: Record<string, number> = {};
+    for (const { item, amount } of selectedMs.items) {
+      const payerId = item.paid_by ?? null;
+      if (!payerId) continue;
+      if (payerId === selectedMemberId) continue; // don't owe yourself
+      owedTo[payerId] = (owedTo[payerId] ?? 0) + amount;
+    }
+
+    // Build DebtTransaction list
+    return Object.entries(owedTo)
+      .filter(([, amt]) => amt > 0.005)
+      .map(([payerId, rawAmount]) => {
+        const payer = members.find((m) => m.id === payerId)!;
+        // Apply the same multiplier as calculateBill (tax/SC/tip/discount)
+        const multiplier = calc.subtotal > 0 ? calc.total / calc.subtotal : 1;
+        const amount = rawAmount * multiplier;
+        return { from: selectedMs.member, to: payer, amount };
+      })
+      .filter((d) => d.to != null);
+  }, [selectedMemberId, calc, members]);
+
+  // Count paid members (those who have debts and are marked paid)
+  const membersWithDebts = useMemo(() => {
+    const ids = new Set(debts.map((d) => d.from.id));
+    return members.filter((m) => ids.has(m.id));
+  }, [debts, members]);
+
+  const paidCount = membersWithDebts.filter((m) => paidIds.includes(m.id)).length;
+  const allPaid = membersWithDebts.length > 0 && paidCount === membersWithDebts.length;
+
+  const isCompleted = bill.status === "completed";
 
   if (members.length === 0) {
     return (
@@ -156,6 +226,26 @@ export default function SummaryPage({ bill, members: membersProp, currentUserId 
         )}
         {calc.vatAmount > 0 && (
           <p className="text-xs opacity-70">รวม VAT {bill.settings.vat}%</p>
+        )}
+        {/* Payment progress */}
+        {isCompleted && membersWithDebts.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-white/20">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-xs opacity-80">สถานะการชำระ</p>
+              <p className="text-xs font-bold">
+                {paidCount}/{membersWithDebts.length} คน
+              </p>
+            </div>
+            <div className="w-full bg-white/20 rounded-full h-1.5">
+              <div
+                className="bg-white rounded-full h-1.5 transition-all"
+                style={{ width: `${membersWithDebts.length > 0 ? (paidCount / membersWithDebts.length) * 100 : 0}%` }}
+              />
+            </div>
+            {allPaid && (
+              <p className="text-xs font-semibold mt-1.5 opacity-90">✅ ทุกคนจ่ายแล้ว!</p>
+            )}
+          </div>
         )}
       </div>
 
@@ -191,6 +281,7 @@ export default function SummaryPage({ bill, members: membersProp, currentUserId 
           {members.map((m) => {
             const isSelected = m.id === selectedMemberId;
             const isCurrentUser = m.user_id === currentUserId;
+            const isPaid = paidIds.includes(m.id);
             return (
               <button
                 key={m.id}
@@ -201,6 +292,8 @@ export default function SummaryPage({ bill, members: membersProp, currentUserId 
                 className={`flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-semibold flex-shrink-0 transition-all ${
                   isSelected
                     ? "bg-[#4366f4] text-white shadow-sm"
+                    : isPaid
+                    ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
                     : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                 }`}
               >
@@ -217,6 +310,9 @@ export default function SummaryPage({ bill, members: membersProp, currentUserId 
                   }`}>
                     คุณ
                   </span>
+                )}
+                {isPaid && !isSelected && (
+                  <IoCheckmarkCircle size={13} className="text-emerald-500 flex-shrink-0" />
                 )}
               </button>
             );
@@ -249,6 +345,12 @@ export default function SummaryPage({ bill, members: membersProp, currentUserId 
                   {selectedSummary.member.user_id === currentUserId && (
                     <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-[#4366f4] rounded-full font-semibold">
                       คุณ
+                    </span>
+                  )}
+                  {/* Paid badge */}
+                  {paidIds.includes(selectedSummary.member.id) && (
+                    <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-full font-semibold border border-emerald-200 dark:border-emerald-800">
+                      <IoCheckmarkCircle size={10} /> จ่ายแล้ว
                     </span>
                   )}
                 </div>
@@ -296,8 +398,16 @@ export default function SummaryPage({ bill, members: membersProp, currentUserId 
                 {myDebts.map(({ from, to, amount }) => {
                   const qrKey = `${from.id}-${to.id}`;
                   const isExpanded = expandedQR === qrKey;
+                  const isMemberPaid = paidIds.includes(from.id);
                   return (
-                    <div key={qrKey} className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl overflow-hidden">
+                    <div
+                      key={qrKey}
+                      className={`rounded-2xl overflow-hidden transition-colors ${
+                        isMemberPaid
+                          ? "bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800"
+                          : "bg-gray-50 dark:bg-gray-800/60"
+                      }`}
+                    >
                       <div className="flex items-center gap-3 px-4 py-3">
                         {/* From */}
                         <div
@@ -321,10 +431,10 @@ export default function SummaryPage({ bill, members: membersProp, currentUserId 
                           )}
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <p className="text-base font-bold text-gray-900 dark:text-white">
+                          <p className={`text-base font-bold ${isMemberPaid ? "text-emerald-600 dark:text-emerald-400 line-through opacity-60" : "text-gray-900 dark:text-white"}`}>
                             {formatNumber(amount)} บาท
                           </p>
-                          {to.promptpay && (
+                          {to.promptpay && !isMemberPaid && (
                             <button
                               onClick={() => setExpandedQR(isExpanded ? null : qrKey)}
                               className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors ${
@@ -340,9 +450,45 @@ export default function SummaryPage({ bill, members: membersProp, currentUserId 
                       </div>
 
                       {/* QR Code for this debt */}
-                      {isExpanded && to.promptpay && (
+                      {isExpanded && to.promptpay && !isMemberPaid && (
                         <div className="border-t border-gray-100 dark:border-gray-700/50">
                           <PromptPayQR promptpay={to.promptpay} amount={amount} name={to.name} />
+                        </div>
+                      )}
+
+                      {/* จ่ายแล้ว button — only when bill is completed */}
+                      {isCompleted && (
+                        <div className="border-t border-gray-100 dark:border-gray-700/30 px-4 py-2.5 flex items-center justify-between">
+                          {isMemberPaid ? (
+                            <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                              <IoCheckmarkCircle size={15} />
+                              <span className="text-xs font-semibold">จ่ายแล้ว</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 text-gray-400">
+                              <IoEllipseOutline size={15} />
+                              <span className="text-xs">ยังไม่ได้จ่าย</span>
+                            </div>
+                          )}
+                          <button
+                            onClick={() => handleTogglePaid(from.id)}
+                            disabled={togglingId === from.id}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all disabled:opacity-60 ${
+                              isMemberPaid
+                                ? "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                                : "bg-emerald-500 hover:bg-emerald-600 text-white"
+                            }`}
+                          >
+                            {togglingId === from.id ? (
+                              <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                            ) : isMemberPaid ? (
+                              "ยกเลิก"
+                            ) : (
+                              <>
+                                <IoCheckmarkCircle size={12} /> จ่ายแล้ว
+                              </>
+                            )}
+                          </button>
                         </div>
                       )}
                     </div>
@@ -372,6 +518,10 @@ export default function SummaryPage({ bill, members: membersProp, currentUserId 
         debts={debts}
         currency={currency}
         currentUserId={currentUserId}
+        paidIds={paidIds}
+        isCompleted={isCompleted}
+        onTogglePaid={handleTogglePaid}
+        togglingId={togglingId}
       />
     </div>
   );
@@ -383,11 +533,19 @@ function AllMembersSection({
   debts,
   currency,
   currentUserId,
+  paidIds,
+  isCompleted,
+  onTogglePaid,
+  togglingId,
 }: {
   calc: ReturnType<typeof calculateBill>;
   debts: ReturnType<typeof simplifyDebtsPerItem>;
   currency: string;
   currentUserId?: string | null;
+  paidIds: string[];
+  isCompleted: boolean;
+  onTogglePaid: (memberId: string) => void;
+  togglingId: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [expandedQR, setExpandedQR] = useState<string | null>(null);
@@ -413,103 +571,160 @@ function AllMembersSection({
             <div className="flex flex-col gap-2 mb-1">
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide px-1">ใครโอนให้ใคร</p>
               <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl p-4 flex flex-col gap-3">
-                {debts.map(({ from, to, amount }: { from: BillMember; to: BillMember; amount: number }) => (
-                  <div key={`${from.id}-${to.id}`} className="flex items-center gap-2">
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                      style={{ backgroundColor: from.color }}
-                    >
-                      {from.name.charAt(0).toUpperCase()}
+                {debts.map(({ from, to, amount }: { from: BillMember; to: BillMember; amount: number }) => {
+                  const isPaid = paidIds.includes(from.id);
+                  return (
+                    <div key={`${from.id}-${to.id}`} className="flex items-center gap-2">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                        style={{ backgroundColor: from.color }}
+                      >
+                        {from.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className={`text-sm font-medium truncate ${isPaid ? "text-gray-400 line-through" : "text-gray-700 dark:text-gray-300"}`}>{from.name}</span>
+                      <IoArrowForward size={14} className="text-gray-400 flex-shrink-0" />
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                        style={{ backgroundColor: to.color }}
+                      >
+                        {to.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className={`text-sm font-medium truncate ${isPaid ? "text-gray-400 line-through" : "text-gray-700 dark:text-gray-300"}`}>{to.name}</span>
+                      <span className={`text-sm font-bold ml-auto flex-shrink-0 ${isPaid ? "text-emerald-500 line-through opacity-60" : "text-gray-900 dark:text-white"}`}>
+                        {formatNumber(amount)} บาท
+                      </span>
+                      {isPaid && (
+                        <IoCheckmarkCircle size={14} className="text-emerald-500 flex-shrink-0" />
+                      )}
                     </div>
-                    <span className="text-sm text-gray-700 dark:text-gray-300 font-medium truncate">{from.name}</span>
-                    <IoArrowForward size={14} className="text-gray-400 flex-shrink-0" />
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                      style={{ backgroundColor: to.color }}
-                    >
-                      {to.name.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="text-sm text-gray-700 dark:text-gray-300 font-medium truncate">{to.name}</span>
-                    <span className="text-sm font-bold text-gray-900 dark:text-white ml-auto flex-shrink-0">
-                      {formatNumber(amount)} บาท
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* Per-member breakdown */}
           <div className="flex flex-col gap-2">
-            {calc.memberSummaries.map(({ member, total, items }) => (
-              <div key={member.id} className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl overflow-hidden">
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                    style={{ backgroundColor: member.color }}
-                  >
-                    {member.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{member.name}</p>
-                      {member.is_external && (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-500 rounded-full">
-                          ภายนอก
-                        </span>
-                      )}
-                      {member.user_id === currentUserId && (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-[#4366f4] rounded-full font-semibold">
-                          คุณ
-                        </span>
+            {calc.memberSummaries.map(({ member, total, items }) => {
+              const isPaid = paidIds.includes(member.id);
+              return (
+                <div
+                  key={member.id}
+                  className={`rounded-2xl overflow-hidden transition-colors ${
+                    isPaid
+                      ? "bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800"
+                      : "bg-gray-50 dark:bg-gray-800/60"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                      style={{ backgroundColor: member.color }}
+                    >
+                      {member.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{member.name}</p>
+                        {member.is_external && (
+                          <span className="text-[10px] px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-500 rounded-full">
+                            ภายนอก
+                          </span>
+                        )}
+                        {member.user_id === currentUserId && (
+                          <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-[#4366f4] rounded-full font-semibold">
+                            คุณ
+                          </span>
+                        )}
+                        {isPaid && (
+                          <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full font-semibold">
+                            <IoCheckmarkCircle size={9} /> จ่ายแล้ว
+                          </span>
+                        )}
+                      </div>
+                      {member.promptpay && (
+                        <p className="text-xs text-gray-400">พร้อมเพย์: {member.promptpay}</p>
                       )}
                     </div>
-                    {member.promptpay && (
-                      <p className="text-xs text-gray-400">พร้อมเพย์: {member.promptpay}</p>
-                    )}
-                  </div>
-                  <div className="text-right flex items-center gap-2">
-                    <div>
-                      <p className="text-base font-bold text-gray-900 dark:text-white">
-                        {formatNumber(total)} บาท
-                      </p>
-                      <p className="text-[10px] text-gray-400">{getTotalEmoji(total)}</p>
+                    <div className="text-right flex items-center gap-2">
+                      <div>
+                        <p className={`text-base font-bold ${isPaid ? "text-emerald-600 dark:text-emerald-400" : "text-gray-900 dark:text-white"}`}>
+                          {formatNumber(total)} บาท
+                        </p>
+                        <p className="text-[10px] text-gray-400">{getTotalEmoji(total)}</p>
+                      </div>
+                      {member.promptpay && !isPaid && (
+                        <button
+                          onClick={() => setExpandedQR(expandedQR === member.id ? null : member.id)}
+                          className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors ${
+                            expandedQR === member.id
+                              ? "bg-[#4366f4] text-white"
+                              : "text-gray-400 hover:text-[#4366f4] hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                          }`}
+                        >
+                          <IoQrCodeOutline size={16} />
+                        </button>
+                      )}
                     </div>
-                    {member.promptpay && (
+                  </div>
+
+                  {expandedQR === member.id && member.promptpay && !isPaid && (
+                    <div className="border-t border-gray-100 dark:border-gray-700/50">
+                      <PromptPayQR promptpay={member.promptpay} amount={total} name={member.name} />
+                    </div>
+                  )}
+
+                  {/* จ่ายแล้ว toggle — only when bill is completed */}
+                  {isCompleted && debts.some((d) => d.from.id === member.id) && (
+                    <div className="border-t border-gray-100 dark:border-gray-700/30 px-4 py-2.5 flex items-center justify-between">
+                      {isPaid ? (
+                        <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                          <IoCheckmarkCircle size={14} />
+                          <span className="text-xs font-semibold">จ่ายแล้ว</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-gray-400">
+                          <IoEllipseOutline size={14} />
+                          <span className="text-xs">ยังไม่ได้จ่าย</span>
+                        </div>
+                      )}
                       <button
-                        onClick={() => setExpandedQR(expandedQR === member.id ? null : member.id)}
-                        className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors ${
-                          expandedQR === member.id
-                            ? "bg-[#4366f4] text-white"
-                            : "text-gray-400 hover:text-[#4366f4] hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        onClick={() => onTogglePaid(member.id)}
+                        disabled={togglingId === member.id}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all disabled:opacity-60 ${
+                          isPaid
+                            ? "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                            : "bg-emerald-500 hover:bg-emerald-600 text-white"
                         }`}
                       >
-                        <IoQrCodeOutline size={16} />
+                        {togglingId === member.id ? (
+                          <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                        ) : isPaid ? (
+                          "ยกเลิก"
+                        ) : (
+                          <>
+                            <IoCheckmarkCircle size={12} /> จ่ายแล้ว
+                          </>
+                        )}
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
+
+                  {items.length > 0 && (
+                    <div className="border-t border-gray-100 dark:border-gray-700/50 px-4 py-2 flex flex-col gap-1">
+                      {items.map(({ item, amount }) => (
+                        <div key={item.id} className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">{item.name}</span>
+                          <span className="text-xs text-gray-600 dark:text-gray-300 flex-shrink-0 ml-2">
+                            {formatNumber(amount)} บาท
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-
-                {expandedQR === member.id && member.promptpay && (
-                  <div className="border-t border-gray-100 dark:border-gray-700/50">
-                    <PromptPayQR promptpay={member.promptpay} amount={total} name={member.name} />
-                  </div>
-                )}
-
-                {items.length > 0 && (
-                  <div className="border-t border-gray-100 dark:border-gray-700/50 px-4 py-2 flex flex-col gap-1">
-                    {items.map(({ item, amount }) => (
-                      <div key={item.id} className="flex items-center justify-between">
-                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">{item.name}</span>
-                        <span className="text-xs text-gray-600 dark:text-gray-300 flex-shrink-0 ml-2">
-                          {formatNumber(amount)} บาท
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

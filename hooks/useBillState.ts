@@ -220,5 +220,6 @@ export function useBillState(billId: string, currentUser?: User | null) {
     editItem,
     deleteItem,
     resetBill,
+    setBill,
   };
 }

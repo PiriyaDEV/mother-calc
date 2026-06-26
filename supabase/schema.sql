@@ -91,18 +91,20 @@ create table public.trips (
 );
 
 create table public.bills (
-  id          uuid primary key default uuid_generate_v4(),
-  title       text not null default 'บิลใหม่',
-  emoji       text,
-  tags        text[] not null default '{}',
-  trip_id     uuid references public.trips(id) on delete set null,
-  group_id    uuid references public.groups(id) on delete cascade,
-  owner_id    uuid not null references public.profiles(id) on delete cascade,
-  settings    jsonb not null default '{"vat":7,"serviceCharge":10,"isVat":false,"isService":false,"roundingMode":"none","currency":"THB"}',
-  tip         numeric not null default 0,
-  discount    numeric not null default 0,
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now()
+  id               uuid primary key default uuid_generate_v4(),
+  title            text not null default 'บิลใหม่',
+  emoji            text,
+  tags             text[] not null default '{}',
+  trip_id          uuid references public.trips(id) on delete set null,
+  group_id         uuid references public.groups(id) on delete cascade,
+  owner_id         uuid not null references public.profiles(id) on delete cascade,
+  settings         jsonb not null default '{"vat":7,"serviceCharge":10,"isVat":false,"isService":false,"roundingMode":"none","currency":"THB"}',
+  tip              numeric not null default 0,
+  discount         numeric not null default 0,
+  status           text not null default 'draft' check (status in ('draft', 'completed')),
+  paid_member_ids  jsonb not null default '[]',
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
 );
 
 create table public.bill_members (

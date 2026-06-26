@@ -14,12 +14,13 @@ const MEMBER_COLORS = [
 
 interface MemberPageProps {
   members: BillMember[];
-  onAdd: (input: { name: string; color: string; promptpay?: string }) => Promise<void>;
-  onEdit: (memberId: string, updates: Partial<Pick<BillMember, "name" | "color" | "promptpay">>) => Promise<void>;
-  onDelete: (memberId: string) => Promise<void>;
+  onAdd?: (input: { name: string; color: string; promptpay?: string }) => Promise<void>;
+  onEdit?: (memberId: string, updates: Partial<Pick<BillMember, "name" | "color" | "promptpay">>) => Promise<void>;
+  onDelete?: (memberId: string) => Promise<void>;
+  readOnly?: boolean;
 }
 
-export default function MemberPage({ members, onAdd, onEdit, onDelete }: MemberPageProps) {
+export default function MemberPage({ members, onAdd, onEdit, onDelete, readOnly = false }: MemberPageProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -35,7 +36,7 @@ export default function MemberPage({ members, onAdd, onEdit, onDelete }: MemberP
   const [editColor, setEditColor] = useState("");
 
   const handleAdd = async () => {
-    if (!name.trim()) return;
+    if (!name.trim() || !onAdd) return;
     setSaving(true);
     try {
       await onAdd({ name: name.trim(), color, promptpay: promptpay.trim() || undefined });
@@ -56,6 +57,7 @@ export default function MemberPage({ members, onAdd, onEdit, onDelete }: MemberP
   };
 
   const handleEdit = async (memberId: string) => {
+    if (!onEdit) return;
     setSaving(true);
     try {
       await onEdit(memberId, {
@@ -72,7 +74,7 @@ export default function MemberPage({ members, onAdd, onEdit, onDelete }: MemberP
   return (
     <div className="flex flex-col gap-3">
       {/* Sticky pill add-button */}
-      {!showForm && (
+      {!showForm && !readOnly && (
         <div className="sticky top-0 z-10 pt-1 pb-2 bg-white dark:bg-gray-950">
           <button
             onClick={() => {
@@ -164,27 +166,29 @@ export default function MemberPage({ members, onAdd, onEdit, onDelete }: MemberP
                   <p className="text-xs text-gray-400 truncate">พร้อมเพย์: {member.promptpay}</p>
                 )}
               </div>
-              <div className="flex gap-1">
-                <button
-                  onClick={() => startEdit(member)}
-                  className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <IoPencil size={14} />
-                </button>
-                <button
-                  onClick={() => onDelete(member.id)}
-                  className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                >
-                  <IoTrash size={14} />
-                </button>
-              </div>
+              {!readOnly && (
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => startEdit(member)}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <IoPencil size={14} />
+                  </button>
+                  <button
+                    onClick={() => onDelete?.(member.id)}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  >
+                    <IoTrash size={14} />
+                  </button>
+                </div>
+              )}
             </div>
           )
         )}
       </div>
 
       {/* Add form */}
-      {showForm && (
+      {showForm && !readOnly && (
         <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl p-3 flex flex-col gap-3">
           <div className="flex gap-2">
             <Input
