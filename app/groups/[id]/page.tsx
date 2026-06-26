@@ -25,7 +25,10 @@ import {
   IoSettingsOutline,
   IoBarChartOutline,
   IoAnalyticsOutline,
+  IoChevronDown,
+  IoChevronUp,
 } from "react-icons/io5";
+import SummaryPage from "@/components/summary/SummaryPage";
 import CreateEntityModal, { EntityFormData } from "@/components/ui/CreateEntityModal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 
@@ -266,7 +269,7 @@ export default function GroupPage() {
           />
         )}
         {tab === "summary" && (
-          <GroupSummaryTab bills={bills} />
+          <GroupSummaryTab bills={bills} currentUserId={user?.id ?? null} />
         )}
         {tab === "analytics" && (
           <GroupAnalyticsTab bills={bills} />
@@ -534,7 +537,11 @@ function BillsTab({
 }
 
 // ── Group Summary Tab ─────────────────────────────────────────
-function GroupSummaryTab({ bills }: { bills: Bill[] }) {
+function GroupSummaryTab({ bills, currentUserId }: { bills: Bill[]; currentUserId?: string | null }) {
+  const [expandedBillId, setExpandedBillId] = useState<string | null>(
+    bills.length === 1 ? bills[0].id : null
+  );
+
   const totalAmount = bills.reduce((sum, b) => {
     const items = b.items ?? [];
     return sum + items.reduce((s, i) => s + i.price, 0);
@@ -563,25 +570,53 @@ function GroupSummaryTab({ bills }: { bills: Bill[] }) {
         <p className="text-xs opacity-70 mt-1">{bills.length} บิล</p>
       </div>
 
-      {/* Bill breakdown */}
-      <div className="flex flex-col gap-2">
+      {/* Per-bill summaries */}
+      <div className="flex flex-col gap-3">
         <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-1">
-          รายการบิล
+          สรุปแยกตามบิล
         </h3>
         {bills.map((bill) => {
           const billTotal = (bill.items ?? []).reduce((s, i) => s + i.price, 0);
+          const isExpanded = expandedBillId === bill.id;
+          const billMembers = bill.members ?? [];
           return (
-            <div key={bill.id} className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl px-4 py-3 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0 text-lg">
-                {bill.emoji ?? <IoReceiptOutline size={18} className="text-[#4366f4]" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{bill.title}</p>
-                <p className="text-xs text-gray-400">{(bill.items ?? []).length} รายการ</p>
-              </div>
-              <p className="text-sm font-bold text-gray-900 dark:text-white flex-shrink-0">
-                {billTotal.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
-              </p>
+            <div key={bill.id} className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl overflow-hidden">
+              {/* Bill header — tap to expand */}
+              <button
+                onClick={() => setExpandedBillId(isExpanded ? null : bill.id)}
+                className="w-full flex items-center gap-3 px-4 py-3 text-left"
+              >
+                <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0 text-lg">
+                  {bill.emoji ?? <IoReceiptOutline size={18} className="text-[#4366f4]" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{bill.title}</p>
+                  <p className="text-xs text-gray-400">
+                    {(bill.items ?? []).length} รายการ · {billMembers.length} คน
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    {billTotal.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
+                  </p>
+                  {isExpanded ? (
+                    <IoChevronUp size={14} className="text-gray-400" />
+                  ) : (
+                    <IoChevronDown size={14} className="text-gray-400" />
+                  )}
+                </div>
+              </button>
+
+              {/* Expanded: full SummaryPage for this bill */}
+              {isExpanded && (
+                <div className="border-t border-gray-100 dark:border-gray-700/50 px-4 py-4">
+                  <SummaryPage
+                    bill={{ ...bill, members: billMembers, items: bill.items ?? [] }}
+                    members={billMembers}
+                    currentUserId={currentUserId}
+                  />
+                </div>
+              )}
             </div>
           );
         })}

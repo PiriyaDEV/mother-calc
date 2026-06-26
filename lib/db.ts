@@ -412,7 +412,9 @@ export async function getBills(opts: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  let query = supabase.from("bills").select("*");
+  let query = supabase
+    .from("bills")
+    .select("*, members:bill_members(*, profile:profiles(*)), items:bill_items(*)");
 
   if (opts.tripId) {
     query = query.eq("trip_id", opts.tripId);
@@ -432,7 +434,7 @@ export async function getIndividualBills(): Promise<Bill[]> {
   if (!user) return [];
   const { data } = await supabase
     .from("bills")
-    .select("*")
+    .select("*, members:bill_members(*, profile:profiles(*)), items:bill_items(*)")
     .eq("owner_id", user.id)
     .is("group_id", null)
     .order("created_at", { ascending: false });
