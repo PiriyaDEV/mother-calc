@@ -1,270 +1,157 @@
-import {
-  Bill,
-  BillItem,
-  CurrencyCode,
-  CURRENCY_SYMBOLS,
-  DebtMatrix,
-  DebtTransaction,
-  Member,
-  MemberSummary,
-  RoundingMode,
-} from "./types";
-import { THAI_ID_REGEX, THAI_PHONE_REGEX } from "./constants";
+import { Bill, BillItem, BillMember, BillCalculation, MemberSummary, Settings, CurrencyCode } from "./types";
+import { DEFAULT_SETTINGS } from "./constants";
 
-// ============================================================
-// Price Calculation
-// ============================================================
+// ── Currency formatting ────────────────────────────────────────
+export const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
+  THB: "฿",
+  USD: "$",
+  EUR: "€",
+  JPY: "¥",
+  SGD: "S$",
+  GBP: "£",
+  CNY: "¥",
+  KRW: "₩",
+};
 
-/** คำนวณ multiplier สำหรับ VAT+SC */
-export function getItemMultiplier(item: BillItem): number {
-  let m = 1;
-  if (item.isService) m *= 1 + item.serviceCharge / 100;
-  if (item.isVat) m *= 1 + item.vat / 100;
-  return m;
+export function formatCurrency(amount: number, currency: CurrencyCode = "THB"): string {
+  const symbol = CURRENCY_SYMBOLS[currency] ?? "฿";
+  const decimals = currency === "JPY" || currency === "KRW" ? 0 : 2;
+  return `${symbol}${amount.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
 }
 
-/** คำนวณราคาสุทธิของ item (รวม VAT และ Service Charge) */
-export function getItemNetAmount(item: BillItem): number {
-  return item.totalAmount * getItemMultiplier(item);
-}
-
-/** คำนวณยอดที่ member คนนึงต้องจ่ายใน item นั้น (รวม VAT/SC แล้ว) */
-export function getMemberAmountInItem(item: BillItem, memberId: string): number {
-  const share = item.shares.find((s) => s.memberId === memberId);
-  if (!share) return 0;
-  return share.amount * getItemMultiplier(item);
-}
-
-/** Apply rounding to a number */
-export function applyRounding(amount: number, mode: RoundingMode): number {
+// ── Rounding ───────────────────────────────────────────────────
+export function applyRounding(amount: number, mode: Settings["roundingMode"]): number {
   switch (mode) {
-    case "up":
-      return Math.ceil(amount);
-    case "down":
-      return Math.floor(amount);
-    case "nearest":
-      return Math.round(amount);
-    default:
-      return Math.round(amount * 100) / 100;
+    case "up":      return Math.ceil(amount);
+    case "down":    return Math.floor(amount);
+    case "nearest": return Math.round(amount);
+    default:        return amount;
   }
 }
 
-// ============================================================
-// Bill Total (including tip & discount)
-// ============================================================
-
-export function getBillSubtotal(bill: Bill): number {
-  return bill.items.reduce((sum, item) => sum + getItemNetAmount(item), 0);
-}
-
+// ── Bill total ─────────────────────────────────────────────────
 export function getBillTotal(bill: Bill): number {
-  const subtotal = getBillSubtotal(bill);
-  return Math.max(0, subtotal + (bill.tip || 0) - (bill.discount || 0));
+  const calc = calculateBill(bill);
+  return calc.total;
 }
 
-// ============================================================
-// Summary Calculation
-// ============================================================
+// ── Main bill calculation ──────────────────────────────────────
+export function calculateBill(bill: Bill): BillCalculation {
+  const members = bill.members ?? [];
+  const items = bill.items ?? [];
+  const settings = bill.settings ?? DEFAULT_SETTINGS;
+  const tip = bill.tip ?? 0;
+  const discount = bill.discount ?? 0;
 
-export function calculateSummary(bill: Bill): MemberSummary[] {
-  const { members, items, tip = 0, discount = 0 } = bill;
+  // Subtotal = sum of all item prices
+  const subtotal = items.reduce((sum, item) => sum + item.price, 0);
 
-  const subtotal = getBillSubtotal(bill);
-  const adjustment = tip - discount; // can be negative
+  // Service charge applies to subtotal
+  const serviceAmount = settings.isService
+    ? subtotal * (settings.serviceCharge / 100)
+    : 0;
 
-  return members.map((member) => {
-    let totalOwed = 0;
-    let totalPaid = 0;
+  // VAT applies to subtotal + service
+  const vatBase = subtotal + serviceAmount;
+  const vatAmount = settings.isVat ? vatBase * (settings.vat / 100) : 0;
 
-    items.forEach((item) => {
-      const netAmount = getItemNetAmount(item);
-      totalOwed += getMemberAmountInItem(item, member.id);
-      if (item.paidBy === member.id) {
-        totalPaid += netAmount;
-      }
-    });
+  const discountAmount = discount;
+  const tipAmount = tip;
 
-    // Distribute tip/discount proportionally
-    if (subtotal > 0 && adjustment !== 0) {
-      const ratio = totalOwed / subtotal;
-      totalOwed += adjustment * ratio;
+  const rawTotal = subtotal + serviceAmount + vatAmount + tipAmount - discountAmount;
+  const total = applyRounding(rawTotal, settings.roundingMode);
+
+  // ── Per-member calculation ──────────────────────────────────
+  // For each item, distribute cost among members based on shares
+  const memberTotals: Record<string, number> = {};
+  const memberSubtotals: Record<string, number> = {};
+  const memberItems: Record<string, { item: BillItem; amount: number }[]> = {};
+
+  for (const member of members) {
+    memberTotals[member.id] = 0;
+    memberSubtotals[member.id] = 0;
+    memberItems[member.id] = [];
+  }
+
+  for (const item of items) {
+    const shares = item.shares ?? {};
+    const shareEntries = Object.entries(shares);
+    if (shareEntries.length === 0) continue;
+
+    const totalWeight = shareEntries.reduce((sum, [, w]) => sum + w, 0);
+    if (totalWeight === 0) continue;
+
+    for (const [memberId, weight] of shareEntries) {
+      if (!(memberId in memberSubtotals)) continue;
+      const itemShare = (item.price * weight) / totalWeight;
+      memberSubtotals[memberId] += itemShare;
+      if (!memberItems[memberId]) memberItems[memberId] = [];
+      memberItems[memberId].push({ item, amount: itemShare });
     }
+  }
 
-    return {
-      memberId: member.id,
-      memberName: member.name,
-      color: member.color,
-      totalOwed: Math.max(0, totalOwed),
-      totalPaid,
-      netBalance: totalPaid - Math.max(0, totalOwed),
-    };
-  });
+  // Apply tax/service/tip/discount proportionally
+  const multiplier = subtotal > 0 ? total / subtotal : 1;
+
+  for (const memberId of Object.keys(memberTotals)) {
+    memberTotals[memberId] = applyRounding(
+      memberSubtotals[memberId] * multiplier,
+      settings.roundingMode
+    );
+  }
+
+  const memberSummaries: MemberSummary[] = members.map((member) => ({
+    member,
+    subtotal: memberSubtotals[member.id] ?? 0,
+    total: memberTotals[member.id] ?? 0,
+    items: memberItems[member.id] ?? [],
+  }));
+
+  return {
+    subtotal,
+    vatAmount,
+    serviceAmount,
+    tipAmount,
+    discountAmount,
+    total,
+    memberSummaries,
+  };
 }
 
-// ============================================================
-// Debt Matrix & Simplified Debt
-// ============================================================
-
-export function buildDebtMatrix(bill: Bill): DebtMatrix {
-  const { members, items, tip = 0, discount = 0 } = bill;
-  const matrix: DebtMatrix = {};
-
-  members.forEach((m) => {
-    matrix[m.id] = {};
-    members.forEach((n) => {
-      if (m.id !== n.id) matrix[m.id][n.id] = 0;
-    });
-  });
-
-  const subtotal = getBillSubtotal(bill);
-  const adjustment = tip - discount;
-
-  items.forEach((item) => {
-    const paidBy = item.paidBy;
-    item.shares.forEach((share) => {
-      if (share.memberId === paidBy) return;
-      const multiplier = getItemMultiplier(item);
-      let amount = share.amount * multiplier;
-
-      // Add proportional tip/discount
-      if (subtotal > 0 && adjustment !== 0) {
-        const itemNet = getItemNetAmount(item);
-        const memberRatio = (share.amount * multiplier) / itemNet;
-        const itemAdjustment = (itemNet / subtotal) * adjustment * memberRatio;
-        amount += itemAdjustment;
-      }
-
-      if (amount > 0) {
-        matrix[share.memberId][paidBy] =
-          (matrix[share.memberId][paidBy] || 0) + amount;
-      }
-    });
-  });
-
-  return matrix;
+// ── Debt simplification ────────────────────────────────────────
+export interface DebtTransaction {
+  from: BillMember;
+  to: BillMember;
+  amount: number;
 }
 
 export function simplifyDebts(
-  matrix: DebtMatrix,
-  members: Member[],
-  roundingMode: RoundingMode = "none"
+  memberSummaries: MemberSummary[],
+  paidByMemberId?: string
 ): DebtTransaction[] {
-  const balance: Record<string, number> = {};
-  members.forEach((m) => (balance[m.id] = 0));
+  if (!paidByMemberId) return [];
 
-  members.forEach((from) => {
-    members.forEach((to) => {
-      if (from.id === to.id) return;
-      const amount = matrix[from.id]?.[to.id] || 0;
-      if (amount > 0) {
-        balance[from.id] -= amount;
-        balance[to.id] += amount;
-      }
-    });
-  });
-
-  const creditors = members
-    .filter((m) => balance[m.id] > 0.005)
-    .map((m) => ({ ...m, balance: balance[m.id] }));
-  const debtors = members
-    .filter((m) => balance[m.id] < -0.005)
-    .map((m) => ({ ...m, balance: balance[m.id] }));
+  const payer = memberSummaries.find((s) => s.member.id === paidByMemberId);
+  if (!payer) return [];
 
   const transactions: DebtTransaction[] = [];
-  let i = 0, j = 0;
-
-  while (i < debtors.length && j < creditors.length) {
-    const debtor = debtors[i];
-    const creditor = creditors[j];
-    const rawAmount = Math.min(-debtor.balance, creditor.balance);
-    const amount = applyRounding(rawAmount, roundingMode);
-
-    if (amount > 0.005) {
-      transactions.push({
-        fromId: debtor.id,
-        fromName: debtor.name,
-        toId: creditor.id,
-        toName: creditor.name,
-        toPromptpay: creditor.promptpay,
-        amount,
-        isPaid: false,
-      });
-    }
-
-    debtor.balance += rawAmount;
-    creditor.balance -= rawAmount;
-
-    if (Math.abs(debtor.balance) < 0.005) i++;
-    if (Math.abs(creditor.balance) < 0.005) j++;
+  for (const summary of memberSummaries) {
+    if (summary.member.id === paidByMemberId) continue;
+    if (summary.total <= 0) continue;
+    transactions.push({
+      from: summary.member,
+      to: payer.member,
+      amount: summary.total,
+    });
   }
-
   return transactions;
 }
 
-// ============================================================
-// Validation
-// ============================================================
-
-export function validatePromptpay(value: string): boolean {
-  if (!value) return true;
-  return THAI_PHONE_REGEX.test(value) || THAI_ID_REGEX.test(value);
+// ── Username validation ────────────────────────────────────────
+export function isValidUsername(username: string): boolean {
+  return /^[a-z0-9_]{3,30}$/.test(username);
 }
 
-export function maskPromptpay(value: string): string {
-  if (!value) return "";
-  if (THAI_PHONE_REGEX.test(value)) {
-    return value.slice(0, 3) + "-xxx-x" + value.slice(-3);
-  }
-  if (THAI_ID_REGEX.test(value)) {
-    return value.slice(0, 1) + "-xxxx-xxxxx-" + value.slice(-2) + "-x";
-  }
-  return value;
-}
-
-// ============================================================
-// URL State Encoding/Decoding (with compression)
-// ============================================================
-
-export function encodeState(bill: Bill): string {
-  try {
-    const json = JSON.stringify(bill);
-    return btoa(encodeURIComponent(json));
-  } catch {
-    return "";
-  }
-}
-
-export function decodeState(encoded: string): Bill | null {
-  try {
-    const json = decodeURIComponent(atob(encoded));
-    return JSON.parse(json) as Bill;
-  } catch {
-    return null;
-  }
-}
-
-// ============================================================
-// Formatting
-// ============================================================
-
-export function formatCurrency(amount: number, currency: CurrencyCode = "THB"): string {
-  const symbol = CURRENCY_SYMBOLS[currency] || "฿";
-  const decimals = currency === "JPY" || currency === "KRW" ? 0 : 2;
-  const formatted = amount.toLocaleString("th-TH", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
-  return `${symbol}${formatted}`;
-}
-
-export function formatDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleDateString("th-TH", {
-    day: "numeric",
-    month: "short",
-    year: "2-digit",
-  });
-}
-
-export function generateId(): string {
-  return Math.random().toString(36).slice(2, 10);
+export function formatUsername(username: string): string {
+  return `@${username}`;
 }

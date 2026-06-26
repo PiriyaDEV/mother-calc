@@ -1,0 +1,330 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { getMyProfile, upsertProfile, isUsernameTaken } from "@/lib/db";
+import { Profile } from "@/lib/types";
+import { isValidUsername } from "@/lib/utils";
+import {
+  IoArrowBack,
+  IoPersonOutline,
+  IoLogOutOutline,
+  IoPencil,
+  IoCheckmark,
+  IoClose,
+} from "react-icons/io5";
+
+export default function ProfilePage() {
+  const router = useRouter();
+  const { user, loading, signOut, updateDisplayName, updatePassword } = useAuth();
+
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
+
+  // Edit states
+  const [editingName, setEditingName] = useState(false);
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [editingPassword, setEditingPassword] = useState(false);
+
+  const [nameVal, setNameVal] = useState("");
+  const [usernameVal, setUsernameVal] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!loading && !user) router.push("/login");
+  }, [loading, user, router]);
+
+  useEffect(() => {
+    if (!user) return;
+    getMyProfile().then((p) => {
+      setProfile(p);
+      setNameVal(p?.display_name ?? "");
+      setUsernameVal(p?.username ?? "");
+      setDataLoading(false);
+    });
+  }, [user]);
+
+  const showSuccess = (msg: string) => {
+    setSuccess(msg);
+    setTimeout(() => setSuccess(null), 3000);
+  };
+
+  const handleSaveName = async () => {
+    if (!profile || !nameVal.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await upsertProfile({ id: profile.id, display_name: nameVal.trim() });
+      await updateDisplayName(nameVal.trim());
+      setProfile((p) => p ? { ...p, display_name: nameVal.trim() } : p);
+      setEditingName(false);
+      showSuccess("อัปเดตชื่อแล้ว");
+    } catch {
+      setError("เกิดข้อผิดพลาด กรุณาลองใหม่");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveUsername = async () => {
+    if (!profile || !usernameVal.trim()) return;
+    if (!isValidUsername(usernameVal)) {
+      setError("username ต้องเป็นตัวอักษรภาษาอังกฤษ ตัวเลข หรือ _ (3-30 ตัว)");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      if (usernameVal !== profile.username) {
+        const taken = await isUsernameTaken(usernameVal);
+        if (taken) { setError("username นี้ถูกใช้งานแล้ว"); return; }
+      }
+      await upsertProfile({ id: profile.id, username: usernameVal });
+      setProfile((p) => p ? { ...p, username: usernameVal } : p);
+      setEditingUsername(false);
+      showSuccess("อัปเดต username แล้ว");
+    } catch {
+      setError("เกิดข้อผิดพลาด กรุณาลองใหม่");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSavePassword = async () => {
+    if (newPassword.length < 6) { setError("รหัสผ่านต้องมีอย่างน้อย 6 ตัว"); return; }
+    if (newPassword !== confirmPassword) { setError("รหัสผ่านไม่ตรงกัน"); return; }
+    setSaving(true);
+    setError(null);
+    try {
+      const err = await updatePassword(newPassword);
+      if (err) { setError(err); return; }
+      setEditingPassword(false);
+      setNewPassword("");
+      setConfirmPassword("");
+      showSuccess("เปลี่ยนรหัสผ่านแล้ว");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/login");
+  };
+
+  if (loading || dataLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f8f9fc] dark:bg-gray-950">
+        <div className="w-8 h-8 rounded-full border-2 border-[#4366f4] border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  const isGoogleUser = user?.app_metadata?.provider === "google";
+
+  return (
+    <div className="min-h-screen bg-[#f8f9fc] dark:bg-gray-950 flex flex-col">
+      {/* Navbar */}
+      <nav className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
+        <div className="max-w-2xl mx-auto px-5 h-14 flex items-center gap-3">
+          <button
+            onClick={() => router.push("/")}
+            className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <IoArrowBack size={18} />
+          </button>
+          <h1 className="text-sm font-bold text-gray-900 dark:text-white">โปรไฟล์</h1>
+        </div>
+      </nav>
+
+      <main className="flex-1 max-w-2xl mx-auto w-full px-5 py-5 flex flex-col gap-4">
+        {/* Toast */}
+        {success && (
+          <div className="px-4 py-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl text-sm text-green-700 dark:text-green-400 font-medium">
+            {success}
+          </div>
+        )}
+        {error && (
+          <div className="px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl text-sm text-red-600 dark:text-red-400">
+            {error}
+          </div>
+        )}
+
+        {/* Avatar + email */}
+        <div className="flex flex-col items-center gap-3 py-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+          <div className="w-16 h-16 rounded-2xl bg-[#4366f4] flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
+            {profile?.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <IoPersonOutline size={28} />
+            )}
+          </div>
+          <div className="text-center">
+            <p className="text-base font-bold text-gray-900 dark:text-white">
+              {profile?.display_name ?? "ไม่มีชื่อ"}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">@{profile?.username}</p>
+            <p className="text-xs text-gray-400">{user?.email}</p>
+          </div>
+        </div>
+
+        {/* Display name */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-400">ชื่อที่แสดง</p>
+              {editingName ? (
+                <input
+                  autoFocus
+                  value={nameVal}
+                  onChange={(e) => setNameVal(e.target.value)}
+                  className="mt-1 text-sm font-medium text-gray-900 dark:text-white bg-transparent border-b border-[#4366f4] outline-none w-full"
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveName()}
+                />
+              ) : (
+                <p className="text-sm font-medium text-gray-900 dark:text-white mt-0.5">
+                  {profile?.display_name ?? "—"}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-1">
+              {editingName ? (
+                <>
+                  <button
+                    onClick={handleSaveName}
+                    disabled={saving}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#4366f4] text-white"
+                  >
+                    <IoCheckmark size={14} />
+                  </button>
+                  <button
+                    onClick={() => { setEditingName(false); setNameVal(profile?.display_name ?? ""); setError(null); }}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <IoClose size={14} />
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => { setEditingName(true); setError(null); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <IoPencil size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Username */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-gray-400">Username</p>
+              {editingUsername ? (
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="text-sm text-gray-400">@</span>
+                  <input
+                    autoFocus
+                    value={usernameVal}
+                    onChange={(e) => setUsernameVal(e.target.value.toLowerCase())}
+                    className="text-sm font-medium text-gray-900 dark:text-white bg-transparent border-b border-[#4366f4] outline-none flex-1"
+                    onKeyDown={(e) => e.key === "Enter" && handleSaveUsername()}
+                  />
+                </div>
+              ) : (
+                <p className="text-sm font-medium text-gray-900 dark:text-white mt-0.5">
+                  @{profile?.username ?? "—"}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-1 flex-shrink-0">
+              {editingUsername ? (
+                <>
+                  <button
+                    onClick={handleSaveUsername}
+                    disabled={saving}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#4366f4] text-white"
+                  >
+                    <IoCheckmark size={14} />
+                  </button>
+                  <button
+                    onClick={() => { setEditingUsername(false); setUsernameVal(profile?.username ?? ""); setError(null); }}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <IoClose size={14} />
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => { setEditingUsername(true); setError(null); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <IoPencil size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Change password — only for email users */}
+        {!isGoogleUser && (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <div className="px-4 py-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">เปลี่ยนรหัสผ่าน</p>
+                <button
+                  onClick={() => { setEditingPassword(!editingPassword); setError(null); setNewPassword(""); setConfirmPassword(""); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  {editingPassword ? <IoClose size={14} /> : <IoPencil size={14} />}
+                </button>
+              </div>
+              {editingPassword && (
+                <div className="flex flex-col gap-3 mt-3">
+                  <input
+                    type="password"
+                    placeholder="รหัสผ่านใหม่"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:border-[#4366f4]"
+                  />
+                  <input
+                    type="password"
+                    placeholder="ยืนยันรหัสผ่านใหม่"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:border-[#4366f4]"
+                  />
+                  <button
+                    onClick={handleSavePassword}
+                    disabled={saving}
+                    className="w-full py-2.5 bg-[#4366f4] hover:bg-[#3355e0] disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors"
+                  >
+                    {saving ? "กำลังบันทึก..." : "บันทึก"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Sign out */}
+        <button
+          onClick={handleSignOut}
+          className="flex items-center justify-center gap-2 w-full py-3.5 bg-white dark:bg-gray-900 border border-red-100 dark:border-red-900/30 rounded-2xl text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors mt-2"
+        >
+          <IoLogOutOutline size={18} />
+          ออกจากระบบ
+        </button>
+      </main>
+    </div>
+  );
+}

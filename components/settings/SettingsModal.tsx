@@ -29,9 +29,9 @@ interface SettingsModalProps {
   settings: Settings;
   tip: number;
   discount: number;
-  onSave: (settings: Settings) => void;
-  onTipDiscount: (tip: number, discount: number) => void;
-  onReset: () => void;
+  /** Called with (settings, tip, discount) when user saves */
+  onSave: (settings: Settings, tip: number, discount: number) => void | Promise<void>;
+  onReset?: () => void;
   onSignOut?: () => Promise<void>;
   shareUrl?: string;
   user?: User | null;
@@ -64,7 +64,6 @@ export default function SettingsModal({
   tip,
   discount,
   onSave,
-  onTipDiscount,
   onReset,
   onSignOut,
   shareUrl,
@@ -112,8 +111,7 @@ export default function SettingsModal({
   }, [isOpen]);
 
   const handleSave = () => {
-    onSave(form);
-    onTipDiscount(parseFloat(tipVal) || 0, parseFloat(discountVal) || 0);
+    onSave(form, parseFloat(tipVal) || 0, parseFloat(discountVal) || 0);
     onClose();
   };
 
@@ -514,7 +512,7 @@ export default function SettingsModal({
                 </div>
                 <div className="flex gap-2">
                   <Button variant="secondary" size="sm" fullWidth onClick={() => setConfirmReset(false)}>ยกเลิก</Button>
-                  <Button variant="danger" size="sm" fullWidth onClick={() => { onReset(); onClose(); }}>ล้างข้อมูล</Button>
+                  <Button variant="danger" size="sm" fullWidth onClick={() => { onReset?.(); onClose(); }}>ล้างข้อมูล</Button>
                 </div>
               </div>
             )}

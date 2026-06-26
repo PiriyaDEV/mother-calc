@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { IoAdd, IoCheckmark, IoTrash, IoPencil, IoClose } from "react-icons/io5";
 import { Bill } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
 
 interface BillsDrawerProps {
   isOpen: boolean;
@@ -117,8 +116,8 @@ export default function BillsDrawer({
                         {bill.title}
                       </p>
                       <p className="text-[10px] text-gray-400">
-                        {bill.members.length} คน · {bill.items.length} รายการ ·{" "}
-                        {formatDate(bill.updatedAt)}
+                        {(bill.members ?? []).length} คน · {(bill.items ?? []).length} รายการ ·{" "}
+                        {new Date(bill.updated_at).toLocaleDateString("th-TH")}
                       </p>
                     </>
                   )}

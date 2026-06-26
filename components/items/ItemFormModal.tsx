@@ -1,299 +1,278 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { BillItem, Member, Settings, SplitType } from "@/lib/types";
+import { useState, useEffect } from "react";
+import { IoClose, IoCheckmark } from "react-icons/io5";
+import { BillItem, BillMember } from "@/lib/types";
 import Modal from "@/components/ui/Modal";
-import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import Toggle from "@/components/ui/Toggle";
+import Button from "@/components/ui/Button";
+
+type SplitMode = "equal" | "unequal";
 
 interface ItemFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (item: Omit<BillItem, "id">) => void;
-  members: Member[];
-  settings: Settings;
+  members: BillMember[];
   editItem?: BillItem | null;
+  onSave: (data: { name: string; price: number; shares: Record<string, number> }) => Promise<void>;
 }
 
-export default function ItemFormModal({
-  isOpen,
-  onClose,
-  onSave,
-  members,
-  settings,
-  editItem,
-}: ItemFormModalProps) {
+export default function ItemFormModal({ isOpen, onClose, members, editItem, onSave }: ItemFormModalProps) {
   const [name, setName] = useState("");
-  const [amount, setAmount] = useState("");
-  const [splitType, setSplitType] = useState<SplitType>("equal");
-  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [price, setPrice] = useState("");
+  const [splitMode, setSplitMode] = useState<SplitMode>("equal");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // unequal mode: custom amount per member (string for input)
   const [unequalAmounts, setUnequalAmounts] = useState<Record<string, string>>({});
-  const [paidBy, setPaidBy] = useState("");
-  const [isVat, setIsVat] = useState(settings.isVat);
-  const [isService, setIsService] = useState(settings.isService);
+  const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Reset form when modal opens
   useEffect(() => {
     if (!isOpen) return;
     if (editItem) {
       setName(editItem.name);
-      setAmount(String(editItem.totalAmount));
-      setSplitType(editItem.splitType);
-      setSelectedMemberIds(
-        editItem.selectedMemberIds.length > 0
-          ? editItem.selectedMemberIds
-          : editItem.shares.map((s) => s.memberId)
-      );
-      const ua: Record<string, string> = {};
-      editItem.shares.forEach((s) => {
-        ua[s.memberId] = String(s.amount);
-      });
-      setUnequalAmounts(ua);
-      setPaidBy(editItem.paidBy);
-      setIsVat(editItem.isVat);
-      setIsService(editItem.isService);
+      setPrice(String(editItem.price));
+      const ids = new Set(Object.keys(editItem.shares));
+      setSelectedIds(ids);
+
+      // Detect if shares are equal weights (all 1) or custom
+      const weights = Object.values(editItem.shares);
+      const allEqual = weights.every((w) => w === 1);
+      if (allEqual) {
+        setSplitMode("equal");
+        setUnequalAmounts({});
+      } else {
+        // Reconstruct amounts from weights
+        const total = weights.reduce((s, w) => s + w, 0);
+        const ua: Record<string, string> = {};
+        for (const [id, w] of Object.entries(editItem.shares)) {
+          ua[id] = ((w / total) * editItem.price).toFixed(2);
+        }
+        setSplitMode("unequal");
+        setUnequalAmounts(ua);
+      }
     } else {
       setName("");
-      setAmount("");
-      setSplitType("equal");
-      setSelectedMemberIds(members.map((m) => m.id));
+      setPrice("");
+      setSplitMode("equal");
+      setSelectedIds(new Set(members.map((m) => m.id)));
       setUnequalAmounts({});
-      setPaidBy(members[0]?.id || "");
-      setIsVat(settings.isVat);
-      setIsService(settings.isService);
     }
     setErrors({});
-  }, [isOpen, editItem, members, settings]);
+  }, [isOpen, editItem, members]);
 
   const toggleMember = (id: string) => {
-    setSelectedMemberIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
-  const totalAmount = parseFloat(amount) || 0;
+  const totalAmount = parseFloat(price) || 0;
+  const selectedArr = Array.from(selectedIds);
+
+  const unequalTotal = selectedArr.reduce(
+    (s, id) => s + (parseFloat(unequalAmounts[id] || "0") || 0),
+    0
+  );
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
     if (!name.trim()) errs.name = "กรุณาใส่ชื่อรายการ";
-    if (!amount || totalAmount <= 0) errs.amount = "กรุณาใส่ราคา";
-    if (selectedMemberIds.length === 0) errs.members = "เลือกสมาชิกอย่างน้อย 1 คน";
-    if (splitType === "unequal") {
-      const total = selectedMemberIds.reduce(
-        (s, id) => s + (parseFloat(unequalAmounts[id] || "0") || 0),
-        0
-      );
-      if (Math.abs(total - totalAmount) > 0.01)
-        errs.unequal = `ยอดรวมต้องเท่ากับ ${totalAmount} (ตอนนี้ ${total.toFixed(2)})`;
+    if (!price || totalAmount <= 0) errs.price = "กรุณาใส่ราคา";
+    if (selectedIds.size === 0) errs.members = "เลือกสมาชิกอย่างน้อย 1 คน";
+    if (splitMode === "unequal") {
+      if (Math.abs(unequalTotal - totalAmount) > 0.01) {
+        errs.unequal = `ยอดรวมต้องเท่ากับ ฿${totalAmount.toFixed(2)} (ตอนนี้ ฿${unequalTotal.toFixed(2)})`;
+      }
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  const buildShares = () => {
-    if (splitType === "equal") {
-      const perPerson = totalAmount / selectedMemberIds.length;
-      return selectedMemberIds.map((id) => ({ memberId: id, amount: perPerson }));
+  const buildShares = (): Record<string, number> => {
+    if (splitMode === "equal") {
+      const shares: Record<string, number> = {};
+      for (const id of selectedIds) shares[id] = 1;
+      return shares;
     }
-    return selectedMemberIds.map((id) => ({
-      memberId: id,
-      amount: parseFloat(unequalAmounts[id] || "0") || 0,
-    }));
+    // unequal: store actual amounts as weights (they sum to totalAmount)
+    const shares: Record<string, number> = {};
+    for (const id of selectedArr) {
+      shares[id] = parseFloat(unequalAmounts[id] || "0") || 0;
+    }
+    return shares;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) return;
-    onSave({
-      name: name.trim(),
-      splitType,
-      totalAmount,
-      shares: buildShares(),
-      selectedMemberIds,
-      paidBy,
-      vat: settings.vat,
-      serviceCharge: settings.serviceCharge,
-      isVat,
-      isService,
-    });
-    onClose();
+    setSaving(true);
+    try {
+      await onSave({ name: name.trim(), price: totalAmount, shares: buildShares() });
+      onClose();
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const perPerson =
+    splitMode === "equal" && selectedIds.size > 0 && totalAmount > 0
+      ? totalAmount / selectedIds.size
+      : 0;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={editItem ? "แก้ไขรายการ" : "เพิ่มรายการ"}
-      size="lg"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={editItem ? "แก้ไขรายการ" : "เพิ่มรายการ"}>
       <div className="flex flex-col gap-4">
         {/* Name */}
         <Input
           label="ชื่อรายการ"
-          placeholder="เช่น ข้าวผัด, เบียร์"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          error={errors.name}
+          placeholder="เช่น ข้าวผัด, เบียร์"
           autoFocus
+          error={errors.name}
         />
 
-        {/* Amount */}
+        {/* Price */}
         <Input
           label="ราคารวม (บาท)"
-          placeholder="0.00"
           type="number"
           inputMode="decimal"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          error={errors.amount}
-          prefix="฿"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder="0.00"
+          error={errors.price}
         />
 
-        {/* Paid by */}
-        {members.length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-              ใครจ่ายไปก่อน
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {members.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setPaidBy(m.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                    paidBy === m.id
-                      ? "text-white shadow-sm"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
-                  }`}
-                  style={paidBy === m.id ? { backgroundColor: m.color } : {}}
-                >
-                  {m.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Split type */}
+        {/* Split mode toggle */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-            วิธีหาร
-          </label>
+          <label className="text-xs font-medium text-gray-600 dark:text-gray-400">วิธีหาร</label>
           <div className="flex gap-2">
-            {(["equal", "unequal"] as SplitType[]).map((t) => (
+            {(["equal", "unequal"] as SplitMode[]).map((mode) => (
               <button
-                key={t}
+                key={mode}
                 type="button"
-                onClick={() => setSplitType(t)}
-                className={`flex-1 py-2 rounded-xl text-xs font-medium transition-all ${
-                  splitType === t
-                    ? "bg-[#4366f4] text-white"
-                    : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                onClick={() => setSplitMode(mode)}
+                className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
+                  splitMode === mode
+                    ? "bg-[#4366f4] text-white shadow-sm"
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
                 }`}
               >
-                {t === "equal" ? "หารเท่า" : "หารไม่เท่า"}
+                {mode === "equal" ? "หารเท่า" : "หารไม่เท่า"}
               </button>
             ))}
           </div>
         </div>
 
         {/* Member selection */}
-        {members.length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                สมาชิกที่ร่วม
-              </label>
-              {errors.members && (
-                <span className="text-xs text-red-500">{errors.members}</span>
-              )}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              สมาชิกที่ร่วม
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedIds(new Set(members.map((m) => m.id)))}
+                className="text-xs text-[#4366f4] hover:underline"
+              >
+                เลือกทั้งหมด
+              </button>
+              <span className="text-gray-300">|</span>
+              <button
+                type="button"
+                onClick={() => setSelectedIds(new Set())}
+                className="text-xs text-gray-400 hover:underline"
+              >
+                ล้าง
+              </button>
             </div>
-            <div className="flex flex-col gap-2">
-              {members.map((m) => {
-                const selected = selectedMemberIds.includes(m.id);
-                return (
-                  <div key={m.id} className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => toggleMember(m.id)}
-                      className={`flex items-center gap-2 flex-1 px-3 py-2 rounded-xl border transition-all text-left ${
-                        selected
-                          ? "border-[#4366f4] bg-blue-50 dark:bg-blue-900/20"
-                          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-                      }`}
+          </div>
+
+          {errors.members && (
+            <p className="text-xs text-red-500 mb-2">{errors.members}</p>
+          )}
+
+          <div className="flex flex-col gap-2">
+            {members.map((member) => {
+              const selected = selectedIds.has(member.id);
+              return (
+                <div key={member.id} className="flex items-center gap-2">
+                  {/* Member chip */}
+                  <button
+                    type="button"
+                    onClick={() => toggleMember(member.id)}
+                    className={`flex items-center gap-2 flex-1 px-3 py-2 rounded-xl border transition-all text-left ${
+                      selected
+                        ? "border-[#4366f4] bg-blue-50 dark:bg-blue-900/20"
+                        : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                    }`}
+                  >
+                    <div
+                      className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                      style={{ backgroundColor: member.color }}
                     >
-                      <div
-                        className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                        style={{ backgroundColor: m.color }}
-                      >
-                        {m.name.slice(0, 1).toUpperCase()}
-                      </div>
-                      <span className="text-sm text-gray-800 dark:text-gray-200">
-                        {m.name}
+                      {selected ? <IoCheckmark size={12} /> : member.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-sm text-gray-800 dark:text-gray-200 flex-1">
+                      {member.name}
+                    </span>
+                    {/* Equal mode: show per-person amount */}
+                    {splitMode === "equal" && selected && perPerson > 0 && (
+                      <span className="text-xs text-[#4366f4] font-semibold">
+                        ฿{perPerson.toFixed(2)}
                       </span>
-                      {splitType === "equal" && selected && totalAmount > 0 && (
-                        <span className="ml-auto text-xs text-[#4366f4] font-medium">
-                          ฿{(totalAmount / selectedMemberIds.length).toFixed(2)}
-                        </span>
-                      )}
-                    </button>
-
-                    {/* Unequal amount input */}
-                    {splitType === "unequal" && selected && (
-                      <div className="w-24">
-                        <Input
-                          type="number"
-                          inputMode="decimal"
-                          placeholder="0.00"
-                          value={unequalAmounts[m.id] || ""}
-                          onChange={(e) =>
-                            setUnequalAmounts((prev) => ({
-                              ...prev,
-                              [m.id]: e.target.value,
-                            }))
-                          }
-                          prefix="฿"
-                        />
-                      </div>
                     )}
-                  </div>
-                );
-              })}
-            </div>
-            {errors.unequal && (
-              <p className="text-xs text-red-500">{errors.unequal}</p>
-            )}
-          </div>
-        )}
+                  </button>
 
-        {/* VAT / Service */}
-        <div className="flex flex-col gap-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-          <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-            ภาษีและค่าบริการ
-          </p>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              VAT {settings.vat}%
-            </span>
-            <Toggle checked={isVat} onChange={setIsVat} size="sm" />
+                  {/* Unequal mode: custom amount input */}
+                  {splitMode === "unequal" && selected && (
+                    <div className="w-28 flex-shrink-0">
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        placeholder="0.00"
+                        value={unequalAmounts[member.id] || ""}
+                        onChange={(e) =>
+                          setUnequalAmounts((prev) => ({
+                            ...prev,
+                            [member.id]: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              Service Charge {settings.serviceCharge}%
-            </span>
-            <Toggle checked={isService} onChange={setIsService} size="sm" />
-          </div>
+
+          {/* Unequal total check */}
+          {splitMode === "unequal" && selectedIds.size > 0 && (
+            <div className={`mt-2 text-xs font-medium ${
+              errors.unequal ? "text-red-500" : "text-gray-400"
+            }`}>
+              {errors.unequal
+                ? errors.unequal
+                : `รวม ฿${unequalTotal.toFixed(2)} / ฿${totalAmount.toFixed(2)}`}
+            </div>
+          )}
         </div>
 
         {/* Actions */}
         <div className="flex gap-2 pt-1">
-          <Button variant="secondary" fullWidth onClick={onClose}>
-            ยกเลิก
+          <Button
+            onClick={handleSave}
+            disabled={saving || !name.trim() || !price || selectedIds.size === 0}
+            className="flex-1"
+          >
+            {saving ? "กำลังบันทึก..." : editItem ? "บันทึก" : "เพิ่มรายการ"}
           </Button>
-          <Button fullWidth onClick={handleSave}>
-            {editItem ? "บันทึก" : "เพิ่ม"}
+          <Button variant="secondary" onClick={onClose} disabled={saving}>
+            <IoClose size={16} />
           </Button>
         </div>
       </div>

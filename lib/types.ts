@@ -1,37 +1,14 @@
 // ============================================================
-// Core Types for Kidtang Bill Splitting App
+// Kidtang — TypeScript Types v2
 // ============================================================
 
-export interface Member {
-  id: string;
-  name: string;
-  color: string;
-  promptpay?: string; // เบอร์โทร หรือ Thai ID 13 หลัก
-}
-
-export type SplitType = "equal" | "unequal";
-export type RoundingMode = "none" | "up" | "down" | "nearest";
 export type CurrencyCode = "THB" | "USD" | "EUR" | "JPY" | "SGD" | "GBP" | "CNY" | "KRW";
+export type RoundingMode = "none" | "nearest" | "up" | "down";
+export type MemberRole = "owner" | "member";
+export type MemberStatus = "pending" | "accepted" | "declined";
+export type NotificationType = "group_invite";
 
-export interface ItemShare {
-  memberId: string;
-  amount: number; // จำนวนเงินที่แต่ละคนต้องจ่ายในรายการนี้ (ก่อน VAT/SC)
-}
-
-export interface BillItem {
-  id: string;
-  name: string;
-  splitType: SplitType;
-  totalAmount: number; // ราคารวมของรายการ (ก่อน VAT/SC)
-  shares: ItemShare[]; // สัดส่วนของแต่ละคน
-  selectedMemberIds: string[]; // สมาชิกที่ร่วมในรายการนี้ (สำหรับ equal split)
-  paidBy: string; // memberId ของคนที่จ่ายเงินไปก่อน
-  vat: number; // % VAT
-  serviceCharge: number; // % Service Charge
-  isVat: boolean;
-  isService: boolean;
-}
-
+// ── Settings ──────────────────────────────────────────────────
 export interface Settings {
   vat: number;
   serviceCharge: number;
@@ -41,59 +18,173 @@ export interface Settings {
   currency: CurrencyCode;
 }
 
+// ── Profile ───────────────────────────────────────────────────
+export interface Profile {
+  id: string;
+  username: string;       // stored without @
+  display_name: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── Group ─────────────────────────────────────────────────────
+export interface Group {
+  id: string;
+  name: string;
+  description: string | null;
+  owner_id: string;
+  created_at: string;
+  updated_at: string;
+  // joined via query
+  member_count?: number;
+  my_role?: MemberRole;
+}
+
+// ── Group Member ──────────────────────────────────────────────
+export interface GroupMember {
+  id: string;
+  group_id: string;
+  user_id: string;
+  role: MemberRole;
+  status: MemberStatus;
+  invited_by: string | null;
+  created_at: string;
+  // joined via query
+  profile?: Profile;
+  invited_by_profile?: Profile;
+}
+
+// ── Notification ──────────────────────────────────────────────
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  data: NotificationData;
+  read: boolean;
+  created_at: string;
+}
+
+export interface NotificationData {
+  group_id: string;
+  group_name: string;
+  invited_by_username: string;
+  invited_by_display_name?: string;
+  group_member_id: string;
+}
+
+// ── Trip ──────────────────────────────────────────────────────
+export interface Trip {
+  id: string;
+  name: string;
+  group_id: string | null;
+  owner_id: string;
+  created_at: string;
+  updated_at: string;
+  // joined via query
+  bill_count?: number;
+}
+
+// ── Bill ──────────────────────────────────────────────────────
 export interface Bill {
   id: string;
   title: string;
-  createdAt: number; // timestamp
-  updatedAt: number; // timestamp
-  members: Member[];
-  items: BillItem[];
+  trip_id: string | null;
+  group_id: string | null;
+  owner_id: string;
   settings: Settings;
-  tip: number; // บาท (absolute amount)
-  discount: number; // บาท (absolute amount)
+  tip: number;
+  discount: number;
+  created_at: string;
+  updated_at: string;
+  // joined via query
+  members?: BillMember[];
+  items?: BillItem[];
+  owner?: Profile;
 }
 
-// Legacy alias for single-bill usage
-export type BillState = Bill;
-
-// สำหรับ Summary
-export interface MemberSummary {
-  memberId: string;
-  memberName: string;
+// ── Bill Member ───────────────────────────────────────────────
+export interface BillMember {
+  id: string;
+  bill_id: string;
+  user_id: string | null;    // null = external person
+  name: string;
   color: string;
-  totalOwed: number; // ยอดที่ต้องจ่ายทั้งหมด
-  totalPaid: number; // ยอดที่จ่ายไปแล้ว (paidBy)
-  netBalance: number; // totalPaid - totalOwed (บวก = ได้คืน, ลบ = ต้องจ่าย)
+  promptpay: string | null;
+  is_external: boolean;
+  created_at: string;
+  // joined via query
+  profile?: Profile;
 }
 
-// debt[from][to] = amount → "from" ต้องจ่าย "to" เท่าไหร่
-export type DebtMatrix = Record<string, Record<string, number>>;
-
-// Simplified debt transactions
-export interface DebtTransaction {
-  fromId: string;
-  fromName: string;
-  toId: string;
-  toName: string;
-  toPromptpay?: string;
-  amount: number;
-  isPaid?: boolean; // mark as paid
+// ── Bill Item ─────────────────────────────────────────────────
+export interface BillItem {
+  id: string;
+  bill_id: string;
+  name: string;
+  price: number;
+  shares: Record<string, number>;  // { bill_member_id: weight }
+  created_at: string;
 }
 
+// ── Computed types for UI ─────────────────────────────────────
+
+/** Per-member summary after calculation */
+export interface MemberSummary {
+  member: BillMember;
+  subtotal: number;   // before tax/service
+  total: number;      // final amount to pay
+  items: { item: BillItem; amount: number }[];
+}
+
+/** Full bill calculation result */
+export interface BillCalculation {
+  subtotal: number;
+  vatAmount: number;
+  serviceAmount: number;
+  tipAmount: number;
+  discountAmount: number;
+  total: number;
+  memberSummaries: MemberSummary[];
+}
+
+// ── Form types ────────────────────────────────────────────────
+
+export interface CreateBillInput {
+  title: string;
+  trip_id?: string | null;
+  group_id?: string | null;
+  settings?: Partial<Settings>;
+}
+
+export interface CreateGroupInput {
+  name: string;
+  description?: string;
+}
+
+export interface CreateTripInput {
+  name: string;
+  group_id?: string | null;
+}
+
+export interface AddBillMemberInput {
+  bill_id: string;
+  user_id?: string | null;
+  name: string;
+  color: string;
+  promptpay?: string;
+  is_external?: boolean;
+}
+
+export interface AddBillItemInput {
+  bill_id: string;
+  name: string;
+  price: number;
+  shares: Record<string, number>;
+}
+
+// ── App Tab ───────────────────────────────────────────────────
 export type AppTab = "members" | "items" | "summary";
 
-export interface AppState {
-  bills: Bill[];
-  activeBillId: string | null;
-}
-
-export const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
-  THB: "฿",
-  USD: "$",
-  EUR: "€",
-  JPY: "¥",
-  SGD: "S$",
-  GBP: "£",
-  CNY: "¥",
-  KRW: "₩",
-};
+// ── Home context ──────────────────────────────────────────────
+export type HomeContext = "groups" | "individual";

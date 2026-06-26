@@ -29,14 +29,14 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.push("/app");
+      router.push("/");
     }
   }, [user, loading, router]);
 
-  // If Supabase not configured, redirect to app directly
+  // If Supabase not configured, redirect to home directly
   useEffect(() => {
     if (!loading && !configured) {
-      router.push("/app");
+      router.push("/");
     }
   }, [loading, configured, router]);
 

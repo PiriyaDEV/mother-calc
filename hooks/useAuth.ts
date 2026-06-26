@@ -4,6 +4,27 @@ import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 
+/** Ensure a profile row exists for the given user (safe, idempotent). */
+async function ensureProfile(user: User) {
+  const supabase = createClient();
+
+  const username =
+    (user.user_metadata?.username as string | undefined)?.toLowerCase().trim() ||
+    "user_" + user.id.replace(/-/g, "").slice(0, 8);
+  const displayName =
+    (user.user_metadata?.full_name as string | undefined) ||
+    user.email?.split("@")[0] ||
+    username;
+  const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) ?? null;
+
+  // upsert with ignoreDuplicates=true: INSERT ... ON CONFLICT DO NOTHING
+  // Never throws on duplicate key — safe to call multiple times
+  await supabase.from("profiles").upsert(
+    { id: user.id, username, display_name: displayName, avatar_url: avatarUrl },
+    { onConflict: "id", ignoreDuplicates: true }
+  );
+}
+
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -17,10 +38,14 @@ export function useAuth() {
 
     const supabase = createClient();
 
-    // Get initial session
+    // Get initial session — set user/loading immediately, then ensure profile in background
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
+      // Fire-and-forget: don't block UI on profile creation
+      if (session?.user) {
+        ensureProfile(session.user).catch(console.error);
+      }
     });
 
     // Listen for auth changes
@@ -28,6 +53,10 @@ export function useAuth() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      // Fire-and-forget: don't block UI on profile creation
+      if (session?.user) {
+        ensureProfile(session.user).catch(console.error);
+      }
     });
 
     return () => subscription.unsubscribe();
