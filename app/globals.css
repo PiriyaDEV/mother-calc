@@ -1,6 +1,12 @@
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap");
 @import "tailwindcss";
 
+/* Tailwind v4: enable class-based dark mode */
+@variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   CSS Custom Properties
+   ============================================================ */
 :root {
   --font-ibm: "IBM Plex Sans Thai", sans-serif;
   --primary: #4366f4;
@@ -15,20 +21,41 @@
   --warning: #f59e0b;
 }
 
-* {
+/* ============================================================
+   Dark mode overrides (class-based via Tailwind)
+   ============================================================ */
+.dark {
+  color-scheme: dark;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 html,
 body {
   font-family: var(--font-ibm);
-  background-color: var(--bg);
-  color: var(--text);
+  background-color: #f8f9fc;
+  color: #1a1d2e;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Scrollbar */
+html.dark,
+html.dark body {
+  background-color: #030712;
+  color: #f9fafb;
+}
+
+/* ============================================================
+   Scrollbar
+   ============================================================ */
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -40,8 +67,13 @@ body {
   background: #d1d5db;
   border-radius: 2px;
 }
+.dark ::-webkit-scrollbar-thumb {
+  background: #374151;
+}
 
-/* Input base */
+/* ============================================================
+   Form elements
+   ============================================================ */
 input[type="text"],
 input[type="number"],
 input[type="tel"],
@@ -58,4 +90,46 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.2s ease-out both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.15s ease-out both;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.2s ease-out both;
 }

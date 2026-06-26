@@ -10,6 +10,8 @@ export interface Member {
 }
 
 export type SplitType = "equal" | "unequal";
+export type RoundingMode = "none" | "up" | "down" | "nearest";
+export type CurrencyCode = "THB" | "USD" | "EUR" | "JPY" | "SGD" | "GBP" | "CNY" | "KRW";
 
 export interface ItemShare {
   memberId: string;
@@ -22,6 +24,7 @@ export interface BillItem {
   splitType: SplitType;
   totalAmount: number; // ราคารวมของรายการ (ก่อน VAT/SC)
   shares: ItemShare[]; // สัดส่วนของแต่ละคน
+  selectedMemberIds: string[]; // สมาชิกที่ร่วมในรายการนี้ (สำหรับ equal split)
   paidBy: string; // memberId ของคนที่จ่ายเงินไปก่อน
   vat: number; // % VAT
   serviceCharge: number; // % Service Charge
@@ -34,13 +37,24 @@ export interface Settings {
   serviceCharge: number;
   isVat: boolean;
   isService: boolean;
+  roundingMode: RoundingMode;
+  currency: CurrencyCode;
 }
 
-export interface BillState {
+export interface Bill {
+  id: string;
+  title: string;
+  createdAt: number; // timestamp
+  updatedAt: number; // timestamp
   members: Member[];
   items: BillItem[];
   settings: Settings;
+  tip: number; // บาท (absolute amount)
+  discount: number; // บาท (absolute amount)
 }
+
+// Legacy alias for single-bill usage
+export type BillState = Bill;
 
 // สำหรับ Summary
 export interface MemberSummary {
@@ -63,6 +77,23 @@ export interface DebtTransaction {
   toName: string;
   toPromptpay?: string;
   amount: number;
+  isPaid?: boolean; // mark as paid
 }
 
-export type AppTab = "members" | "items" | "summary" | "payment";
+export type AppTab = "members" | "items" | "summary";
+
+export interface AppState {
+  bills: Bill[];
+  activeBillId: string | null;
+}
+
+export const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
+  THB: "฿",
+  USD: "$",
+  EUR: "€",
+  JPY: "¥",
+  SGD: "S$",
+  GBP: "£",
+  CNY: "¥",
+  KRW: "₩",
+};

@@ -1,40 +1,58 @@
-import { InputHTMLAttributes, forwardRef } from "react";
+"use client";
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+import React from "react";
+
+interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "prefix"> {
   label?: string;
   error?: string;
   hint?: string;
+  prefix?: React.ReactNode;
+  suffix?: React.ReactNode;
 }
 
-const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, hint, className = "", id, ...props }, ref) => {
-    const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
+export default function Input({
+  label,
+  error,
+  hint,
+  prefix,
+  suffix,
+  className = "",
+  id,
+  ...props
+}: InputProps) {
+  const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
 
-    return (
-      <div className="flex flex-col gap-1.5">
-        {label && (
-          <label
-            htmlFor={inputId}
-            className="text-sm font-medium text-gray-700"
-          >
-            {label}
-          </label>
+  return (
+    <div className="flex flex-col gap-1.5">
+      {label && (
+        <label
+          htmlFor={inputId}
+          className="text-xs font-medium text-gray-600 dark:text-gray-400"
+        >
+          {label}
+        </label>
+      )}
+      <div
+        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-colors bg-white dark:bg-gray-800 ${
+          error
+            ? "border-red-400 focus-within:border-red-500"
+            : "border-gray-200 dark:border-gray-700 focus-within:border-[#4366f4]"
+        }`}
+      >
+        {prefix && (
+          <span className="text-gray-400 text-sm flex-shrink-0">{prefix}</span>
         )}
         <input
-          ref={ref}
           id={inputId}
-          className={`w-full h-10 px-3 text-sm bg-white border rounded-xl outline-none transition-all
-            ${error ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100" : "border-gray-200 focus:border-[#4366f4] focus:ring-2 focus:ring-[#4366f4]/10"}
-            placeholder:text-gray-400 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed
-            ${className}`}
+          className={`flex-1 text-sm bg-transparent outline-none text-gray-900 dark:text-white placeholder:text-gray-400 ${className}`}
           {...props}
         />
-        {error && <p className="text-xs text-red-500">{error}</p>}
-        {hint && !error && <p className="text-xs text-gray-400">{hint}</p>}
+        {suffix && (
+          <span className="text-gray-400 text-sm flex-shrink-0">{suffix}</span>
+        )}
       </div>
-    );
-  }
-);
-
-Input.displayName = "Input";
-export default Input;
+      {error && <p className="text-xs text-red-500">{error}</p>}
+      {hint && !error && <p className="text-xs text-gray-400">{hint}</p>}
+    </div>
+  );
+}

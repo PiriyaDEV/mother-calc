@@ -1,28 +1,19 @@
 import {
+  Bill,
   BillItem,
-  BillState,
+  CurrencyCode,
+  CURRENCY_SYMBOLS,
   DebtMatrix,
   DebtTransaction,
   Member,
   MemberSummary,
+  RoundingMode,
 } from "./types";
 import { THAI_ID_REGEX, THAI_PHONE_REGEX } from "./constants";
 
 // ============================================================
 // Price Calculation
 // ============================================================
-
-/** คำนวณราคาสุทธิของ item (รวม VAT และ Service Charge) */
-export function getItemNetAmount(item: BillItem): number {
-  let amount = item.totalAmount;
-  if (item.isService) {
-    amount = amount * (1 + item.serviceCharge / 100);
-  }
-  if (item.isVat) {
-    amount = amount * (1 + item.vat / 100);
-  }
-  return amount;
-}
 
 /** คำนวณ multiplier สำหรับ VAT+SC */
 export function getItemMultiplier(item: BillItem): number {
@@ -32,20 +23,54 @@ export function getItemMultiplier(item: BillItem): number {
   return m;
 }
 
+/** คำนวณราคาสุทธิของ item (รวม VAT และ Service Charge) */
+export function getItemNetAmount(item: BillItem): number {
+  return item.totalAmount * getItemMultiplier(item);
+}
+
 /** คำนวณยอดที่ member คนนึงต้องจ่ายใน item นั้น (รวม VAT/SC แล้ว) */
 export function getMemberAmountInItem(item: BillItem, memberId: string): number {
   const share = item.shares.find((s) => s.memberId === memberId);
   if (!share) return 0;
-  const multiplier = getItemMultiplier(item);
-  return share.amount * multiplier;
+  return share.amount * getItemMultiplier(item);
+}
+
+/** Apply rounding to a number */
+export function applyRounding(amount: number, mode: RoundingMode): number {
+  switch (mode) {
+    case "up":
+      return Math.ceil(amount);
+    case "down":
+      return Math.floor(amount);
+    case "nearest":
+      return Math.round(amount);
+    default:
+      return Math.round(amount * 100) / 100;
+  }
+}
+
+// ============================================================
+// Bill Total (including tip & discount)
+// ============================================================
+
+export function getBillSubtotal(bill: Bill): number {
+  return bill.items.reduce((sum, item) => sum + getItemNetAmount(item), 0);
+}
+
+export function getBillTotal(bill: Bill): number {
+  const subtotal = getBillSubtotal(bill);
+  return Math.max(0, subtotal + (bill.tip || 0) - (bill.discount || 0));
 }
 
 // ============================================================
 // Summary Calculation
 // ============================================================
 
-export function calculateSummary(state: BillState): MemberSummary[] {
-  const { members, items } = state;
+export function calculateSummary(bill: Bill): MemberSummary[] {
+  const { members, items, tip = 0, discount = 0 } = bill;
+
+  const subtotal = getBillSubtotal(bill);
+  const adjustment = tip - discount; // can be negative
 
   return members.map((member) => {
     let totalOwed = 0;
@@ -53,21 +78,25 @@ export function calculateSummary(state: BillState): MemberSummary[] {
 
     items.forEach((item) => {
       const netAmount = getItemNetAmount(item);
-      // ยอดที่ member คนนี้ต้องจ่าย
       totalOwed += getMemberAmountInItem(item, member.id);
-      // ยอดที่ member คนนี้จ่ายแทนคนอื่น
       if (item.paidBy === member.id) {
         totalPaid += netAmount;
       }
     });
 
+    // Distribute tip/discount proportionally
+    if (subtotal > 0 && adjustment !== 0) {
+      const ratio = totalOwed / subtotal;
+      totalOwed += adjustment * ratio;
+    }
+
     return {
       memberId: member.id,
       memberName: member.name,
       color: member.color,
-      totalOwed,
+      totalOwed: Math.max(0, totalOwed),
       totalPaid,
-      netBalance: totalPaid - totalOwed,
+      netBalance: totalPaid - Math.max(0, totalOwed),
     };
   });
 }
@@ -76,9 +105,8 @@ export function calculateSummary(state: BillState): MemberSummary[] {
 // Debt Matrix & Simplified Debt
 // ============================================================
 
-/** สร้าง debt matrix: debt[fromId][toId] = amount */
-export function buildDebtMatrix(state: BillState): DebtMatrix {
-  const { members, items } = state;
+export function buildDebtMatrix(bill: Bill): DebtMatrix {
+  const { members, items, tip = 0, discount = 0 } = bill;
   const matrix: DebtMatrix = {};
 
   members.forEach((m) => {
@@ -88,12 +116,24 @@ export function buildDebtMatrix(state: BillState): DebtMatrix {
     });
   });
 
+  const subtotal = getBillSubtotal(bill);
+  const adjustment = tip - discount;
+
   items.forEach((item) => {
     const paidBy = item.paidBy;
     item.shares.forEach((share) => {
       if (share.memberId === paidBy) return;
       const multiplier = getItemMultiplier(item);
-      const amount = share.amount * multiplier;
+      let amount = share.amount * multiplier;
+
+      // Add proportional tip/discount
+      if (subtotal > 0 && adjustment !== 0) {
+        const itemNet = getItemNetAmount(item);
+        const memberRatio = (share.amount * multiplier) / itemNet;
+        const itemAdjustment = (itemNet / subtotal) * adjustment * memberRatio;
+        amount += itemAdjustment;
+      }
+
       if (amount > 0) {
         matrix[share.memberId][paidBy] =
           (matrix[share.memberId][paidBy] || 0) + amount;
@@ -104,12 +144,11 @@ export function buildDebtMatrix(state: BillState): DebtMatrix {
   return matrix;
 }
 
-/** Simplify debts: หักลบหนี้ที่ตัดกันได้ */
 export function simplifyDebts(
   matrix: DebtMatrix,
-  members: Member[]
+  members: Member[],
+  roundingMode: RoundingMode = "none"
 ): DebtTransaction[] {
-  // คำนวณ net balance ของแต่ละคน
   const balance: Record<string, number> = {};
   members.forEach((m) => (balance[m.id] = 0));
 
@@ -132,13 +171,13 @@ export function simplifyDebts(
     .map((m) => ({ ...m, balance: balance[m.id] }));
 
   const transactions: DebtTransaction[] = [];
+  let i = 0, j = 0;
 
-  let i = 0,
-    j = 0;
   while (i < debtors.length && j < creditors.length) {
     const debtor = debtors[i];
     const creditor = creditors[j];
-    const amount = Math.min(-debtor.balance, creditor.balance);
+    const rawAmount = Math.min(-debtor.balance, creditor.balance);
+    const amount = applyRounding(rawAmount, roundingMode);
 
     if (amount > 0.005) {
       transactions.push({
@@ -147,12 +186,13 @@ export function simplifyDebts(
         toId: creditor.id,
         toName: creditor.name,
         toPromptpay: creditor.promptpay,
-        amount: Math.round(amount * 100) / 100,
+        amount,
+        isPaid: false,
       });
     }
 
-    debtor.balance += amount;
-    creditor.balance -= amount;
+    debtor.balance += rawAmount;
+    creditor.balance -= rawAmount;
 
     if (Math.abs(debtor.balance) < 0.005) i++;
     if (Math.abs(creditor.balance) < 0.005) j++;
@@ -166,14 +206,13 @@ export function simplifyDebts(
 // ============================================================
 
 export function validatePromptpay(value: string): boolean {
-  if (!value) return true; // optional
+  if (!value) return true;
   return THAI_PHONE_REGEX.test(value) || THAI_ID_REGEX.test(value);
 }
 
 export function maskPromptpay(value: string): string {
   if (!value) return "";
   if (THAI_PHONE_REGEX.test(value)) {
-    // 081-xxx-x678
     return value.slice(0, 3) + "-xxx-x" + value.slice(-3);
   }
   if (THAI_ID_REGEX.test(value)) {
@@ -183,22 +222,22 @@ export function maskPromptpay(value: string): string {
 }
 
 // ============================================================
-// URL State Encoding/Decoding
+// URL State Encoding/Decoding (with compression)
 // ============================================================
 
-export function encodeState(state: BillState): string {
+export function encodeState(bill: Bill): string {
   try {
-    const json = JSON.stringify(state);
+    const json = JSON.stringify(bill);
     return btoa(encodeURIComponent(json));
   } catch {
     return "";
   }
 }
 
-export function decodeState(encoded: string): BillState | null {
+export function decodeState(encoded: string): Bill | null {
   try {
     const json = decodeURIComponent(atob(encoded));
-    return JSON.parse(json) as BillState;
+    return JSON.parse(json) as Bill;
   } catch {
     return null;
   }
@@ -208,10 +247,21 @@ export function decodeState(encoded: string): BillState | null {
 // Formatting
 // ============================================================
 
-export function formatCurrency(amount: number): string {
-  return amount.toLocaleString("th-TH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+export function formatCurrency(amount: number, currency: CurrencyCode = "THB"): string {
+  const symbol = CURRENCY_SYMBOLS[currency] || "฿";
+  const decimals = currency === "JPY" || currency === "KRW" ? 0 : 2;
+  const formatted = amount.toLocaleString("th-TH", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+  return `${symbol}${formatted}`;
+}
+
+export function formatDate(timestamp: number): string {
+  return new Date(timestamp).toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "2-digit",
   });
 }
 

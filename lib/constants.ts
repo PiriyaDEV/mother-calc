@@ -28,7 +28,11 @@ export const DEFAULT_SETTINGS: Settings = {
   serviceCharge: 10,
   isVat: false,
   isService: false,
+  roundingMode: "none",
+  currency: "THB",
 };
 
 export const THAI_PHONE_REGEX = /^(0[689]\d{8}|02\d{7})$/;
 export const THAI_ID_REGEX = /^\d{13}$/;
+
+export const STORAGE_KEY = "kidtang_app_state";

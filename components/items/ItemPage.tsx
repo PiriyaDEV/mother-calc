@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { IoAdd, IoPencil, IoTrash, IoReceipt } from "react-icons/io5";
 import { BillItem, Member, Settings } from "@/lib/types";
-import { formatCurrency, getItemNetAmount, getMemberAmountInItem } from "@/lib/utils";
+import { formatCurrency, getItemNetAmount } from "@/lib/utils";
 import ItemFormModal from "./ItemFormModal";
-import Button from "@/components/ui/Button";
 
 interface ItemPageProps {
   items: BillItem[];
@@ -24,191 +23,190 @@ export default function ItemPage({
   onUpdate,
   onRemove,
 }: ItemPageProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<BillItem | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState<BillItem | null>(null);
 
   const openAdd = () => {
-    setEditingItem(null);
-    setIsModalOpen(true);
+    setEditItem(null);
+    setModalOpen(true);
   };
 
   const openEdit = (item: BillItem) => {
-    setEditingItem(item);
-    setIsModalOpen(true);
+    setEditItem(item);
+    setModalOpen(true);
   };
 
-  const getMemberById = (id: string) => members.find((m) => m.id === id);
+  const handleSave = (data: Omit<BillItem, "id">) => {
+    if (editItem) {
+      onUpdate(editItem.id, data);
+    } else {
+      onAdd(data);
+    }
+  };
 
-  const totalBill = items.reduce((sum, item) => sum + getItemNetAmount(item), 0);
+  const getMemberName = (id: string) =>
+    members.find((m) => m.id === id)?.name || "ไม่ระบุ";
+
+  const getMemberColor = (id: string) =>
+    members.find((m) => m.id === id)?.color || "#9ca3af";
 
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-gray-900">รายการ</h2>
-          <p className="text-xs text-gray-400 mt-0.5">{items.length} รายการ</p>
+          <h1 className="text-lg font-bold text-gray-900 dark:text-white">รายการ</h1>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {items.length > 0
+              ? `${items.length} รายการ`
+              : "เพิ่มรายการเพื่อคำนวณ"}
+          </p>
         </div>
-        <Button
-          size="sm"
+        <button
           onClick={openAdd}
           disabled={members.length === 0}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#4366f4] hover:bg-[#3355e0] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-medium rounded-xl transition-all active:scale-95"
         >
           <IoAdd size={16} />
           เพิ่มรายการ
-        </Button>
+        </button>
       </div>
 
+      {/* No members warning */}
       {members.length === 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
-          <p className="text-xs text-amber-700">⚠️ กรุณาเพิ่มสมาชิกก่อนเพิ่มรายการ</p>
+        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            กรุณาเพิ่มสมาชิกก่อนเพิ่มรายการ
+          </p>
         </div>
       )}
 
       {/* Empty state */}
       {items.length === 0 && members.length > 0 && (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <div className="w-16 h-16 rounded-2xl bg-[#4366f4]/10 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
             <IoReceipt size={32} className="text-[#4366f4]" />
           </div>
-          <p className="text-sm text-gray-500 text-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
             ยังไม่มีรายการ
             <br />
-            <span className="text-gray-400">กดปุ่ม &quot;เพิ่มรายการ&quot; เพื่อเริ่มต้น</span>
+            กดปุ่ม &quot;เพิ่มรายการ&quot; เพื่อเริ่มต้น
           </p>
         </div>
       )}
 
       {/* Item list */}
       <div className="flex flex-col gap-2">
-        {items.map((item) => {
-          const paidByMember = getMemberById(item.paidBy);
+        {items.map((item, idx) => {
           const netAmount = getItemNetAmount(item);
+          const paidByMember = members.find((m) => m.id === item.paidBy);
+          const participantIds =
+            item.selectedMemberIds.length > 0
+              ? item.selectedMemberIds
+              : item.shares.map((s) => s.memberId);
 
           return (
             <div
               key={item.id}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+              className="p-3.5 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all duration-200 hover:shadow-md"
+              style={{ animationDelay: `${idx * 40}ms` }}
             >
-              {/* Item header */}
-              <div className="flex items-start gap-3 px-4 pt-3 pb-2">
+              <div className="flex items-start gap-3">
+                {/* Icon */}
+                <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <IoReceipt size={16} className="text-[#4366f4]" />
+                </div>
+
+                {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-semibold text-gray-900">{item.name}</p>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {item.name}
+                    </p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white flex-shrink-0">
+                      {formatCurrency(netAmount, settings.currency)}
+                    </p>
+                  </div>
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    {/* Split type */}
+                    <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[10px] rounded-lg">
                       {item.splitType === "equal" ? "หารเท่า" : "หารไม่เท่า"}
                     </span>
+
+                    {/* VAT/SC */}
                     {item.isVat && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
+                      <span className="px-2 py-0.5 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-[10px] rounded-lg">
                         VAT {item.vat}%
                       </span>
                     )}
                     {item.isService && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">
+                      <span className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-[10px] rounded-lg">
                         SC {item.serviceCharge}%
                       </span>
                     )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <p className="text-base font-bold text-gray-900">
-                      ฿{formatCurrency(netAmount)}
-                    </p>
+
+                    {/* Paid by */}
                     {paidByMember && (
-                      <span className="text-xs text-gray-400">
-                        จ่ายโดย{" "}
-                        <span
-                          className="font-medium"
-                          style={{ color: paidByMember.color }}
-                        >
-                          {paidByMember.name}
-                        </span>
+                      <span
+                        className="px-2 py-0.5 text-white text-[10px] rounded-lg"
+                        style={{ backgroundColor: paidByMember.color }}
+                      >
+                        {paidByMember.name} จ่าย
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Participants */}
+                  <div className="flex items-center gap-1 mt-2">
+                    {participantIds.slice(0, 6).map((id) => (
+                      <div
+                        key={id}
+                        title={getMemberName(id)}
+                        className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[9px] font-bold"
+                        style={{ backgroundColor: getMemberColor(id) }}
+                      >
+                        {getMemberName(id).slice(0, 1).toUpperCase()}
+                      </div>
+                    ))}
+                    {participantIds.length > 6 && (
+                      <span className="text-[10px] text-gray-400">
+                        +{participantIds.length - 6}
                       </span>
                     )}
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex flex-col gap-1 flex-shrink-0">
                   <button
                     onClick={() => openEdit(item)}
-                    className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    <IoPencil size={14} />
+                    <IoPencil size={13} />
                   </button>
-                  {deleteConfirmId === item.id ? (
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => {
-                          onRemove(item.id);
-                          setDeleteConfirmId(null);
-                        }}
-                        className="text-xs text-red-500 font-medium px-2 py-1 rounded-lg hover:bg-red-50"
-                      >
-                        ลบ
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirmId(null)}
-                        className="text-xs text-gray-400 px-2 py-1 rounded-lg hover:bg-gray-100"
-                      >
-                        ยกเลิก
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setDeleteConfirmId(item.id)}
-                      className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      <IoTrash size={14} />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => onRemove(item.id)}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    <IoTrash size={13} />
+                  </button>
                 </div>
-              </div>
-
-              {/* Member shares */}
-              <div className="px-4 pb-3 flex flex-wrap gap-1.5">
-                {item.shares.map((share) => {
-                  const member = getMemberById(share.memberId);
-                  if (!member) return null;
-                  const memberNet = getMemberAmountInItem(item, share.memberId);
-                  return (
-                    <div
-                      key={share.memberId}
-                      className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-50 border border-gray-100"
-                    >
-                      <div
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: member.color }}
-                      />
-                      <span className="text-xs text-gray-600">{member.name}</span>
-                      <span className="text-xs font-medium text-gray-800">
-                        ฿{formatCurrency(memberNet)}
-                      </span>
-                    </div>
-                  );
-                })}
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Total */}
-      {items.length > 0 && (
-        <div className="bg-[#4366f4] rounded-2xl px-4 py-3 flex items-center justify-between">
-          <p className="text-sm text-white/80">ยอดรวมทั้งหมด</p>
-          <p className="text-lg font-bold text-white">฿{formatCurrency(totalBill)}</p>
-        </div>
-      )}
-
-      {/* Modal */}
+      {/* Item Form Modal */}
       <ItemFormModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={editingItem ? (item) => onUpdate(editingItem.id, item) : onAdd}
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSave}
         members={members}
         settings={settings}
-        editingItem={editingItem}
+        editItem={editItem}
       />
     </div>
   );
