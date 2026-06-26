@@ -173,31 +173,6 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* Recent activity */}
-            {recentBills.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-bold text-gray-900 dark:text-white">กิจกรรมล่าสุด</h2>
-                  <button onClick={() => router.push("/bills")} className="text-xs text-[#4366f4] font-medium">ดูทั้งหมด</button>
-                </div>
-                {recentBills.map((bill) => (
-                  <div key={bill.id} className="flex items-center gap-3 p-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                    <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-lg flex-shrink-0">
-                      {bill.emoji ?? <IoReceiptOutline size={16} className="text-[#4366f4]" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{bill.title}</p>
-                      <p className="text-xs text-gray-400 flex items-center gap-1">
-                        <IoCalendarOutline size={10} />
-                        {new Date(bill.updated_at).toLocaleDateString("th-TH", { day: "numeric", month: "short" })}
-                      </p>
-                    </div>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white flex-shrink-0">{formatBaht(getBillTotal(bill))} บาท</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {/* Empty state */}
             {allBills.length === 0 && (
               <div className="flex flex-col items-center gap-4 py-10 text-center">

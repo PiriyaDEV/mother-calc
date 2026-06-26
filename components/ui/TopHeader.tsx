@@ -29,11 +29,11 @@ export default function TopHeader() {
           onClick={() => router.push("/home")}
           className="flex items-center gap-2.5"
         >
-          <div className="w-7 h-7 rounded-xl bg-[#4366f4] flex items-center justify-center shadow-sm">
+          {/* <div className="w-7 h-7 rounded-xl bg-[#4366f4] flex items-center justify-center shadow-sm">
             <span className="text-white text-xs font-bold">฿</span>
-          </div>
+          </div> */}
           <span className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-            Kidtang
+            Kidtang !
           </span>
         </button>
 
