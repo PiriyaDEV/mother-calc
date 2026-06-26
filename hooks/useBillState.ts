@@ -158,12 +158,14 @@ export function useBillState(billId: string, currentUser?: User | null) {
     name: string;
     price: number;
     shares: Record<string, number>;
+    paid_by?: string | null;
   }) => {
     const item = await addBillItem({
       bill_id: billId,
       name: input.name,
       price: input.price,
       shares: input.shares,
+      paid_by: input.paid_by ?? null,
     });
     setItems((prev) => [...prev, item]);
     return item;
@@ -171,7 +173,7 @@ export function useBillState(billId: string, currentUser?: User | null) {
 
   const editItem = async (
     itemId: string,
-    updates: Partial<Pick<BillItem, "name" | "price" | "shares">>
+    updates: Partial<Pick<BillItem, "name" | "price" | "shares" | "paid_by">>
   ) => {
     await updateBillItem(itemId, updates);
     setItems((prev) =>

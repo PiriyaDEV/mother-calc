@@ -24,6 +24,7 @@ export interface Profile {
   username: string;       // stored without @
   display_name: string | null;
   avatar_url: string | null;
+  promptpay: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -128,6 +129,7 @@ export interface BillItem {
   name: string;
   price: number;
   shares: Record<string, number>;  // { bill_member_id: weight }
+  paid_by: string | null;          // bill_member_id of who paid upfront
   created_at: string;
 }
 
@@ -189,10 +191,11 @@ export interface AddBillItemInput {
   name: string;
   price: number;
   shares: Record<string, number>;
+  paid_by?: string | null;
 }
 
 // ── App Tab ───────────────────────────────────────────────────
-export type AppTab = "members" | "items" | "summary";
+export type AppTab = "members" | "items" | "summary" | "analytics";
 
 // ── Home context ──────────────────────────────────────────────
 export type HomeContext = "groups" | "individual";

@@ -14,9 +14,31 @@ export const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
 };
 
 export function formatCurrency(amount: number, currency: CurrencyCode = "THB"): string {
-  const symbol = CURRENCY_SYMBOLS[currency] ?? "฿";
   const decimals = currency === "JPY" || currency === "KRW" ? 0 : 2;
-  return `${symbol}${amount.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+  const formatted = amount.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  if (currency === "THB") {
+    return `${formatted} บาท`;
+  }
+  const symbol = CURRENCY_SYMBOLS[currency] ?? "฿";
+  return `${symbol}${formatted}`;
+}
+
+/** Format number with commas only (no currency symbol) */
+export function formatNumber(amount: number, decimals = 2): string {
+  return amount.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+/** Emoji reaction based on total amount */
+export function getTotalEmoji(total: number): string {
+  if (total >= 150_000) return "💀";
+  if (total >= 100_000) return "🤯";
+  if (total >= 50_000) return "😱";
+  if (total >= 10_000) return "🤑";
+  if (total >= 5_000) return "😵‍💫";
+  if (total >= 3_000) return "🫠";
+  if (total >= 1_000) return "😅";
+  if (total >= 500) return "🥱";
+  return "😍";
 }
 
 // ── Rounding ───────────────────────────────────────────────────
@@ -143,6 +165,57 @@ export function simplifyDebts(
       to: payer.member,
       amount: summary.total,
     });
+  }
+  return transactions;
+}
+
+/**
+ * Compute debts when each item may have its own paid_by.
+ * Items without paid_by fall back to globalPaidById.
+ * Returns net amounts: who owes whom.
+ */
+export function simplifyDebtsPerItem(
+  memberSummaries: MemberSummary[],
+  members: BillMember[],
+  globalPaidById?: string | null
+): DebtTransaction[] {
+  // net[memberId] = how much they are owed (positive) or owe (negative)
+  const net: Record<string, number> = {};
+  for (const m of members) net[m.id] = 0;
+
+  for (const summary of memberSummaries) {
+    for (const { item, amount } of summary.items) {
+      const payerId = item.paid_by ?? globalPaidById ?? null;
+      if (!payerId) continue;
+      if (payerId === summary.member.id) continue; // payer doesn't owe themselves
+      // summary.member owes payerId `amount`
+      net[summary.member.id] = (net[summary.member.id] ?? 0) - amount;
+      net[payerId] = (net[payerId] ?? 0) + amount;
+    }
+  }
+
+  // Simplify: match debtors with creditors
+  const debtors = members
+    .filter((m) => (net[m.id] ?? 0) < -0.005)
+    .map((m) => ({ member: m, amount: -(net[m.id] ?? 0) }));
+  const creditors = members
+    .filter((m) => (net[m.id] ?? 0) > 0.005)
+    .map((m) => ({ member: m, amount: net[m.id] ?? 0 }));
+
+  const transactions: DebtTransaction[] = [];
+  let di = 0;
+  let ci = 0;
+  while (di < debtors.length && ci < creditors.length) {
+    const d = debtors[di];
+    const c = creditors[ci];
+    const amount = Math.min(d.amount, c.amount);
+    if (amount > 0.005) {
+      transactions.push({ from: d.member, to: c.member, amount });
+    }
+    d.amount -= amount;
+    c.amount -= amount;
+    if (d.amount < 0.005) di++;
+    if (c.amount < 0.005) ci++;
   }
   return transactions;
 }

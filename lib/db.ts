@@ -558,6 +558,7 @@ export async function addBillItem(input: AddBillItemInput): Promise<BillItem> {
       name: input.name,
       price: input.price,
       shares: input.shares,
+      paid_by: input.paid_by ?? null,
     })
     .select()
     .single();
@@ -567,7 +568,7 @@ export async function addBillItem(input: AddBillItemInput): Promise<BillItem> {
 
 export async function updateBillItem(
   itemId: string,
-  updates: Partial<Pick<BillItem, "name" | "price" | "shares">>
+  updates: Partial<Pick<BillItem, "name" | "price" | "shares" | "paid_by">>
 ): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase

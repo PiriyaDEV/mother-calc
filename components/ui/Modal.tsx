@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { IoClose } from "react-icons/io5";
 
 interface ModalProps {
@@ -18,6 +18,8 @@ export default function Modal({
   children,
   size = "md",
 }: ModalProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -42,28 +44,29 @@ export default function Modal({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
       />
 
-      {/* Modal */}
+      {/* Modal panel */}
       <div
-        className={`relative w-full ${sizeClass} bg-white dark:bg-gray-900 rounded-t-3xl sm:rounded-2xl shadow-2xl z-10 max-h-[92vh] overflow-y-auto`}
+        ref={contentRef}
+        className={`relative w-full ${sizeClass} bg-white dark:bg-gray-900 rounded-t-3xl sm:rounded-3xl shadow-2xl z-10 max-h-[92vh] overflow-y-auto animate-fade-in-up`}
       >
-        {/* Handle bar (mobile) */}
+        {/* Handle bar — mobile only */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden">
-          <div className="w-10 h-1 bg-gray-200 dark:bg-gray-700 rounded-full" />
+          <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full" />
         </div>
 
         {/* Header */}
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-500"
+              className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <IoClose size={18} />
             </button>

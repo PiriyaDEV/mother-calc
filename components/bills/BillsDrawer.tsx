@@ -1,6 +1,6 @@
 "use client";
 
-import { IoAdd, IoCheckmark, IoTrash, IoPencil, IoClose } from "react-icons/io5";
+import { IoCheckmark, IoTrash, IoPencil, IoClose } from "react-icons/io5";
 import { Bill } from "@/lib/types";
 
 interface BillsDrawerProps {
@@ -134,7 +134,6 @@ export default function BillsDrawer({
             }}
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#4366f4] hover:bg-[#3355e0] text-white text-sm font-medium rounded-xl transition-all active:scale-95"
           >
-            <IoAdd size={18} />
             สร้างบิลใหม่
           </button>
         </div>

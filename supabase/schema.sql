@@ -122,6 +122,7 @@ create table public.bill_items (
   name        text not null,
   price       numeric not null default 0,
   shares      jsonb not null default '{}',
+  paid_by     uuid references public.bill_members(id) on delete set null,
   created_at  timestamptz not null default now()
 );
 

@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { IoAdd, IoPencil, IoTrash, IoReceiptOutline } from "react-icons/io5";
 import { BillItem, BillMember } from "@/lib/types";
+import { formatNumber, getTotalEmoji } from "@/lib/utils";
 import ItemFormModal from "./ItemFormModal";
 
 interface ItemPageProps {
   items: BillItem[];
   members: BillMember[];
-  onAdd: (data: { name: string; price: number; shares: Record<string, number> }) => Promise<void>;
-  onEdit: (itemId: string, updates: Partial<Pick<BillItem, "name" | "price" | "shares">>) => Promise<void>;
+  onAdd: (data: { name: string; price: number; shares: Record<string, number>; paid_by: string | null }) => Promise<void>;
+  onEdit: (itemId: string, updates: Partial<Pick<BillItem, "name" | "price" | "shares" | "paid_by">>) => Promise<void>;
   onDelete: (itemId: string) => Promise<void>;
 }
 
@@ -17,7 +18,7 @@ export default function ItemPage({ items, members, onAdd, onEdit, onDelete }: It
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<BillItem | null>(null);
 
-  const handleSave = async (data: { name: string; price: number; shares: Record<string, number> }) => {
+  const handleSave = async (data: { name: string; price: number; shares: Record<string, number>; paid_by: string | null }) => {
     if (editItem) {
       await onEdit(editItem.id, data);
     } else {
@@ -36,9 +37,20 @@ export default function ItemPage({ items, members, onAdd, onEdit, onDelete }: It
   };
 
   const total = items.reduce((sum, item) => sum + item.price, 0);
+  const emoji = getTotalEmoji(total);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
+      {/* Sticky pill add-button */}
+      <div className="sticky top-0 z-10 pt-1 pb-2 bg-white dark:bg-gray-950">
+        <button
+          onClick={openAdd}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#4366f4] hover:bg-[#3355e0] text-white text-sm font-semibold shadow-sm shadow-blue-200/60 dark:shadow-none transition-all active:scale-95"
+        >
+          รายการใหม่
+        </button>
+      </div>
+
       {/* Empty state */}
       {items.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-10 text-center">
@@ -46,7 +58,20 @@ export default function ItemPage({ items, members, onAdd, onEdit, onDelete }: It
             <IoReceiptOutline size={24} className="text-gray-400" />
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400">ยังไม่มีรายการ</p>
-          <p className="text-xs text-gray-400">เพิ่มรายการอาหารหรือสินค้าที่ต้องหาร</p>
+          <p className="text-xs text-gray-400">กดปุ่มด้านบนเพื่อเพิ่มรายการ</p>
+        </div>
+      )}
+
+      {/* Total banner */}
+      {items.length > 0 && (
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl border border-blue-100 dark:border-blue-800/30">
+          <div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">ยอดรวมทั้งหมด</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white mt-0.5">
+              {formatNumber(total)} บาท
+            </p>
+          </div>
+          <span className="text-3xl">{emoji}</span>
         </div>
       )}
 
@@ -57,6 +82,10 @@ export default function ItemPage({ items, members, onAdd, onEdit, onDelete }: It
             .map((id) => members.find((m) => m.id === id))
             .filter(Boolean) as BillMember[];
 
+          // Check if unequal split
+          const weights = Object.values(item.shares);
+          const isUnequal = weights.length > 0 && !weights.every((w) => w === 1);
+
           return (
             <div key={item.id} className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl px-4 py-3">
               <div className="flex items-start gap-3">
@@ -64,7 +93,7 @@ export default function ItemPage({ items, members, onAdd, onEdit, onDelete }: It
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.name}</p>
                     <p className="text-sm font-bold text-gray-900 dark:text-white flex-shrink-0">
-                      ฿{item.price.toFixed(2)}
+                      {formatNumber(item.price)} บาท
                     </p>
                   </div>
                   {/* Shared with avatars */}
@@ -89,7 +118,8 @@ export default function ItemPage({ items, members, onAdd, onEdit, onDelete }: It
                       </div>
                       <span className="text-[10px] text-gray-400">
                         {sharedWith.length === members.length ? "ทุกคน" : `${sharedWith.length} คน`}
-                        {sharedWith.length > 0 && ` · ฿${(item.price / sharedWith.length).toFixed(2)}/คน`}
+                        {!isUnequal && sharedWith.length > 0 && ` · ${formatNumber(item.price / sharedWith.length)} บาท/คน`}
+                        {isUnequal && " · หารไม่เท่า"}
                       </span>
                     </div>
                   )}
@@ -113,23 +143,6 @@ export default function ItemPage({ items, members, onAdd, onEdit, onDelete }: It
           );
         })}
       </div>
-
-      {/* Total */}
-      {items.length > 0 && (
-        <div className="flex items-center justify-between px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-2xl">
-          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">รวมทั้งหมด</span>
-          <span className="text-base font-bold text-gray-900 dark:text-white">฿{total.toFixed(2)}</span>
-        </div>
-      )}
-
-      {/* Add button */}
-      <button
-        onClick={openAdd}
-        className="flex items-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-[#4366f4] hover:text-[#4366f4] transition-colors text-sm font-medium"
-      >
-        <IoAdd size={18} />
-        เพิ่มรายการ
-      </button>
 
       <ItemFormModal
         isOpen={showModal}

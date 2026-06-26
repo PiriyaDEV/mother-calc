@@ -27,16 +27,16 @@ export default function Input({
       {label && (
         <label
           htmlFor={inputId}
-          className="text-xs font-medium text-gray-600 dark:text-gray-400"
+          className="text-xs font-semibold text-gray-600 dark:text-gray-400"
         >
           {label}
         </label>
       )}
       <div
-        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-colors bg-white dark:bg-gray-800 ${
+        className={`flex items-center gap-2 px-3.5 py-3 rounded-2xl border transition-all bg-gray-50 dark:bg-gray-800/80 ${
           error
-            ? "border-red-400 focus-within:border-red-500"
-            : "border-gray-200 dark:border-gray-700 focus-within:border-[#4366f4]"
+            ? "border-red-400 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-400/20"
+            : "border-gray-200 dark:border-gray-700 focus-within:border-[#4366f4] focus-within:ring-2 focus-within:ring-[#4366f4]/15 focus-within:bg-white dark:focus-within:bg-gray-800"
         }`}
       >
         {prefix && (
@@ -51,7 +51,7 @@ export default function Input({
           <span className="text-gray-400 text-sm flex-shrink-0">{suffix}</span>
         )}
       </div>
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
       {hint && !error && <p className="text-xs text-gray-400">{hint}</p>}
     </div>
   );

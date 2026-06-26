@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { IoAdd, IoPencil, IoTrash, IoPersonOutline, IoCheckmark, IoClose } from "react-icons/io5";
+import { IoPencil, IoTrash, IoPersonOutline, IoCheckmark, IoClose } from "react-icons/io5";
 import { BillMember } from "@/lib/types";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -70,7 +70,22 @@ export default function MemberPage({ members, onAdd, onEdit, onDelete }: MemberP
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
+      {/* Sticky pill add-button */}
+      {!showForm && (
+        <div className="sticky top-0 z-10 pt-1 pb-2 bg-white dark:bg-gray-950">
+          <button
+            onClick={() => {
+              setColor(MEMBER_COLORS[members.length % MEMBER_COLORS.length]);
+              setShowForm(true);
+            }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#4366f4] hover:bg-[#3355e0] text-white text-sm font-semibold shadow-sm shadow-blue-200/60 dark:shadow-none transition-all active:scale-95"
+          >
+            เพิ่มสมาชิก
+          </button>
+        </div>
+      )}
+
       {/* Member list */}
       {members.length === 0 && !showForm && (
         <div className="flex flex-col items-center gap-3 py-10 text-center">
@@ -210,19 +225,6 @@ export default function MemberPage({ members, onAdd, onEdit, onDelete }: MemberP
         </div>
       )}
 
-      {/* Add button */}
-      {!showForm && (
-        <button
-          onClick={() => {
-            setColor(MEMBER_COLORS[members.length % MEMBER_COLORS.length]);
-            setShowForm(true);
-          }}
-          className="flex items-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-[#4366f4] hover:text-[#4366f4] transition-colors text-sm font-medium"
-        >
-          <IoAdd size={18} />
-          เพิ่มสมาชิก
-        </button>
-      )}
     </div>
   );
 }

@@ -228,7 +228,7 @@ export default function HomePage() {
               <div className="w-6 h-6 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center">
                 <IoAdd size={14} className="text-purple-500" />
               </div>
-              + กลุ่ม
+              เพิ่มกลุ่ม
             </button>
             <button
               onClick={() => setShowCreateBill(true)}
@@ -238,7 +238,7 @@ export default function HomePage() {
               <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">
                 <IoAdd size={14} className="text-white" />
               </div>
-              {creating ? "กำลังสร้าง..." : "+ บิลส่วนตัว"}
+              {creating ? "กำลังสร้าง..." : "บิลส่วนตัว"}
             </button>
           </div>
 

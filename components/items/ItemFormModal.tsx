@@ -14,7 +14,7 @@ interface ItemFormModalProps {
   onClose: () => void;
   members: BillMember[];
   editItem?: BillItem | null;
-  onSave: (data: { name: string; price: number; shares: Record<string, number> }) => Promise<void>;
+  onSave: (data: { name: string; price: number; shares: Record<string, number>; paid_by: string | null }) => Promise<void>;
 }
 
 export default function ItemFormModal({ isOpen, onClose, members, editItem, onSave }: ItemFormModalProps) {
@@ -22,10 +22,13 @@ export default function ItemFormModal({ isOpen, onClose, members, editItem, onSa
   const [price, setPrice] = useState("");
   const [splitMode, setSplitMode] = useState<SplitMode>("equal");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  // unequal mode: custom amount per member (string for input)
   const [unequalAmounts, setUnequalAmounts] = useState<Record<string, string>>({});
+  const [paidById, setPaidById] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Default paid_by = first member (bill owner)
+  const defaultPaidById = members[0]?.id ?? null;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -34,15 +37,15 @@ export default function ItemFormModal({ isOpen, onClose, members, editItem, onSa
       setPrice(String(editItem.price));
       const ids = new Set(Object.keys(editItem.shares));
       setSelectedIds(ids);
+      // If item has no paid_by, fall back to first member
+      setPaidById(editItem.paid_by ?? defaultPaidById);
 
-      // Detect if shares are equal weights (all 1) or custom
       const weights = Object.values(editItem.shares);
       const allEqual = weights.every((w) => w === 1);
       if (allEqual) {
         setSplitMode("equal");
         setUnequalAmounts({});
       } else {
-        // Reconstruct amounts from weights
         const total = weights.reduce((s, w) => s + w, 0);
         const ua: Record<string, string> = {};
         for (const [id, w] of Object.entries(editItem.shares)) {
@@ -57,6 +60,8 @@ export default function ItemFormModal({ isOpen, onClose, members, editItem, onSa
       setSplitMode("equal");
       setSelectedIds(new Set(members.map((m) => m.id)));
       setUnequalAmounts({});
+      // Default to first member
+      setPaidById(defaultPaidById);
     }
     setErrors({});
   }, [isOpen, editItem, members]);
@@ -98,7 +103,6 @@ export default function ItemFormModal({ isOpen, onClose, members, editItem, onSa
       for (const id of selectedIds) shares[id] = 1;
       return shares;
     }
-    // unequal: store actual amounts as weights (they sum to totalAmount)
     const shares: Record<string, number> = {};
     for (const id of selectedArr) {
       shares[id] = parseFloat(unequalAmounts[id] || "0") || 0;
@@ -110,7 +114,7 @@ export default function ItemFormModal({ isOpen, onClose, members, editItem, onSa
     if (!validate()) return;
     setSaving(true);
     try {
-      await onSave({ name: name.trim(), price: totalAmount, shares: buildShares() });
+      await onSave({ name: name.trim(), price: totalAmount, shares: buildShares(), paid_by: paidById });
       onClose();
     } finally {
       setSaving(false);
@@ -146,6 +150,35 @@ export default function ItemFormModal({ isOpen, onClose, members, editItem, onSa
           error={errors.price}
         />
 
+        {/* Paid by selector — required */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+            ใครจ่ายไปก่อน <span className="text-red-400">*</span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {members.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setPaidById(m.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
+                  paidById === m.id
+                    ? "border-[#4366f4] bg-blue-50 dark:bg-blue-900/20 text-[#4366f4]"
+                    : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300"
+                }`}
+              >
+                <div
+                  className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-bold flex-shrink-0"
+                  style={{ backgroundColor: m.color }}
+                >
+                  {paidById === m.id ? <IoCheckmark size={8} /> : m.name.charAt(0).toUpperCase()}
+                </div>
+                {m.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Split mode toggle */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-gray-600 dark:text-gray-400">วิธีหาร</label>
@@ -171,7 +204,7 @@ export default function ItemFormModal({ isOpen, onClose, members, editItem, onSa
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-              สมาชิกที่ร่วม
+              เลือกสมาชิก
             </label>
             <div className="flex gap-2">
               <button
@@ -201,7 +234,6 @@ export default function ItemFormModal({ isOpen, onClose, members, editItem, onSa
               const selected = selectedIds.has(member.id);
               return (
                 <div key={member.id} className="flex items-center gap-2">
-                  {/* Member chip */}
                   <button
                     type="button"
                     onClick={() => toggleMember(member.id)}
@@ -220,7 +252,6 @@ export default function ItemFormModal({ isOpen, onClose, members, editItem, onSa
                     <span className="text-sm text-gray-800 dark:text-gray-200 flex-1">
                       {member.name}
                     </span>
-                    {/* Equal mode: show per-person amount */}
                     {splitMode === "equal" && selected && perPerson > 0 && (
                       <span className="text-xs text-[#4366f4] font-semibold">
                         ฿{perPerson.toFixed(2)}
@@ -228,7 +259,6 @@ export default function ItemFormModal({ isOpen, onClose, members, editItem, onSa
                     )}
                   </button>
 
-                  {/* Unequal mode: custom amount input */}
                   {splitMode === "unequal" && selected && (
                     <div className="w-28 flex-shrink-0">
                       <Input
@@ -250,7 +280,6 @@ export default function ItemFormModal({ isOpen, onClose, members, editItem, onSa
             })}
           </div>
 
-          {/* Unequal total check */}
           {splitMode === "unequal" && selectedIds.size > 0 && (
             <div className={`mt-2 text-xs font-medium ${
               errors.unequal ? "text-red-500" : "text-gray-400"

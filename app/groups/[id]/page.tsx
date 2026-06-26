@@ -244,7 +244,7 @@ export default function GroupPage() {
           <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">
             <IoAdd size={14} className="text-white" />
           </div>
-          {creating ? "กำลังสร้าง..." : "+ สร้างบิลใหม่"}
+          {creating ? "กำลังสร้าง..." : "สร้างบิลใหม่"}
         </button>
 
         {/* Bills list */}

@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getMyProfile, upsertProfile, isUsernameTaken, uploadAvatar } from "@/lib/db";
 import { Profile } from "@/lib/types";
 import { isValidUsername } from "@/lib/utils";
+import { useTheme } from "@/hooks/useTheme";
 import {
   IoArrowBack,
   IoPersonOutline,
@@ -14,6 +15,8 @@ import {
   IoCheckmark,
   IoClose,
   IoCamera,
+  IoMoonOutline,
+  IoSunnyOutline,
 } from "react-icons/io5";
 import { useRef } from "react";
 
@@ -28,9 +31,11 @@ export default function ProfilePage() {
   const [editingName, setEditingName] = useState(false);
   const [editingUsername, setEditingUsername] = useState(false);
   const [editingPassword, setEditingPassword] = useState(false);
+  const [editingPromptpay, setEditingPromptpay] = useState(false);
 
   const [nameVal, setNameVal] = useState("");
   const [usernameVal, setUsernameVal] = useState("");
+  const [promptpayVal, setPromptpayVal] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -39,6 +44,7 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const { theme, toggle: toggleTheme } = useTheme();
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -50,6 +56,7 @@ export default function ProfilePage() {
       setProfile(p);
       setNameVal(p?.display_name ?? "");
       setUsernameVal(p?.username ?? "");
+      setPromptpayVal(p?.promptpay ?? "");
       setDataLoading(false);
     });
   }, [user]);
@@ -139,6 +146,23 @@ export default function ProfilePage() {
     }
   };
 
+  const handleSavePromptpay = async () => {
+    if (!profile) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const val = promptpayVal.trim() || null;
+      await upsertProfile({ id: profile.id, promptpay: val });
+      setProfile((p) => p ? { ...p, promptpay: val } : p);
+      setEditingPromptpay(false);
+      showSuccess("อัปเดตพร้อมเพย์แล้ว");
+    } catch {
+      setError("เกิดข้อผิดพลาด กรุณาลองใหม่");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
     router.push("/login");
@@ -165,7 +189,16 @@ export default function ProfilePage() {
           >
             <IoArrowBack size={18} />
           </button>
-          <h1 className="text-sm font-bold text-gray-900 dark:text-white">โปรไฟล์</h1>
+          <h1 className="text-base font-bold text-gray-900 dark:text-white">โปรไฟล์</h1>
+          <div className="ml-auto">
+            <button
+              onClick={toggleTheme}
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              title={theme === "dark" ? "เปลี่ยนเป็น Light mode" : "เปลี่ยนเป็น Dark mode"}
+            >
+              {theme === "dark" ? <IoSunnyOutline size={18} /> : <IoMoonOutline size={18} />}
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -364,6 +397,62 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
+
+        {/* PromptPay */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-gray-400">พร้อมเพย์ (ใช้เป็น default ในบิล)</p>
+              {editingPromptpay ? (
+                <input
+                  autoFocus
+                  value={promptpayVal}
+                  onChange={(e) => setPromptpayVal(e.target.value)}
+                  placeholder="เบอร์โทร หรือ เลขบัตรประชาชน"
+                  className="mt-1 text-sm font-medium text-gray-900 dark:text-white bg-transparent border-b border-[#4366f4] outline-none w-full"
+                  onKeyDown={(e) => e.key === "Enter" && handleSavePromptpay()}
+                />
+              ) : (
+                <p className="text-sm font-medium text-gray-900 dark:text-white mt-0.5">
+                  {profile?.promptpay ? (
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-base">📱</span>
+                      {profile.promptpay}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">ยังไม่ได้ตั้งค่า</span>
+                  )}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-1 flex-shrink-0">
+              {editingPromptpay ? (
+                <>
+                  <button
+                    onClick={handleSavePromptpay}
+                    disabled={saving}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#4366f4] text-white"
+                  >
+                    <IoCheckmark size={14} />
+                  </button>
+                  <button
+                    onClick={() => { setEditingPromptpay(false); setPromptpayVal(profile?.promptpay ?? ""); setError(null); }}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <IoClose size={14} />
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => { setEditingPromptpay(true); setError(null); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <IoPencil size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Sign out */}
         <button

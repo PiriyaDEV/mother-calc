@@ -8,21 +8,24 @@ import {
   IoBarChartOutline,
   IoSettingsOutline,
   IoArrowBack,
+  IoAnalyticsOutline,
 } from "react-icons/io5";
 import { useBillState } from "@/hooks/useBillState";
 import { useAuth } from "@/hooks/useAuth";
 import MemberPage from "@/components/members/MemberPage";
 import ItemPage from "@/components/items/ItemPage";
 import SummaryPage from "@/components/summary/SummaryPage";
+import AnalyticsPage from "@/components/summary/AnalyticsPage";
 import CreateEntityModal, { EntityFormData } from "@/components/ui/CreateEntityModal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { deleteBill } from "@/lib/db";
 import { AppTab } from "@/lib/types";
 
 const TABS: { id: AppTab; label: string; icon: React.ReactNode }[] = [
-  { id: "members", label: "สมาชิก", icon: <IoPeopleOutline size={18} /> },
-  { id: "items", label: "รายการ", icon: <IoReceiptOutline size={18} /> },
-  { id: "summary", label: "สรุป", icon: <IoBarChartOutline size={18} /> },
+  { id: "members", label: "สมาชิก", icon: <IoPeopleOutline size={16} /> },
+  { id: "items", label: "รายการ", icon: <IoReceiptOutline size={16} /> },
+  { id: "summary", label: "สรุป", icon: <IoBarChartOutline size={16} /> },
+  { id: "analytics", label: "วิเคราะห์", icon: <IoAnalyticsOutline size={16} /> },
 ];
 
 export default function BillPageWrapper() {
@@ -148,27 +151,35 @@ function BillPage() {
         </div>
 
         {/* Tabs */}
-        <div className="max-w-lg mx-auto px-4 pb-0">
-          <div className="flex gap-1">
+        <div className="max-w-lg mx-auto px-4 pb-3">
+          <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-2xl p-1">
             {TABS.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-xl transition-colors ${
+                className={`flex items-center justify-center gap-1.5 flex-1 px-3 py-2 text-sm font-semibold rounded-xl transition-all ${
                   tab === t.id
-                    ? "text-[#4366f4] border-b-2 border-[#4366f4]"
+                    ? "bg-white dark:bg-gray-700 text-[#4366f4] shadow-sm"
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
               >
                 {t.icon}
                 {t.label}
                 {t.id === "members" && members.length > 0 && (
-                  <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-full px-1.5 py-0.5">
+                  <span className={`text-[10px] rounded-full px-1.5 py-0.5 font-bold ${
+                    tab === t.id
+                      ? "bg-blue-50 dark:bg-blue-900/30 text-[#4366f4]"
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-500"
+                  }`}>
                     {members.length}
                   </span>
                 )}
                 {t.id === "items" && items.length > 0 && (
-                  <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-full px-1.5 py-0.5">
+                  <span className={`text-[10px] rounded-full px-1.5 py-0.5 font-bold ${
+                    tab === t.id
+                      ? "bg-blue-50 dark:bg-blue-900/30 text-[#4366f4]"
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-500"
+                  }`}>
                     {items.length}
                   </span>
                 )}
@@ -198,7 +209,10 @@ function BillPage() {
           />
         )}
         {tab === "summary" && (
-          <SummaryPage bill={bill} />
+          <SummaryPage bill={{ ...bill, members, items }} members={members} />
+        )}
+        {tab === "analytics" && (
+          <AnalyticsPage bill={{ ...bill, members, items }} members={members} />
         )}
       </main>
 
