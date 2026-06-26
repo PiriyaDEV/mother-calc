@@ -1,36 +1,8 @@
 -- ============================================================
 -- Kidtang — Supabase Schema v4
--- Safe to re-run: drops everything then recreates from scratch
+-- Run this on a fresh Supabase project (no existing tables).
+-- To update an existing DB, use ALTER TABLE / ADD COLUMN instead.
 -- ============================================================
-
--- ============================================================
--- RESET: Drop everything safely (handles first-run with no tables)
--- ============================================================
-do $$ begin
-  drop trigger if exists on_auth_user_created on auth.users;
-exception when others then null; end $$;
-
-do $$ begin drop trigger if exists bills_updated_at    on public.bills;    exception when undefined_table then null; end $$;
-do $$ begin drop trigger if exists profiles_updated_at on public.profiles; exception when undefined_table then null; end $$;
-do $$ begin drop trigger if exists groups_updated_at   on public.groups;   exception when undefined_table then null; end $$;
-do $$ begin drop trigger if exists trips_updated_at    on public.trips;    exception when undefined_table then null; end $$;
-
--- Drop helper functions (cascade removes any policies that depend on them)
-drop function if exists public.can_access_bill(uuid)   cascade;
-drop function if exists public.is_group_owner(uuid)    cascade;
-drop function if exists public.is_group_member(uuid)   cascade;
-drop function if exists public.handle_updated_at()     cascade;
-drop function if exists public.handle_new_user()       cascade;
-
--- Drop tables (CASCADE removes all policies, indexes, FK constraints)
-drop table if exists public.bill_items    cascade;
-drop table if exists public.bill_members  cascade;
-drop table if exists public.bills         cascade;
-drop table if exists public.notifications cascade;
-drop table if exists public.group_members cascade;
-drop table if exists public.groups        cascade;
-drop table if exists public.trips         cascade;
-drop table if exists public.profiles      cascade;
 
 -- ============================================================
 -- Extensions
@@ -41,90 +13,102 @@ create extension if not exists "uuid-ossp";
 -- Tables
 -- ============================================================
 
+-- User profiles — one row per auth.users entry.
+-- Auto-created by the handle_new_user trigger on signup.
 create table public.profiles (
-  id           uuid primary key references auth.users(id) on delete cascade,
-  username     text unique not null,
-  display_name text,
-  avatar_url   text,
+  id           uuid primary key references auth.users(id) on delete cascade, -- matches auth.users.id
+  username     text unique not null,       -- unique @handle chosen at signup
+  display_name text,                       -- friendly display name (nullable)
+  avatar_url   text,                       -- profile picture URL (nullable)
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
 
+-- Groups — a shared space that can contain multiple bills/trips.
 create table public.groups (
   id          uuid primary key default uuid_generate_v4(),
-  name        text not null,
-  description text,
-  emoji       text,
-  tags        text[] not null default '{}',
-  owner_id    uuid not null references public.profiles(id) on delete cascade,
+  name        text not null,               -- group display name
+  description text,                        -- optional description
+  emoji       text,                        -- optional emoji icon
+  tags        text[] not null default '{}', -- freeform tags for filtering
+  owner_id    uuid not null references public.profiles(id) on delete cascade, -- creator / admin
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
 
+-- Group membership — links profiles to groups with role & invite status.
 create table public.group_members (
   id          uuid primary key default uuid_generate_v4(),
   group_id    uuid not null references public.groups(id) on delete cascade,
   user_id     uuid not null references public.profiles(id) on delete cascade,
-  role        text not null default 'member' check (role in ('owner', 'member')),
-  status      text not null default 'pending' check (status in ('pending', 'accepted', 'declined')),
-  invited_by  uuid references public.profiles(id),
+  role        text not null default 'member' check (role in ('owner', 'member')), -- 'owner' | 'member'
+  status      text not null default 'pending' check (status in ('pending', 'accepted', 'declined')), -- invite lifecycle
+  invited_by  uuid references public.profiles(id), -- who sent the invite (nullable)
   created_at  timestamptz not null default now(),
   unique(group_id, user_id)
 );
 
+-- In-app notifications (e.g. group invites).
 create table public.notifications (
   id          uuid primary key default uuid_generate_v4(),
-  user_id     uuid not null references public.profiles(id) on delete cascade,
-  type        text not null default 'group_invite',
-  data        jsonb not null default '{}',
-  read        boolean not null default false,
+  user_id     uuid not null references public.profiles(id) on delete cascade, -- recipient
+  type        text not null default 'group_invite', -- notification type key
+  data        jsonb not null default '{}',           -- arbitrary payload (group_id, inviter, etc.)
+  read        boolean not null default false,        -- whether the user has seen it
   created_at  timestamptz not null default now()
 );
 
+-- Trips — optional grouping of bills under a named trip.
 create table public.trips (
   id          uuid primary key default uuid_generate_v4(),
-  name        text not null,
-  group_id    uuid references public.groups(id) on delete cascade,
+  name        text not null,               -- trip name (e.g. "Tokyo 2025")
+  group_id    uuid references public.groups(id) on delete cascade, -- optional group scope
   owner_id    uuid not null references public.profiles(id) on delete cascade,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
 
+-- Bills — the core entity: a single expense-splitting session.
 create table public.bills (
   id               uuid primary key default uuid_generate_v4(),
-  title            text not null default 'บิลใหม่',
-  emoji            text,
-  tags             text[] not null default '{}',
-  trip_id          uuid references public.trips(id) on delete set null,
-  group_id         uuid references public.groups(id) on delete cascade,
-  owner_id         uuid not null references public.profiles(id) on delete cascade,
+  title            text not null default 'บิลใหม่',  -- bill display name
+  emoji            text,                              -- optional emoji icon
+  tags             text[] not null default '{}',      -- freeform tags
+  trip_id          uuid references public.trips(id) on delete set null,   -- optional trip
+  group_id         uuid references public.groups(id) on delete cascade,   -- optional group
+  owner_id         uuid not null references public.profiles(id) on delete cascade, -- creator
   settings         jsonb not null default '{"vat":7,"serviceCharge":10,"isVat":false,"isService":false,"roundingMode":"none","currency":"THB"}',
-  tip              numeric not null default 0,
-  discount         numeric not null default 0,
+                                                      -- bill-level settings: VAT, service charge, rounding, currency
+  tip              numeric not null default 0,        -- tip amount (absolute, not %)
+  discount         numeric not null default 0,        -- discount amount (absolute)
   status           text not null default 'draft' check (status in ('draft', 'completed')),
-  paid_member_ids  jsonb not null default '[]',
+                                                      -- 'draft' = editable | 'completed' = locked, payment tracking enabled
+  paid_member_ids  jsonb not null default '[]',       -- [uuid] list of bill_member IDs who have paid (updated via toggleMemberPaid)
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
 );
 
+-- Bill members — participants in a specific bill.
+-- Can be linked to a real profile (user_id) or be an external guest.
 create table public.bill_members (
   id          uuid primary key default uuid_generate_v4(),
   bill_id     uuid not null references public.bills(id) on delete cascade,
-  user_id     uuid references public.profiles(id) on delete set null,
-  name        text not null,
-  color       text not null default '#4366f4',
-  promptpay   text,
-  is_external boolean not null default false,
+  user_id     uuid references public.profiles(id) on delete set null, -- null for external/guest members
+  name        text not null,                          -- display name inside the bill
+  color       text not null default '#4366f4',        -- avatar color (hex)
+  promptpay   text,                                   -- PromptPay ID (phone / national ID) for QR generation
+  is_external boolean not null default false,         -- true = guest not linked to any account
   created_at  timestamptz not null default now()
 );
 
+-- Bill items — individual line items in a bill.
 create table public.bill_items (
   id          uuid primary key default uuid_generate_v4(),
   bill_id     uuid not null references public.bills(id) on delete cascade,
-  name        text not null,
-  price       numeric not null default 0,
-  shares      jsonb not null default '{}',
-  paid_by     uuid references public.bill_members(id) on delete set null,
+  name        text not null,                          -- item name
+  price       numeric not null default 0,             -- item price (before tax/SC)
+  shares      jsonb not null default '{}',            -- { [bill_member_id]: weight } — who shares this item and by how much
+  paid_by     uuid references public.bill_members(id) on delete set null, -- which member paid for this item upfront (for debt calculation)
   created_at  timestamptz not null default now()
 );
 
@@ -360,6 +344,7 @@ create policy "bill_items_delete" on public.bill_items
 -- Functions & Triggers
 -- ============================================================
 
+-- Auto-update updated_at on any UPDATE.
 create function public.handle_updated_at()
 returns trigger language plpgsql as $$
 begin
