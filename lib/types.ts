@@ -33,6 +33,8 @@ export interface Group {
   id: string;
   name: string;
   description: string | null;
+  emoji: string | null;
+  tags: string[];
   owner_id: string;
   created_at: string;
   updated_at: string;
@@ -89,6 +91,8 @@ export interface Trip {
 export interface Bill {
   id: string;
   title: string;
+  emoji: string | null;
+  tags: string[];
   trip_id: string | null;
   group_id: string | null;
   owner_id: string;
@@ -152,6 +156,8 @@ export interface BillCalculation {
 
 export interface CreateBillInput {
   title: string;
+  emoji?: string | null;
+  tags?: string[];
   trip_id?: string | null;
   group_id?: string | null;
   settings?: Partial<Settings>;
@@ -160,6 +166,8 @@ export interface CreateBillInput {
 export interface CreateGroupInput {
   name: string;
   description?: string;
+  emoji?: string | null;
+  tags?: string[];
 }
 
 export interface CreateTripInput {

@@ -188,7 +188,7 @@ export async function getGroup(groupId: string): Promise<Group | null> {
   return data ?? null;
 }
 
-export async function updateGroup(groupId: string, updates: Partial<Pick<Group, "name" | "description">>): Promise<void> {
+export async function updateGroup(groupId: string, updates: Partial<Pick<Group, "name" | "description" | "emoji" | "tags">>): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase
     .from("groups")
@@ -448,6 +448,8 @@ export async function createBill(input: CreateBillInput): Promise<Bill> {
     .from("bills")
     .insert({
       title: input.title,
+      emoji: input.emoji ?? null,
+      tags: input.tags ?? [],
       trip_id: input.trip_id ?? null,
       group_id: input.group_id ?? null,
       owner_id: user.id,
@@ -461,7 +463,7 @@ export async function createBill(input: CreateBillInput): Promise<Bill> {
 
 export async function updateBill(
   billId: string,
-  updates: Partial<Pick<Bill, "title" | "settings" | "tip" | "discount">>
+  updates: Partial<Pick<Bill, "title" | "emoji" | "tags" | "settings" | "tip" | "discount">>
 ): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase.from("bills").update(updates).eq("id", billId);

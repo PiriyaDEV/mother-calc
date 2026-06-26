@@ -9,12 +9,17 @@ import {
   getBills,
   createBill,
   deleteBill,
+  updateBill,
   createGroup,
   deleteGroup,
+  updateGroup,
   getUnreadNotificationCount,
   ensureMyProfile,
 } from "@/lib/db";
 import { Group, Bill } from "@/lib/types";
+import { FEATURES } from "@/lib/constants";
+import CreateEntityModal, { EntityFormData } from "@/components/ui/CreateEntityModal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import {
   IoAdd,
   IoReceiptOutline,
@@ -28,75 +33,8 @@ import {
   IoNotificationsOutline,
   IoPeopleCircleOutline,
   IoChevronForward,
-  IoPersonCircleOutline,
-  IoClose,
+  IoSettingsOutline,
 } from "react-icons/io5";
-
-// ── Create Group Modal ────────────────────────────────────────
-function CreateGroupModal({
-  onClose,
-  onCreate,
-}: {
-  onClose: () => void;
-  onCreate: (name: string, description?: string) => Promise<void>;
-}) {
-  const [name, setName] = useState("");
-  const [desc, setDesc] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    setLoading(true);
-    try {
-      await onCreate(name.trim(), desc.trim() || undefined);
-      onClose();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-xl p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">สร้างกลุ่มใหม่</h2>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
-            <IoClose size={18} />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">ชื่อกลุ่ม *</label>
-            <input
-              autoFocus
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="เช่น Family, เพื่อนสนิท"
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4366f4]/30 focus:border-[#4366f4] transition-all"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">คำอธิบาย (ไม่บังคับ)</label>
-            <input
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-              placeholder="เช่น กลุ่มครอบครัว"
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4366f4]/30 focus:border-[#4366f4] transition-all"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading || !name.trim()}
-            className="w-full py-3 bg-[#4366f4] hover:bg-[#3355e0] disabled:opacity-50 text-white text-sm font-semibold rounded-2xl transition-colors mt-1"
-          >
-            {loading ? "กำลังสร้าง..." : "สร้างกลุ่ม"}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
 
 // ── Main Home Page ────────────────────────────────────────────
 export default function HomePage() {
@@ -110,14 +48,21 @@ export default function HomePage() {
   const [dataLoading, setDataLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showCreateBill, setShowCreateBill] = useState(false);
+
+  // Edit modals
+  const [editingBill, setEditingBill] = useState<Bill | null>(null);
+  const [editingGroup, setEditingGroup] = useState<Group | null>(null);
+
+  // Confirm delete
+  const [confirmDeleteBill, setConfirmDeleteBill] = useState<Bill | null>(null);
+  const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<Group | null>(null);
 
   const loadData = useCallback(async () => {
     if (!user) return;
     setDataLoading(true);
     try {
-      // Ensure profile row exists for this user before any reads/writes
       await ensureMyProfile();
-
       const [grps, bills, unread] = await Promise.all([
         getMyGroups(),
         getIndividualBills(),
@@ -127,7 +72,6 @@ export default function HomePage() {
       setPersonalBills(bills);
       setUnreadCount(unread);
 
-      // Load bill counts per group
       const counts: Record<string, number> = {};
       await Promise.all(
         grps.map(async (g) => {
@@ -154,35 +98,82 @@ export default function HomePage() {
   }
 
   // ── Handlers ──────────────────────────────────────────────
-  const handleCreatePersonalBill = async () => {
+  const handleCreatePersonalBill = async (data: EntityFormData) => {
     setCreating(true);
     try {
-      const bill = await createBill({ title: "บิลใหม่" });
-      router.push(`/app?id=${bill.id}`);
+      const bill = await createBill({
+        title: data.name,
+        emoji: data.emoji,
+        tags: data.tags,
+        settings: data.settings,
+      });
+      setPersonalBills((prev) => [bill, ...prev]);
     } catch (e) {
       console.error(e);
+    } finally {
       setCreating(false);
     }
   };
 
-  const handleDeleteBill = async (e: React.MouseEvent, billId: string) => {
-    e.stopPropagation();
-    if (!confirm("ลบบิลนี้?")) return;
-    await deleteBill(billId);
-    setPersonalBills((prev) => prev.filter((b) => b.id !== billId));
+  const handleEditBill = async (data: EntityFormData) => {
+    if (!editingBill) return;
+    await updateBill(editingBill.id, {
+      title: data.name,
+      emoji: data.emoji,
+      tags: data.tags,
+      settings: data.settings,
+    });
+    setPersonalBills((prev) =>
+      prev.map((b) =>
+        b.id === editingBill.id
+          ? { ...b, title: data.name, emoji: data.emoji, tags: data.tags, settings: data.settings ?? b.settings }
+          : b
+      )
+    );
+    setEditingBill(null);
   };
 
-  const handleDeleteGroup = async (e: React.MouseEvent, groupId: string) => {
-    e.stopPropagation();
-    if (!confirm("ลบกลุ่มนี้? บิลทั้งหมดในกลุ่มจะถูกลบด้วย")) return;
-    await deleteGroup(groupId);
-    setGroups((prev) => prev.filter((g) => g.id !== groupId));
+  const handleDeleteBill = async () => {
+    if (!confirmDeleteBill) return;
+    await deleteBill(confirmDeleteBill.id);
+    setPersonalBills((prev) => prev.filter((b) => b.id !== confirmDeleteBill.id));
+    setConfirmDeleteBill(null);
   };
 
-  const handleCreateGroup = async (name: string, description?: string) => {
-    const group = await createGroup({ name, description });
+  const handleCreateGroup = async (data: EntityFormData) => {
+    const group = await createGroup({
+      name: data.name,
+      description: data.description || undefined,
+      emoji: data.emoji,
+      tags: data.tags,
+    });
     setGroups((prev) => [group, ...prev]);
     setGroupBillCounts((prev) => ({ ...prev, [group.id]: 0 }));
+  };
+
+  const handleEditGroup = async (data: EntityFormData) => {
+    if (!editingGroup) return;
+    await updateGroup(editingGroup.id, {
+      name: data.name,
+      description: data.description || undefined,
+      emoji: data.emoji,
+      tags: data.tags,
+    });
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === editingGroup.id
+          ? { ...g, name: data.name, description: data.description || null, emoji: data.emoji, tags: data.tags }
+          : g
+      )
+    );
+    setEditingGroup(null);
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!confirmDeleteGroup) return;
+    await deleteGroup(confirmDeleteGroup.id);
+    setGroups((prev) => prev.filter((g) => g.id !== confirmDeleteGroup.id));
+    setConfirmDeleteGroup(null);
   };
 
   // ── Logged-in Dashboard ──────────────────────────────────
@@ -196,15 +187,12 @@ export default function HomePage() {
         {/* Navbar */}
         <nav className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
           <div className="max-w-2xl mx-auto px-5 h-14 flex items-center justify-between">
-            {/* Logo */}
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-[#4366f4] flex items-center justify-center">
                 <span className="text-white text-xs font-bold">฿</span>
               </div>
               <span className="text-sm font-bold text-gray-900 dark:text-white">Kidtang</span>
             </div>
-
-            {/* Right: bell + avatar */}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => router.push("/notifications")}
@@ -243,7 +231,7 @@ export default function HomePage() {
               + กลุ่ม
             </button>
             <button
-              onClick={handleCreatePersonalBill}
+              onClick={() => setShowCreateBill(true)}
               disabled={creating}
               className="flex items-center justify-center gap-2 py-3.5 bg-[#4366f4] hover:bg-[#3355e0] disabled:opacity-60 rounded-2xl text-sm font-semibold text-white transition-all shadow-sm hover:shadow-md"
             >
@@ -291,22 +279,36 @@ export default function HomePage() {
                         onClick={() => router.push(`/groups/${group.id}`)}
                         className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-purple-200 dark:hover:border-purple-800 hover:shadow-sm transition-all cursor-pointer group"
                       >
-                        <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center flex-shrink-0">
-                          <IoPeopleOutline size={20} className="text-purple-500" />
+                        <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center flex-shrink-0 text-xl">
+                          {group.emoji ?? <IoPeopleOutline size={20} className="text-purple-500" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{group.name}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {groupBillCounts[group.id] ?? 0} บิล
-                            {group.description ? ` · ${group.description}` : ""}
-                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            <p className="text-xs text-gray-400">
+                              {groupBillCounts[group.id] ?? 0} บิล
+                              {group.description ? ` · ${group.description}` : ""}
+                            </p>
+                            {group.tags && group.tags.length > 0 && (
+                              <>
+                                {group.tags.slice(0, 2).map((tag) => (
+                                  <span key={tag} className="px-1.5 py-0.5 bg-purple-50 dark:bg-purple-900/20 text-purple-500 dark:text-purple-400 text-[10px] rounded-full font-medium">
+                                    {tag}
+                                  </span>
+                                ))}
+                                {group.tags.length > 2 && (
+                                  <span className="text-[10px] text-gray-400">+{group.tags.length - 2}</span>
+                                )}
+                              </>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button
-                            onClick={(e) => handleDeleteGroup(e, group.id)}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
+                            onClick={(e) => { e.stopPropagation(); setEditingGroup(group); }}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-[#4366f4] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors opacity-0 group-hover:opacity-100"
                           >
-                            <IoTrash size={13} />
+                            <IoSettingsOutline size={14} />
                           </button>
                           <IoChevronForward size={14} className="text-gray-300 group-hover:text-purple-400 transition-colors" />
                         </div>
@@ -327,7 +329,7 @@ export default function HomePage() {
 
                 {personalBills.length === 0 ? (
                   <div
-                    onClick={handleCreatePersonalBill}
+                    onClick={() => setShowCreateBill(true)}
                     className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 cursor-pointer hover:border-[#4366f4]/30 dark:hover:border-[#4366f4]/30 transition-colors group"
                   >
                     <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
@@ -347,25 +349,39 @@ export default function HomePage() {
                         onClick={() => router.push(`/app?id=${bill.id}`)}
                         className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-[#4366f4]/20 hover:shadow-sm transition-all cursor-pointer group"
                       >
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
-                          <IoReceiptOutline size={20} className="text-[#4366f4]" />
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0 text-xl">
+                          {bill.emoji ?? <IoReceiptOutline size={20} className="text-[#4366f4]" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{bill.title}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {new Date(bill.updated_at).toLocaleDateString("th-TH", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            <p className="text-xs text-gray-400">
+                              {new Date(bill.updated_at).toLocaleDateString("th-TH", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </p>
+                            {bill.tags && bill.tags.length > 0 && (
+                              <>
+                                {bill.tags.slice(0, 2).map((tag) => (
+                                  <span key={tag} className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-[#4366f4] text-[10px] rounded-full font-medium">
+                                    {tag}
+                                  </span>
+                                ))}
+                                {bill.tags.length > 2 && (
+                                  <span className="text-[10px] text-gray-400">+{bill.tags.length - 2}</span>
+                                )}
+                              </>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button
-                            onClick={(e) => handleDeleteBill(e, bill.id)}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
+                            onClick={(e) => { e.stopPropagation(); setEditingBill(bill); }}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-[#4366f4] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors opacity-0 group-hover:opacity-100"
                           >
-                            <IoTrash size={13} />
+                            <IoSettingsOutline size={14} />
                           </button>
                           <IoArrowForward size={14} className="text-gray-300 group-hover:text-[#4366f4] transition-colors" />
                         </div>
@@ -380,9 +396,77 @@ export default function HomePage() {
 
         {/* Create Group Modal */}
         {showCreateGroup && (
-          <CreateGroupModal
+          <CreateEntityModal
+            type="group"
             onClose={() => setShowCreateGroup(false)}
-            onCreate={handleCreateGroup}
+            onSave={handleCreateGroup}
+          />
+        )}
+
+        {/* Create Bill Modal */}
+        {showCreateBill && (
+          <CreateEntityModal
+            type="bill"
+            onClose={() => setShowCreateBill(false)}
+            onSave={handleCreatePersonalBill}
+          />
+        )}
+
+        {/* Edit Bill Modal (settings icon) */}
+        {editingBill && (
+          <CreateEntityModal
+            type="bill"
+            mode="edit"
+            initialData={{
+              name: editingBill.title,
+              emoji: editingBill.emoji,
+              tags: editingBill.tags ?? [],
+              settings: editingBill.settings,
+            }}
+            onClose={() => setEditingBill(null)}
+            onSave={async (data) => {
+              await handleEditBill(data);
+            }}
+          />
+        )}
+
+        {/* Edit Group Modal (settings icon) — includes delete */}
+        {editingGroup && (
+          <CreateEntityModal
+            type="group"
+            mode="edit"
+            initialData={{
+              name: editingGroup.name,
+              emoji: editingGroup.emoji,
+              description: editingGroup.description ?? "",
+              tags: editingGroup.tags ?? [],
+            }}
+            onClose={() => setEditingGroup(null)}
+            onSave={handleEditGroup}
+          />
+        )}
+
+        {/* Confirm delete bill */}
+        {confirmDeleteBill && (
+          <ConfirmModal
+            title={`ลบบิล "${confirmDeleteBill.title}"?`}
+            description="การกระทำนี้ไม่สามารถย้อนกลับได้"
+            confirmLabel="ลบบิล"
+            danger
+            onConfirm={handleDeleteBill}
+            onCancel={() => setConfirmDeleteBill(null)}
+          />
+        )}
+
+        {/* Confirm delete group */}
+        {confirmDeleteGroup && (
+          <ConfirmModal
+            title={`ลบกลุ่ม "${confirmDeleteGroup.name}"?`}
+            description="บิลทั้งหมดในกลุ่มจะถูกลบด้วย ไม่สามารถย้อนกลับได้"
+            confirmLabel="ลบกลุ่ม"
+            danger
+            onConfirm={handleDeleteGroup}
+            onCancel={() => setConfirmDeleteGroup(null)}
           />
         )}
       </div>
@@ -394,7 +478,7 @@ export default function HomePage() {
     if (configured) {
       router.push("/login");
     } else {
-      handleCreatePersonalBill();
+      setShowCreateBill(true);
     }
   };
 
@@ -438,7 +522,7 @@ export default function HomePage() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 items-center">
-          {configured && (
+          {configured && FEATURES.GOOGLE_LOGIN && (
             <button
               onClick={signInWithGoogle}
               className="flex items-center gap-2 px-6 py-3.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white text-sm font-semibold rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:-translate-y-0.5 shadow-sm"
@@ -515,6 +599,15 @@ export default function HomePage() {
       <footer className="border-t border-gray-100 dark:border-gray-800 py-6 text-center">
         <p className="text-xs text-gray-400">© 2025 Kidtang · หารบิลง่ายๆ สำหรับทุกคน</p>
       </footer>
+
+      {/* Create Bill Modal (landing) */}
+      {showCreateBill && (
+        <CreateEntityModal
+          type="bill"
+          onClose={() => setShowCreateBill(false)}
+          onSave={handleCreatePersonalBill}
+        />
+      )}
     </div>
   );
 }

@@ -54,6 +54,8 @@ create table public.groups (
   id          uuid primary key default uuid_generate_v4(),
   name        text not null,
   description text,
+  emoji       text,
+  tags        text[] not null default '{}',
   owner_id    uuid not null references public.profiles(id) on delete cascade,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
@@ -91,6 +93,8 @@ create table public.trips (
 create table public.bills (
   id          uuid primary key default uuid_generate_v4(),
   title       text not null default 'บิลใหม่',
+  emoji       text,
+  tags        text[] not null default '{}',
   trip_id     uuid references public.trips(id) on delete set null,
   group_id    uuid references public.groups(id) on delete cascade,
   owner_id    uuid not null references public.profiles(id) on delete cascade,

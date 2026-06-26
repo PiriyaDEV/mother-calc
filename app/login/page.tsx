@@ -16,10 +16,11 @@ export default function LoginPage() {
 
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
-  const [confirmEmail, setConfirmEmail] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [showPass, setShowPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -60,12 +61,17 @@ export default function LoginPage() {
         const err = await signInWithEmail(email, password);
         if (err) setError(err);
       } else {
-        if (email !== confirmEmail) {
-          setError("อีเมลไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง");
+        if (password !== confirmPassword) {
+          setError("รหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง");
           setSubmitting(false);
           return;
         }
-        const err = await signUpWithEmail(email, password, name);
+        if (password.length < 6) {
+          setError("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
+          setSubmitting(false);
+          return;
+        }
+        const err = await signUpWithEmail(email, password, username);
         if (err) {
           setError(err);
         } else {
@@ -232,7 +238,7 @@ export default function LoginPage() {
             <p className="text-xs text-gray-400 text-center">
               ไม่ได้รับรหัส?{" "}
               <button
-                onClick={() => signUpWithEmail(email, password, name)}
+                onClick={() => signUpWithEmail(email, password, username)}
                 className="text-[#4366f4] font-semibold hover:underline"
               >
                 ส่งใหม่
@@ -243,7 +249,7 @@ export default function LoginPage() {
           /* ── Login / Register Screen ── */
           <>
             {/* Google */}
-            {FEATURES.GOOGLE_LOGIN && (
+            {FEATURES.GOOGLE_LOGIN && configured && (
               <>
                 <button
                   onClick={signInWithGoogle}
@@ -267,16 +273,19 @@ export default function LoginPage() {
               {mode === "register" && (
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                    ชื่อ
+                    Username
                   </label>
                   <input
                     type="text"
-                    placeholder="ชื่อของคุณ"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    placeholder="เช่น john_doe (a-z, 0-9, _)"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
                     required
+                    minLength={3}
+                    maxLength={30}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4366f4]/30 focus:border-[#4366f4] transition-all"
                   />
+                  <p className="text-[11px] text-gray-400 mt-0.5">ใช้ตัวอักษรภาษาอังกฤษ ตัวเลข หรือ _ (3-30 ตัว)</p>
                 </div>
               )}
 
@@ -293,29 +302,6 @@ export default function LoginPage() {
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4366f4]/30 focus:border-[#4366f4] transition-all"
                 />
               </div>
-
-              {mode === "register" && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                    ยืนยันอีเมล
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="กรอกอีเมลอีกครั้ง"
-                    value={confirmEmail}
-                    onChange={(e) => setConfirmEmail(e.target.value)}
-                    required
-                    className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border rounded-2xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4366f4]/30 focus:border-[#4366f4] transition-all ${
-                      confirmEmail && confirmEmail !== email
-                        ? "border-red-300 dark:border-red-700"
-                        : "border-gray-100 dark:border-gray-700"
-                    }`}
-                  />
-                  {confirmEmail && confirmEmail !== email && (
-                    <p className="text-[11px] text-red-500 mt-0.5">อีเมลไม่ตรงกัน</p>
-                  )}
-                </div>
-              )}
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
@@ -340,6 +326,38 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
+
+              {mode === "register" && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    ยืนยันรหัสผ่าน
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPass ? "text" : "password"}
+                      placeholder="กรอกรหัสผ่านอีกครั้ง"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      className={`w-full px-4 py-3 pr-11 bg-gray-50 dark:bg-gray-800 border rounded-2xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4366f4]/30 focus:border-[#4366f4] transition-all ${
+                        confirmPassword && confirmPassword !== password
+                          ? "border-red-300 dark:border-red-700"
+                          : "border-gray-100 dark:border-gray-700"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPass((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      {showConfirmPass ? <IoEyeOffOutline size={18} /> : <IoEyeOutline size={18} />}
+                    </button>
+                  </div>
+                  {confirmPassword && confirmPassword !== password && (
+                    <p className="text-[11px] text-red-500 mt-0.5">รหัสผ่านไม่ตรงกัน</p>
+                  )}
+                </div>
+              )}
 
               {/* Error */}
               {error && (

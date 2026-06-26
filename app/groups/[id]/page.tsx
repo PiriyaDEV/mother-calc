@@ -8,6 +8,7 @@ import {
   getBills,
   createBill,
   deleteBill,
+  updateBill,
   getGroupMembers,
   ensureMyProfile,
 } from "@/lib/db";
@@ -22,6 +23,8 @@ import {
   IoChevronForward,
   IoSettingsOutline,
 } from "react-icons/io5";
+import CreateEntityModal, { EntityFormData } from "@/components/ui/CreateEntityModal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function GroupPage() {
   const { id } = useParams<{ id: string }>();
@@ -34,6 +37,9 @@ export default function GroupPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [showCreateBill, setShowCreateBill] = useState(false);
+  const [editingBill, setEditingBill] = useState<Bill | null>(null);
+  const [confirmDeleteBill, setConfirmDeleteBill] = useState<Bill | null>(null);
 
   const loadData = useCallback(async () => {
     if (!user || !id) return;
@@ -61,7 +67,6 @@ export default function GroupPage() {
     if (user) loadData();
   }, [user, loadData]);
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && !user) router.push("/login");
   }, [loading, user, router]);
@@ -88,11 +93,17 @@ export default function GroupPage() {
     );
   }
 
-  const handleCreateBill = async () => {
+  const handleCreateBill = async (data: EntityFormData) => {
     if (!group) return;
     setCreating(true);
     try {
-      const bill = await createBill({ title: "บิลใหม่", group_id: group.id });
+      const bill = await createBill({
+        title: data.name,
+        emoji: data.emoji,
+        tags: data.tags,
+        settings: data.settings,
+        group_id: group.id,
+      });
       router.push(`/app?id=${bill.id}`);
     } catch (e) {
       console.error(e);
@@ -100,11 +111,29 @@ export default function GroupPage() {
     }
   };
 
-  const handleDeleteBill = async (e: React.MouseEvent, billId: string) => {
-    e.stopPropagation();
-    if (!confirm("ลบบิลนี้?")) return;
-    await deleteBill(billId);
-    setBills((prev) => prev.filter((b) => b.id !== billId));
+  const handleEditBill = async (data: EntityFormData) => {
+    if (!editingBill) return;
+    await updateBill(editingBill.id, {
+      title: data.name,
+      emoji: data.emoji,
+      tags: data.tags,
+      settings: data.settings,
+    });
+    setBills((prev) =>
+      prev.map((b) =>
+        b.id === editingBill.id
+          ? { ...b, title: data.name, emoji: data.emoji, tags: data.tags, settings: data.settings ?? b.settings }
+          : b
+      )
+    );
+    setEditingBill(null);
+  };
+
+  const handleDeleteBill = async () => {
+    if (!confirmDeleteBill) return;
+    await deleteBill(confirmDeleteBill.id);
+    setBills((prev) => prev.filter((b) => b.id !== confirmDeleteBill.id));
+    setConfirmDeleteBill(null);
   };
 
   const acceptedMembers = members.filter((m) => m.status === "accepted");
@@ -121,13 +150,18 @@ export default function GroupPage() {
             >
               <IoArrowBack size={18} />
             </button>
-            <div>
-              <h1 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
-                {group?.name ?? "กลุ่ม"}
-              </h1>
-              {group?.description && (
-                <p className="text-xs text-gray-400 leading-tight">{group.description}</p>
+            <div className="flex items-center gap-2">
+              {group?.emoji && (
+                <span className="text-xl">{group.emoji}</span>
               )}
+              <div>
+                <h1 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
+                  {group?.name ?? "กลุ่ม"}
+                </h1>
+                {group?.description && (
+                  <p className="text-xs text-gray-400 leading-tight">{group.description}</p>
+                )}
+              </div>
             </div>
           </div>
           <button
@@ -182,7 +216,7 @@ export default function GroupPage() {
 
         {/* Create bill button */}
         <button
-          onClick={handleCreateBill}
+          onClick={() => setShowCreateBill(true)}
           disabled={creating}
           className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#4366f4] hover:bg-[#3355e0] disabled:opacity-60 rounded-2xl text-sm font-semibold text-white transition-all shadow-sm hover:shadow-md mb-5"
         >
@@ -203,7 +237,7 @@ export default function GroupPage() {
 
           {bills.length === 0 ? (
             <div
-              onClick={handleCreateBill}
+              onClick={() => setShowCreateBill(true)}
               className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 cursor-pointer hover:border-[#4366f4]/30 transition-colors group"
             >
               <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
@@ -223,22 +257,42 @@ export default function GroupPage() {
                   onClick={() => router.push(`/app?id=${bill.id}`)}
                   className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-[#4366f4]/20 hover:shadow-sm transition-all cursor-pointer group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
-                    <IoReceiptOutline size={20} className="text-[#4366f4]" />
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0 text-xl">
+                    {bill.emoji ?? <IoReceiptOutline size={20} className="text-[#4366f4]" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{bill.title}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {new Date(bill.updated_at).toLocaleDateString("th-TH", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <p className="text-xs text-gray-400">
+                        {new Date(bill.updated_at).toLocaleDateString("th-TH", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                      {bill.tags && bill.tags.length > 0 && (
+                        <>
+                          {bill.tags.slice(0, 2).map((tag) => (
+                            <span key={tag} className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-[#4366f4] text-[10px] rounded-full font-medium">
+                              {tag}
+                            </span>
+                          ))}
+                          {bill.tags.length > 2 && (
+                            <span className="text-[10px] text-gray-400">+{bill.tags.length - 2}</span>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <button
-                      onClick={(e) => handleDeleteBill(e, bill.id)}
+                      onClick={(e) => { e.stopPropagation(); setEditingBill(bill); }}
+                      className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-[#4366f4] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <IoSettingsOutline size={13} />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setConfirmDeleteBill(bill); }}
                       className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
                     >
                       <IoTrash size={13} />
@@ -251,6 +305,43 @@ export default function GroupPage() {
           )}
         </section>
       </main>
+
+      {/* Create Bill Modal */}
+      {showCreateBill && (
+        <CreateEntityModal
+          type="bill"
+          onClose={() => setShowCreateBill(false)}
+          onSave={handleCreateBill}
+        />
+      )}
+
+      {/* Confirm delete bill */}
+      {confirmDeleteBill && (
+        <ConfirmModal
+          title={`ลบบิล "${confirmDeleteBill.title}"?`}
+          description="การกระทำนี้ไม่สามารถย้อนกลับได้"
+          confirmLabel="ลบบิล"
+          danger
+          onConfirm={handleDeleteBill}
+          onCancel={() => setConfirmDeleteBill(null)}
+        />
+      )}
+
+      {/* Edit Bill Modal */}
+      {editingBill && (
+        <CreateEntityModal
+          type="bill"
+          mode="edit"
+          initialData={{
+            name: editingBill.title,
+            emoji: editingBill.emoji,
+            tags: editingBill.tags ?? [],
+            settings: editingBill.settings,
+          }}
+          onClose={() => setEditingBill(null)}
+          onSave={handleEditBill}
+        />
+      )}
     </div>
   );
 }

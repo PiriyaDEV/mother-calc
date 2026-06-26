@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { User } from "@supabase/supabase-js";
 import { Bill, BillMember, BillItem, Settings } from "@/lib/types";
 import {
   getBill,
@@ -14,10 +15,11 @@ import {
   removeBillItem,
   updateBill,
   updateBillSettings,
+  getMyProfile,
 } from "@/lib/db";
-import { DEFAULT_SETTINGS } from "@/lib/constants";
+import { DEFAULT_SETTINGS, MEMBER_COLORS } from "@/lib/constants";
 
-export function useBillState(billId: string) {
+export function useBillState(billId: string, currentUser?: User | null) {
   const [bill, setBill] = useState<Bill | null>(null);
   const [members, setMembers] = useState<BillMember[]>([]);
   const [items, setItems] = useState<BillItem[]>([]);
@@ -39,14 +41,40 @@ export function useBillState(billId: string) {
         return;
       }
       setBill(billData);
-      setMembers(membersData);
+
+      // Auto-add current user as first member if no members yet
+      let finalMembers = membersData;
+      if (membersData.length === 0 && currentUser) {
+        try {
+          const profile = await getMyProfile();
+          const displayName =
+            profile?.display_name ||
+            (currentUser.user_metadata?.full_name as string | undefined) ||
+            currentUser.email?.split("@")[0] ||
+            "ฉัน";
+          const color = MEMBER_COLORS[0];
+          const selfMember = await addBillMember({
+            bill_id: billId,
+            name: displayName,
+            color,
+            promptpay: undefined,
+            user_id: currentUser.id,
+            is_external: false,
+          });
+          finalMembers = [selfMember];
+        } catch {
+          // silently ignore — user can add manually
+        }
+      }
+
+      setMembers(finalMembers);
       setItems(itemsData);
     } catch (e) {
       setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
     } finally {
       setLoading(false);
     }
-  }, [billId]);
+  }, [billId, currentUser]);
 
   useEffect(() => {
     load();
@@ -57,6 +85,23 @@ export function useBillState(billId: string) {
     if (!bill) return;
     await updateBill(billId, { title });
     setBill((b) => b ? { ...b, title } : b);
+  };
+
+  // ── Bill meta (title + emoji + tags + settings together) ──
+  const updateBillMeta = async (opts: {
+    title?: string;
+    emoji?: string | null;
+    tags?: string[];
+    settings?: Settings;
+  }) => {
+    if (!bill) return;
+    const updates: Parameters<typeof updateBill>[1] = {};
+    if (opts.title !== undefined) updates.title = opts.title;
+    if (opts.emoji !== undefined) updates.emoji = opts.emoji;
+    if (opts.tags !== undefined) updates.tags = opts.tags;
+    if (opts.settings !== undefined) updates.settings = opts.settings;
+    await updateBill(billId, updates);
+    setBill((b) => b ? { ...b, ...updates } : b);
   };
 
   // ── Settings ──────────────────────────────────────────────
@@ -164,6 +209,7 @@ export function useBillState(billId: string) {
     error,
     reload: load,
     updateTitle,
+    updateBillMeta,
     saveSettings,
     addMember,
     editMember,

@@ -8,17 +8,13 @@ import {
   IoBarChartOutline,
   IoSettingsOutline,
   IoArrowBack,
-  IoPencil,
-  IoCheckmark,
-  IoClose,
 } from "react-icons/io5";
 import { useBillState } from "@/hooks/useBillState";
 import { useAuth } from "@/hooks/useAuth";
 import MemberPage from "@/components/members/MemberPage";
 import ItemPage from "@/components/items/ItemPage";
 import SummaryPage from "@/components/summary/SummaryPage";
-import SettingsModal from "@/components/settings/SettingsModal";
-import Input from "@/components/ui/Input";
+import CreateEntityModal, { EntityFormData } from "@/components/ui/CreateEntityModal";
 import { AppTab } from "@/lib/types";
 
 const TABS: { id: AppTab; label: string; icon: React.ReactNode }[] = [
@@ -47,9 +43,7 @@ function BillPage() {
   const { user, loading: authLoading, configured } = useAuth();
 
   const [tab, setTab] = useState<AppTab>("members");
-  const [showSettings, setShowSettings] = useState(false);
-  const [editingTitle, setEditingTitle] = useState(false);
-  const [titleInput, setTitleInput] = useState("");
+  const [showEditBill, setShowEditBill] = useState(false);
 
   // Auth guard — redirect to /login if Supabase is configured and user is not logged in
   useEffect(() => {
@@ -64,7 +58,7 @@ function BillPage() {
     items,
     loading,
     error,
-    updateTitle,
+    updateBillMeta,
     saveSettings,
     addMember,
     editMember,
@@ -72,13 +66,7 @@ function BillPage() {
     addItem,
     editItem,
     deleteItem,
-  } = useBillState(billId);
-
-  useEffect(() => {
-    if (bill && !editingTitle) {
-      setTitleInput(bill.title);
-    }
-  }, [bill?.title]);
+  } = useBillState(billId, user);
 
   // Redirect to home if no bill ID
   useEffect(() => {
@@ -114,11 +102,13 @@ function BillPage() {
     );
   }
 
-  const handleSaveTitle = async () => {
-    if (titleInput.trim() && titleInput.trim() !== bill.title) {
-      await updateTitle(titleInput.trim());
-    }
-    setEditingTitle(false);
+  const handleSaveBillMeta = async (data: EntityFormData) => {
+    await updateBillMeta({
+      title: data.name,
+      emoji: data.emoji,
+      tags: data.tags,
+      settings: data.settings,
+    });
   };
 
   return (
@@ -134,41 +124,19 @@ function BillPage() {
           </button>
 
           {/* Title */}
-          <div className="flex-1 min-w-0">
-            {editingTitle ? (
-              <div className="flex items-center gap-2">
-                <Input
-                  value={titleInput}
-                  onChange={(e) => setTitleInput(e.target.value)}
-                  className="text-sm font-semibold h-8 py-0"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSaveTitle();
-                    if (e.key === "Escape") setEditingTitle(false);
-                  }}
-                />
-                <button onClick={handleSaveTitle} className="text-[#4366f4]">
-                  <IoCheckmark size={18} />
-                </button>
-                <button onClick={() => setEditingTitle(false)} className="text-gray-400">
-                  <IoClose size={18} />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => { setTitleInput(bill.title); setEditingTitle(true); }}
-                className="flex items-center gap-1.5 group"
-              >
-                <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate">
-                  {bill.title}
-                </h1>
-                <IoPencil size={12} className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-              </button>
-            )}
-          </div>
+          <button
+            onClick={() => setShowEditBill(true)}
+            className="flex-1 min-w-0 flex items-center gap-2 group text-left"
+          >
+            {bill.emoji && <span className="text-xl flex-shrink-0">{bill.emoji}</span>}
+            <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate">
+              {bill.title}
+            </h1>
+            <IoSettingsOutline size={14} className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+          </button>
 
           <button
-            onClick={() => setShowSettings(true)}
+            onClick={() => setShowEditBill(true)}
             className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
           >
             <IoSettingsOutline size={18} />
@@ -230,15 +198,21 @@ function BillPage() {
         )}
       </main>
 
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-        settings={bill.settings}
-        tip={bill.tip}
-        discount={bill.discount}
-        onSave={saveSettings}
-      />
+      {/* Edit Bill Modal */}
+      {showEditBill && (
+        <CreateEntityModal
+          type="bill"
+          mode="edit"
+          initialData={{
+            name: bill.title,
+            emoji: bill.emoji,
+            tags: bill.tags ?? [],
+            settings: bill.settings,
+          }}
+          onClose={() => setShowEditBill(false)}
+          onSave={handleSaveBillMeta}
+        />
+      )}
     </div>
   );
 }

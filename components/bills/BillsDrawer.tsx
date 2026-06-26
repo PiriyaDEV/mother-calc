@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { IoAdd, IoCheckmark, IoTrash, IoPencil, IoClose } from "react-icons/io5";
 import { Bill } from "@/lib/types";
 
@@ -12,7 +11,10 @@ interface BillsDrawerProps {
   onSwitch: (id: string) => void;
   onCreate: (title?: string) => void;
   onDelete: (id: string) => void;
-  onRename: (id: string, title: string) => void;
+  /** Called when user clicks the pencil icon — open edit modal externally */
+  onEdit?: (bill: Bill) => void;
+  /** Legacy rename (kept for backward compat) */
+  onRename?: (id: string, title: string) => void;
 }
 
 export default function BillsDrawer({
@@ -23,23 +25,8 @@ export default function BillsDrawer({
   onSwitch,
   onCreate,
   onDelete,
-  onRename,
+  onEdit,
 }: BillsDrawerProps) {
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-
-  const startEdit = (bill: Bill) => {
-    setEditingId(bill.id);
-    setEditTitle(bill.title);
-  };
-
-  const commitEdit = () => {
-    if (editingId) {
-      onRename(editingId, editTitle);
-      setEditingId(null);
-    }
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -69,7 +56,6 @@ export default function BillsDrawer({
         <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
           {bills.map((bill) => {
             const isActive = bill.id === activeBillId;
-            const isEditing = editingId === bill.id;
 
             return (
               <div
@@ -80,60 +66,48 @@ export default function BillsDrawer({
                     : "border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800 hover:border-gray-200"
                 }`}
               >
-                {/* Active indicator */}
-                {isActive && (
-                  <div className="w-5 h-5 rounded-full bg-[#4366f4] flex items-center justify-center flex-shrink-0">
-                    <IoCheckmark size={12} className="text-white" />
-                  </div>
-                )}
+                {/* Emoji / active indicator */}
+                <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 text-base">
+                  {isActive ? (
+                    <div className="w-5 h-5 rounded-full bg-[#4366f4] flex items-center justify-center">
+                      <IoCheckmark size={12} className="text-white" />
+                    </div>
+                  ) : (
+                    bill.emoji ?? "🧾"
+                  )}
+                </div>
 
-                {/* Title / Edit */}
+                {/* Title */}
                 <div
                   className="flex-1 min-w-0 cursor-pointer"
                   onClick={() => {
-                    if (!isEditing) {
-                      onSwitch(bill.id);
-                      onClose();
-                    }
+                    onSwitch(bill.id);
+                    onClose();
                   }}
                 >
-                  {isEditing ? (
-                    <input
-                      autoFocus
-                      value={editTitle}
-                      onChange={(e) => setEditTitle(e.target.value)}
-                      onBlur={commitEdit}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") commitEdit();
-                        if (e.key === "Escape") setEditingId(null);
-                      }}
-                      className="w-full text-sm font-medium bg-transparent outline-none border-b border-[#4366f4] text-gray-900 dark:text-white"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                        {bill.title}
-                      </p>
-                      <p className="text-[10px] text-gray-400">
-                        {(bill.members ?? []).length} คน · {(bill.items ?? []).length} รายการ ·{" "}
-                        {new Date(bill.updated_at).toLocaleDateString("th-TH")}
-                      </p>
-                    </>
-                  )}
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    {bill.title}
+                  </p>
+                  <p className="text-[10px] text-gray-400">
+                    {(bill.members ?? []).length} คน · {(bill.items ?? []).length} รายการ ·{" "}
+                    {new Date(bill.updated_at).toLocaleDateString("th-TH")}
+                  </p>
                 </div>
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      startEdit(bill);
-                    }}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <IoPencil size={12} />
-                  </button>
+                  {onEdit && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(bill);
+                        onClose();
+                      }}
+                      className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-[#4366f4] transition-colors"
+                    >
+                      <IoPencil size={12} />
+                    </button>
+                  )}
                   {bills.length > 1 && (
                     <button
                       onClick={(e) => {
