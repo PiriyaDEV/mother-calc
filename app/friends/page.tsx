@@ -137,19 +137,21 @@ export default function FriendsPage() {
     <div className="min-h-screen bg-[#f4f6fb] dark:bg-gray-950 flex flex-col pb-20">
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-5 flex flex-col gap-5">
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">เพื่อน</h1>
-            <p className="text-xs text-gray-400 mt-0.5">{friends.length} เพื่อน{requests.length > 0 ? ` · ${requests.length} คำขอใหม่` : ""}</p>
+        {/* Header — sticky */}
+        <div className="sticky top-14 z-20 bg-[#f4f6fb] dark:bg-gray-950 pt-5 pb-3 -mt-5 -mx-4 px-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">เพื่อน</h1>
+              <p className="text-xs text-gray-400 mt-0.5">{friends.length} เพื่อน{requests.length > 0 ? ` · ${requests.length} คำขอใหม่` : ""}</p>
+            </div>
+            <button
+              onClick={() => { setShowAdd(true); setAddError(""); setAddSuccess(""); setAddUsername(""); }}
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#286bfe] hover:bg-[#1a5ce0] text-white text-xs font-semibold rounded-xl transition-colors"
+            >
+              <IoPersonAddOutline size={14} />
+              เพิ่มเพื่อน
+            </button>
           </div>
-          <button
-            onClick={() => { setShowAdd(true); setAddError(""); setAddSuccess(""); setAddUsername(""); }}
-            className="flex items-center gap-1.5 px-3 py-2 bg-[#286bfe] hover:bg-[#1a5ce0] text-white text-xs font-semibold rounded-xl transition-colors"
-          >
-            <IoPersonAddOutline size={14} />
-            เพิ่มเพื่อน
-          </button>
         </div>
 
         {/* Add friend modal */}

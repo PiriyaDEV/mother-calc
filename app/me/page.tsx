@@ -164,7 +164,7 @@ export default function MePage() {
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-5 flex flex-col gap-4">
         {/* Page title */}
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">ฉัน</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">สวัสดี!, คุณ {profile?.display_name}</h1>
           <button
             onClick={toggleTheme}
             className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"

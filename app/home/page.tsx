@@ -23,6 +23,7 @@ import {
   IoAddOutline,
 } from "react-icons/io5";
 import BottomNav from "@/components/ui/BottomNav";
+import BillStatusPill from "@/components/ui/BillStatusPill";
 
 function getBillTotal(bill: Bill): number {
   return (bill.items ?? []).reduce((s, i) => s + i.price, 0);
@@ -298,7 +299,10 @@ export default function HomePage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{bill.title}</p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">{(bill.items ?? []).length} รายการ · {new Date(bill.updated_at).toLocaleDateString("th-TH", { day: "numeric", month: "short" })}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                          <BillStatusPill bill={bill} />
+                          <p className="text-[10px] text-gray-400">{(bill.items ?? []).length} รายการ · {new Date(bill.updated_at).toLocaleDateString("th-TH", { day: "numeric", month: "short" })}</p>
+                        </div>
                       </div>
                       <p className="text-sm font-bold text-[#286bfe] flex-shrink-0">{formatBaht(getBillTotal(bill))} ฿</p>
                     </button>

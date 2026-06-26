@@ -159,7 +159,7 @@ function BillPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
+      <header className="sticky top-14 z-30 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => router.back()}

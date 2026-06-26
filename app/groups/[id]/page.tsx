@@ -32,6 +32,7 @@ import SummaryPage from "@/components/summary/SummaryPage";
 import CreateEntityModal, { EntityFormData } from "@/components/ui/CreateEntityModal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import BottomNav from "@/components/ui/BottomNav";
+import BillStatusPill from "@/components/ui/BillStatusPill";
 
 type GroupTab = "members" | "bills" | "summary" | "analytics";
 
@@ -181,7 +182,7 @@ export default function GroupPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
+      <header className="sticky top-14 z-30 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => router.back()}
@@ -456,7 +457,7 @@ function BillsTab({
   return (
     <div className="flex flex-col gap-3">
       {/* Create button */}
-      <div className="sticky top-0 z-10 pt-1 pb-2 bg-white dark:bg-gray-950">
+      <div className="pb-2">
         <button
           onClick={onCreateBill}
           disabled={creating}
@@ -497,6 +498,7 @@ function BillsTab({
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{bill.title}</p>
               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                <BillStatusPill bill={bill} />
                 <p className="text-xs text-gray-400">
                   {new Date(bill.updated_at).toLocaleDateString("th-TH", {
                     day: "numeric",

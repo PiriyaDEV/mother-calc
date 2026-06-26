@@ -72,7 +72,7 @@ export default function NotificationsPage() {
   return (
     <div className="min-h-screen bg-[#f8f9fc] dark:bg-gray-950 flex flex-col">
       {/* Navbar */}
-      <nav className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
+      <nav className="sticky top-14 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
         <div className="max-w-2xl mx-auto px-5 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button

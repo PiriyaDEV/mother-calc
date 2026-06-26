@@ -68,15 +68,17 @@ export default function GroupsPage() {
   return (
     <div className="min-h-screen bg-[#f4f6fb] dark:bg-gray-950 flex flex-col pb-20">
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-5">
-        {/* Page title */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">กลุ่มของฉัน</h1>
-            {groups.length > 0 && !dataLoading && <p className="text-xs text-gray-400 mt-0.5">{groups.length} กลุ่ม</p>}
+        {/* Page title — sticky */}
+        <div className="sticky top-14 z-20 bg-[#f4f6fb] dark:bg-gray-950 pt-5 pb-3 -mt-5 -mx-4 px-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">กลุ่มของฉัน</h1>
+              {groups.length > 0 && !dataLoading && <p className="text-xs text-gray-400 mt-0.5">{groups.length} กลุ่ม</p>}
+            </div>
+            <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white text-xs font-semibold rounded-xl transition-colors">
+              <IoAdd size={14} /> สร้างกลุ่ม
+            </button>
           </div>
-          <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white text-xs font-semibold rounded-xl transition-colors">
-            <IoAdd size={14} /> สร้างกลุ่ม
-          </button>
         </div>
         {dataLoading ? (
           <div className="flex items-center justify-center py-16"><div className="w-6 h-6 border-2 border-[#4366f4] border-t-transparent rounded-full animate-spin" /></div>
