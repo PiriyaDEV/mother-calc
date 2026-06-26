@@ -37,15 +37,15 @@ interface SettingsModalProps {
   user?: User | null;
 }
 
-const CURRENCIES: { code: CurrencyCode; label: string }[] = [
-  { code: "THB", label: "฿ บาทไทย" },
-  { code: "USD", label: "$ ดอลลาร์" },
-  { code: "EUR", label: "€ ยูโร" },
-  { code: "JPY", label: "¥ เยน" },
-  { code: "SGD", label: "S$ สิงคโปร์" },
-  { code: "GBP", label: "£ ปอนด์" },
-  { code: "CNY", label: "¥ หยวน" },
-  { code: "KRW", label: "₩ วอน" },
+const CURRENCIES: { code: CurrencyCode; flag: string; symbol: string; label: string }[] = [
+  { code: "THB", flag: "🇹🇭", symbol: "฿",  label: "บาทไทย" },
+  { code: "USD", flag: "🇺🇸", symbol: "$",  label: "ดอลลาร์" },
+  { code: "EUR", flag: "🇪🇺", symbol: "€",  label: "ยูโร" },
+  { code: "JPY", flag: "🇯🇵", symbol: "¥",  label: "เยน" },
+  { code: "SGD", flag: "🇸🇬", symbol: "S$", label: "สิงคโปร์" },
+  { code: "GBP", flag: "🇬🇧", symbol: "£",  label: "ปอนด์" },
+  { code: "CNY", flag: "🇨🇳", symbol: "¥",  label: "หยวน" },
+  { code: "KRW", flag: "🇰🇷", symbol: "₩",  label: "วอน" },
 ];
 
 const ROUNDING_OPTIONS: { value: RoundingMode; label: string }[] = [
@@ -399,19 +399,24 @@ export default function SettingsModal({
             {/* Currency */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-gray-600 dark:text-gray-400 px-1">สกุลเงิน</label>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-2 gap-1.5">
                 {CURRENCIES.map((c) => (
                   <button
                     key={c.code}
                     type="button"
                     onClick={() => setForm((f) => ({ ...f, currency: c.code }))}
-                    className={`px-2 py-2 rounded-xl text-xs font-medium text-center transition-all ${
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-left transition-all ${
                       form.currency === c.code
-                        ? "bg-[#4366f4] text-white shadow-sm"
+                        ? "bg-[#4366f4] text-white shadow-sm ring-2 ring-[#4366f4]/30"
                         : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
                     }`}
                   >
-                    {c.label}
+                    <span className="text-base leading-none">{c.flag}</span>
+                    <span className={`font-bold ${form.currency === c.code ? "text-white" : "text-gray-800 dark:text-gray-200"}`}>{c.symbol}</span>
+                    <span className="truncate">{c.label}</span>
+                    {form.currency === c.code && (
+                      <IoCheckmark size={12} className="ml-auto flex-shrink-0" />
+                    )}
                   </button>
                 ))}
               </div>

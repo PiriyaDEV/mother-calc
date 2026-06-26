@@ -37,15 +37,15 @@ interface CreateEntityModalProps {
 
 // ── Constants ──────────────────────────────────────────────────
 
-const CURRENCIES: { code: CurrencyCode; label: string }[] = [
-  { code: "THB", label: "฿ THB" },
-  { code: "USD", label: "$ USD" },
-  { code: "EUR", label: "€ EUR" },
-  { code: "JPY", label: "¥ JPY" },
-  { code: "SGD", label: "S$ SGD" },
-  { code: "GBP", label: "£ GBP" },
-  { code: "CNY", label: "¥ CNY" },
-  { code: "KRW", label: "₩ KRW" },
+const CURRENCIES: { code: CurrencyCode; flag: string; symbol: string; label: string }[] = [
+  { code: "THB", flag: "🇹🇭", symbol: "฿",  label: "บาท" },
+  { code: "USD", flag: "🇺🇸", symbol: "$",  label: "USD" },
+  { code: "EUR", flag: "🇪🇺", symbol: "€",  label: "EUR" },
+  { code: "JPY", flag: "🇯🇵", symbol: "¥",  label: "JPY" },
+  { code: "SGD", flag: "🇸🇬", symbol: "S$", label: "SGD" },
+  { code: "GBP", flag: "🇬🇧", symbol: "£",  label: "GBP" },
+  { code: "CNY", flag: "🇨🇳", symbol: "¥",  label: "CNY" },
+  { code: "KRW", flag: "🇰🇷", symbol: "₩",  label: "KRW" },
 ];
 
 const ROUNDING_OPTIONS: { value: RoundingMode; label: string }[] = [
@@ -327,19 +327,24 @@ export default function CreateEntityModal({
               {/* Currency */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">สกุลเงิน</label>
-                <div className="grid grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5">
                   {CURRENCIES.map((c) => (
                     <button
                       key={c.code}
                       type="button"
                       onClick={() => setSettings((s) => ({ ...s, currency: c.code }))}
-                      className={`px-1.5 py-2 rounded-xl text-[11px] font-medium text-center transition-all ${
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-[11px] font-medium text-left transition-all ${
                         settings.currency === c.code
-                          ? "bg-[#4366f4] text-white shadow-sm"
+                          ? "bg-[#4366f4] text-white shadow-sm ring-2 ring-[#4366f4]/30"
                           : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
                       }`}
                     >
-                      {c.label}
+                      <span className="text-base leading-none">{c.flag}</span>
+                      <span className={`font-bold ${settings.currency === c.code ? "text-white" : "text-gray-800 dark:text-gray-200"}`}>{c.symbol}</span>
+                      <span className="truncate">{c.label}</span>
+                      {settings.currency === c.code && (
+                        <IoCheckmark size={11} className="ml-auto flex-shrink-0" />
+                      )}
                     </button>
                   ))}
                 </div>
