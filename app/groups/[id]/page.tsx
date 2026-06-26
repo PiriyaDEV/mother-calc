@@ -9,6 +9,8 @@ import {
   createBill,
   deleteBill,
   updateBill,
+  updateGroup,
+  deleteGroup,
   getGroupMembers,
   ensureMyProfile,
 } from "@/lib/db";
@@ -40,6 +42,8 @@ export default function GroupPage() {
   const [showCreateBill, setShowCreateBill] = useState(false);
   const [editingBill, setEditingBill] = useState<Bill | null>(null);
   const [confirmDeleteBill, setConfirmDeleteBill] = useState<Bill | null>(null);
+  const [showGroupSettings, setShowGroupSettings] = useState(false);
+  const [confirmDeleteGroup, setConfirmDeleteGroup] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!user || !id) return;
@@ -136,6 +140,23 @@ export default function GroupPage() {
     setConfirmDeleteBill(null);
   };
 
+  const handleEditGroup = async (data: EntityFormData) => {
+    if (!group) return;
+    await updateGroup(group.id, {
+      name: data.name,
+      description: data.description || undefined,
+      emoji: data.emoji,
+      tags: data.tags,
+    });
+    setGroup((g) => g ? { ...g, name: data.name, description: data.description || null, emoji: data.emoji, tags: data.tags } : g);
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!group) return;
+    await deleteGroup(group.id);
+    router.push("/");
+  };
+
   const acceptedMembers = members.filter((m) => m.status === "accepted");
 
   return (
@@ -165,7 +186,7 @@ export default function GroupPage() {
             </div>
           </div>
           <button
-            onClick={() => router.push(`/groups/${id}/settings`)}
+            onClick={() => setShowGroupSettings(true)}
             className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <IoSettingsOutline size={18} />
@@ -285,18 +306,6 @@ export default function GroupPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setEditingBill(bill); }}
-                      className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-[#4366f4] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors opacity-0 group-hover:opacity-100"
-                    >
-                      <IoSettingsOutline size={13} />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setConfirmDeleteBill(bill); }}
-                      className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
-                    >
-                      <IoTrash size={13} />
-                    </button>
                     <IoArrowForward size={14} className="text-gray-300 group-hover:text-[#4366f4] transition-colors" />
                   </div>
                 </div>
@@ -312,6 +321,35 @@ export default function GroupPage() {
           type="bill"
           onClose={() => setShowCreateBill(false)}
           onSave={handleCreateBill}
+        />
+      )}
+
+      {/* Group Settings Modal */}
+      {showGroupSettings && group && (
+        <CreateEntityModal
+          type="group"
+          mode="edit"
+          initialData={{
+            name: group.name,
+            emoji: group.emoji,
+            description: group.description ?? "",
+            tags: group.tags ?? [],
+          }}
+          onClose={() => setShowGroupSettings(false)}
+          onSave={handleEditGroup}
+          onDelete={() => { setShowGroupSettings(false); setConfirmDeleteGroup(true); }}
+        />
+      )}
+
+      {/* Confirm delete group */}
+      {confirmDeleteGroup && group && (
+        <ConfirmModal
+          title={`ลบกลุ่ม "${group.name}"?`}
+          description="บิลทั้งหมดในกลุ่มจะถูกลบด้วย ไม่สามารถย้อนกลับได้"
+          confirmLabel="ลบกลุ่ม"
+          danger
+          onConfirm={handleDeleteGroup}
+          onCancel={() => setConfirmDeleteGroup(false)}
         />
       )}
 

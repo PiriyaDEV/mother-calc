@@ -83,6 +83,19 @@ export async function getMyProfile(): Promise<Profile | null> {
   return data ?? null;
 }
 
+export async function uploadAvatar(userId: string, file: File): Promise<string> {
+  const supabase = createClient();
+  const ext = file.name.split(".").pop() ?? "jpg";
+  const path = `${userId}/avatar.${ext}`;
+  const { error } = await supabase.storage
+    .from("avatars")
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw error;
+  const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+  // append cache-buster so browser reloads the new image
+  return `${data.publicUrl}?t=${Date.now()}`;
+}
+
 export async function upsertProfile(profile: Partial<Profile> & { id: string }): Promise<Profile | null> {
   const supabase = createClient();
   const { data, error } = await supabase

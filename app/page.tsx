@@ -304,12 +304,6 @@ export default function HomePage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setEditingGroup(group); }}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-[#4366f4] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors opacity-0 group-hover:opacity-100"
-                          >
-                            <IoSettingsOutline size={14} />
-                          </button>
                           <IoChevronForward size={14} className="text-gray-300 group-hover:text-purple-400 transition-colors" />
                         </div>
                       </div>
@@ -377,12 +371,6 @@ export default function HomePage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setEditingBill(bill); }}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-[#4366f4] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors opacity-0 group-hover:opacity-100"
-                          >
-                            <IoSettingsOutline size={14} />
-                          </button>
                           <IoArrowForward size={14} className="text-gray-300 group-hover:text-[#4366f4] transition-colors" />
                         </div>
                       </div>

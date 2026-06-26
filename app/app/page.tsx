@@ -15,6 +15,8 @@ import MemberPage from "@/components/members/MemberPage";
 import ItemPage from "@/components/items/ItemPage";
 import SummaryPage from "@/components/summary/SummaryPage";
 import CreateEntityModal, { EntityFormData } from "@/components/ui/CreateEntityModal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
+import { deleteBill } from "@/lib/db";
 import { AppTab } from "@/lib/types";
 
 const TABS: { id: AppTab; label: string; icon: React.ReactNode }[] = [
@@ -44,6 +46,7 @@ function BillPage() {
 
   const [tab, setTab] = useState<AppTab>("members");
   const [showEditBill, setShowEditBill] = useState(false);
+  const [confirmDeleteBill, setConfirmDeleteBill] = useState(false);
 
   // Auth guard — redirect to /login if Supabase is configured and user is not logged in
   useEffect(() => {
@@ -111,6 +114,11 @@ function BillPage() {
     });
   };
 
+  const handleDeleteBill = async () => {
+    await deleteBill(billId);
+    router.push("/");
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
       {/* Header */}
@@ -124,16 +132,12 @@ function BillPage() {
           </button>
 
           {/* Title */}
-          <button
-            onClick={() => setShowEditBill(true)}
-            className="flex-1 min-w-0 flex items-center gap-2 group text-left"
-          >
+          <div className="flex-1 min-w-0 flex items-center gap-2">
             {bill.emoji && <span className="text-xl flex-shrink-0">{bill.emoji}</span>}
             <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate">
               {bill.title}
             </h1>
-            <IoSettingsOutline size={14} className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-          </button>
+          </div>
 
           <button
             onClick={() => setShowEditBill(true)}
@@ -211,6 +215,19 @@ function BillPage() {
           }}
           onClose={() => setShowEditBill(false)}
           onSave={handleSaveBillMeta}
+          onDelete={() => { setShowEditBill(false); setConfirmDeleteBill(true); }}
+        />
+      )}
+
+      {/* Confirm delete bill */}
+      {confirmDeleteBill && (
+        <ConfirmModal
+          title={`ลบบิล "${bill.title}"?`}
+          description="การกระทำนี้ไม่สามารถย้อนกลับได้"
+          confirmLabel="ลบบิล"
+          danger
+          onConfirm={handleDeleteBill}
+          onCancel={() => setConfirmDeleteBill(false)}
         />
       )}
     </div>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { getMyProfile, upsertProfile, isUsernameTaken } from "@/lib/db";
+import { getMyProfile, upsertProfile, isUsernameTaken, uploadAvatar } from "@/lib/db";
 import { Profile } from "@/lib/types";
 import { isValidUsername } from "@/lib/utils";
 import {
@@ -13,7 +13,9 @@ import {
   IoPencil,
   IoCheckmark,
   IoClose,
+  IoCamera,
 } from "react-icons/io5";
+import { useRef } from "react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -33,8 +35,10 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -113,6 +117,28 @@ export default function ProfilePage() {
     }
   };
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile) return;
+    // Validate type & size (max 5 MB)
+    if (!file.type.startsWith("image/")) { setError("กรุณาเลือกไฟล์รูปภาพ"); return; }
+    if (file.size > 5 * 1024 * 1024) { setError("ขนาดไฟล์ต้องไม่เกิน 5 MB"); return; }
+    setUploadingAvatar(true);
+    setError(null);
+    try {
+      const url = await uploadAvatar(profile.id, file);
+      await upsertProfile({ id: profile.id, avatar_url: url });
+      setProfile((p) => p ? { ...p, avatar_url: url } : p);
+      showSuccess("อัปเดตรูปโปรไฟล์แล้ว");
+    } catch {
+      setError("อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่");
+    } finally {
+      setUploadingAvatar(false);
+      // reset input so same file can be re-selected
+      e.target.value = "";
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
     router.push("/login");
@@ -158,13 +184,36 @@ export default function ProfilePage() {
 
         {/* Avatar + email */}
         <div className="flex flex-col items-center gap-3 py-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-          <div className="w-16 h-16 rounded-2xl bg-[#4366f4] flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
-            {profile?.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <IoPersonOutline size={28} />
-            )}
+          {/* Avatar with upload button */}
+          <div className="relative">
+            <div className="w-20 h-20 rounded-2xl bg-[#4366f4] flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
+              {profile?.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <IoPersonOutline size={32} />
+              )}
+              {uploadingAvatar && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-2xl">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+            </div>
+            {/* Camera button */}
+            <button
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-[#4366f4] hover:bg-[#3355e0] disabled:opacity-60 rounded-xl flex items-center justify-center text-white shadow-md transition-colors"
+            >
+              <IoCamera size={13} />
+            </button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
           </div>
           <div className="text-center">
             <p className="text-base font-bold text-gray-900 dark:text-white">

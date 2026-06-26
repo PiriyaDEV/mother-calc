@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { IoClose, IoAdd, IoCheckmark } from "react-icons/io5";
+import { IoClose, IoAdd, IoCheckmark, IoTrash } from "react-icons/io5";
 import { EMOJI_PRESETS, DEFAULT_TAGS } from "@/lib/constants";
 import Toggle from "@/components/ui/Toggle";
 import { CurrencyCode, RoundingMode, Settings } from "@/lib/types";
@@ -31,6 +31,8 @@ interface CreateEntityModalProps {
   initialData?: EntityInitialData;
   onClose: () => void;
   onSave: (data: EntityFormData) => Promise<void>;
+  /** If provided, shows a delete button at the bottom (edit mode only) */
+  onDelete?: () => void;
 }
 
 // ── Constants ──────────────────────────────────────────────────
@@ -70,6 +72,7 @@ export default function CreateEntityModal({
   initialData,
   onClose,
   onSave,
+  onDelete,
 }: CreateEntityModalProps) {
   const [name, setName] = useState(initialData?.name ?? "");
   const [emoji, setEmoji] = useState<string | null>(initialData?.emoji ?? "💰");
@@ -375,6 +378,18 @@ export default function CreateEntityModal({
               ? (isEdit ? "กำลังบันทึก..." : "กำลังสร้าง...")
               : (isEdit ? `บันทึก${label}` : `สร้าง${label}`)}
           </button>
+
+          {/* ── Delete (edit mode only) ── */}
+          {isEdit && onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="w-full py-3 flex items-center justify-center gap-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 text-sm font-medium rounded-2xl transition-colors border border-red-100 dark:border-red-900/30"
+            >
+              <IoTrash size={14} />
+              ลบ{label}นี้
+            </button>
+          )}
         </form>
       </div>
     </div>
