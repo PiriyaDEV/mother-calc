@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -34,7 +34,17 @@ import {
   IoPeopleCircleOutline,
   IoChevronForward,
   IoSettingsOutline,
+  IoWalletOutline,
 } from "react-icons/io5";
+
+// ── helpers ───────────────────────────────────────────────────
+function getBillTotal(bill: Bill): number {
+  return (bill.items ?? []).reduce((s, i) => s + i.price, 0);
+}
+
+function formatBaht(n: number): string {
+  return n.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 // ── Main Home Page ────────────────────────────────────────────
 export default function HomePage() {
@@ -43,7 +53,7 @@ export default function HomePage() {
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [personalBills, setPersonalBills] = useState<Bill[]>([]);
-  const [groupBillCounts, setGroupBillCounts] = useState<Record<string, number>>({});
+  const [groupBills, setGroupBills] = useState<Record<string, Bill[]>>({});
   const [unreadCount, setUnreadCount] = useState(0);
   const [dataLoading, setDataLoading] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -72,14 +82,14 @@ export default function HomePage() {
       setPersonalBills(bills);
       setUnreadCount(unread);
 
-      const counts: Record<string, number> = {};
+      const billMap: Record<string, Bill[]> = {};
       await Promise.all(
         grps.map(async (g) => {
           const gb = await getBills({ groupId: g.id });
-          counts[g.id] = gb.length;
+          billMap[g.id] = gb;
         })
       );
-      setGroupBillCounts(counts);
+      setGroupBills(billMap);
     } finally {
       setDataLoading(false);
     }
@@ -89,9 +99,28 @@ export default function HomePage() {
     if (user) loadData();
   }, [user, loadData]);
 
+  // ── Computed totals ──────────────────────────────────────────
+  const personalTotal = useMemo(
+    () => personalBills.reduce((s, b) => s + getBillTotal(b), 0),
+    [personalBills]
+  );
+
+  const groupTotals = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const [gid, bills] of Object.entries(groupBills)) {
+      map[gid] = bills.reduce((s, b) => s + getBillTotal(b), 0);
+    }
+    return map;
+  }, [groupBills]);
+
+  const grandTotal = useMemo(
+    () => personalTotal + Object.values(groupTotals).reduce((s, v) => s + v, 0),
+    [personalTotal, groupTotals]
+  );
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8f9fc] dark:bg-gray-950">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
         <div className="w-8 h-8 rounded-full border-2 border-[#4366f4] border-t-transparent animate-spin" />
       </div>
     );
@@ -148,7 +177,7 @@ export default function HomePage() {
       tags: data.tags,
     });
     setGroups((prev) => [group, ...prev]);
-    setGroupBillCounts((prev) => ({ ...prev, [group.id]: 0 }));
+    setGroupBills((prev) => ({ ...prev, [group.id]: [] }));
   };
 
   const handleEditGroup = async (data: EntityFormData) => {
@@ -180,20 +209,21 @@ export default function HomePage() {
   if (user) {
     const avatarUrl = user.user_metadata?.avatar_url as string | undefined;
     const displayName = (user.user_metadata?.full_name as string | undefined) || user.email?.split("@")[0] || "คุณ";
+    const firstName = displayName.split(" ")[0];
     const initials = displayName.slice(0, 1).toUpperCase();
 
     return (
-      <div className="min-h-screen bg-[#f8f9fc] dark:bg-gray-950 flex flex-col">
+      <div className="min-h-screen bg-[#f4f6fb] dark:bg-gray-950 flex flex-col">
         {/* Navbar */}
-        <nav className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
-          <div className="max-w-2xl mx-auto px-5 h-14 flex items-center justify-between">
+        <nav className="sticky top-0 z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
+          <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-[#4366f4] flex items-center justify-center">
                 <span className="text-white text-xs font-bold">฿</span>
               </div>
               <span className="text-sm font-bold text-gray-900 dark:text-white">Kidtang</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => router.push("/notifications")}
                 className="relative w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -218,43 +248,84 @@ export default function HomePage() {
           </div>
         </nav>
 
-        <main className="flex-1 max-w-2xl mx-auto w-full px-5 py-5">
-          {/* Action buttons */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
+        <main className="flex-1 max-w-lg mx-auto w-full px-4 py-5 flex flex-col gap-5">
+          {/* Hero card — grand total */}
+          <div className="bg-gradient-to-br from-[#4366f4] to-[#6b8aff] rounded-3xl p-5 text-white shadow-lg shadow-blue-200/40 dark:shadow-none">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium opacity-80">สวัสดี, {firstName} 👋</p>
+                <p className="text-xs opacity-60 mt-0.5">ยอดรวมทั้งหมดของคุณ</p>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                <IoWalletOutline size={18} className="text-white" />
+              </div>
+            </div>
+            <div className="mt-4">
+              {dataLoading ? (
+                <div className="w-6 h-6 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  <p className="text-3xl font-bold tracking-tight">{formatBaht(grandTotal)} บาท</p>
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className="text-xs opacity-70">{groups.length} กลุ่ม</span>
+                    <span className="text-xs opacity-40">·</span>
+                    <span className="text-xs opacity-70">{personalBills.length} บิลส่วนตัว</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Quick actions */}
+          <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setShowCreateGroup(true)}
-              className="flex items-center justify-center gap-2 py-3.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl text-sm font-semibold text-gray-700 dark:text-gray-200 hover:border-[#4366f4]/30 hover:shadow-sm transition-all"
+              className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-purple-200 dark:hover:border-purple-800 hover:shadow-sm transition-all group"
             >
-              <div className="w-6 h-6 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center">
-                <IoAdd size={14} className="text-purple-500" />
+              <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center flex-shrink-0">
+                <IoPeopleOutline size={18} className="text-purple-500" />
               </div>
-              เพิ่มกลุ่ม
+              <div className="text-left">
+                <p className="text-sm font-semibold text-gray-800 dark:text-white">กลุ่มใหม่</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">หารกับเพื่อน</p>
+              </div>
             </button>
             <button
               onClick={() => setShowCreateBill(true)}
               disabled={creating}
-              className="flex items-center justify-center gap-2 py-3.5 bg-[#4366f4] hover:bg-[#3355e0] disabled:opacity-60 rounded-2xl text-sm font-semibold text-white transition-all shadow-sm hover:shadow-md"
+              className="flex items-center gap-3 p-4 bg-[#4366f4] hover:bg-[#3355e0] disabled:opacity-60 rounded-2xl shadow-sm hover:shadow-md transition-all group"
             >
-              <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">
-                <IoAdd size={14} className="text-white" />
+              <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                <IoReceiptOutline size={18} className="text-white" />
               </div>
-              {creating ? "กำลังสร้าง..." : "บิลส่วนตัว"}
+              <div className="text-left">
+                <p className="text-sm font-semibold text-white">{creating ? "กำลังสร้าง..." : "บิลใหม่"}</p>
+                <p className="text-[10px] text-white/70 mt-0.5">บิลส่วนตัว</p>
+              </div>
             </button>
           </div>
 
           {dataLoading ? (
-            <div className="flex items-center justify-center py-16">
+            <div className="flex items-center justify-center py-12">
               <div className="w-6 h-6 border-2 border-[#4366f4] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
             <>
               {/* ── Groups Section ── */}
-              <section className="mb-6">
+              <section>
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-bold text-gray-900 dark:text-white">กลุ่มของฉัน</h2>
-                  {groups.length > 0 && (
-                    <span className="text-xs text-gray-400">{groups.length} กลุ่ม</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {groups.length > 0 && (
+                      <span className="text-xs text-gray-400">{groups.length} กลุ่ม</span>
+                    )}
+                    <button
+                      onClick={() => setShowCreateGroup(true)}
+                      className="w-6 h-6 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-purple-50 hover:text-purple-500 transition-colors"
+                    >
+                      <IoAdd size={14} />
+                    </button>
+                  </div>
                 </div>
 
                 {groups.length === 0 ? (
@@ -273,41 +344,49 @@ export default function HomePage() {
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    {groups.map((group) => (
-                      <div
-                        key={group.id}
-                        onClick={() => router.push(`/groups/${group.id}`)}
-                        className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-purple-200 dark:hover:border-purple-800 hover:shadow-sm transition-all cursor-pointer group"
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center flex-shrink-0 text-xl">
-                          {group.emoji ?? <IoPeopleOutline size={20} className="text-purple-500" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{group.name}</p>
-                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                            <p className="text-xs text-gray-400">
-                              {groupBillCounts[group.id] ?? 0} บิล
-                              {group.description ? ` · ${group.description}` : ""}
-                            </p>
-                            {group.tags && group.tags.length > 0 && (
-                              <>
-                                {group.tags.slice(0, 2).map((tag) => (
-                                  <span key={tag} className="px-1.5 py-0.5 bg-purple-50 dark:bg-purple-900/20 text-purple-500 dark:text-purple-400 text-[10px] rounded-full font-medium">
-                                    {tag}
-                                  </span>
-                                ))}
-                                {group.tags.length > 2 && (
-                                  <span className="text-[10px] text-gray-400">+{group.tags.length - 2}</span>
-                                )}
-                              </>
-                            )}
+                    {groups.map((group) => {
+                      const gTotal = groupTotals[group.id] ?? 0;
+                      const billCount = (groupBills[group.id] ?? []).length;
+                      return (
+                        <div
+                          key={group.id}
+                          onClick={() => router.push(`/groups/${group.id}`)}
+                          className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-purple-200 dark:hover:border-purple-800 hover:shadow-sm transition-all cursor-pointer group"
+                        >
+                          <div className="w-11 h-11 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center flex-shrink-0 text-xl">
+                            {group.emoji ?? <IoPeopleOutline size={20} className="text-purple-500" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{group.name}</p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <p className="text-xs text-gray-400">{billCount} บิล</p>
+                              {group.tags && group.tags.slice(0, 1).map((tag) => (
+                                <span key={tag} className="px-1.5 py-0.5 bg-purple-50 dark:bg-purple-900/20 text-purple-500 text-[10px] rounded-full font-medium">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="text-right flex-shrink-0 flex items-center gap-2">
+                            <div>
+                              <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                {formatBaht(gTotal)}
+                              </p>
+                              <p className="text-[10px] text-gray-400">บาท</p>
+                            </div>
+                            <div className="flex items-center gap-0.5">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setEditingGroup(group); }}
+                                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                              >
+                                <IoSettingsOutline size={13} />
+                              </button>
+                              <IoChevronForward size={14} className="text-gray-300 group-hover:text-purple-400 transition-colors" />
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <IoChevronForward size={14} className="text-gray-300 group-hover:text-purple-400 transition-colors" />
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </section>
@@ -316,15 +395,25 @@ export default function HomePage() {
               <section>
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-bold text-gray-900 dark:text-white">บิลส่วนตัว</h2>
-                  {personalBills.length > 0 && (
-                    <span className="text-xs text-gray-400">{personalBills.length} บิล</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {personalBills.length > 0 && (
+                      <span className="text-xs text-gray-400">
+                        รวม {formatBaht(personalTotal)} บาท
+                      </span>
+                    )}
+                    <button
+                      onClick={() => setShowCreateBill(true)}
+                      className="w-6 h-6 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-blue-50 hover:text-[#4366f4] transition-colors"
+                    >
+                      <IoAdd size={14} />
+                    </button>
+                  </div>
                 </div>
 
                 {personalBills.length === 0 ? (
                   <div
                     onClick={() => setShowCreateBill(true)}
-                    className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 cursor-pointer hover:border-[#4366f4]/30 dark:hover:border-[#4366f4]/30 transition-colors group"
+                    className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 cursor-pointer hover:border-[#4366f4]/30 transition-colors group"
                   >
                     <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
                       <IoReceiptOutline size={20} className="text-[#4366f4]" />
@@ -337,44 +426,59 @@ export default function HomePage() {
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    {personalBills.map((bill) => (
-                      <div
-                        key={bill.id}
-                        onClick={() => router.push(`/app?id=${bill.id}`)}
-                        className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-[#4366f4]/20 hover:shadow-sm transition-all cursor-pointer group"
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0 text-xl">
-                          {bill.emoji ?? <IoReceiptOutline size={20} className="text-[#4366f4]" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{bill.title}</p>
-                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                            <p className="text-xs text-gray-400">
-                              {new Date(bill.updated_at).toLocaleDateString("th-TH", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                              })}
-                            </p>
-                            {bill.tags && bill.tags.length > 0 && (
-                              <>
-                                {bill.tags.slice(0, 2).map((tag) => (
-                                  <span key={tag} className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-[#4366f4] text-[10px] rounded-full font-medium">
-                                    {tag}
-                                  </span>
-                                ))}
-                                {bill.tags.length > 2 && (
-                                  <span className="text-[10px] text-gray-400">+{bill.tags.length - 2}</span>
-                                )}
-                              </>
-                            )}
+                    {personalBills.map((bill) => {
+                      const bTotal = getBillTotal(bill);
+                      return (
+                        <div
+                          key={bill.id}
+                          onClick={() => router.push(`/app?id=${bill.id}`)}
+                          className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-[#4366f4]/20 hover:shadow-sm transition-all cursor-pointer group"
+                        >
+                          <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0 text-xl">
+                            {bill.emoji ?? <IoReceiptOutline size={20} className="text-[#4366f4]" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{bill.title}</p>
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              <p className="text-xs text-gray-400">
+                                {new Date(bill.updated_at).toLocaleDateString("th-TH", {
+                                  day: "numeric",
+                                  month: "short",
+                                })}
+                              </p>
+                              {bill.tags && bill.tags.slice(0, 1).map((tag) => (
+                                <span key={tag} className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-[#4366f4] text-[10px] rounded-full font-medium">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="text-right flex-shrink-0 flex items-center gap-2">
+                            <div>
+                              <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                {formatBaht(bTotal)}
+                              </p>
+                              <p className="text-[10px] text-gray-400">บาท</p>
+                            </div>
+                            <div className="flex items-center gap-0.5">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setEditingBill(bill); }}
+                                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                              >
+                                <IoSettingsOutline size={13} />
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setConfirmDeleteBill(bill); }}
+                                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              >
+                                <IoTrash size={13} />
+                              </button>
+                              <IoArrowForward size={14} className="text-gray-300 group-hover:text-[#4366f4] transition-colors" />
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <IoArrowForward size={14} className="text-gray-300 group-hover:text-[#4366f4] transition-colors" />
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </section>
@@ -382,7 +486,7 @@ export default function HomePage() {
           )}
         </main>
 
-        {/* Create Group Modal */}
+        {/* Modals */}
         {showCreateGroup && (
           <CreateEntityModal
             type="group"
@@ -390,8 +494,6 @@ export default function HomePage() {
             onSave={handleCreateGroup}
           />
         )}
-
-        {/* Create Bill Modal */}
         {showCreateBill && (
           <CreateEntityModal
             type="bill"
@@ -399,8 +501,6 @@ export default function HomePage() {
             onSave={handleCreatePersonalBill}
           />
         )}
-
-        {/* Edit Bill Modal (settings icon) */}
         {editingBill && (
           <CreateEntityModal
             type="bill"
@@ -412,13 +512,9 @@ export default function HomePage() {
               settings: editingBill.settings,
             }}
             onClose={() => setEditingBill(null)}
-            onSave={async (data) => {
-              await handleEditBill(data);
-            }}
+            onSave={handleEditBill}
           />
         )}
-
-        {/* Edit Group Modal (settings icon) — includes delete */}
         {editingGroup && (
           <CreateEntityModal
             type="group"
@@ -431,10 +527,9 @@ export default function HomePage() {
             }}
             onClose={() => setEditingGroup(null)}
             onSave={handleEditGroup}
+            onDelete={() => { setEditingGroup(null); setConfirmDeleteGroup(editingGroup); }}
           />
         )}
-
-        {/* Confirm delete bill */}
         {confirmDeleteBill && (
           <ConfirmModal
             title={`ลบบิล "${confirmDeleteBill.title}"?`}
@@ -445,8 +540,6 @@ export default function HomePage() {
             onCancel={() => setConfirmDeleteBill(null)}
           />
         )}
-
-        {/* Confirm delete group */}
         {confirmDeleteGroup && (
           <ConfirmModal
             title={`ลบกลุ่ม "${confirmDeleteGroup.name}"?`}
