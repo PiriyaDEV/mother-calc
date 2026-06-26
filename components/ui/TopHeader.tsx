@@ -1,18 +1,49 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 
-// Pages where the header should NOT appear
-const HIDDEN_PATHS = ["/", "/login", "/auth/callback"];
+// Pages where the header should NOT appear at all
+const HIDDEN_PATHS = ["/", "/auth/callback"];
+
+// Pages where only the logo is shown (no avatar)
+const LOGO_ONLY_PATHS = ["/login"];
 
 export default function TopHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
 
-  // Hide on public/auth pages or when not logged in
-  if (!user || HIDDEN_PATHS.includes(pathname)) return null;
+  // Hide completely on certain paths
+  if (HIDDEN_PATHS.includes(pathname)) return null;
+
+  // Logo-only header for login page
+  if (LOGO_ONLY_PATHS.includes(pathname)) {
+    return (
+      <header className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
+        <div className="max-w-lg mx-auto px-4 h-14 flex items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-xl bg-[#286bfe] flex items-center justify-center flex-shrink-0">
+              <Image
+                src="/logo.png"
+                alt="Kidtang logo"
+                width={20}
+                height={20}
+                priority
+              />
+            </div>
+            <span className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
+              Kidtang!
+            </span>
+          </div>
+        </div>
+      </header>
+    );
+  }
+
+  // Hide when not logged in on other pages
+  if (!user) return null;
 
   const displayName =
     (user?.user_metadata?.full_name as string | undefined) ||
@@ -27,13 +58,19 @@ export default function TopHeader() {
         {/* Logo */}
         <button
           onClick={() => router.push("/home")}
-          className="flex items-center gap-2.5"
+          className="flex items-center gap-2"
         >
-          {/* <div className="w-7 h-7 rounded-xl bg-[#4366f4] flex items-center justify-center shadow-sm">
-            <span className="text-white text-xs font-bold">฿</span>
-          </div> */}
+          <div className="w-7 h-7 rounded-xl bg-[#286bfe] flex items-center justify-center flex-shrink-0">
+            <Image
+              src="/logo.png"
+              alt="Kidtang logo"
+              width={20}
+              height={20}
+              priority
+            />
+          </div>
           <span className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-            Kidtang !
+            Kidtang!
           </span>
         </button>
 

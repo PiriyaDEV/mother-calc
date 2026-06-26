@@ -172,10 +172,16 @@ export default function LoginPage() {
       <div className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm p-8">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-[#4366f4] flex items-center justify-center mb-3">
-            <span className="text-white text-xl font-bold">฿</span>
+          <div className="w-12 h-12 rounded-2xl bg-[#286bfe] flex items-center justify-center mb-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="Kidtang logo"
+              width={32}
+              height={32}
+            />
           </div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Kidtang</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Kidtang!</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {mode === "login" ? "เข้าสู่ระบบ" : mode === "register" ? "สมัครสมาชิก" : "ยืนยันอีเมล"}
           </p>
