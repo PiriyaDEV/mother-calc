@@ -114,6 +114,26 @@ export function useAuth() {
     return null;
   };
 
+  /** Update display name — returns error message or null */
+  const updateDisplayName = async (name: string): Promise<string | null> => {
+    if (!configured) return null;
+    const supabase = createClient();
+    const { error } = await supabase.auth.updateUser({
+      data: { full_name: name.trim() },
+    });
+    if (error) return error.message;
+    return null;
+  };
+
+  /** Update password — returns error message or null */
+  const updatePassword = async (newPassword: string): Promise<string | null> => {
+    if (!configured) return null;
+    const supabase = createClient();
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) return error.message;
+    return null;
+  };
+
   const signOut = async () => {
     if (!configured) return;
     const supabase = createClient();
@@ -127,6 +147,8 @@ export function useAuth() {
     signInWithEmail,
     signUpWithEmail,
     verifyOTP,
+    updateDisplayName,
+    updatePassword,
     signOut,
     configured,
   };

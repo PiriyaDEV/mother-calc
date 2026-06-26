@@ -36,3 +36,9 @@ export const THAI_PHONE_REGEX = /^(0[689]\d{8}|02\d{7})$/;
 export const THAI_ID_REGEX = /^\d{13}$/;
 
 export const STORAGE_KEY = "kidtang_app_state";
+
+// ── Feature Flags ──────────────────────────────────────────
+export const FEATURES = {
+  /** Set to true to show Google sign-in button on login page */
+  GOOGLE_LOGIN: false,
+} as const;

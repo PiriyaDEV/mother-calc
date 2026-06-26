@@ -39,6 +39,11 @@ export default function AppPage() {
   const { user, loading: authLoading, signOut, configured } = useAuth();
   const router = useRouter();
 
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/login");
+  };
+
   const {
     appState,
     hydrated,
@@ -325,7 +330,7 @@ export default function AppPage() {
           onTipDiscount={updateTipDiscount}
           onClose={() => setSettingsOpen(false)}
           onReset={resetAll}
-          onSignOut={signOut}
+          onSignOut={handleSignOut}
           shareUrl={getShareUrl()}
           user={user}
         />

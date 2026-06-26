@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { IoLogoGoogle, IoEyeOutline, IoEyeOffOutline, IoArrowBack, IoMailOutline } from "react-icons/io5";
 import Link from "next/link";
+import { FEATURES } from "@/lib/constants";
 
 type Mode = "login" | "register" | "otp";
 
@@ -15,6 +16,7 @@ export default function LoginPage() {
 
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -38,9 +40,10 @@ export default function LoginPage() {
     }
   }, [loading, configured, router]);
 
-  if (loading || !configured) {
+  // Show spinner while checking auth — prevents login page blink for logged-in users
+  if (loading || user || !configured) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8f9fc]">
+      <div className="min-h-screen flex items-center justify-center bg-[#f8f9fc] dark:bg-gray-950">
         <div className="w-8 h-8 rounded-full border-2 border-[#4366f4] border-t-transparent animate-spin" />
       </div>
     );
@@ -57,6 +60,11 @@ export default function LoginPage() {
         const err = await signInWithEmail(email, password);
         if (err) setError(err);
       } else {
+        if (email !== confirmEmail) {
+          setError("อีเมลไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง");
+          setSubmitting(false);
+          return;
+        }
         const err = await signUpWithEmail(email, password, name);
         if (err) {
           setError(err);
@@ -235,20 +243,24 @@ export default function LoginPage() {
           /* ── Login / Register Screen ── */
           <>
             {/* Google */}
-            <button
-              onClick={signInWithGoogle}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white text-sm font-semibold rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors mb-4"
-            >
-              <IoLogoGoogle size={18} className="text-[#4285f4]" />
-              {mode === "login" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"} ด้วย Google
-            </button>
+            {FEATURES.GOOGLE_LOGIN && (
+              <>
+                <button
+                  onClick={signInWithGoogle}
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white text-sm font-semibold rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors mb-4"
+                >
+                  <IoLogoGoogle size={18} className="text-[#4285f4]" />
+                  {mode === "login" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"} ด้วย Google
+                </button>
 
-            {/* Divider */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
-              <span className="text-xs text-gray-400">หรือ</span>
-              <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
-            </div>
+                {/* Divider */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
+                  <span className="text-xs text-gray-400">หรือ</span>
+                  <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
+                </div>
+              </>
+            )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -281,6 +293,29 @@ export default function LoginPage() {
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4366f4]/30 focus:border-[#4366f4] transition-all"
                 />
               </div>
+
+              {mode === "register" && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    ยืนยันอีเมล
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="กรอกอีเมลอีกครั้ง"
+                    value={confirmEmail}
+                    onChange={(e) => setConfirmEmail(e.target.value)}
+                    required
+                    className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border rounded-2xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4366f4]/30 focus:border-[#4366f4] transition-all ${
+                      confirmEmail && confirmEmail !== email
+                        ? "border-red-300 dark:border-red-700"
+                        : "border-gray-100 dark:border-gray-700"
+                    }`}
+                  />
+                  {confirmEmail && confirmEmail !== email && (
+                    <p className="text-[11px] text-red-500 mt-0.5">อีเมลไม่ตรงกัน</p>
+                  )}
+                </div>
+              )}
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
