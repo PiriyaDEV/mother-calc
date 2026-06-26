@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { IoTrash, IoWarning } from "react-icons/io5";
+import {
+  IoTrash,
+  IoWarning,
+  IoShareOutline,
+  IoCopyOutline,
+  IoCheckmark,
+  IoLogOutOutline,
+  IoPerson,
+} from "react-icons/io5";
+import { User } from "@supabase/supabase-js";
 import { CurrencyCode, RoundingMode, Settings } from "@/lib/types";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
@@ -17,6 +26,9 @@ interface SettingsModalProps {
   onSave: (settings: Settings) => void;
   onTipDiscount: (tip: number, discount: number) => void;
   onReset: () => void;
+  onSignOut?: () => Promise<void>;
+  shareUrl?: string;
+  user?: User | null;
 }
 
 const CURRENCIES: { code: CurrencyCode; label: string }[] = [
@@ -46,11 +58,16 @@ export default function SettingsModal({
   onSave,
   onTipDiscount,
   onReset,
+  onSignOut,
+  shareUrl,
+  user,
 }: SettingsModalProps) {
   const [form, setForm] = useState(settings);
   const [tipVal, setTipVal] = useState(String(tip));
   const [discountVal, setDiscountVal] = useState(String(discount));
   const [confirmReset, setConfirmReset] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
 
   // Sync when modal opens
   const handleOpen = () => {
@@ -58,6 +75,7 @@ export default function SettingsModal({
     setTipVal(String(tip));
     setDiscountVal(String(discount));
     setConfirmReset(false);
+    setConfirmSignOut(false);
   };
 
   const handleSave = () => {
@@ -66,14 +84,83 @@ export default function SettingsModal({
     onClose();
   };
 
+  const handleCopyLink = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback
+    }
+  };
+
+  const handleShare = async () => {
+    if (!shareUrl) return;
+    if (navigator.share) {
+      await navigator.share({ title: "Kidtang — หารบิล", url: shareUrl });
+    } else {
+      handleCopyLink();
+    }
+  };
+
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="ตั้งค่า"
-      size="md"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="ตั้งค่า" size="md">
       <div className="flex flex-col gap-5" onFocus={handleOpen}>
+        {/* User info */}
+        {user && (
+          <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl">
+            {user.user_metadata?.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={user.user_metadata.avatar_url}
+                alt="avatar"
+                className="w-9 h-9 rounded-full"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-[#4366f4] flex items-center justify-center">
+                <IoPerson size={16} className="text-white" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                {user.user_metadata?.full_name || user.email}
+              </p>
+              <p className="text-xs text-gray-400 truncate">{user.email}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Share */}
+        {shareUrl && (
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              แชร์บิล
+            </label>
+            <div className="flex gap-2">
+              <div className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-xl text-xs text-gray-500 dark:text-gray-400 truncate border border-gray-100 dark:border-gray-700">
+                {shareUrl}
+              </div>
+              <button
+                onClick={handleCopyLink}
+                className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
+              >
+                {copied ? (
+                  <IoCheckmark size={16} className="text-emerald-500" />
+                ) : (
+                  <IoCopyOutline size={16} />
+                )}
+              </button>
+              <button
+                onClick={handleShare}
+                className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#4366f4] text-white hover:bg-[#3355e0] transition-colors flex-shrink-0"
+              >
+                <IoShareOutline size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Currency */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
@@ -201,7 +288,7 @@ export default function SettingsModal({
         </Button>
 
         {/* Reset */}
-        <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
+        <div className="border-t border-gray-100 dark:border-gray-800 pt-4 flex flex-col gap-3">
           {!confirmReset ? (
             <button
               onClick={() => setConfirmReset(true)}
@@ -238,6 +325,46 @@ export default function SettingsModal({
                 </Button>
               </div>
             </div>
+          )}
+
+          {/* Sign out */}
+          {onSignOut && (
+            <>
+              {!confirmSignOut ? (
+                <button
+                  onClick={() => setConfirmSignOut(true)}
+                  className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                >
+                  <IoLogOutOutline size={14} />
+                  ออกจากระบบ
+                </button>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs text-gray-500">ยืนยันออกจากระบบ?</p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      fullWidth
+                      onClick={() => setConfirmSignOut(false)}
+                    >
+                      ยกเลิก
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      fullWidth
+                      onClick={async () => {
+                        await onSignOut();
+                        onClose();
+                      }}
+                    >
+                      ออกจากระบบ
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

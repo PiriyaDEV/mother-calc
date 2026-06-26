@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { User } from "@supabase/supabase-js";
 import { AppState, Bill, BillItem, Member, Settings } from "@/lib/types";
-import { DEFAULT_SETTINGS, MEMBER_COLORS, STORAGE_KEY } from "@/lib/constants";
+import { DEFAULT_SETTINGS, MEMBER_COLORS } from "@/lib/constants";
 import { decodeState, encodeState, generateId } from "@/lib/utils";
+import { fetchBills, upsertBill, deleteBillFromDB } from "@/lib/db";
 
 // ============================================================
 // Helpers
@@ -33,12 +35,25 @@ const EMPTY_APP_STATE: AppState = {
 // Hook
 // ============================================================
 
-export function useBillState() {
+export function useBillState(user: User | null = null) {
   const [appState, setAppState] = useState<AppState>(EMPTY_APP_STATE);
   const [hydrated, setHydrated] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
-  // ── Load from URL or localStorage after mount ──────────────
+  // Debounce timer ref for DB writes
+  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track which bills need to be upserted
+  const pendingUpsert = useRef<Set<string>>(new Set());
+
+  // ── Load: from URL or Supabase ─────────────────────────────
   useEffect(() => {
+    if (!user) {
+      // Not logged in — reset state
+      setAppState(EMPTY_APP_STATE);
+      setHydrated(false);
+      return;
+    }
+
     // Check URL for shared bill
     const params = new URLSearchParams(window.location.search);
     const encoded = params.get("state");
@@ -51,93 +66,111 @@ export function useBillState() {
       }
     }
 
-    // Load from localStorage
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved) as AppState;
-        // Migrate: if no bills, create one
-        if (!parsed.bills || parsed.bills.length === 0) {
+    // Load from Supabase
+    setSyncing(true);
+    fetchBills()
+      .then((bills) => {
+        if (bills.length === 0) {
           const bill = createNewBill();
           setAppState({ bills: [bill], activeBillId: bill.id });
+          pendingUpsert.current.add(bill.id);
         } else {
-          setAppState(parsed);
+          setAppState({ bills, activeBillId: bills[0].id });
         }
-      } else {
-        // First time — create default bill
+      })
+      .catch(() => {
         const bill = createNewBill();
         setAppState({ bills: [bill], activeBillId: bill.id });
-      }
-    } catch {
-      const bill = createNewBill();
-      setAppState({ bills: [bill], activeBillId: bill.id });
-    }
-    setHydrated(true);
-  }, []);
+      })
+      .finally(() => {
+        setSyncing(false);
+        setHydrated(true);
+      });
+  }, [user]);
 
-  // ── Persist to localStorage ────────────────────────────────
+  // ── Persist: Supabase only (debounced) ────────────────────
   useEffect(() => {
-    if (!hydrated) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-    } catch {
-      // ignore
-    }
-  }, [appState, hydrated]);
+    if (!hydrated || !user) return;
+
+    if (syncTimer.current) clearTimeout(syncTimer.current);
+    syncTimer.current = setTimeout(() => {
+      const ids = Array.from(pendingUpsert.current);
+      if (ids.length === 0) return;
+      pendingUpsert.current.clear();
+      const billsToSync = appState.bills.filter((b) => ids.includes(b.id));
+      billsToSync.forEach((bill) => upsertBill(bill, user.id));
+    }, 800);
+  }, [appState, hydrated, user]);
 
   // ── Active bill helper ─────────────────────────────────────
   const activeBill: Bill | null =
     appState.bills.find((b) => b.id === appState.activeBillId) ?? null;
 
-  const updateActiveBill = useCallback((updater: (bill: Bill) => Bill) => {
-    setAppState((prev) => ({
-      ...prev,
-      bills: prev.bills.map((b) =>
-        b.id === prev.activeBillId
-          ? { ...updater(b), updatedAt: Date.now() }
-          : b
-      ),
-    }));
-  }, []);
+  const updateActiveBill = useCallback(
+    (updater: (bill: Bill) => Bill) => {
+      setAppState((prev) => {
+        const updated = prev.bills.map((b) => {
+          if (b.id !== prev.activeBillId) return b;
+          const next = { ...updater(b), updatedAt: Date.now() };
+          pendingUpsert.current.add(next.id);
+          return next;
+        });
+        return { ...prev, bills: updated };
+      });
+    },
+    []
+  );
 
   // ============================================================
   // Bill Management
   // ============================================================
 
-  const createBill = useCallback((title?: string) => {
-    const bill = createNewBill(title);
-    setAppState((prev) => ({
-      bills: [...prev.bills, bill],
-      activeBillId: bill.id,
-    }));
-    return bill.id;
-  }, []);
+  const createBill = useCallback(
+    (title?: string) => {
+      const bill = createNewBill(title);
+      pendingUpsert.current.add(bill.id);
+      setAppState((prev) => ({
+        bills: [...prev.bills, bill],
+        activeBillId: bill.id,
+      }));
+      return bill.id;
+    },
+    []
+  );
 
   const switchBill = useCallback((id: string) => {
     setAppState((prev) => ({ ...prev, activeBillId: id }));
   }, []);
 
-  const deleteBill = useCallback((id: string) => {
-    setAppState((prev) => {
-      const remaining = prev.bills.filter((b) => b.id !== id);
-      if (remaining.length === 0) {
-        const newBill = createNewBill();
-        return { bills: [newBill], activeBillId: newBill.id };
-      }
-      const newActive =
-        prev.activeBillId === id
-          ? remaining[remaining.length - 1].id
-          : prev.activeBillId;
-      return { bills: remaining, activeBillId: newActive };
-    });
-  }, []);
+  const deleteBill = useCallback(
+    (id: string) => {
+      deleteBillFromDB(id);
+      setAppState((prev) => {
+        const remaining = prev.bills.filter((b) => b.id !== id);
+        if (remaining.length === 0) {
+          const newBill = createNewBill();
+          pendingUpsert.current.add(newBill.id);
+          return { bills: [newBill], activeBillId: newBill.id };
+        }
+        const newActive =
+          prev.activeBillId === id
+            ? remaining[remaining.length - 1].id
+            : prev.activeBillId;
+        return { bills: remaining, activeBillId: newActive };
+      });
+    },
+    []
+  );
 
   const renameBill = useCallback((id: string, title: string) => {
     setAppState((prev) => ({
       ...prev,
-      bills: prev.bills.map((b) =>
-        b.id === id ? { ...b, title: title.trim() || "บิลใหม่", updatedAt: Date.now() } : b
-      ),
+      bills: prev.bills.map((b) => {
+        if (b.id !== id) return b;
+        const next = { ...b, title: title.trim() || "บิลใหม่", updatedAt: Date.now() };
+        pendingUpsert.current.add(next.id);
+        return next;
+      }),
     }));
   }, []);
 
@@ -145,18 +178,21 @@ export function useBillState() {
   // Member Actions
   // ============================================================
 
-  const addMember = useCallback((name: string, promptpay?: string) => {
-    updateActiveBill((bill) => {
-      const color = MEMBER_COLORS[bill.members.length % MEMBER_COLORS.length];
-      const newMember: Member = {
-        id: generateId(),
-        name: name.trim(),
-        color,
-        promptpay: promptpay?.trim() || undefined,
-      };
-      return { ...bill, members: [...bill.members, newMember] };
-    });
-  }, [updateActiveBill]);
+  const addMember = useCallback(
+    (name: string, promptpay?: string) => {
+      updateActiveBill((bill) => {
+        const color = MEMBER_COLORS[bill.members.length % MEMBER_COLORS.length];
+        const newMember: Member = {
+          id: generateId(),
+          name: name.trim(),
+          color,
+          promptpay: promptpay?.trim() || undefined,
+        };
+        return { ...bill, members: [...bill.members, newMember] };
+      });
+    },
+    [updateActiveBill]
+  );
 
   const updateMember = useCallback(
     (id: string, name: string, promptpay?: string) => {
@@ -246,12 +282,8 @@ export function useBillState() {
 
   const resetAll = useCallback(() => {
     const bill = createNewBill();
+    pendingUpsert.current.add(bill.id);
     setAppState({ bills: [bill], activeBillId: bill.id });
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // ignore
-    }
   }, []);
 
   // ============================================================
@@ -274,6 +306,7 @@ export function useBillState() {
     // app-level
     appState,
     hydrated,
+    syncing,
     activeBill,
     // bill management
     createBill,

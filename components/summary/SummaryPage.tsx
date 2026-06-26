@@ -4,11 +4,17 @@ import { useState } from "react";
 import {
   IoCheckmarkCircle,
   IoEllipseOutline,
-  IoShareSocial,
   IoQrCode,
   IoArrowForward,
   IoBarChart,
 } from "react-icons/io5";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { Bill, DebtTransaction } from "@/lib/types";
 import {
   buildDebtMatrix,
@@ -25,10 +31,9 @@ interface SummaryPageProps {
   getShareUrl: () => string;
 }
 
-export default function SummaryPage({ bill, getShareUrl }: SummaryPageProps) {
+export default function SummaryPage({ bill }: SummaryPageProps) {
   const [paidMap, setPaidMap] = useState<Record<string, boolean>>({});
   const [qrTarget, setQrTarget] = useState<DebtTransaction | null>(null);
-  const [copied, setCopied] = useState(false);
 
   const { members, settings } = bill;
   const summaries = calculateSummary(bill);
@@ -43,23 +48,21 @@ export default function SummaryPage({ bill, getShareUrl }: SummaryPageProps) {
     setPaidMap((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleShare = async () => {
-    const url = getShareUrl();
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // fallback
-    }
-  };
-
   const getQrUrl = (promptpay: string, amount: number) => {
     const clean = promptpay.replace(/-/g, "");
     return `https://promptpay.io/${clean}/${amount.toFixed(2)}`;
   };
 
   const pendingCount = transactions.filter((tx) => !paidMap[txKey(tx)]).length;
+
+  // Pie chart data
+  const pieData = summaries
+    .filter((s) => s.totalOwed > 0)
+    .map((s) => ({
+      name: s.memberName,
+      value: Math.round(s.totalOwed * 100) / 100,
+      color: s.color,
+    }));
 
   if (members.length === 0) {
     return (
@@ -88,13 +91,6 @@ export default function SummaryPage({ bill, getShareUrl }: SummaryPageProps) {
               : "ชำระครบแล้ว 🎉"}
           </p>
         </div>
-        <button
-          onClick={handleShare}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-xl transition-all active:scale-95"
-        >
-          <IoShareSocial size={14} />
-          {copied ? "คัดลอกแล้ว!" : "แชร์"}
-        </button>
       </div>
 
       {/* Bill total card */}
@@ -114,6 +110,62 @@ export default function SummaryPage({ bill, getShareUrl }: SummaryPageProps) {
           </div>
         )}
       </div>
+
+      {/* Pie Chart */}
+      {pieData.length > 0 && total > 0 && (
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            สัดส่วนค่าใช้จ่าย
+          </h2>
+          <div className="flex items-center gap-4">
+            <div className="w-36 h-36 flex-shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={36}
+                    outerRadius={60}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) =>
+                      formatCurrency(Number(value) || 0, settings.currency)
+                    }
+                    contentStyle={{
+                      borderRadius: "12px",
+                      border: "1px solid #e5e7eb",
+                      fontSize: "12px",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+              {pieData.map((entry) => (
+                <div key={entry.name} className="flex items-center gap-2">
+                  <div
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: entry.color }}
+                  />
+                  <span className="text-xs text-gray-600 dark:text-gray-400 truncate flex-1">
+                    {entry.name}
+                  </span>
+                  <span className="text-xs font-semibold text-gray-900 dark:text-white flex-shrink-0">
+                    {formatCurrency(entry.value, settings.currency)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Per-person summary */}
       <div className="flex flex-col gap-2">
@@ -177,7 +229,6 @@ export default function SummaryPage({ bill, getShareUrl }: SummaryPageProps) {
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  {/* From */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
@@ -196,9 +247,7 @@ export default function SummaryPage({ bill, getShareUrl }: SummaryPageProps) {
                     </p>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* QR button */}
                     {tx.toPromptpay && !isPaid && (
                       <button
                         onClick={() => setQrTarget(tx)}
@@ -208,7 +257,6 @@ export default function SummaryPage({ bill, getShareUrl }: SummaryPageProps) {
                       </button>
                     )}
 
-                    {/* Mark paid */}
                     <button
                       onClick={() => togglePaid(tx)}
                       className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors ${
@@ -262,6 +310,7 @@ export default function SummaryPage({ bill, getShareUrl }: SummaryPageProps) {
               {formatCurrency(qrTarget.amount, bill.settings.currency)}
             </p>
             {qrTarget.toPromptpay && (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={getQrUrl(qrTarget.toPromptpay, qrTarget.amount)}
                 alt="QR PromptPay"
