@@ -209,7 +209,7 @@ function BillPage() {
           />
         )}
         {tab === "summary" && (
-          <SummaryPage bill={{ ...bill, members, items }} members={members} />
+          <SummaryPage bill={{ ...bill, members, items }} members={members} currentUserId={user?.id ?? null} />
         )}
         {tab === "analytics" && (
           <AnalyticsPage bill={{ ...bill, members, items }} members={members} />

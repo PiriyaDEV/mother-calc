@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef } from "react";
-import { IoArrowForward, IoQrCodeOutline } from "react-icons/io5";
+import { IoArrowForward, IoQrCodeOutline, IoChevronDown, IoChevronUp } from "react-icons/io5";
 import { Bill, BillMember } from "@/lib/types";
 import { calculateBill, formatCurrency, formatNumber, getTotalEmoji, simplifyDebtsPerItem } from "@/lib/utils";
 import QRCode from "qrcode";
@@ -9,6 +9,7 @@ import QRCode from "qrcode";
 interface SummaryPageProps {
   bill: Bill;
   members?: BillMember[];
+  currentUserId?: string | null;
 }
 
 // ── PromptPay QR helpers ──────────────────────────────────────
@@ -83,7 +84,7 @@ function PromptPayQR({ promptpay, amount, name }: { promptpay: string; amount: n
   );
 }
 
-export default function SummaryPage({ bill, members: membersProp }: SummaryPageProps) {
+export default function SummaryPage({ bill, members: membersProp, currentUserId }: SummaryPageProps) {
   // Prefer explicit members prop (always up-to-date from parent state)
   const members = membersProp ?? bill.members ?? [];
   // Build a bill object with the correct members + items for calculation
@@ -96,6 +97,20 @@ export default function SummaryPage({ bill, members: membersProp }: SummaryPageP
   const calc = useMemo(() => calculateBill(billForCalc), [billForCalc]);
   const currency = bill.settings?.currency ?? "THB";
 
+  // ── Selected member (default = current user's bill member) ──
+  const defaultMemberId = useMemo(() => {
+    if (!currentUserId) return members[0]?.id ?? null;
+    const match = members.find((m) => m.user_id === currentUserId);
+    return match?.id ?? members[0]?.id ?? null;
+  }, [currentUserId, members]);
+
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(defaultMemberId);
+
+  // Update selected when members change (e.g. first load)
+  useEffect(() => {
+    setSelectedMemberId(defaultMemberId);
+  }, [defaultMemberId]);
+
   const [expandedQR, setExpandedQR] = useState<string | null>(null);
 
   const debts = useMemo(
@@ -104,6 +119,18 @@ export default function SummaryPage({ bill, members: membersProp }: SummaryPageP
   );
 
   const totalEmoji = getTotalEmoji(calc.total);
+
+  // ── Selected member data ──────────────────────────────────
+  const selectedSummary = useMemo(
+    () => calc.memberSummaries.find((s) => s.member.id === selectedMemberId) ?? null,
+    [calc.memberSummaries, selectedMemberId]
+  );
+
+  // Debts that the selected member needs to pay (from = selected)
+  const myDebts = useMemo(
+    () => debts.filter((d) => d.from.id === selectedMemberId),
+    [debts, selectedMemberId]
+  );
 
   if (members.length === 0) {
     return (
@@ -155,110 +182,337 @@ export default function SummaryPage({ bill, members: membersProp }: SummaryPageP
         </div>
       </div>
 
-
-      {/* Debt arrows — show when any item has paid_by OR global paidBy is set */}
-      {debts.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-1">
-            ใครโอนให้ใคร
-          </h3>
-          <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl p-4 flex flex-col gap-3">
-            {debts.map(({ from, to, amount }: { from: BillMember; to: BillMember; amount: number }) => (
-              <div key={`${from.id}-${to.id}`} className="flex items-center gap-2">
-                <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                  style={{ backgroundColor: from.color }}
-                >
-                  {from.name.charAt(0).toUpperCase()}
-                </div>
-                <span className="text-sm text-gray-700 dark:text-gray-300 font-medium truncate">{from.name}</span>
-                <IoArrowForward size={14} className="text-gray-400 flex-shrink-0" />
-                <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                  style={{ backgroundColor: to.color }}
-                >
-                  {to.name.charAt(0).toUpperCase()}
-                </div>
-                <span className="text-sm text-gray-700 dark:text-gray-300 font-medium truncate">{to.name}</span>
-                <span className="text-sm font-bold text-gray-900 dark:text-white ml-auto flex-shrink-0">
-                  {formatNumber(amount)} บาท
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Per-member breakdown */}
+      {/* ── Member selector ─────────────────────────────────── */}
       <div className="flex flex-col gap-2">
         <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-1">
-          แต่ละคนจ่าย
+          ดูสรุปของ
         </h3>
-        {calc.memberSummaries.map(({ member, total, items }) => (
-          <div key={member.id} className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl overflow-hidden">
-            <div className="flex items-center gap-3 px-4 py-3">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                style={{ backgroundColor: member.color }}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {members.map((m) => {
+            const isSelected = m.id === selectedMemberId;
+            const isCurrentUser = m.user_id === currentUserId;
+            return (
+              <button
+                key={m.id}
+                onClick={() => {
+                  setSelectedMemberId(m.id);
+                  setExpandedQR(null);
+                }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-semibold flex-shrink-0 transition-all ${
+                  isSelected
+                    ? "bg-[#4366f4] text-white shadow-sm"
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                }`}
               >
-                {member.name.charAt(0).toUpperCase()}
+                <div
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
+                  style={{ backgroundColor: isSelected ? "rgba(255,255,255,0.3)" : m.color }}
+                >
+                  {m.name.charAt(0).toUpperCase()}
+                </div>
+                <span>{m.name}</span>
+                {isCurrentUser && (
+                  <span className={`text-[9px] px-1 py-0.5 rounded-full font-bold ${
+                    isSelected ? "bg-white/20 text-white" : "bg-blue-100 dark:bg-blue-900/30 text-[#4366f4]"
+                  }`}>
+                    คุณ
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Selected member detail ───────────────────────────── */}
+      {selectedSummary && (
+        <div className="flex flex-col gap-3">
+          {/* Member header card */}
+          <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-4">
+              <div
+                className="w-11 h-11 rounded-full flex items-center justify-center text-white text-base font-bold flex-shrink-0"
+                style={{ backgroundColor: selectedSummary.member.color }}
+              >
+                {selectedSummary.member.name.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{member.name}</p>
-                  {member.is_external && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="text-base font-bold text-gray-900 dark:text-white">
+                    {selectedSummary.member.name}
+                  </p>
+                  {selectedSummary.member.is_external && (
                     <span className="text-[10px] px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-500 rounded-full">
                       ภายนอก
                     </span>
                   )}
+                  {selectedSummary.member.user_id === currentUserId && (
+                    <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-[#4366f4] rounded-full font-semibold">
+                      คุณ
+                    </span>
+                  )}
                 </div>
-                {member.promptpay && (
-                  <p className="text-xs text-gray-400">พร้อมเพย์: {member.promptpay}</p>
+                {selectedSummary.member.promptpay && (
+                  <p className="text-xs text-gray-400 mt-0.5">พร้อมเพย์: {selectedSummary.member.promptpay}</p>
                 )}
               </div>
-              <div className="text-right flex items-center gap-2">
-                <div>
-                  <p className="text-base font-bold text-gray-900 dark:text-white">
-                    {formatNumber(total)} บาท
-                  </p>
-                  <p className="text-[10px] text-gray-400">{getTotalEmoji(total)}</p>
-                </div>
-                {member.promptpay && (
-                  <button
-                    onClick={() => setExpandedQR(expandedQR === member.id ? null : member.id)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors ${
-                      expandedQR === member.id
-                        ? "bg-[#4366f4] text-white"
-                        : "text-gray-400 hover:text-[#4366f4] hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                    }`}
-                  >
-                    <IoQrCodeOutline size={16} />
-                  </button>
-                )}
+              <div className="text-right">
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  {formatNumber(selectedSummary.total)} บาท
+                </p>
+                <p className="text-xs text-gray-400">{getTotalEmoji(selectedSummary.total)} ส่วนของฉัน</p>
               </div>
             </div>
 
-            {expandedQR === member.id && member.promptpay && (
-              <div className="border-t border-gray-100 dark:border-gray-700/50">
-                <PromptPayQR promptpay={member.promptpay} amount={total} name={member.name} />
+            {/* Item breakdown for selected member */}
+            {selectedSummary.items.length > 0 && (
+              <div className="border-t border-gray-100 dark:border-gray-700/50 px-4 py-3 flex flex-col gap-1.5">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">รายการที่สั่ง</p>
+                {selectedSummary.items.map(({ item, amount }) => (
+                  <div key={item.id} className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-300 truncate flex-1">{item.name}</span>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex-shrink-0 ml-2">
+                      {formatNumber(amount)} บาท
+                    </span>
+                  </div>
+                ))}
+                <div className="border-t border-gray-100 dark:border-gray-700/50 pt-1.5 mt-0.5 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">รวม (รวม VAT/SC)</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-white">
+                    {formatNumber(selectedSummary.total)} บาท
+                  </span>
+                </div>
               </div>
             )}
+          </div>
 
-            {items.length > 0 && (
-              <div className="border-t border-gray-100 dark:border-gray-700/50 px-4 py-2 flex flex-col gap-1">
-                {items.map(({ item, amount }) => (
-                  <div key={item.id} className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">{item.name}</span>
-                    <span className="text-xs text-gray-600 dark:text-gray-300 flex-shrink-0 ml-2">
+          {/* ── Debts for selected member (who they owe) ──────── */}
+          {myDebts.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-1">
+                {selectedSummary.member.user_id === currentUserId ? "ฉันต้องโอนให้" : `${selectedSummary.member.name} ต้องโอนให้`}
+              </h3>
+              <div className="flex flex-col gap-2">
+                {myDebts.map(({ from, to, amount }) => {
+                  const qrKey = `${from.id}-${to.id}`;
+                  const isExpanded = expandedQR === qrKey;
+                  return (
+                    <div key={qrKey} className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl overflow-hidden">
+                      <div className="flex items-center gap-3 px-4 py-3">
+                        {/* From */}
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0"
+                          style={{ backgroundColor: from.color }}
+                        >
+                          {from.name.charAt(0).toUpperCase()}
+                        </div>
+                        <IoArrowForward size={14} className="text-gray-400 flex-shrink-0" />
+                        {/* To */}
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0"
+                          style={{ backgroundColor: to.color }}
+                        >
+                          {to.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{to.name}</p>
+                          {to.promptpay && (
+                            <p className="text-xs text-gray-400">พร้อมเพย์: {to.promptpay}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <p className="text-base font-bold text-gray-900 dark:text-white">
+                            {formatNumber(amount)} บาท
+                          </p>
+                          {to.promptpay && (
+                            <button
+                              onClick={() => setExpandedQR(isExpanded ? null : qrKey)}
+                              className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors ${
+                                isExpanded
+                                  ? "bg-[#4366f4] text-white"
+                                  : "text-gray-400 hover:text-[#4366f4] hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                              }`}
+                            >
+                              {isExpanded ? <IoChevronUp size={15} /> : <IoQrCodeOutline size={15} />}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* QR Code for this debt */}
+                      {isExpanded && to.promptpay && (
+                        <div className="border-t border-gray-100 dark:border-gray-700/50">
+                          <PromptPayQR promptpay={to.promptpay} amount={amount} name={to.name} />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* No debts message */}
+          {myDebts.length === 0 && debts.length > 0 && (
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl px-4 py-3 flex items-center gap-2">
+              <span className="text-lg">✅</span>
+              <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                {selectedSummary.member.user_id === currentUserId
+                  ? "คุณไม่ต้องโอนให้ใคร"
+                  : `${selectedSummary.member.name} ไม่ต้องโอนให้ใคร`}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── All members overview (collapsed) ────────────────── */}
+      <AllMembersSection
+        calc={calc}
+        debts={debts}
+        currency={currency}
+        currentUserId={currentUserId}
+      />
+    </div>
+  );
+}
+
+// ── All members collapsible section ──────────────────────────
+function AllMembersSection({
+  calc,
+  debts,
+  currency,
+  currentUserId,
+}: {
+  calc: ReturnType<typeof calculateBill>;
+  debts: ReturnType<typeof simplifyDebtsPerItem>;
+  currency: string;
+  currentUserId?: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const [expandedQR, setExpandedQR] = useState<string | null>(null);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center justify-between px-1 py-1 group"
+      >
+        <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          สรุปทุกคน
+        </h3>
+        <span className="text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+          {open ? <IoChevronUp size={14} /> : <IoChevronDown size={14} />}
+        </span>
+      </button>
+
+      {open && (
+        <>
+          {/* Debt arrows */}
+          {debts.length > 0 && (
+            <div className="flex flex-col gap-2 mb-1">
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide px-1">ใครโอนให้ใคร</p>
+              <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl p-4 flex flex-col gap-3">
+                {debts.map(({ from, to, amount }: { from: BillMember; to: BillMember; amount: number }) => (
+                  <div key={`${from.id}-${to.id}`} className="flex items-center gap-2">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                      style={{ backgroundColor: from.color }}
+                    >
+                      {from.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-sm text-gray-700 dark:text-gray-300 font-medium truncate">{from.name}</span>
+                    <IoArrowForward size={14} className="text-gray-400 flex-shrink-0" />
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                      style={{ backgroundColor: to.color }}
+                    >
+                      {to.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-sm text-gray-700 dark:text-gray-300 font-medium truncate">{to.name}</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white ml-auto flex-shrink-0">
                       {formatNumber(amount)} บาท
                     </span>
                   </div>
                 ))}
               </div>
-            )}
+            </div>
+          )}
+
+          {/* Per-member breakdown */}
+          <div className="flex flex-col gap-2">
+            {calc.memberSummaries.map(({ member, total, items }) => (
+              <div key={member.id} className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl overflow-hidden">
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                    style={{ backgroundColor: member.color }}
+                  >
+                    {member.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{member.name}</p>
+                      {member.is_external && (
+                        <span className="text-[10px] px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-500 rounded-full">
+                          ภายนอก
+                        </span>
+                      )}
+                      {member.user_id === currentUserId && (
+                        <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-[#4366f4] rounded-full font-semibold">
+                          คุณ
+                        </span>
+                      )}
+                    </div>
+                    {member.promptpay && (
+                      <p className="text-xs text-gray-400">พร้อมเพย์: {member.promptpay}</p>
+                    )}
+                  </div>
+                  <div className="text-right flex items-center gap-2">
+                    <div>
+                      <p className="text-base font-bold text-gray-900 dark:text-white">
+                        {formatNumber(total)} บาท
+                      </p>
+                      <p className="text-[10px] text-gray-400">{getTotalEmoji(total)}</p>
+                    </div>
+                    {member.promptpay && (
+                      <button
+                        onClick={() => setExpandedQR(expandedQR === member.id ? null : member.id)}
+                        className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors ${
+                          expandedQR === member.id
+                            ? "bg-[#4366f4] text-white"
+                            : "text-gray-400 hover:text-[#4366f4] hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        }`}
+                      >
+                        <IoQrCodeOutline size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {expandedQR === member.id && member.promptpay && (
+                  <div className="border-t border-gray-100 dark:border-gray-700/50">
+                    <PromptPayQR promptpay={member.promptpay} amount={total} name={member.name} />
+                  </div>
+                )}
+
+                {items.length > 0 && (
+                  <div className="border-t border-gray-100 dark:border-gray-700/50 px-4 py-2 flex flex-col gap-1">
+                    {items.map(({ item, amount }) => (
+                      <div key={item.id} className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">{item.name}</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-300 flex-shrink-0 ml-2">
+                          {formatNumber(amount)} บาท
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   );
 }
