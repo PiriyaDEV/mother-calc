@@ -31,6 +31,7 @@ import {
 import SummaryPage from "@/components/summary/SummaryPage";
 import CreateEntityModal, { EntityFormData } from "@/components/ui/CreateEntityModal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import BottomNav from "@/components/ui/BottomNav";
 
 type GroupTab = "members" | "bills" | "summary" | "analytics";
 
@@ -178,12 +179,12 @@ export default function GroupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col pb-20">
       {/* Header */}
       <header className="sticky top-0 z-30 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.back()}
             className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
           >
             <IoArrowBack size={18} />
@@ -337,6 +338,9 @@ export default function GroupPage() {
           onSave={handleEditBill}
         />
       )}
+
+      {/* Bottom Nav */}
+      <BottomNav />
     </div>
   );
 }

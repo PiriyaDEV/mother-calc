@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import TopHeader from "@/components/ui/TopHeader";
 
 export const metadata: Metadata = {
   title: "Kidtang — หารบิลง่ายๆ",
@@ -22,7 +23,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="th" className="h-full">
-      <body className="min-h-full flex flex-col antialiased">{children}</body>
+      <body className="min-h-full flex flex-col antialiased">
+        <TopHeader />
+        {children}
+      </body>
     </html>
   );
 }
