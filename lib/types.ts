@@ -6,6 +6,7 @@ export type CurrencyCode = "THB" | "USD" | "EUR" | "JPY" | "SGD" | "GBP" | "CNY"
 export type RoundingMode = "none" | "nearest" | "up" | "down";
 export type MemberRole = "owner" | "member";
 export type MemberStatus = "pending" | "accepted" | "declined";
+export type FriendStatus = "pending" | "accepted" | "declined";
 export type NotificationType = "group_invite";
 export type BillStatus = "draft" | "completed";
 
@@ -57,6 +58,18 @@ export interface GroupMember {
   // joined via query
   profile?: Profile;
   invited_by_profile?: Profile;
+}
+
+// ── Friend ────────────────────────────────────────────────────
+export interface Friend {
+  id: string;
+  requester_id: string;
+  addressee_id: string;
+  status: FriendStatus;
+  created_at: string;
+  // joined via query
+  requester?: Profile;
+  addressee?: Profile;
 }
 
 // ── Notification ──────────────────────────────────────────────

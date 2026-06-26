@@ -6,6 +6,7 @@ import {
   Profile,
   Group,
   GroupMember,
+  Friend,
   Trip,
   Bill,
   BillMember,
@@ -83,24 +84,15 @@ export async function getMyProfile(): Promise<Profile | null> {
   return data ?? null;
 }
 
-export async function uploadAvatar(userId: string, file: File): Promise<string> {
-  const supabase = createClient();
-  const ext = file.name.split(".").pop() ?? "jpg";
-  const path = `${userId}/avatar.${ext}`;
-  const { error } = await supabase.storage
-    .from("avatars")
-    .upload(path, file, { upsert: true, contentType: file.type });
-  if (error) throw error;
-  const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-  // append cache-buster so browser reloads the new image
-  return `${data.publicUrl}?t=${Date.now()}`;
-}
-
 export async function upsertProfile(profile: Partial<Profile> & { id: string }): Promise<Profile | null> {
   const supabase = createClient();
+  const { id, ...updates } = profile;
+  // Always UPDATE (never INSERT) — profile row must already exist.
+  // This avoids NOT NULL constraint errors on username when only updating avatar_url etc.
   const { data, error } = await supabase
     .from("profiles")
-    .upsert(profile, { onConflict: "id" })
+    .update(updates)
+    .eq("id", id)
     .select()
     .single();
   if (error) throw error;
@@ -236,7 +228,7 @@ export async function inviteMemberByUsername(groupId: string, username: string):
   // Find target user
   const target = await searchProfileByUsername(username);
   if (!target) return { error: `ไม่พบผู้ใช้ @${username}` };
-  if (target.id === user.id) return { error: "ไม่สามารถเชิญตัวเองได้" };
+  if (target.id === user.id) return { error: "ไม่สามารถเพิ่มตัวเองได้" };
 
   // Check already member
   const { data: existing } = await supabase
@@ -248,44 +240,23 @@ export async function inviteMemberByUsername(groupId: string, username: string):
 
   if (existing) {
     if (existing.status === "accepted") return { error: "ผู้ใช้นี้เป็นสมาชิกอยู่แล้ว" };
-    if (existing.status === "pending") return { error: "ส่งคำเชิญไปแล้ว รอการตอบรับ" };
+    // If pending/declined, update to accepted directly
+    await supabase.from("group_members").update({ status: "accepted" }).eq("id", existing.id);
+    return {};
   }
 
-  // Get group info for notification
-  const group = await getGroup(groupId);
-  if (!group) return { error: "ไม่พบกลุ่ม" };
-
-  // Get inviter profile
-  const inviterProfile = await getMyProfile();
-
-  // Insert group_member (pending)
-  const { data: member, error: memberError } = await supabase
+  // Insert group_member as accepted directly (no invite flow)
+  const { error: memberError } = await supabase
     .from("group_members")
     .insert({
       group_id: groupId,
       user_id: target.id,
       role: "member",
-      status: "pending",
+      status: "accepted",
       invited_by: user.id,
-    })
-    .select()
-    .single();
+    });
 
   if (memberError) return { error: memberError.message };
-
-  // Create notification
-  await supabase.from("notifications").insert({
-    user_id: target.id,
-    type: "group_invite",
-    data: {
-      group_id: groupId,
-      group_name: group.name,
-      invited_by_username: inviterProfile?.username ?? "",
-      invited_by_display_name: inviterProfile?.display_name ?? "",
-      group_member_id: member.id,
-    },
-  });
-
   return {};
 }
 
@@ -308,6 +279,86 @@ export async function removeGroupMember(groupMemberId: string): Promise<void> {
     .delete()
     .eq("id", groupMemberId);
   if (error) throw error;
+}
+
+// ── Friends ───────────────────────────────────────────────────
+
+/** Get all accepted friends of the current user */
+export async function getMyFriends(): Promise<Friend[]> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("friends")
+    .select("*, requester:profiles!friends_requester_id_fkey(*), addressee:profiles!friends_addressee_id_fkey(*)")
+    .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+    .eq("status", "accepted")
+    .order("created_at", { ascending: false });
+  return (data ?? []) as Friend[];
+}
+
+/** Get pending friend requests sent TO the current user */
+export async function getPendingFriendRequests(): Promise<Friend[]> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("friends")
+    .select("*, requester:profiles!friends_requester_id_fkey(*), addressee:profiles!friends_addressee_id_fkey(*)")
+    .eq("addressee_id", user.id)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+  return (data ?? []) as Friend[];
+}
+
+/** Send a friend request by username */
+export async function sendFriendRequest(username: string): Promise<{ error?: string }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const target = await searchProfileByUsername(username);
+  if (!target) return { error: `ไม่พบผู้ใช้ @${username}` };
+  if (target.id === user.id) return { error: "ไม่สามารถเพิ่มตัวเองเป็นเพื่อนได้" };
+
+  // Check existing relationship (either direction)
+  const { data: existing } = await supabase
+    .from("friends")
+    .select("id, status")
+    .or(`and(requester_id.eq.${user.id},addressee_id.eq.${target.id}),and(requester_id.eq.${target.id},addressee_id.eq.${user.id})`)
+    .maybeSingle();
+
+  if (existing) {
+    if (existing.status === "accepted") return { error: "เป็นเพื่อนกันอยู่แล้ว" };
+    if (existing.status === "pending") return { error: "ส่งคำขอไปแล้ว หรือมีคำขอรอการตอบรับ" };
+  }
+
+  const { error } = await supabase.from("friends").insert({
+    requester_id: user.id,
+    addressee_id: target.id,
+    status: "pending",
+  });
+
+  if (error) return { error: error.message };
+  return {};
+}
+
+/** Accept a friend request */
+export async function acceptFriendRequest(friendId: string): Promise<void> {
+  const supabase = createClient();
+  await supabase.from("friends").update({ status: "accepted" }).eq("id", friendId);
+}
+
+/** Decline a friend request */
+export async function declineFriendRequest(friendId: string): Promise<void> {
+  const supabase = createClient();
+  await supabase.from("friends").update({ status: "declined" }).eq("id", friendId);
+}
+
+/** Remove a friend (delete the row) */
+export async function removeFriend(friendId: string): Promise<void> {
+  const supabase = createClient();
+  await supabase.from("friends").delete().eq("id", friendId);
 }
 
 // ── Notifications ─────────────────────────────────────────────

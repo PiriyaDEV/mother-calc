@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Bill, BillMember } from "@/lib/types";
 import { calculateBill, formatNumber, getTotalEmoji } from "@/lib/utils";
+import MemberAvatar from "@/components/ui/MemberAvatar";
 
 interface AnalyticsPageProps {
   bill: Bill;
@@ -83,12 +84,7 @@ export default function AnalyticsPage({ bill, members: membersProp }: AnalyticsP
             🏆 จ่ายเยอะสุด
           </p>
           <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-              style={{ backgroundColor: biggestPayer.member.color }}
-            >
-              {biggestPayer.member.name.charAt(0).toUpperCase()}
-            </div>
+            <MemberAvatar member={biggestPayer.member} size={40} />
             <div className="flex-1">
               <p className="text-sm font-bold text-gray-900 dark:text-white">{biggestPayer.member.name}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">{biggestPayer.itemCount} รายการ</p>
@@ -121,12 +117,7 @@ export default function AnalyticsPage({ bill, members: membersProp }: AnalyticsP
                   {i === 1 && <span className="text-xs">🥈</span>}
                   {i === 2 && <span className="text-xs">🥉</span>}
                   {i > 2 && (
-                    <div
-                      className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-bold"
-                      style={{ backgroundColor: member.color }}
-                    >
-                      {member.name.charAt(0).toUpperCase()}
-                    </div>
+                    <MemberAvatar member={member} size={16} />
                   )}
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{member.name}</span>
                 </div>
@@ -258,12 +249,7 @@ export default function AnalyticsPage({ bill, members: membersProp }: AnalyticsP
               key={member.id}
               className="flex items-center gap-2 bg-white dark:bg-gray-700/50 rounded-xl px-3 py-2"
             >
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
-                style={{ backgroundColor: member.color }}
-              >
-                {member.name.charAt(0).toUpperCase()}
-              </div>
+              <MemberAvatar member={member} size={24} />
               <div className="min-w-0">
                 <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{member.name}</p>
                 <p className="text-[10px] text-gray-400">{itemCount} รายการ</p>

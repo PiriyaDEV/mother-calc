@@ -8,17 +8,41 @@ import {
   getGroupMembers,
   inviteMemberByUsername,
   removeGroupMember,
+  getMyFriends,
 } from "@/lib/db";
-import { Group, GroupMember } from "@/lib/types";
+import { Group, GroupMember, Friend, Profile } from "@/lib/types";
 import {
   IoArrowBack,
   IoPersonAdd,
   IoTrash,
   IoClose,
-  IoCheckmark,
   IoPeopleOutline,
-  IoTimeOutline,
+  IoCheckmarkCircle,
 } from "react-icons/io5";
+
+/** Get the "other" profile from a friend row */
+function getFriendProfile(friend: Friend, myId: string): Profile | undefined {
+  return friend.requester_id === myId ? friend.addressee : friend.requester;
+}
+
+function Avatar({ profile, size = 10 }: { profile?: Profile; size?: number }) {
+  const initials = (profile?.display_name ?? profile?.username ?? "?").slice(0, 1).toUpperCase();
+  if (profile?.avatar_url) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={profile.avatar_url}
+        alt={profile.display_name ?? profile.username}
+        className={`w-${size} h-${size} rounded-xl object-cover flex-shrink-0`}
+      />
+    );
+  }
+  return (
+    <div className={`w-${size} h-${size} rounded-xl bg-[#4366f4] flex items-center justify-center text-white font-bold flex-shrink-0 text-sm`}>
+      {initials}
+    </div>
+  );
+}
 
 export default function GroupMembersPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,23 +51,24 @@ export default function GroupMembersPage() {
 
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
-  const [inviteUsername, setInviteUsername] = useState("");
-  const [inviting, setInviting] = useState(false);
-  const [inviteError, setInviteError] = useState<string | null>(null);
-  const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+  const [adding, setAdding] = useState<string | null>(null); // username being added
+  const [addError, setAddError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     if (!user || !id) return;
     setDataLoading(true);
     try {
-      const [grp, grpMembers] = await Promise.all([
+      const [grp, grpMembers, myFriends] = await Promise.all([
         getGroup(id),
         getGroupMembers(id),
+        getMyFriends(),
       ]);
       setGroup(grp);
       setMembers(grpMembers);
+      setFriends(myFriends);
     } finally {
       setDataLoading(false);
     }
@@ -57,24 +82,18 @@ export default function GroupMembersPage() {
     if (user) loadData();
   }, [user, loadData]);
 
-  const handleInvite = async () => {
-    const username = inviteUsername.trim().replace(/^@/, "");
-    if (!username) return;
-    setInviting(true);
-    setInviteError(null);
-    setInviteSuccess(null);
+  const handleAddFriend = async (friendProfile: Profile) => {
+    setAdding(friendProfile.username);
+    setAddError(null);
     try {
-      const result = await inviteMemberByUsername(id, username);
+      const result = await inviteMemberByUsername(id, friendProfile.username);
       if (result.error) {
-        setInviteError(result.error);
+        setAddError(result.error);
       } else {
-        setInviteSuccess(`ส่งคำเชิญถึง @${username} แล้ว`);
-        setInviteUsername("");
         await loadData();
-        setTimeout(() => setInviteSuccess(null), 3000);
       }
     } finally {
-      setInviting(false);
+      setAdding(null);
     }
   };
 
@@ -95,7 +114,12 @@ export default function GroupMembersPage() {
 
   const isOwner = group?.owner_id === user?.id;
   const accepted = members.filter((m) => m.status === "accepted");
-  const pending = members.filter((m) => m.status === "pending");
+  const memberUserIds = new Set(accepted.map((m) => m.user_id));
+
+  // Friends not yet in the group
+  const friendsNotInGroup = friends
+    .map((f) => getFriendProfile(f, user!.id))
+    .filter((p): p is Profile => !!p && !memberUserIds.has(p.id));
 
   return (
     <div className="min-h-screen bg-[#f8f9fc] dark:bg-gray-950 flex flex-col">
@@ -118,42 +142,65 @@ export default function GroupMembersPage() {
       </nav>
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-5 py-5 flex flex-col gap-5">
-        {/* Invite section — owner only */}
+
+        {/* Add from friends — owner only */}
         {isOwner && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white mb-3">เชิญสมาชิก</p>
-            <div className="flex gap-2">
-              <div className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                <span className="text-sm text-gray-400">@</span>
-                <input
-                  value={inviteUsername}
-                  onChange={(e) => setInviteUsername(e.target.value.toLowerCase())}
-                  onKeyDown={(e) => e.key === "Enter" && handleInvite()}
-                  placeholder="username"
-                  className="flex-1 text-sm bg-transparent outline-none text-gray-900 dark:text-white placeholder-gray-400"
-                />
-                {inviteUsername && (
-                  <button onClick={() => setInviteUsername("")} className="text-gray-400 hover:text-gray-600">
-                    <IoClose size={14} />
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <IoPersonAdd size={14} className="text-gray-400" />
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">เพิ่มสมาชิกจากเพื่อน</p>
+            </div>
+
+            {addError && (
+              <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-xl">{addError}</p>
+            )}
+
+            {friendsNotInGroup.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-4 text-center">
+                <IoPeopleOutline size={24} className="text-gray-300" />
+                <p className="text-xs text-gray-400">
+                  {friends.length === 0
+                    ? "ยังไม่มีเพื่อน — ไปเพิ่มเพื่อนที่หน้าเพื่อนก่อน"
+                    : "เพื่อนทุกคนอยู่ในกลุ่มนี้แล้ว"}
+                </p>
+                {friends.length === 0 && (
+                  <button
+                    onClick={() => router.push("/friends")}
+                    className="text-xs text-[#4366f4] font-semibold hover:underline"
+                  >
+                    ไปหน้าเพื่อน →
                   </button>
                 )}
               </div>
-              <button
-                onClick={handleInvite}
-                disabled={inviting || !inviteUsername.trim()}
-                className="px-4 py-2.5 bg-[#4366f4] hover:bg-[#3355e0] disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors flex items-center gap-1.5"
-              >
-                <IoPersonAdd size={14} />
-                {inviting ? "..." : "เชิญ"}
-              </button>
-            </div>
-            {inviteError && (
-              <p className="text-xs text-red-500 mt-2">{inviteError}</p>
-            )}
-            {inviteSuccess && (
-              <p className="text-xs text-green-600 dark:text-green-400 mt-2 flex items-center gap-1">
-                <IoCheckmark size={12} /> {inviteSuccess}
-              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {friendsNotInGroup.map((profile) => (
+                  <div
+                    key={profile.id}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
+                  >
+                    <Avatar profile={profile} size={9} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                        {profile.display_name ?? `@${profile.username}`}
+                      </p>
+                      <p className="text-[10px] text-gray-400">@{profile.username}</p>
+                    </div>
+                    <button
+                      onClick={() => handleAddFriend(profile)}
+                      disabled={adding === profile.username}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#4366f4] hover:bg-[#3355e0] disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors"
+                    >
+                      {adding === profile.username ? (
+                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <IoPersonAdd size={12} />
+                      )}
+                      เพิ่ม
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}
@@ -186,39 +233,40 @@ export default function GroupMembersPage() {
                   <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                     {member.profile?.display_name ?? `@${member.profile?.username}`}
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-400 flex items-center gap-1">
                     @{member.profile?.username}
                     {member.role === "owner" && (
-                      <span className="ml-1.5 px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-md text-[10px] font-semibold">
+                      <span className="ml-1 px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-md text-[10px] font-semibold">
                         เจ้าของ
                       </span>
                     )}
                   </p>
                 </div>
-                {isOwner && member.user_id !== user?.id && (
+                {member.user_id === user?.id ? (
+                  <IoCheckmarkCircle size={16} className="text-green-400 flex-shrink-0" />
+                ) : isOwner ? (
                   <button
                     onClick={() => handleRemove(member)}
                     className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   >
                     <IoTrash size={14} />
                   </button>
-                )}
+                ) : null}
               </div>
             ))}
           </div>
         </section>
 
-        {/* Pending invites */}
-        {pending.length > 0 && (
+        {/* Pending section removed — members are added directly now */}
+        {members.filter((m) => m.status === "pending").length > 0 && (
           <section>
             <div className="flex items-center gap-2 mb-3">
-              <IoTimeOutline size={14} className="text-gray-400" />
               <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                รอตอบรับ ({pending.length})
+                รอตอบรับ ({members.filter((m) => m.status === "pending").length})
               </h2>
             </div>
             <div className="flex flex-col gap-2">
-              {pending.map((member) => (
+              {members.filter((m) => m.status === "pending").map((member) => (
                 <div
                   key={member.id}
                   className="flex items-center gap-3 p-3 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 opacity-70"

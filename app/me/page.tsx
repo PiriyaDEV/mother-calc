@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { getMyProfile, upsertProfile, isUsernameTaken, uploadAvatar, ensureMyProfile } from "@/lib/db";
+import { getMyProfile, upsertProfile, isUsernameTaken, ensureMyProfile } from "@/lib/db";
 import { Profile } from "@/lib/types";
 import { isValidUsername } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
@@ -98,16 +98,39 @@ export default function MePage() {
     } finally { setSaving(false); }
   };
 
+  const resizeToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 256;
+        let { width, height } = img;
+        if (width > height) {
+          if (width > MAX) { height = Math.round((height * MAX) / width); width = MAX; }
+        } else {
+          if (height > MAX) { width = Math.round((width * MAX) / height); height = MAX; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { reject(new Error("canvas error")); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL("image/jpeg", 0.8));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("load error")); };
+      img.src = url;
+    });
+
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
     if (!file.type.startsWith("image/")) { setError("กรุณาเลือกไฟล์รูปภาพ"); return; }
-    if (file.size > 5 * 1024 * 1024) { setError("ขนาดไฟล์ต้องไม่เกิน 5 MB"); return; }
     setUploadingAvatar(true); setError(null);
     try {
-      const url = await uploadAvatar(profile.id, file);
-      await upsertProfile({ id: profile.id, avatar_url: url });
-      setProfile((p) => p ? { ...p, avatar_url: url } : p);
+      const base64 = await resizeToBase64(file);
+      await upsertProfile({ id: profile.id, avatar_url: base64 });
+      setProfile((p) => p ? { ...p, avatar_url: base64 } : p);
       showSuccess("อัปเดตรูปโปรไฟล์แล้ว");
     } catch { setError("อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่"); }
     finally { setUploadingAvatar(false); e.target.value = ""; }

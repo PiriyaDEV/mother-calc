@@ -5,6 +5,7 @@ import { IoPencil, IoTrash, IoPersonOutline, IoCheckmark, IoClose } from "react-
 import { BillMember } from "@/lib/types";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import MemberAvatar from "@/components/ui/MemberAvatar";
 
 const MEMBER_COLORS = [
   "#4366f4", "#f43f5e", "#10b981", "#f59e0b",
@@ -142,12 +143,7 @@ export default function MemberPage({ members, onAdd, onEdit, onDelete, readOnly 
           ) : (
             // Display row
             <div key={member.id} className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/60 rounded-2xl px-4 py-3">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                style={{ backgroundColor: member.color }}
-              >
-                {member.name.charAt(0).toUpperCase()}
-              </div>
+              <MemberAvatar member={member} size={36} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{member.name}</p>

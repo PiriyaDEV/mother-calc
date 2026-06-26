@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { IoLogoGoogle, IoEyeOutline, IoEyeOffOutline, IoArrowBack, IoMailOutline } from "react-icons/io5";
-import Link from "next/link";
 import { FEATURES } from "@/lib/constants";
 
 type Mode = "login" | "register" | "otp";
@@ -148,9 +147,9 @@ export default function LoginPage() {
   // ── Render ─────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#f8f9fc] dark:bg-gray-950 flex flex-col items-center justify-center px-4 py-12">
-      {/* Back */}
-      <div className="w-full max-w-sm mb-4">
-        {mode === "otp" ? (
+      {/* Back — OTP only */}
+      {mode === "otp" && (
+        <div className="w-full max-w-sm mb-4">
           <button
             onClick={() => { setMode("register"); setError(""); }}
             className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
@@ -158,16 +157,8 @@ export default function LoginPage() {
             <IoArrowBack size={14} />
             กลับ
           </button>
-        ) : (
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-          >
-            <IoArrowBack size={14} />
-            กลับหน้าหลัก
-          </Link>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm p-8">
         {/* Logo */}

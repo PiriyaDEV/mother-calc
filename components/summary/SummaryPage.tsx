@@ -12,6 +12,7 @@ import {
 import { Bill, BillMember } from "@/lib/types";
 import { calculateBill, formatCurrency, formatNumber, getTotalEmoji, simplifyDebtsPerItem } from "@/lib/utils";
 import { toggleMemberPaid } from "@/lib/db";
+import MemberAvatar from "@/components/ui/MemberAvatar";
 import QRCode from "qrcode";
 
 interface SummaryPageProps {
@@ -297,12 +298,11 @@ export default function SummaryPage({ bill, members: membersProp, currentUserId,
                     : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                 }`}
               >
-                <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
-                  style={{ backgroundColor: isSelected ? "rgba(255,255,255,0.3)" : m.color }}
-                >
-                  {m.name.charAt(0).toUpperCase()}
-                </div>
+                <MemberAvatar
+                  member={m}
+                  size={20}
+                  bgOverride={isSelected ? "rgba(255,255,255,0.3)" : undefined}
+                />
                 <span>{m.name}</span>
                 {isCurrentUser && (
                   <span className={`text-[9px] px-1 py-0.5 rounded-full font-bold ${
@@ -326,12 +326,7 @@ export default function SummaryPage({ bill, members: membersProp, currentUserId,
           {/* Member header card */}
           <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl overflow-hidden">
             <div className="flex items-center gap-3 px-4 py-4">
-              <div
-                className="w-11 h-11 rounded-full flex items-center justify-center text-white text-base font-bold flex-shrink-0"
-                style={{ backgroundColor: selectedSummary.member.color }}
-              >
-                {selectedSummary.member.name.charAt(0).toUpperCase()}
-              </div>
+              <MemberAvatar member={selectedSummary.member} size={44} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <p className="text-base font-bold text-gray-900 dark:text-white">
@@ -410,20 +405,10 @@ export default function SummaryPage({ bill, members: membersProp, currentUserId,
                     >
                       <div className="flex items-center gap-3 px-4 py-3">
                         {/* From */}
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0"
-                          style={{ backgroundColor: from.color }}
-                        >
-                          {from.name.charAt(0).toUpperCase()}
-                        </div>
+                        <MemberAvatar member={from} size={32} />
                         <IoArrowForward size={14} className="text-gray-400 flex-shrink-0" />
                         {/* To */}
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0"
-                          style={{ backgroundColor: to.color }}
-                        >
-                          {to.name.charAt(0).toUpperCase()}
-                        </div>
+                        <MemberAvatar member={to} size={32} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{to.name}</p>
                           {to.promptpay && (
@@ -575,20 +560,10 @@ function AllMembersSection({
                   const isPaid = paidIds.includes(from.id);
                   return (
                     <div key={`${from.id}-${to.id}`} className="flex items-center gap-2">
-                      <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                        style={{ backgroundColor: from.color }}
-                      >
-                        {from.name.charAt(0).toUpperCase()}
-                      </div>
+                      <MemberAvatar member={from} size={28} />
                       <span className={`text-sm font-medium truncate ${isPaid ? "text-gray-400 line-through" : "text-gray-700 dark:text-gray-300"}`}>{from.name}</span>
                       <IoArrowForward size={14} className="text-gray-400 flex-shrink-0" />
-                      <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                        style={{ backgroundColor: to.color }}
-                      >
-                        {to.name.charAt(0).toUpperCase()}
-                      </div>
+                      <MemberAvatar member={to} size={28} />
                       <span className={`text-sm font-medium truncate ${isPaid ? "text-gray-400 line-through" : "text-gray-700 dark:text-gray-300"}`}>{to.name}</span>
                       <span className={`text-sm font-bold ml-auto flex-shrink-0 ${isPaid ? "text-emerald-500 line-through opacity-60" : "text-gray-900 dark:text-white"}`}>
                         {formatNumber(amount)} บาท
@@ -617,12 +592,7 @@ function AllMembersSection({
                   }`}
                 >
                   <div className="flex items-center gap-3 px-4 py-3">
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                      style={{ backgroundColor: member.color }}
-                    >
-                      {member.name.charAt(0).toUpperCase()}
-                    </div>
+                    <MemberAvatar member={member} size={36} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="text-sm font-semibold text-gray-900 dark:text-white">{member.name}</p>

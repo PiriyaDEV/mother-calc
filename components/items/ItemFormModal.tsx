@@ -6,6 +6,7 @@ import { BillItem, BillMember } from "@/lib/types";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import MemberAvatar from "@/components/ui/MemberAvatar";
 
 type SplitMode = "equal" | "unequal";
 
@@ -167,12 +168,13 @@ export default function ItemFormModal({ isOpen, onClose, members, editItem, onSa
                     : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300"
                 }`}
               >
-                <div
-                  className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-bold flex-shrink-0"
-                  style={{ backgroundColor: m.color }}
-                >
-                  {paidById === m.id ? <IoCheckmark size={8} /> : m.name.charAt(0).toUpperCase()}
-                </div>
+                {paidById === m.id ? (
+                  <div className="w-4 h-4 rounded-full flex items-center justify-center bg-[#4366f4] text-white flex-shrink-0">
+                    <IoCheckmark size={8} />
+                  </div>
+                ) : (
+                  <MemberAvatar member={m} size={16} />
+                )}
                 {m.name}
               </button>
             ))}
@@ -243,12 +245,13 @@ export default function ItemFormModal({ isOpen, onClose, members, editItem, onSa
                         : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
                     }`}
                   >
-                    <div
-                      className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                      style={{ backgroundColor: member.color }}
-                    >
-                      {selected ? <IoCheckmark size={12} /> : member.name.charAt(0).toUpperCase()}
-                    </div>
+                    {selected ? (
+                      <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-[#4366f4] text-white flex-shrink-0">
+                        <IoCheckmark size={12} />
+                      </div>
+                    ) : (
+                      <MemberAvatar member={member} size={24} className="rounded-lg" />
+                    )}
                     <span className="text-sm text-gray-800 dark:text-gray-200 flex-1">
                       {member.name}
                     </span>

@@ -48,6 +48,17 @@ create table public.group_members (
   unique(group_id, user_id)
 );
 
+-- Friends — bidirectional friend relationships between users.
+-- requester sends request → addressee accepts/declines.
+create table public.friends (
+  id           uuid primary key default uuid_generate_v4(),
+  requester_id uuid not null references public.profiles(id) on delete cascade,
+  addressee_id uuid not null references public.profiles(id) on delete cascade,
+  status       text not null default 'pending' check (status in ('pending', 'accepted', 'declined')),
+  created_at   timestamptz not null default now(),
+  unique(requester_id, addressee_id)
+);
+
 -- In-app notifications (e.g. group invites).
 create table public.notifications (
   id          uuid primary key default uuid_generate_v4(),
@@ -120,6 +131,8 @@ create index group_members_user_id_idx  on public.group_members(user_id);
 create index group_members_group_id_idx on public.group_members(group_id);
 create index notifications_user_id_idx  on public.notifications(user_id);
 create index notifications_read_idx     on public.notifications(user_id, read);
+create index friends_requester_idx      on public.friends(requester_id);
+create index friends_addressee_idx      on public.friends(addressee_id);
 create index bills_owner_id_idx         on public.bills(owner_id);
 create index bills_group_id_idx         on public.bills(group_id);
 create index bills_trip_id_idx          on public.bills(trip_id);
@@ -135,6 +148,7 @@ alter table public.profiles      enable row level security;
 alter table public.groups        enable row level security;
 alter table public.group_members enable row level security;
 alter table public.notifications enable row level security;
+alter table public.friends       enable row level security;
 alter table public.trips         enable row level security;
 alter table public.bills         enable row level security;
 alter table public.bill_members  enable row level security;
@@ -249,6 +263,21 @@ create policy "group_members_delete" on public.group_members
     auth.uid() = user_id
     or public.is_group_owner(group_id)
   );
+
+-- ============================================================
+-- Policies — friends
+-- ============================================================
+create policy "friends_select" on public.friends
+  for select using (auth.uid() = requester_id or auth.uid() = addressee_id);
+
+create policy "friends_insert" on public.friends
+  for insert with check (auth.uid() = requester_id);
+
+create policy "friends_update" on public.friends
+  for update using (auth.uid() = addressee_id or auth.uid() = requester_id);
+
+create policy "friends_delete" on public.friends
+  for delete using (auth.uid() = requester_id or auth.uid() = addressee_id);
 
 -- ============================================================
 -- Policies — notifications

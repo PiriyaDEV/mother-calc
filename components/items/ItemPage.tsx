@@ -5,6 +5,7 @@ import { IoPencil, IoTrash, IoReceiptOutline } from "react-icons/io5";
 import { BillItem, BillMember } from "@/lib/types";
 import { formatNumber, getTotalEmoji } from "@/lib/utils";
 import ItemFormModal from "./ItemFormModal";
+import MemberAvatar from "@/components/ui/MemberAvatar";
 
 interface ItemPageProps {
   items: BillItem[];
@@ -100,13 +101,11 @@ export default function ItemPage({ items, members, onAdd, onEdit, onDelete, read
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
                       {paidByMember && (
-                        <div
-                          title={`จ่ายโดย ${paidByMember.name}`}
-                          className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
-                          style={{ backgroundColor: paidByMember.color }}
-                        >
-                          {paidByMember.name.charAt(0).toUpperCase()}
-                        </div>
+                        <MemberAvatar
+                          member={paidByMember}
+                          size={20}
+                          className="flex-shrink-0"
+                        />
                       )}
                       <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.name}</p>
                     </div>
@@ -119,14 +118,12 @@ export default function ItemPage({ items, members, onAdd, onEdit, onDelete, read
                     <div className="flex items-center gap-1 mt-1.5">
                       <div className="flex -space-x-1">
                         {sharedWith.slice(0, 5).map((m) => (
-                          <div
+                          <MemberAvatar
                             key={m.id}
-                            title={m.name}
-                            className="w-5 h-5 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center text-white text-[9px] font-bold"
-                            style={{ backgroundColor: m.color }}
-                          >
-                            {m.name.charAt(0).toUpperCase()}
-                          </div>
+                            member={m}
+                            size={20}
+                            className="border-2 border-white dark:border-gray-800"
+                          />
                         ))}
                         {sharedWith.length > 5 && (
                           <div className="w-5 h-5 rounded-full border-2 border-white dark:border-gray-800 bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-[9px] font-bold text-gray-600 dark:text-gray-300">
