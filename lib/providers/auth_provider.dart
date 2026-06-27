@@ -49,7 +49,6 @@ class AuthProvider extends ChangeNotifier {
         _profile = Profile.fromJson(data);
         notifyListeners();
       } else {
-        // Create profile if not exists
         await _ensureProfile();
       }
     } catch (e) {
@@ -57,19 +56,23 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _ensureProfile() async {
+  Future<void> _ensureProfile({String? username}) async {
     if (_user == null) return;
     try {
       final email = _user!.email ?? '';
-      final username = email.split('@').first.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+      final defaultUsername = email
+          .split('@')
+          .first
+          .replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
       final displayName = _user!.userMetadata?['full_name'] as String? ??
           _user!.userMetadata?['name'] as String? ??
-          username;
+          username ??
+          defaultUsername;
       final avatarUrl = _user!.userMetadata?['avatar_url'] as String?;
 
       await _supabase.from('profiles').upsert({
         'id': _user!.id,
-        'username': username,
+        'username': username ?? defaultUsername,
         'display_name': displayName,
         'avatar_url': avatarUrl,
       });
@@ -97,9 +100,47 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<String?> signUpWithEmail(String email, String password) async {
+  /// Signs up with email/password. Returns null on success (OTP sent),
+  /// or an error string on failure.
+  Future<String?> signUpWithEmail(
+      String email, String password, String username) async {
     try {
-      await _supabase.auth.signUp(email: email, password: password);
+      await _supabase.auth.signUp(
+        email: email,
+        password: password,
+        data: {'username': username, 'display_name': username},
+      );
+      return null;
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+    }
+  }
+
+  /// Verifies the 6-digit OTP sent to email after sign-up.
+  Future<String?> verifyOTP(String email, String token) async {
+    try {
+      await _supabase.auth.verifyOTP(
+        email: email,
+        token: token,
+        type: OtpType.signup,
+      );
+      return null;
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+    }
+  }
+
+  /// Signs in with Google OAuth.
+  Future<String?> signInWithGoogle() async {
+    try {
+      await _supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'io.supabase.kidtang://login-callback',
+      );
       return null;
     } on AuthException catch (e) {
       return e.message;
