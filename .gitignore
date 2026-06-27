@@ -1,50 +1,51 @@
-# Flutter/Dart
-build/
+# # Flutter/Dart/Pub
+**/doc/api/
+**/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
-.packages
-*.iml
-
-# Android
-android/.gradle/
-android/local.properties
-android/key.properties
-android/app/google-services.json
+.pub-cache/
+.pub/
+/build/
 
 # iOS
 ios/Pods/
 ios/.symlinks/
-ios/Flutter/Flutter.framework
-ios/Flutter/Flutter.podspec
-ios/Flutter/Generated.xcconfig
-ios/Flutter/app.flx
-ios/Flutter/app.zip
-ios/Flutter/flutter_assets/
-ios/ServiceDefinitions.json
-ios/Runner/GeneratedPluginRegistrant.*
+
+# Android
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# IntelliJ / IDE
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
 
 # macOS
-macos/Flutter/GeneratedPluginRegistrant.swift
-macos/Flutter/ephemeral/
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
 
-# Environment variables
+# Environment variables (never commit secrets)
 .env
 .env.local
 .env.*.local
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Next.js (legacy - not needed on this branch)
+# Next.js legacy (this branch is Flutter only)
 .next/
 node_modules/
 out/
 
 # Misc
-.DS_Store
 *.log
 coverage/
+app.*.symbols
+app.*.map.json
+migrate_working_dir/
