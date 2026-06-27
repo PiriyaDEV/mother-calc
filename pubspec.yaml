@@ -41,6 +41,10 @@ dependencies:
   uuid: ^4.4.0
   flutter_dotenv: ^5.1.0
 
+  # Sign in with Apple
+  sign_in_with_apple: ^6.1.4
+  crypto: ^3.0.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

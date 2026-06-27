@@ -140,6 +140,23 @@ class AuthProvider extends ChangeNotifier {
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: 'io.supabase.kidtang://login-callback',
+        authScreenLaunchMode: LaunchMode.externalApplication,
+      );
+      return null;
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+    }
+  }
+
+  /// Signs in with LINE OAuth (via Custom OIDC Provider).
+  Future<String?> signInWithLine() async {
+    try {
+      await _supabase.auth.signInWithOAuth(
+        OAuthProvider('custom:line'), // custom: prefix is required for custom OIDC providers
+        redirectTo: 'io.supabase.kidtang://login-callback',
+        authScreenLaunchMode: LaunchMode.externalApplication,
       );
       return null;
     } on AuthException catch (e) {
