@@ -1,0 +1,1827 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/models.dart';
+import '../providers/bill_provider.dart';
+import '../theme/app_theme.dart';
+import '../utils/bill_utils.dart';
+import '../widgets/bill_card.dart';
+import '../widgets/member_avatar.dart';
+
+class BillDetailScreen extends StatefulWidget {
+  final String billId;
+  const BillDetailScreen({super.key, required this.billId});
+
+  @override
+  State<BillDetailScreen> createState() => _BillDetailScreenState();
+}
+
+class _BillDetailScreenState extends State<BillDetailScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final _supabase = Supabase.instance.client;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<BillProvider>().loadBill(widget.billId);
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final billProvider = context.watch<BillProvider>();
+    final bill = billProvider.bill;
+
+    if (billProvider.loading) {
+      return Scaffold(
+        backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
+        body: const Center(
+          child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+        ),
+      );
+    }
+
+    if (bill == null) {
+      return Scaffold(
+        backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_rounded),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: Center(
+          child: Text(
+            'ไม่พบบิล',
+            style: GoogleFonts.notoSansThai(fontSize: 16),
+          ),
+        ),
+      );
+    }
+
+    final calc = calculateBill(bill.copyWith(
+      members: billProvider.members,
+      items: billProvider.items,
+    ));
+
+    return Scaffold(
+      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar(
+            pinned: true,
+            backgroundColor:
+                isDark ? AppColors.bgDark.withOpacity(0.95) : Colors.white.withOpacity(0.95),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_rounded),
+              onPressed: () => context.pop(),
+            ),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${bill.emoji ?? '🧾'} ${bill.title}',
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.more_vert_rounded),
+                onPressed: () => _showBillMenu(context, bill, billProvider),
+              ),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(100),
+              child: Column(
+                children: [
+                  // Total amount
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'ยอดรวม',
+                                style: GoogleFonts.notoSansThai(
+                                  fontSize: 12,
+                                  color: isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textSecondaryLight,
+                                ),
+                              ),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    formatNumber(calc.total),
+                                    style: GoogleFonts.notoSansThai(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark
+                                          ? AppColors.textPrimaryDark
+                                          : AppColors.textPrimaryLight,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 4),
+                                    child: Text(
+                                      bill.settings.currency,
+                                      style: GoogleFonts.notoSansThai(
+                                        fontSize: 14,
+                                        color: isDark
+                                            ? AppColors.textSecondaryDark
+                                            : AppColors.textSecondaryLight,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        BillStatusPill(isCompleted: bill.isCompleted),
+                      ],
+                    ),
+                  ),
+                  // Tabs
+                  TabBar(
+                    controller: _tabController,
+                    labelColor: AppColors.primary,
+                    unselectedLabelColor: isDark
+                        ? AppColors.textTertiaryDark
+                        : AppColors.textTertiaryLight,
+                    indicatorColor: AppColors.primary,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    dividerColor: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    labelStyle: GoogleFonts.notoSansThai(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    unselectedLabelStyle: GoogleFonts.notoSansThai(fontSize: 13),
+                    tabs: const [
+                      Tab(text: 'รายการ'),
+                      Tab(text: 'สมาชิก'),
+                      Tab(text: 'สรุป'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _ItemsTab(bill: bill, billProvider: billProvider, calc: calc),
+            _MembersTab(bill: bill, billProvider: billProvider, calc: calc),
+            _SummaryTab(bill: bill, billProvider: billProvider, calc: calc),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showBillMenu(
+      BuildContext context, Bill bill, BillProvider billProvider) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (!bill.isCompleted)
+                ListTile(
+                  leading: const Icon(Icons.check_circle_outline_rounded,
+                      color: AppColors.emerald),
+                  title: Text('ปิดบิล',
+                      style: GoogleFonts.notoSansThai(
+                          color: AppColors.emerald,
+                          fontWeight: FontWeight.w500)),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await billProvider.completeBill(bill.id);
+                  },
+                )
+              else
+                ListTile(
+                  leading: Icon(Icons.refresh_rounded,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight),
+                  title: Text('เปิดบิลอีกครั้ง',
+                      style: GoogleFonts.notoSansThai()),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await billProvider.reopenBill(bill.id);
+                  },
+                ),
+              ListTile(
+                leading: const Icon(Icons.settings_outlined,
+                    color: AppColors.primary),
+                title: Text('ตั้งค่าบิล',
+                    style: GoogleFonts.notoSansThai(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w500)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showSettingsSheet(context, bill, billProvider);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline_rounded,
+                    color: AppColors.red),
+                title: Text('ลบบิล',
+                    style: GoogleFonts.notoSansThai(
+                        color: AppColors.red, fontWeight: FontWeight.w500)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final confirm = await _showConfirm(
+                      context, 'ลบบิล', 'คุณแน่ใจหรือไม่ว่าต้องการลบบิลนี้?');
+                  if (confirm == true) {
+                    await billProvider.deleteBill(bill.id);
+                    if (context.mounted) context.pop();
+                  }
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showSettingsSheet(
+      BuildContext context, Bill bill, BillProvider billProvider) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final settings = bill.settings;
+    double serviceCharge = settings.serviceCharge;
+    double vat = settings.vat;
+    double tip = settings.tip;
+    double discount = settings.discount;
+    String currency = settings.currency;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.white,
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.borderDark
+                          : AppColors.borderLight,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'ตั้งค่าบิล',
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _SettingsRow(
+                  label: 'Service Charge (%)',
+                  value: serviceCharge,
+                  onChanged: (v) => setModalState(() => serviceCharge = v),
+                ),
+                const SizedBox(height: 12),
+                _SettingsRow(
+                  label: 'VAT (%)',
+                  value: vat,
+                  onChanged: (v) => setModalState(() => vat = v),
+                ),
+                const SizedBox(height: 12),
+                _SettingsRow(
+                  label: 'ทิป (บาท)',
+                  value: tip,
+                  onChanged: (v) => setModalState(() => tip = v),
+                ),
+                const SizedBox(height: 12),
+                _SettingsRow(
+                  label: 'ส่วนลด (บาท)',
+                  value: discount,
+                  onChanged: (v) => setModalState(() => discount = v),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    await billProvider.updateBillMeta(
+                      billId: bill.id,
+                      settings: BillSettings(
+                        serviceCharge: serviceCharge,
+                        vat: vat,
+                        tip: tip,
+                        discount: discount,
+                        currency: currency,
+                      ),
+                    );
+                  },
+                  child: Text('บันทึก',
+                      style: GoogleFonts.notoSansThai(
+                          fontSize: 15, fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<bool?> _showConfirm(
+      BuildContext context, String title, String message) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(title,
+            style: GoogleFonts.notoSansThai(fontWeight: FontWeight.bold)),
+        content: Text(message, style: GoogleFonts.notoSansThai()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('ยกเลิก',
+                style: GoogleFonts.notoSansThai(
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('ยืนยัน',
+                style: GoogleFonts.notoSansThai(
+                    color: AppColors.red, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Items Tab ─────────────────────────────────────────────────
+class _ItemsTab extends StatelessWidget {
+  final Bill bill;
+  final BillProvider billProvider;
+  final BillCalculation calc;
+
+  const _ItemsTab(
+      {required this.bill,
+      required this.billProvider,
+      required this.calc});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final items = billProvider.items;
+    final members = billProvider.members;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Add item button
+        if (!bill.isCompleted)
+          GestureDetector(
+            onTap: () => _showAddItemSheet(context, bill, billProvider),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: AppColors.primary.withOpacity(0.2)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.add_rounded,
+                      color: AppColors.primary, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'เพิ่มรายการ',
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+        if (items.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 40),
+            child: Center(
+              child: Column(
+                children: [
+                  const Text('🍽️', style: TextStyle(fontSize: 40)),
+                  const SizedBox(height: 12),
+                  Text(
+                    'ยังไม่มีรายการ',
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 14,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else ...[
+          const SizedBox(height: 12),
+          ...items.map((item) => _ItemTile(
+                item: item,
+                members: members,
+                bill: bill,
+                billProvider: billProvider,
+              )),
+        ],
+
+        // Bill summary
+        if (items.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _BillSummaryCard(calc: calc, currency: bill.settings.currency),
+        ],
+      ],
+    );
+  }
+
+  void _showAddItemSheet(
+      BuildContext context, Bill bill, BillProvider billProvider) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _ItemFormSheet(
+        bill: bill,
+        billProvider: billProvider,
+        members: billProvider.members,
+      ),
+    );
+  }
+}
+
+class _ItemTile extends StatelessWidget {
+  final BillItem item;
+  final List<BillMember> members;
+  final Bill bill;
+  final BillProvider billProvider;
+
+  const _ItemTile({
+    required this.item,
+    required this.members,
+    required this.bill,
+    required this.billProvider,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final assignedMembers = members
+        .where((m) => item.shares.containsKey(m.id) && item.shares[m.id]! > 0)
+        .toList();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight,
+                  ),
+                ),
+                if (assignedMembers.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 4,
+                    children: assignedMembers.map((m) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: colorFromHex(m.color).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          m.name,
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 11,
+                            color: colorFromHex(m.color),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Text(
+            formatNumber(item.price),
+            style: GoogleFonts.notoSansThai(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: isDark
+                  ? AppColors.textPrimaryDark
+                  : AppColors.textPrimaryLight,
+            ),
+          ),
+          if (!bill.isCompleted) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => _showEditItemSheet(context),
+              child: Icon(
+                Icons.edit_outlined,
+                size: 18,
+                color: isDark
+                    ? AppColors.textTertiaryDark
+                    : AppColors.textTertiaryLight,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showEditItemSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _ItemFormSheet(
+        bill: bill,
+        billProvider: billProvider,
+        members: members,
+        editItem: item,
+      ),
+    );
+  }
+}
+
+class _BillSummaryCard extends StatelessWidget {
+  final BillCalculation calc;
+  final String currency;
+
+  const _BillSummaryCard({required this.calc, required this.currency});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight),
+      ),
+      child: Column(
+        children: [
+          _SummaryRow(
+              label: 'ยอดรวมก่อนภาษี',
+              value: calc.subtotal,
+              currency: currency),
+          if (calc.serviceAmount > 0)
+            _SummaryRow(
+                label: 'Service Charge',
+                value: calc.serviceAmount,
+                currency: currency),
+          if (calc.vatAmount > 0)
+            _SummaryRow(
+                label: 'VAT', value: calc.vatAmount, currency: currency),
+          if (calc.tipAmount > 0)
+            _SummaryRow(
+                label: 'ทิป', value: calc.tipAmount, currency: currency),
+          if (calc.discountAmount > 0)
+            _SummaryRow(
+                label: 'ส่วนลด',
+                value: -calc.discountAmount,
+                currency: currency,
+                isDiscount: true),
+          const Divider(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'ยอดรวมทั้งหมด',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
+                ),
+              ),
+              Text(
+                '${formatNumber(calc.total)} $currency',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  final String label;
+  final double value;
+  final String currency;
+  final bool isDiscount;
+
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    required this.currency,
+    this.isDiscount = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.notoSansThai(
+              fontSize: 13,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight,
+            ),
+          ),
+          Text(
+            '${isDiscount ? '-' : ''}${formatNumber(value.abs())} $currency',
+            style: GoogleFonts.notoSansThai(
+              fontSize: 13,
+              color: isDiscount
+                  ? AppColors.emerald
+                  : (isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Members Tab ───────────────────────────────────────────────
+class _MembersTab extends StatelessWidget {
+  final Bill bill;
+  final BillProvider billProvider;
+  final BillCalculation calc;
+
+  const _MembersTab(
+      {required this.bill,
+      required this.billProvider,
+      required this.calc});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final members = billProvider.members;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (!bill.isCompleted)
+          GestureDetector(
+            onTap: () => _showAddMemberSheet(context, bill, billProvider),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: AppColors.primary.withOpacity(0.2)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.person_add_outlined,
+                      color: AppColors.primary, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'เพิ่มสมาชิก',
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+        if (members.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 40),
+            child: Center(
+              child: Column(
+                children: [
+                  const Text('👥', style: TextStyle(fontSize: 40)),
+                  const SizedBox(height: 12),
+                  Text(
+                    'ยังไม่มีสมาชิก',
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 14,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else ...[
+          const SizedBox(height: 12),
+          ...members.map((member) {
+            final summary = calc.memberSummaries
+                .firstWhere((s) => s.member.id == member.id,
+                    orElse: () => MemberSummary(
+                        member: member, total: 0, items: []));
+            final isPaid =
+                bill.paidMemberIds.contains(member.id);
+
+            return _MemberTile(
+              member: member,
+              summary: summary,
+              isPaid: isPaid,
+              bill: bill,
+              billProvider: billProvider,
+              currency: bill.settings.currency,
+            );
+          }),
+        ],
+      ],
+    );
+  }
+
+  void _showAddMemberSheet(
+      BuildContext context, Bill bill, BillProvider billProvider) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _MemberFormSheet(
+        bill: bill,
+        billProvider: billProvider,
+      ),
+    );
+  }
+}
+
+class _MemberTile extends StatelessWidget {
+  final BillMember member;
+  final MemberSummary summary;
+  final bool isPaid;
+  final Bill bill;
+  final BillProvider billProvider;
+  final String currency;
+
+  const _MemberTile({
+    required this.member,
+    required this.summary,
+    required this.isPaid,
+    required this.bill,
+    required this.billProvider,
+    required this.currency,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = colorFromHex(member.color);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight),
+      ),
+      child: Row(
+        children: [
+          MemberAvatar(name: member.name, color: color, size: 40),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  member.name,
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight,
+                  ),
+                ),
+                Text(
+                  '${summary.items.length} รายการ',
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 12,
+                    color: isDark
+                        ? AppColors.textTertiaryDark
+                        : AppColors.textTertiaryLight,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                formatNumber(summary.total),
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
+                ),
+              ),
+              Text(
+                currency,
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 11,
+                  color: isDark
+                      ? AppColors.textTertiaryDark
+                      : AppColors.textTertiaryLight,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+          // Paid toggle
+          GestureDetector(
+            onTap: () async {
+              await billProvider.toggleMemberPaid(
+                  bill.id, member.id, bill.paidMemberIds);
+            },
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isPaid
+                    ? AppColors.emerald
+                    : (isDark
+                        ? const Color(0xFF374151)
+                        : const Color(0xFFF3F4F6)),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isPaid ? Icons.check_rounded : Icons.circle_outlined,
+                color: isPaid
+                    ? Colors.white
+                    : (isDark
+                        ? AppColors.textTertiaryDark
+                        : AppColors.textTertiaryLight),
+                size: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Summary Tab ───────────────────────────────────────────────
+class _SummaryTab extends StatelessWidget {
+  final Bill bill;
+  final BillProvider billProvider;
+  final BillCalculation calc;
+
+  const _SummaryTab(
+      {required this.bill,
+      required this.billProvider,
+      required this.calc});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final members = billProvider.members;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Per-member breakdown
+        ...calc.memberSummaries.map((summary) {
+          final isPaid = bill.paidMemberIds.contains(summary.member.id);
+          return _MemberSummaryCard(
+            summary: summary,
+            isPaid: isPaid,
+            currency: bill.settings.currency,
+            bill: bill,
+          );
+        }),
+
+        const SizedBox(height: 8),
+        _BillSummaryCard(calc: calc, currency: bill.settings.currency),
+      ],
+    );
+  }
+}
+
+class _MemberSummaryCard extends StatelessWidget {
+  final MemberSummary summary;
+  final bool isPaid;
+  final String currency;
+  final Bill bill;
+
+  const _MemberSummaryCard({
+    required this.summary,
+    required this.isPaid,
+    required this.currency,
+    required this.bill,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = colorFromHex(summary.member.color);
+    final promptpay = summary.member.promptpay;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                MemberAvatar(
+                    name: summary.member.name, color: color, size: 40),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    summary.member.name,
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimaryLight,
+                    ),
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      formatNumber(summary.total),
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDark
+                            ? AppColors.textPrimaryDark
+                            : AppColors.textPrimaryLight,
+                      ),
+                    ),
+                    Text(
+                      currency,
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 11,
+                        color: isDark
+                            ? AppColors.textTertiaryDark
+                            : AppColors.textTertiaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Item breakdown
+          if (summary.items.isNotEmpty) ...[
+            Divider(
+                height: 1,
+                color: isDark ? AppColors.borderDark : AppColors.borderLight),
+            ...summary.items.map((itemShare) => Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          itemShare.item.name,
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 13,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        formatNumber(itemShare.amount),
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 13,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+          ],
+          // PromptPay QR
+          if (promptpay != null && promptpay.isNotEmpty && !isPaid) ...[
+            Divider(
+                height: 1,
+                color: isDark ? AppColors.borderDark : AppColors.borderLight),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: GestureDetector(
+                onTap: () => _showQrSheet(context, summary.member, summary.total),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.qr_code_rounded,
+                        color: AppColors.primary, size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      'แสดง QR PromptPay',
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 13,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showQrSheet(
+      BuildContext context, BillMember member, double amount) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final payload =
+        generatePromptPayPayload(member.promptpay!, amount);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.borderDark
+                        : AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'โอนให้ ${member.name}',
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${formatNumber(amount)} $currency',
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: QrImageView(
+                    data: payload,
+                    version: QrVersions.auto,
+                    size: 200,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  member.promptpay!,
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 14,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Item Form Sheet ───────────────────────────────────────────
+class _ItemFormSheet extends StatefulWidget {
+  final Bill bill;
+  final BillProvider billProvider;
+  final List<BillMember> members;
+  final BillItem? editItem;
+
+  const _ItemFormSheet({
+    required this.bill,
+    required this.billProvider,
+    required this.members,
+    this.editItem,
+  });
+
+  @override
+  State<_ItemFormSheet> createState() => _ItemFormSheetState();
+}
+
+class _ItemFormSheetState extends State<_ItemFormSheet> {
+  late TextEditingController _nameCtrl;
+  late TextEditingController _priceCtrl;
+  late Map<String, bool> _selectedMembers;
+  String? _paidBy;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl =
+        TextEditingController(text: widget.editItem?.name ?? '');
+    _priceCtrl = TextEditingController(
+        text: widget.editItem != null
+            ? widget.editItem!.price.toString()
+            : '');
+    _selectedMembers = {
+      for (final m in widget.members)
+        m.id: widget.editItem?.shares.containsKey(m.id) ?? false
+    };
+    _paidBy = widget.editItem?.paidBy;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _priceCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = _nameCtrl.text.trim();
+    final price = double.tryParse(_priceCtrl.text) ?? 0;
+    if (name.isEmpty || price <= 0) return;
+
+    final shares = <String, double>{
+      for (final entry in _selectedMembers.entries)
+        if (entry.value) entry.key: 1.0
+    };
+
+    setState(() => _loading = true);
+    try {
+      if (widget.editItem != null) {
+        await widget.billProvider.editItem(
+          widget.editItem!.id,
+          name: name,
+          price: price,
+          shares: shares,
+          paidBy: _paidBy,
+        );
+      } else {
+        await widget.billProvider.addItem(
+          name: name,
+          price: price,
+          shares: shares,
+          paidBy: _paidBy,
+        );
+      }
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _delete() async {
+    if (widget.editItem == null) return;
+    await widget.billProvider.deleteItem(widget.editItem!.id);
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isEdit = widget.editItem != null;
+
+    return Container(
+      padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.borderDark
+                      : AppColors.borderLight,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  isEdit ? 'แก้ไขรายการ' : 'เพิ่มรายการ',
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight,
+                  ),
+                ),
+                if (isEdit)
+                  IconButton(
+                    onPressed: _delete,
+                    icon: const Icon(Icons.delete_outline_rounded,
+                        color: AppColors.red),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _nameCtrl,
+              autofocus: !isEdit,
+              decoration: const InputDecoration(hintText: 'ชื่อรายการ'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _priceCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(hintText: 'ราคา'),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(
+                    RegExp(r'^\d+\.?\d{0,2}'))
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'แบ่งให้ใคร',
+              style: GoogleFonts.notoSansThai(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (widget.members.isEmpty)
+              Text(
+                'ยังไม่มีสมาชิก',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 13,
+                  color: isDark
+                      ? AppColors.textTertiaryDark
+                      : AppColors.textTertiaryLight,
+                ),
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: widget.members.map((m) {
+                  final selected = _selectedMembers[m.id] ?? false;
+                  final color = colorFromHex(m.color);
+                  return GestureDetector(
+                    onTap: () => setState(
+                        () => _selectedMembers[m.id] = !selected),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? color.withOpacity(0.15)
+                            : (isDark
+                                ? const Color(0xFF1F2937)
+                                : const Color(0xFFF3F4F6)),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: selected
+                              ? color
+                              : Colors.transparent,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          MemberAvatar(
+                              name: m.name, color: color, size: 20),
+                          const SizedBox(width: 6),
+                          Text(
+                            m.name,
+                            style: GoogleFonts.notoSansThai(
+                              fontSize: 13,
+                              color: selected
+                                  ? color
+                                  : (isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textSecondaryLight),
+                              fontWeight: selected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            const SizedBox(height: 16),
+            // Paid by
+            if (widget.members.isNotEmpty) ...[
+              Text(
+                'ใครจ่ายก่อน?',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  GestureDetector(
+                    onTap: () => setState(() => _paidBy = null),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _paidBy == null
+                            ? AppColors.primary.withOpacity(0.15)
+                            : (isDark
+                                ? const Color(0xFF1F2937)
+                                : const Color(0xFFF3F4F6)),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _paidBy == null
+                              ? AppColors.primary
+                              : Colors.transparent,
+                        ),
+                      ),
+                      child: Text(
+                        'ไม่ระบุ',
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 13,
+                          color: _paidBy == null
+                              ? AppColors.primary
+                              : (isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight),
+                        ),
+                      ),
+                    ),
+                  ),
+                  ...widget.members.map((m) {
+                    final selected = _paidBy == m.id;
+                    final color = colorFromHex(m.color);
+                    return GestureDetector(
+                      onTap: () =>
+                          setState(() => _paidBy = selected ? null : m.id),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? color.withOpacity(0.15)
+                              : (isDark
+                                  ? const Color(0xFF1F2937)
+                                  : const Color(0xFFF3F4F6)),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: selected ? color : Colors.transparent,
+                          ),
+                        ),
+                        child: Text(
+                          m.name,
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 13,
+                            color: selected
+                                ? color
+                                : (isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+            ElevatedButton(
+              onPressed: _loading ? null : _save,
+              child: _loading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : Text(
+                      isEdit ? 'บันทึก' : 'เพิ่มรายการ',
+                      style: GoogleFonts.notoSansThai(
+                          fontSize: 15, fontWeight: FontWeight.w600),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Member Form Sheet ─────────────────────────────────────────
+class _MemberFormSheet extends StatefulWidget {
+  final Bill bill;
+  final BillProvider billProvider;
+  final BillMember? editMember;
+
+  const _MemberFormSheet({
+    required this.bill,
+    required this.billProvider,
+    this.editMember,
+  });
+
+  @override
+  State<_MemberFormSheet> createState() => _MemberFormSheetState();
+}
+
+class _MemberFormSheetState extends State<_MemberFormSheet> {
+  late TextEditingController _nameCtrl;
+  late TextEditingController _promptpayCtrl;
+  late Color _selectedColor;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl =
+        TextEditingController(text: widget.editMember?.name ?? '');
+    _promptpayCtrl = TextEditingController(
+        text: widget.editMember?.promptpay ?? '');
+    _selectedColor = widget.editMember != null
+        ? colorFromHex(widget.editMember!.color)
+        : AppColors.memberColors[
+            widget.billProvider.members.length %
+                AppColors.memberColors.length];
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _promptpayCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) return;
+
+    setState(() => _loading = true);
+    try {
+      if (widget.editMember != null) {
+        await widget.billProvider.editMember(
+          widget.editMember!.id,
+          name: name,
+          color: hexFromColor(_selectedColor),
+          promptpay: _promptpayCtrl.text.trim().isEmpty
+              ? null
+              : _promptpayCtrl.text.trim(),
+        );
+      } else {
+        await widget.billProvider.addMember(
+          name: name,
+          color: hexFromColor(_selectedColor),
+          promptpay: _promptpayCtrl.text.trim().isEmpty
+              ? null
+              : _promptpayCtrl.text.trim(),
+        );
+      }
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isEdit = widget.editMember != null;
+
+    return Container(
+      padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.borderDark
+                      : AppColors.borderLight,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              isEdit ? 'แก้ไขสมาชิก' : 'เพิ่มสมาชิก',
+              style: GoogleFonts.notoSansThai(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _nameCtrl,
+              autofocus: true,
+              decoration: const InputDecoration(hintText: 'ชื่อสมาชิก'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _promptpayCtrl,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                  hintText: 'เบอร์ PromptPay (ไม่บังคับ)'),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'สีประจำตัว',
+              style: GoogleFonts.notoSansThai(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: AppColors.memberColors.map((color) {
+                final isSelected = _selectedColor == color;
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedColor = color),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: isSelected
+                          ? Border.all(
+                              color: isDark ? Colors.white : Colors.black,
+                              width: 2)
+                          : null,
+                    ),
+                    child: isSelected
+                        ? const Icon(Icons.check_rounded,
+                            color: Colors.white, size: 18)
+                        : null,
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _loading ? null : _save,
+              child: _loading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : Text(
+                      isEdit ? 'บันทึก' : 'เพิ่มสมาชิก',
+                      style: GoogleFonts.notoSansThai(
+                          fontSize: 15, fontWeight: FontWeight.w600),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsRow extends StatelessWidget {
+  final String label;
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  const _SettingsRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = TextEditingController(
+        text: value == 0 ? '' : value.toString());
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: GoogleFonts.notoSansThai(fontSize: 14),
+          ),
+        ),
+        SizedBox(
+          width: 100,
+          child: TextField(
+            controller: ctrl,
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+            textAlign: TextAlign.right,
+            decoration: const InputDecoration(
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            onChanged: (v) => onChanged(double.tryParse(v) ?? 0),
+          ),
+        ),
+      ],
+    );
+  }
+}
