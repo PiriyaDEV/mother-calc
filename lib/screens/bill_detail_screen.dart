@@ -23,7 +23,6 @@ class BillDetailScreen extends StatefulWidget {
 class _BillDetailScreenState extends State<BillDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final _supabase = Supabase.instance.client;
 
   @override
   void initState() {
@@ -297,11 +296,15 @@ class _BillDetailScreenState extends State<BillDetailScreen>
       BuildContext context, Bill bill, BillProvider billProvider) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final settings = bill.settings;
-    double serviceCharge = settings.serviceCharge;
-    double vat = settings.vat;
+    bool isService = settings.isService;
+    bool isVat = settings.isVat;
+    double serviceCharge = settings.serviceCharge > 0 ? settings.serviceCharge : 10;
+    double vat = settings.vat > 0 ? settings.vat : 7;
     double tip = settings.tip;
     double discount = settings.discount;
     String currency = settings.currency;
+
+    const currencies = ['THB', 'USD', 'EUR', 'JPY', 'SGD', 'GBP', 'CNY', 'KRW'];
 
     showModalBottomSheet(
       context: context,
@@ -326,9 +329,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.borderDark
-                          : AppColors.borderLight,
+                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -345,41 +346,275 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                   ),
                 ),
                 const SizedBox(height: 20),
-                _SettingsRow(
-                  label: 'Service Charge (%)',
-                  value: serviceCharge,
-                  onChanged: (v) => setModalState(() => serviceCharge = v),
+
+                // ── Service Charge toggle ──
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isService
+                          ? AppColors.primary.withOpacity(0.4)
+                          : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Service Charge',
+                                  style: GoogleFonts.notoSansThai(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? AppColors.textPrimaryDark
+                                        : AppColors.textPrimaryLight,
+                                  ),
+                                ),
+                                Text(
+                                  'ค่าบริการ ${serviceCharge.toStringAsFixed(0)}%',
+                                  style: GoogleFonts.notoSansThai(
+                                    fontSize: 12,
+                                    color: isDark
+                                        ? AppColors.textTertiaryDark
+                                        : AppColors.textTertiaryLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: isService,
+                            onChanged: (v) => setModalState(() => isService = v),
+                            activeColor: AppColors.primary,
+                          ),
+                        ],
+                      ),
+                      if (isService) ...[
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Slider(
+                                value: serviceCharge.clamp(0, 20),
+                                min: 0,
+                                max: 20,
+                                divisions: 20,
+                                activeColor: AppColors.primary,
+                                onChanged: (v) =>
+                                    setModalState(() => serviceCharge = v),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 60,
+                              child: TextField(
+                                controller: TextEditingController(
+                                    text: serviceCharge.toStringAsFixed(0)),
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.notoSansThai(fontSize: 13),
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 6),
+                                  isDense: true,
+                                  suffixText: '%',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onChanged: (v) => setModalState(
+                                    () => serviceCharge = double.tryParse(v) ?? serviceCharge),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 12),
-                _SettingsRow(
-                  label: 'VAT (%)',
-                  value: vat,
-                  onChanged: (v) => setModalState(() => vat = v),
+                const SizedBox(height: 10),
+
+                // ── VAT toggle ──
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isVat
+                          ? AppColors.primary.withOpacity(0.4)
+                          : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'VAT',
+                                  style: GoogleFonts.notoSansThai(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? AppColors.textPrimaryDark
+                                        : AppColors.textPrimaryLight,
+                                  ),
+                                ),
+                                Text(
+                                  'ภาษีมูลค่าเพิ่ม ${vat.toStringAsFixed(0)}%',
+                                  style: GoogleFonts.notoSansThai(
+                                    fontSize: 12,
+                                    color: isDark
+                                        ? AppColors.textTertiaryDark
+                                        : AppColors.textTertiaryLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: isVat,
+                            onChanged: (v) => setModalState(() => isVat = v),
+                            activeColor: AppColors.primary,
+                          ),
+                        ],
+                      ),
+                      if (isVat) ...[
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Slider(
+                                value: vat.clamp(0, 20),
+                                min: 0,
+                                max: 20,
+                                divisions: 20,
+                                activeColor: AppColors.primary,
+                                onChanged: (v) =>
+                                    setModalState(() => vat = v),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 60,
+                              child: TextField(
+                                controller: TextEditingController(
+                                    text: vat.toStringAsFixed(0)),
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.notoSansThai(fontSize: 13),
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 6),
+                                  isDense: true,
+                                  suffixText: '%',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onChanged: (v) => setModalState(
+                                    () => vat = double.tryParse(v) ?? vat),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
+
+                // ── Tip ──
                 _SettingsRow(
                   label: 'ทิป (บาท)',
                   value: tip,
                   onChanged: (v) => setModalState(() => tip = v),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
+
+                // ── Discount ──
                 _SettingsRow(
                   label: 'ส่วนลด (บาท)',
                   value: discount,
                   onChanged: (v) => setModalState(() => discount = v),
                 ),
+                const SizedBox(height: 16),
+
+                // ── Currency grid ──
+                Text(
+                  'สกุลเงิน',
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: currencies.map((c) {
+                    final selected = currency == c;
+                    return GestureDetector(
+                      onTap: () => setModalState(() => currency = c),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? AppColors.primary
+                              : (isDark
+                                  ? const Color(0xFF1F2937)
+                                  : const Color(0xFFF3F4F6)),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: selected
+                                ? AppColors.primary
+                                : Colors.transparent,
+                          ),
+                        ),
+                        child: Text(
+                          c,
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: selected
+                                ? Colors.white
+                                : (isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
                 const SizedBox(height: 20),
+
                 ElevatedButton(
                   onPressed: () async {
                     Navigator.pop(ctx);
                     await billProvider.updateBillMeta(
                       billId: bill.id,
                       settings: BillSettings(
-                        serviceCharge: serviceCharge,
-                        vat: vat,
+                        serviceCharge: isService ? serviceCharge : 0,
+                        vat: isVat ? vat : 0,
                         tip: tip,
                         discount: discount,
                         currency: currency,
+                        isService: isService,
+                        isVat: isVat,
                       ),
                     );
                   },
@@ -552,83 +787,161 @@ class _ItemTile extends StatelessWidget {
     final assignedMembers = members
         .where((m) => item.shares.containsKey(m.id) && item.shares[m.id]! > 0)
         .toList();
+    final paidByMember = item.paidBy != null
+        ? members.where((m) => m.id == item.paidBy).firstOrNull
+        : null;
+    final shareCount = assignedMembers.length;
+    final perPerson = shareCount > 0 && !item.isUnequalSplit
+        ? item.price / shareCount
+        : 0.0;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: bill.isCompleted ? null : () => _showEditItemSheet(context),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+              color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
+                Expanded(
+                  child: Text(
+                    item.name,
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimaryLight,
+                    ),
+                  ),
+                ),
+                // Unequal split badge
+                if (item.isUnequalSplit) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.amber.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'หารไม่เท่า',
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 10,
+                        color: AppColors.amber,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 Text(
-                  item.name,
+                  formatNumber(item.price),
                   style: GoogleFonts.notoSansThai(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
                     color: isDark
                         ? AppColors.textPrimaryDark
                         : AppColors.textPrimaryLight,
                   ),
                 ),
-                if (assignedMembers.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 4,
-                    children: assignedMembers.map((m) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: colorFromHex(m.color).withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          m.name,
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 11,
-                            color: colorFromHex(m.color),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                if (!bill.isCompleted) ...[
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.edit_outlined,
+                    size: 16,
+                    color: isDark
+                        ? AppColors.textTertiaryDark
+                        : AppColors.textTertiaryLight,
                   ),
                 ],
               ],
             ),
-          ),
-          Text(
-            formatNumber(item.price),
-            style: GoogleFonts.notoSansThai(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: isDark
-                  ? AppColors.textPrimaryDark
-                  : AppColors.textPrimaryLight,
-            ),
-          ),
-          if (!bill.isCompleted) ...[
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () => _showEditItemSheet(context),
-              child: Icon(
-                Icons.edit_outlined,
-                size: 18,
-                color: isDark
-                    ? AppColors.textTertiaryDark
-                    : AppColors.textTertiaryLight,
+            if (assignedMembers.isNotEmpty || paidByMember != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  // Member chips
+                  Expanded(
+                    child: Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: assignedMembers.map((m) {
+                        final memberColor = colorFromHex(m.color);
+                        final amount = item.isUnequalSplit
+                            ? item.customShares[m.id] ?? 0
+                            : perPerson;
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: memberColor.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                m.name,
+                                style: GoogleFonts.notoSansThai(
+                                  fontSize: 11,
+                                  color: memberColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              if (amount > 0) ...[
+                                const SizedBox(width: 3),
+                                Text(
+                                  '฿${formatNumber(amount)}',
+                                  style: GoogleFonts.notoSansThai(
+                                    fontSize: 10,
+                                    color: memberColor.withOpacity(0.8),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  // Paid by avatar
+                  if (paidByMember != null) ...[
+                    const SizedBox(width: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'จ่ายโดย',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 10,
+                            color: isDark
+                                ? AppColors.textTertiaryDark
+                                : AppColors.textTertiaryLight,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        MemberAvatar(
+                          name: paidByMember.name,
+                          color: colorFromHex(paidByMember.color),
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -781,7 +1094,6 @@ class _MembersTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final members = billProvider.members;
-
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -1008,7 +1320,6 @@ class _SummaryTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final members = billProvider.members;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -1279,41 +1590,85 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
   late TextEditingController _nameCtrl;
   late TextEditingController _priceCtrl;
   late Map<String, bool> _selectedMembers;
+  late Map<String, TextEditingController> _unequalCtrls;
   String? _paidBy;
+  bool _isUnequalSplit = false;
   bool _loading = false;
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl =
-        TextEditingController(text: widget.editItem?.name ?? '');
+    final edit = widget.editItem;
+    _nameCtrl = TextEditingController(text: edit?.name ?? '');
     _priceCtrl = TextEditingController(
-        text: widget.editItem != null
-            ? widget.editItem!.price.toString()
-            : '');
+        text: edit != null ? edit.price.toStringAsFixed(2) : '');
+    _isUnequalSplit = edit?.isUnequalSplit ?? false;
     _selectedMembers = {
       for (final m in widget.members)
-        m.id: widget.editItem?.shares.containsKey(m.id) ?? false
+        m.id: edit != null
+            ? (edit.isUnequalSplit
+                ? edit.customShares.containsKey(m.id)
+                : edit.memberIds.contains(m.id))
+            : false,
     };
-    _paidBy = widget.editItem?.paidBy;
+    _unequalCtrls = {
+      for (final m in widget.members)
+        m.id: TextEditingController(
+          text: (edit?.isUnequalSplit == true &&
+                  edit!.customShares.containsKey(m.id))
+              ? edit.customShares[m.id]!.toStringAsFixed(2)
+              : '',
+        ),
+    };
+    _paidBy = edit?.paidBy;
+    // Default paidBy to first member if none set
+    if (_paidBy == null && widget.members.isNotEmpty) {
+      _paidBy = widget.members.first.id;
+    }
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _priceCtrl.dispose();
+    for (final c in _unequalCtrls.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
+  List<String> get _selectedIds =>
+      _selectedMembers.entries.where((e) => e.value).map((e) => e.key).toList();
+
+  double get _price => double.tryParse(_priceCtrl.text) ?? 0;
+
+  double get _perPersonAmount {
+    final count = _selectedIds.length;
+    if (count == 0 || _price <= 0) return 0;
+    return _price / count;
+  }
+
+  double get _unequalTotal => _unequalCtrls.entries
+      .where((e) => _selectedMembers[e.key] == true)
+      .fold(0.0, (sum, e) => sum + (double.tryParse(e.value.text) ?? 0));
+
+  bool get _unequalValid =>
+      !_isUnequalSplit ||
+      (_price > 0 && (_unequalTotal - _price).abs() < 0.01);
+
   Future<void> _save() async {
     final name = _nameCtrl.text.trim();
-    final price = double.tryParse(_priceCtrl.text) ?? 0;
+    final price = _price;
     if (name.isEmpty || price <= 0) return;
+    if (!_unequalValid) return;
 
-    final shares = <String, double>{
-      for (final entry in _selectedMembers.entries)
-        if (entry.value) entry.key: 1.0
-    };
+    final selectedIds = _selectedIds;
+    Map<String, double> customShares = {};
+    if (_isUnequalSplit) {
+      for (final id in selectedIds) {
+        customShares[id] = double.tryParse(_unequalCtrls[id]!.text) ?? 0;
+      }
+    }
 
     setState(() => _loading = true);
     try {
@@ -1322,14 +1677,17 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
           widget.editItem!.id,
           name: name,
           price: price,
-          shares: shares,
+          memberIds: _isUnequalSplit ? [] : selectedIds,
+          customShares: _isUnequalSplit ? customShares : {},
           paidBy: _paidBy,
+          clearCustomShares: !_isUnequalSplit,
         );
       } else {
         await widget.billProvider.addItem(
           name: name,
           price: price,
-          shares: shares,
+          memberIds: _isUnequalSplit ? [] : selectedIds,
+          customShares: _isUnequalSplit ? customShares : {},
           paidBy: _paidBy,
         );
       }
@@ -1349,6 +1707,8 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isEdit = widget.editItem != null;
+    final selectedIds = _selectedIds;
+    final price = _price;
 
     return Container(
       padding: EdgeInsets.only(
@@ -1363,19 +1723,19 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Handle bar
             Center(
               child: Container(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.borderDark
-                      : AppColors.borderLight,
+                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
             const SizedBox(height: 20),
+            // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -1398,34 +1758,160 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
               ],
             ),
             const SizedBox(height: 16),
+
+            // Name field
             TextField(
               controller: _nameCtrl,
               autofocus: !isEdit,
               decoration: const InputDecoration(hintText: 'ชื่อรายการ'),
             ),
             const SizedBox(height: 12),
+
+            // Price field
             TextField(
               controller: _priceCtrl,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(hintText: 'ราคา'),
               inputFormatters: [
-                FilteringTextInputFormatter.allow(
-                    RegExp(r'^\d+\.?\d{0,2}'))
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))
               ],
+              onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
-            Text(
-              'แบ่งให้ใคร',
-              style: GoogleFonts.notoSansThai(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight,
-              ),
+
+            // ── Split mode toggle ──
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'วิธีหาร',
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimaryLight,
+                    ),
+                  ),
+                ),
+                // Equal split button
+                GestureDetector(
+                  onTap: () => setState(() => _isUnequalSplit = false),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: !_isUnequalSplit
+                          ? AppColors.primary
+                          : (isDark
+                              ? const Color(0xFF1F2937)
+                              : const Color(0xFFF3F4F6)),
+                      borderRadius: const BorderRadius.horizontal(
+                          left: Radius.circular(8)),
+                    ),
+                    child: Text(
+                      'หารเท่า',
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: !_isUnequalSplit
+                            ? Colors.white
+                            : (isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight),
+                      ),
+                    ),
+                  ),
+                ),
+                // Unequal split button
+                GestureDetector(
+                  onTap: () => setState(() => _isUnequalSplit = true),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _isUnequalSplit
+                          ? AppColors.primary
+                          : (isDark
+                              ? const Color(0xFF1F2937)
+                              : const Color(0xFFF3F4F6)),
+                      borderRadius: const BorderRadius.horizontal(
+                          right: Radius.circular(8)),
+                    ),
+                    child: Text(
+                      'หารไม่เท่า',
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _isUnequalSplit
+                            ? Colors.white
+                            : (isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // ── Member selection ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'แบ่งให้ใคร',
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight,
+                  ),
+                ),
+                if (widget.members.isNotEmpty)
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => setState(() {
+                          for (final m in widget.members) {
+                            _selectedMembers[m.id] = true;
+                          }
+                        }),
+                        child: Text(
+                          'เลือกทั้งหมด',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 12,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: () => setState(() {
+                          for (final m in widget.members) {
+                            _selectedMembers[m.id] = false;
+                          }
+                        }),
+                        child: Text(
+                          'ล้าง',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 12,
+                            color: isDark
+                                ? AppColors.textTertiaryDark
+                                : AppColors.textTertiaryLight,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
             ),
             const SizedBox(height: 8),
+
             if (widget.members.isEmpty)
               Text(
                 'ยังไม่มีสมาชิก',
@@ -1437,50 +1923,104 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                 ),
               )
             else
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+              Column(
                 children: widget.members.map((m) {
                   final selected = _selectedMembers[m.id] ?? false;
                   final color = colorFromHex(m.color);
                   return GestureDetector(
-                    onTap: () => setState(
-                        () => _selectedMembers[m.id] = !selected),
+                    onTap: () =>
+                        setState(() => _selectedMembers[m.id] = !selected),
                     child: Container(
+                      margin: const EdgeInsets.only(bottom: 6),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                          horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
                         color: selected
-                            ? color.withOpacity(0.15)
+                            ? color.withOpacity(0.08)
                             : (isDark
                                 ? const Color(0xFF1F2937)
-                                : const Color(0xFFF3F4F6)),
-                        borderRadius: BorderRadius.circular(20),
+                                : const Color(0xFFF9FAFB)),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: selected
-                              ? color
-                              : Colors.transparent,
+                          color: selected ? color : Colors.transparent,
                         ),
                       ),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          MemberAvatar(
-                              name: m.name, color: color, size: 20),
-                          const SizedBox(width: 6),
-                          Text(
-                            m.name,
-                            style: GoogleFonts.notoSansThai(
-                              fontSize: 13,
-                              color: selected
-                                  ? color
-                                  : (isDark
-                                      ? AppColors.textSecondaryDark
-                                      : AppColors.textSecondaryLight),
-                              fontWeight: selected
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
+                          MemberAvatar(name: m.name, color: color, size: 28),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              m.name,
+                              style: GoogleFonts.notoSansThai(
+                                fontSize: 14,
+                                color: selected
+                                    ? color
+                                    : (isDark
+                                        ? AppColors.textPrimaryDark
+                                        : AppColors.textPrimaryLight),
+                                fontWeight: selected
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
                             ),
+                          ),
+                          // Equal split: show per-person amount
+                          if (!_isUnequalSplit && selected && price > 0)
+                            Text(
+                              '฿${_perPersonAmount.toStringAsFixed(2)}',
+                              style: GoogleFonts.notoSansThai(
+                                fontSize: 13,
+                                color: color,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          // Unequal split: show amount input
+                          if (_isUnequalSplit && selected) ...[
+                            SizedBox(
+                              width: 90,
+                              child: TextField(
+                                controller: _unequalCtrls[m.id],
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                        decimal: true),
+                                textAlign: TextAlign.right,
+                                style: GoogleFonts.notoSansThai(
+                                    fontSize: 13, color: color),
+                                decoration: InputDecoration(
+                                  hintText: '0.00',
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 6),
+                                  isDense: true,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: color),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                        color: color, width: 2),
+                                  ),
+                                ),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp(r'^\d+\.?\d{0,2}'))
+                                ],
+                                onChanged: (_) => setState(() {}),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(width: 8),
+                          Icon(
+                            selected
+                                ? Icons.check_circle_rounded
+                                : Icons.circle_outlined,
+                            color: selected
+                                ? color
+                                : (isDark
+                                    ? AppColors.textTertiaryDark
+                                    : AppColors.textTertiaryLight),
+                            size: 20,
                           ),
                         ],
                       ),
@@ -1488,8 +2028,49 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                   );
                 }).toList(),
               ),
+
+            // Unequal split validation hint
+            if (_isUnequalSplit && price > 0 && selectedIds.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _unequalValid
+                      ? AppColors.emerald.withOpacity(0.08)
+                      : AppColors.red.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'ยอดที่กรอก',
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 12,
+                        color: _unequalValid
+                            ? AppColors.emerald
+                            : AppColors.red,
+                      ),
+                    ),
+                    Text(
+                      '${_unequalTotal.toStringAsFixed(2)} / ${price.toStringAsFixed(2)}',
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _unequalValid
+                            ? AppColors.emerald
+                            : AppColors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             const SizedBox(height: 16),
-            // Paid by
+
+            // ── Paid by ──
             if (widget.members.isNotEmpty) ...[
               Text(
                 'ใครจ่ายก่อน?',
@@ -1557,16 +2138,27 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                             color: selected ? color : Colors.transparent,
                           ),
                         ),
-                        child: Text(
-                          m.name,
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 13,
-                            color: selected
-                                ? color
-                                : (isDark
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondaryLight),
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            MemberAvatar(
+                                name: m.name, color: color, size: 18),
+                            const SizedBox(width: 6),
+                            Text(
+                              m.name,
+                              style: GoogleFonts.notoSansThai(
+                                fontSize: 13,
+                                color: selected
+                                    ? color
+                                    : (isDark
+                                        ? AppColors.textSecondaryDark
+                                        : AppColors.textSecondaryLight),
+                                fontWeight: selected
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -1575,8 +2167,9 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
               ),
               const SizedBox(height: 16),
             ],
+
             ElevatedButton(
-              onPressed: _loading ? null : _save,
+              onPressed: (_loading || !_unequalValid) ? null : _save,
               child: _loading
                   ? const SizedBox(
                       width: 20,

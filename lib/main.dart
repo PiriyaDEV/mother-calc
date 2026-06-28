@@ -9,6 +9,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/bill_provider.dart';
+import 'providers/friends_provider.dart';
+import 'providers/notifications_provider.dart';
+import 'providers/groups_provider.dart';
 import 'theme/app_theme.dart';
 import 'router.dart';
 
@@ -41,6 +44,9 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => BillProvider()),
+        ChangeNotifierProvider(create: (_) => FriendsProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationsProvider()),
+        ChangeNotifierProvider(create: (_) => GroupsProvider()),
       ],
       child: const KidtangApp(),
     ),
@@ -73,7 +79,7 @@ class _KidtangAppState extends State<KidtangApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.light, // Force light mode (dark mode temporarily disabled)
+      themeMode: themeProvider.isDark ? ThemeMode.dark : ThemeMode.light,
       routerConfig: _router,
     );
   }

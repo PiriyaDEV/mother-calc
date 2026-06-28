@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../theme/app_theme.dart';
-import '../utils/bill_utils.dart';
 
 class MemberAvatar extends StatelessWidget {
   final String name;

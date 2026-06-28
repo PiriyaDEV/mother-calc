@@ -172,11 +172,15 @@ class BillProvider extends ChangeNotifier {
     try {
       await _supabase.from('bill_members').delete().eq('id', memberId);
       _members = _members.where((m) => m.id != memberId).toList();
-      // Remove member from all item shares
+      // Remove member from all item memberIds and customShares
       _items = _items.map((item) {
-        final newShares = Map<String, double>.from(item.shares)
+        final newMemberIds = item.memberIds.where((id) => id != memberId).toList();
+        final newCustomShares = Map<String, double>.from(item.customShares)
           ..remove(memberId);
-        return item.copyWith(shares: newShares);
+        return item.copyWith(
+          memberIds: newMemberIds,
+          customShares: newCustomShares,
+        );
       }).toList();
       notifyListeners();
     } catch (e) {
@@ -189,7 +193,8 @@ class BillProvider extends ChangeNotifier {
   Future<void> addItem({
     required String name,
     required double price,
-    required Map<String, double> shares,
+    required List<String> memberIds,
+    Map<String, double> customShares = const {},
     String? paidBy,
   }) async {
     if (_bill == null) return;
@@ -198,7 +203,8 @@ class BillProvider extends ChangeNotifier {
         'bill_id': _bill!.id,
         'name': name,
         'price': price,
-        'shares': shares,
+        'member_ids': memberIds,
+        if (customShares.isNotEmpty) 'custom_shares': customShares,
         'paid_by': paidBy,
       }).select().single();
       final item = BillItem.fromJson(data);
@@ -214,15 +220,20 @@ class BillProvider extends ChangeNotifier {
     String itemId, {
     String? name,
     double? price,
-    Map<String, double>? shares,
+    List<String>? memberIds,
+    Map<String, double>? customShares,
     String? paidBy,
+    bool clearPaidBy = false,
+    bool clearCustomShares = false,
   }) async {
     try {
       final updates = <String, dynamic>{
         if (name != null) 'name': name,
         if (price != null) 'price': price,
-        if (shares != null) 'shares': shares,
-        'paid_by': paidBy,
+        if (memberIds != null) 'member_ids': memberIds,
+        if (customShares != null) 'custom_shares': customShares.isEmpty ? null : customShares,
+        if (clearCustomShares) 'custom_shares': null,
+        'paid_by': clearPaidBy ? null : paidBy,
       };
       await _supabase.from('bill_items').update(updates).eq('id', itemId);
       _items = _items.map((item) {
@@ -230,8 +241,11 @@ class BillProvider extends ChangeNotifier {
           return item.copyWith(
             name: name ?? item.name,
             price: price ?? item.price,
-            shares: shares ?? item.shares,
+            memberIds: memberIds ?? item.memberIds,
+            customShares: customShares,
             paidBy: paidBy,
+            clearPaidBy: clearPaidBy,
+            clearCustomShares: clearCustomShares,
           );
         }
         return item;

@@ -7,6 +7,8 @@ class BillSettings {
   final double tip;
   final double discount;
   final String currency;
+  final bool isVat;
+  final bool isService;
 
   const BillSettings({
     this.serviceCharge = 0,
@@ -14,6 +16,8 @@ class BillSettings {
     this.tip = 0,
     this.discount = 0,
     this.currency = 'THB',
+    this.isVat = false,
+    this.isService = false,
   });
 
   factory BillSettings.fromJson(Map<String, dynamic> json) {
@@ -23,6 +27,8 @@ class BillSettings {
       tip: (json['tip'] as num?)?.toDouble() ?? 0,
       discount: (json['discount'] as num?)?.toDouble() ?? 0,
       currency: json['currency'] as String? ?? 'THB',
+      isVat: json['isVat'] as bool? ?? false,
+      isService: json['isService'] as bool? ?? false,
     );
   }
 
@@ -32,6 +38,8 @@ class BillSettings {
         'tip': tip,
         'discount': discount,
         'currency': currency,
+        'isVat': isVat,
+        'isService': isService,
       };
 
   BillSettings copyWith({
@@ -40,6 +48,8 @@ class BillSettings {
     double? tip,
     double? discount,
     String? currency,
+    bool? isVat,
+    bool? isService,
   }) {
     return BillSettings(
       serviceCharge: serviceCharge ?? this.serviceCharge,
@@ -47,6 +57,8 @@ class BillSettings {
       tip: tip ?? this.tip,
       discount: discount ?? this.discount,
       currency: currency ?? this.currency,
+      isVat: isVat ?? this.isVat,
+      isService: isService ?? this.isService,
     );
   }
 }
@@ -174,12 +186,19 @@ class BillMember {
 }
 
 // ── Bill Item ─────────────────────────────────────────────────
+// Schema: id, bill_id, name, price, quantity, member_ids (jsonb array),
+//         custom_shares (jsonb map memberId→amount), paid_by (member id)
 class BillItem {
   final String id;
   final String billId;
   final String name;
   final double price;
-  final Map<String, double> shares; // memberId -> weight
+  final double quantity;
+  final List<String> memberIds; // bill_member ids who share this item (equal split)
+  /// Optional: custom per-member amounts for unequal split.
+  /// If non-empty, overrides equal split.
+  final Map<String, double> customShares;
+  /// The member id who paid upfront for this item.
   final String? paidBy;
   final DateTime? createdAt;
 
@@ -188,32 +207,62 @@ class BillItem {
     required this.billId,
     required this.name,
     required this.price,
-    required this.shares,
+    this.quantity = 1,
+    this.memberIds = const [],
+    this.customShares = const {},
     this.paidBy,
     this.createdAt,
   });
 
+  /// True when this item uses unequal split amounts.
+  bool get isUnequalSplit => customShares.isNotEmpty;
+
+  /// Shares map: memberId → fractional share (0..1) for equal split,
+  /// or memberId → absolute amount for unequal split.
+  Map<String, double> get shares {
+    if (customShares.isNotEmpty) return customShares;
+    if (memberIds.isEmpty) return {};
+    final share = 1.0 / memberIds.length;
+    return {for (final id in memberIds) id: share};
+  }
+
   factory BillItem.fromJson(Map<String, dynamic> json) {
-    Map<String, double> shares = {};
-    if (json['shares'] != null) {
-      final raw = json['shares'];
-      if (raw is Map) {
-        raw.forEach((k, v) {
-          shares[k.toString()] = (v as num).toDouble();
-        });
-      } else if (raw is String) {
-        final decoded = jsonDecode(raw) as Map;
-        decoded.forEach((k, v) {
-          shares[k.toString()] = (v as num).toDouble();
-        });
-      }
+    List<String> memberIds = [];
+    final raw = json['member_ids'];
+    if (raw is List) {
+      memberIds = raw.map((e) => e.toString()).toList();
+    } else if (raw is String) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          memberIds = decoded.map((e) => e.toString()).toList();
+        }
+      } catch (_) {}
     }
+
+    Map<String, double> customShares = {};
+    final rawShares = json['custom_shares'];
+    if (rawShares is Map) {
+      customShares = rawShares.map(
+          (k, v) => MapEntry(k.toString(), (v as num).toDouble()));
+    } else if (rawShares is String) {
+      try {
+        final decoded = jsonDecode(rawShares);
+        if (decoded is Map) {
+          customShares = decoded.map(
+              (k, v) => MapEntry(k.toString(), (v as num).toDouble()));
+        }
+      } catch (_) {}
+    }
+
     return BillItem(
       id: json['id'] as String,
       billId: json['bill_id'] as String,
       name: json['name'] as String,
       price: (json['price'] as num).toDouble(),
-      shares: shares,
+      quantity: (json['quantity'] as num?)?.toDouble() ?? 1,
+      memberIds: memberIds,
+      customShares: customShares,
       paidBy: json['paid_by'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
@@ -226,7 +275,9 @@ class BillItem {
         'bill_id': billId,
         'name': name,
         'price': price,
-        'shares': shares,
+        'quantity': quantity,
+        'member_ids': memberIds,
+        'custom_shares': customShares.isEmpty ? null : customShares,
         'paid_by': paidBy,
         'created_at': createdAt?.toIso8601String(),
       };
@@ -234,16 +285,22 @@ class BillItem {
   BillItem copyWith({
     String? name,
     double? price,
-    Map<String, double>? shares,
+    double? quantity,
+    List<String>? memberIds,
+    Map<String, double>? customShares,
     String? paidBy,
+    bool clearPaidBy = false,
+    bool clearCustomShares = false,
   }) {
     return BillItem(
       id: id,
       billId: billId,
       name: name ?? this.name,
       price: price ?? this.price,
-      shares: shares ?? this.shares,
-      paidBy: paidBy ?? this.paidBy,
+      quantity: quantity ?? this.quantity,
+      memberIds: memberIds ?? this.memberIds,
+      customShares: clearCustomShares ? {} : (customShares ?? this.customShares),
+      paidBy: clearPaidBy ? null : (paidBy ?? this.paidBy),
       createdAt: createdAt,
     );
   }
@@ -257,6 +314,7 @@ class Bill {
   final List<String> tags;
   final String status; // 'draft' | 'completed'
   final String ownerId;
+  final String? groupId;
   final BillSettings settings;
   final List<String> paidMemberIds;
   final List<BillMember> members;
@@ -271,6 +329,7 @@ class Bill {
     this.tags = const [],
     this.status = 'draft',
     required this.ownerId,
+    this.groupId,
     this.settings = const BillSettings(),
     this.paidMemberIds = const [],
     this.members = const [],
@@ -329,6 +388,7 @@ class Bill {
       tags: tags,
       status: json['status'] as String? ?? 'draft',
       ownerId: json['owner_id'] as String,
+      groupId: json['group_id'] as String?,
       settings: settings,
       paidMemberIds: paidMemberIds,
       members: members,
@@ -349,6 +409,7 @@ class Bill {
         'tags': tags,
         'status': status,
         'owner_id': ownerId,
+        'group_id': groupId,
         'settings': settings.toJson(),
         'paid_member_ids': paidMemberIds,
         'created_at': createdAt?.toIso8601String(),
@@ -372,6 +433,7 @@ class Bill {
       tags: tags ?? this.tags,
       status: status ?? this.status,
       ownerId: ownerId,
+      groupId: groupId,
       settings: settings ?? this.settings,
       paidMemberIds: paidMemberIds ?? this.paidMemberIds,
       members: members ?? this.members,
@@ -387,6 +449,8 @@ class Group {
   final String id;
   final String name;
   final String? emoji;
+  final String? description;
+  final List<String> tags;
   final String ownerId;
   final DateTime? createdAt;
   final List<GroupMember> members;
@@ -395,6 +459,8 @@ class Group {
     required this.id,
     required this.name,
     this.emoji,
+    this.description,
+    this.tags = const [],
     required this.ownerId,
     this.createdAt,
     this.members = const [],
@@ -407,10 +473,16 @@ class Group {
           .map((e) => GroupMember.fromJson(e as Map<String, dynamic>))
           .toList();
     }
+    List<String> tags = [];
+    if (json['tags'] is List) {
+      tags = (json['tags'] as List).map((e) => e.toString()).toList();
+    }
     return Group(
       id: json['id'] as String,
       name: json['name'] as String,
       emoji: json['emoji'] as String?,
+      description: json['description'] as String?,
+      tags: tags,
       ownerId: json['owner_id'] as String,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
@@ -420,11 +492,14 @@ class Group {
   }
 }
 
+// GroupMember — role: 'owner'|'member', status: 'pending'|'accepted'|'declined'
 class GroupMember {
   final String id;
   final String groupId;
   final String userId;
-  final String role;
+  final String role;   // 'owner' | 'member'
+  final String status; // 'pending' | 'accepted' | 'declined'
+  final String? invitedBy;
   final Profile? profile;
 
   const GroupMember({
@@ -432,64 +507,92 @@ class GroupMember {
     required this.groupId,
     required this.userId,
     required this.role,
+    this.status = 'pending',
+    this.invitedBy,
     this.profile,
   });
 
+  bool get isAccepted => status == 'accepted';
+  bool get isPending => status == 'pending';
+
   factory GroupMember.fromJson(Map<String, dynamic> json) {
+    // Supabase returns the joined profile under the FK hint key
+    Profile? profile;
+    final profileRaw = json['profiles!group_members_user_id_fkey'] ??
+        json['profiles'] ??
+        json['profile'];
+    if (profileRaw != null) {
+      profile = Profile.fromJson(profileRaw as Map<String, dynamic>);
+    }
     return GroupMember(
       id: json['id'] as String,
       groupId: json['group_id'] as String,
       userId: json['user_id'] as String,
       role: json['role'] as String? ?? 'member',
-      profile: json['profiles'] != null
-          ? Profile.fromJson(json['profiles'] as Map<String, dynamic>)
-          : null,
+      status: json['status'] as String? ?? 'pending',
+      invitedBy: json['invited_by'] as String?,
+      profile: profile,
     );
   }
 }
 
 // ── Friend ────────────────────────────────────────────────────
+// Schema: id, requester_id, addressee_id, status
 class Friend {
   final String id;
-  final String userId;
-  final String friendId;
-  final String status; // 'pending' | 'accepted'
-  final Profile? profile;
-  final Profile? friendProfile;
+  final String requesterId;
+  final String addresseeId;
+  final String status; // 'pending' | 'accepted' | 'declined'
+  final Profile? requesterProfile;
+  final Profile? addresseeProfile;
 
   const Friend({
     required this.id,
-    required this.userId,
-    required this.friendId,
+    required this.requesterId,
+    required this.addresseeId,
     required this.status,
-    this.profile,
-    this.friendProfile,
+    this.requesterProfile,
+    this.addresseeProfile,
   });
 
+  /// Returns the "other" user's profile given the current user's id
+  Profile? otherProfile(String myId) {
+    if (requesterId == myId) return addresseeProfile;
+    return requesterProfile;
+  }
+
   factory Friend.fromJson(Map<String, dynamic> json) {
+    Profile? requesterProfile;
+    Profile? addresseeProfile;
+
+    // Supabase returns joined profiles under FK hint keys
+    final rp = json['requester_profile'] ??
+        json['profiles!friends_requester_id_fkey'];
+    final ap = json['addressee_profile'] ??
+        json['profiles!friends_addressee_id_fkey'];
+
+    if (rp != null) requesterProfile = Profile.fromJson(rp as Map<String, dynamic>);
+    if (ap != null) addresseeProfile = Profile.fromJson(ap as Map<String, dynamic>);
+
     return Friend(
       id: json['id'] as String,
-      userId: json['user_id'] as String,
-      friendId: json['friend_id'] as String,
+      requesterId: json['requester_id'] as String,
+      addresseeId: json['addressee_id'] as String,
       status: json['status'] as String? ?? 'pending',
-      profile: json['profiles'] != null
-          ? Profile.fromJson(json['profiles'] as Map<String, dynamic>)
-          : null,
-      friendProfile: json['friend_profile'] != null
-          ? Profile.fromJson(json['friend_profile'] as Map<String, dynamic>)
-          : null,
+      requesterProfile: requesterProfile,
+      addresseeProfile: addresseeProfile,
     );
   }
 }
 
 // ── Notification ──────────────────────────────────────────────
+// Schema: id, user_id, type, data (jsonb), read, created_at
+// NOTE: no title/body columns in schema — derive from type+data
 class AppNotification {
   final String id;
   final String userId;
   final String type;
-  final String? title;
-  final String? body;
-  final Map<String, dynamic>? data;
+  final Map<String, dynamic> data;
   final bool read;
   final DateTime? createdAt;
 
@@ -497,21 +600,61 @@ class AppNotification {
     required this.id,
     required this.userId,
     required this.type,
-    this.title,
-    this.body,
-    this.data,
+    this.data = const {},
     this.read = false,
     this.createdAt,
   });
 
+  /// Derived title based on type
+  String get title {
+    switch (type) {
+      case 'group_invite':
+        return 'คำเชิญเข้ากลุ่ม';
+      case 'friend_request':
+        return 'คำขอเป็นเพื่อน';
+      case 'friend_accepted':
+        return 'ยอมรับคำขอเป็นเพื่อน';
+      default:
+        return 'การแจ้งเตือน';
+    }
+  }
+
+  /// Derived body based on data payload
+  String get body {
+    final groupName = data['group_name'] as String?;
+    final inviterName = data['inviter_name'] as String?;
+    final username = data['username'] as String?;
+    switch (type) {
+      case 'group_invite':
+        if (groupName != null && inviterName != null) {
+          return '$inviterName ชวนคุณเข้าร่วมกลุ่ม "$groupName"';
+        }
+        return 'คุณได้รับคำเชิญเข้าร่วมกลุ่ม';
+      case 'friend_request':
+        return '${username ?? 'ผู้ใช้'} ส่งคำขอเป็นเพื่อน';
+      case 'friend_accepted':
+        return '${username ?? 'ผู้ใช้'} ยอมรับคำขอเป็นเพื่อนของคุณ';
+      default:
+        return '';
+    }
+  }
+
   factory AppNotification.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic> data = {};
+    final rawData = json['data'];
+    if (rawData is Map<String, dynamic>) {
+      data = rawData;
+    } else if (rawData is String) {
+      try {
+        data = jsonDecode(rawData) as Map<String, dynamic>;
+      } catch (_) {}
+    }
+
     return AppNotification(
       id: json['id'] as String,
       userId: json['user_id'] as String,
       type: json['type'] as String,
-      title: json['title'] as String?,
-      body: json['body'] as String?,
-      data: json['data'] as Map<String, dynamic>?,
+      data: data,
       read: json['read'] as bool? ?? false,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)

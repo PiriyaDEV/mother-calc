@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
 import '../providers/auth_provider.dart';
+import '../providers/notifications_provider.dart';
+import '../providers/friends_provider.dart';
+import '../providers/groups_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class MainShell extends StatefulWidget {
@@ -18,6 +20,23 @@ class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
 
   static const _routes = ['/home', '/bills', '/groups', '/friends', '/me'];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
+  }
+
+  void _loadData() {
+    final auth = context.read<AuthProvider>();
+    if (auth.profile != null) {
+      context.read<NotificationsProvider>().loadNotifications();
+      context.read<FriendsProvider>().loadFriends();
+      context.read<GroupsProvider>().loadGroups();
+    }
+  }
 
   void _onTap(int index) {
     if (index != _currentIndex) {
@@ -39,6 +58,10 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final notifCount =
+        context.watch<NotificationsProvider>().unreadCount;
+    final friendCount =
+        context.watch<FriendsProvider>().pendingCount;
 
     return Scaffold(
       body: widget.child,
@@ -84,6 +107,7 @@ class _MainShellState extends State<MainShell> {
                   activeIcon: Icons.people_rounded,
                   label: 'เพื่อน',
                   isActive: _currentIndex == 3,
+                  badge: friendCount,
                   onTap: () => _onTap(3),
                 ),
                 _NavItem(
@@ -91,6 +115,7 @@ class _MainShellState extends State<MainShell> {
                   activeIcon: Icons.person_rounded,
                   label: 'ฉัน',
                   isActive: _currentIndex == 4,
+                  badge: notifCount,
                   onTap: () => _onTap(4),
                 ),
               ],
@@ -108,6 +133,7 @@ class _NavItem extends StatelessWidget {
   final String label;
   final bool isActive;
   final VoidCallback onTap;
+  final int badge;
 
   const _NavItem({
     required this.icon,
@@ -115,6 +141,7 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.isActive,
     required this.onTap,
+    this.badge = 0,
   });
 
   @override
@@ -131,10 +158,40 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isActive ? activeIcon : icon,
-              color: color,
-              size: 24,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  isActive ? activeIcon : icon,
+                  color: color,
+                  size: 24,
+                ),
+                if (badge > 0)
+                  Positioned(
+                    top: -4,
+                    right: -6,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: AppColors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        badge > 99 ? '99+' : '$badge',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 2),
             Text(

@@ -27,14 +27,33 @@ BillMember makeMember(String id, String name) => BillMember(
       isExternal: true,
     );
 
-BillItem makeItem(String id, double price, Map<String, double> shares) =>
-    BillItem(
+/// Build a BillItem from a weight map.
+/// If all weights are equal (all 1.0), use memberIds for equal split.
+/// Otherwise use customShares with absolute amounts derived from weights.
+BillItem makeItem(String id, double price, Map<String, double> shares) {
+  final allEqual = shares.values.every((w) => w == 1.0);
+  if (allEqual) {
+    return BillItem(
       id: id,
       billId: 'bill1',
       name: 'Item $id',
       price: price,
-      shares: shares,
+      memberIds: shares.keys.toList(),
     );
+  }
+  // Weighted: convert weights to absolute amounts
+  final totalWeight = shares.values.fold<double>(0, (s, w) => s + w);
+  final customShares = shares.map(
+    (k, w) => MapEntry(k, (w / totalWeight) * price),
+  );
+  return BillItem(
+    id: id,
+    billId: 'bill1',
+    name: 'Item $id',
+    price: price,
+    customShares: customShares,
+  );
+}
 
 void main() {
   // ── formatNumber ──────────────────────────────────────────────
