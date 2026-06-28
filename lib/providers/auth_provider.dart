@@ -7,11 +7,12 @@ class AuthProvider extends ChangeNotifier {
 
   User? _user;
   Profile? _profile;
-  bool _loading = true;
+  bool _initialized = false;
 
   User? get user => _user;
   Profile? get profile => _profile;
-  bool get loading => _loading;
+  /// True while waiting for the first auth state event from Supabase.
+  bool get loading => !_initialized;
   bool get isLoggedIn => _user != null;
 
   AuthProvider() {
@@ -19,21 +20,39 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void _init() {
+    // Read the cached session synchronously first so we have an immediate value.
     _user = _supabase.auth.currentUser;
-    _loading = false;
 
     _supabase.auth.onAuthStateChange.listen((data) {
       _user = data.session?.user;
+      _initialized = true;          // Auth state is now known
       if (_user != null) {
         _loadProfile();
       } else {
         _profile = null;
+        notifyListeners();
       }
-      notifyListeners();
     });
 
+    // If there is already a session (app reopen), mark as initialized right away
+    // and kick off profile load without waiting for the stream event.
     if (_user != null) {
+      _initialized = true;
       _loadProfile();
+    } else {
+      // No cached session – wait a short tick to let Supabase restore session
+      // from storage, then mark initialized if still no user.
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (!_initialized) {
+          _user = _supabase.auth.currentUser;
+          _initialized = true;
+          if (_user != null) {
+            _loadProfile();
+          } else {
+            notifyListeners();
+          }
+        }
+      });
     }
   }
 

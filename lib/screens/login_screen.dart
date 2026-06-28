@@ -176,19 +176,10 @@ class _SocialButton extends StatelessWidget {
 class _LineIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 22, height: 22,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Center(
-        child: Text("L",
-            style: GoogleFonts.notoSansThai(
-              fontSize: 14, fontWeight: FontWeight.bold,
-              color: const Color(0xFF06C755),
-            )),
-      ),
+    return Image.asset(
+      'assets/images/line-logo.png',
+      width: 22,
+      height: 22,
     );
   }
 }
@@ -196,23 +187,10 @@ class _LineIcon extends StatelessWidget {
 class _GoogleIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Official Google colors G logo using Text
-    return SizedBox(
-      width: 22, height: 22,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Text("G",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                foreground: Paint()
-                  ..shader = const LinearGradient(
-                    colors: [Color(0xFF4285F4), Color(0xFF34A853)],
-                  ).createShader(Rect.fromLTWH(0, 0, 22, 22)),
-              )),
-        ],
-      ),
+    return Image.asset(
+      'assets/images/google-logo.png',
+      width: 22,
+      height: 22,
     );
   }
 }
