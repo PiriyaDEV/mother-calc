@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
@@ -20,7 +21,13 @@ void main() async {
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    authOptions: const FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.pkce,
+    ),
   );
+
+  // Initialize LINE SDK
+  await LineSDK.instance.setup(dotenv.env['LINE_CHANNEL_ID']!);
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

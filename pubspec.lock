@@ -122,7 +122,7 @@ packages:
     source: hosted
     version: "0.3.5"
   crypto:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: crypto
       sha256: c8ea0233063ba03258fbcf2ca4d6dadfefe14f02fab57702265467a19f27fadf
@@ -238,6 +238,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.2.1"
+  flutter_line_sdk:
+    dependency: "direct main"
+    description:
+      name: flutter_line_sdk
+      sha256: "63bc82a3a53f507ead11700085db00422e426f22f43882c13c8afb78a95b338d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.6.2"
   flutter_lints:
     dependency: "direct dev"
     description:

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 
@@ -78,20 +80,31 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _ensureProfile({String? username}) async {
     if (_user == null) return;
     try {
-      final email = _user!.email ?? '';
-      final defaultUsername = email
-          .split('@')
-          .first
-          .replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+      // LINE does not provide email, so email can be null — use a safe fallback.
+      final email = _user!.email;
+      final usernameFromEmail = email != null && email.isNotEmpty
+          ? email.split('@').first.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_')
+          : null;
+
+      // Derive a display name from any available metadata, then fall back to
+      // the username hint or a generic user-id-based name.
       final displayName = _user!.userMetadata?['full_name'] as String? ??
           _user!.userMetadata?['name'] as String? ??
           username ??
-          defaultUsername;
-      final avatarUrl = _user!.userMetadata?['avatar_url'] as String?;
+          usernameFromEmail ??
+          'user_${_user!.id.substring(0, 8)}';
+
+      // Username priority: explicit arg → derived from email → id-based
+      final resolvedUsername = username ??
+          usernameFromEmail ??
+          'user_${_user!.id.substring(0, 8)}';
+
+      final avatarUrl = _user!.userMetadata?['avatar_url'] as String?
+          ?? _user!.userMetadata?['picture'] as String?;
 
       await _supabase.from('profiles').upsert({
         'id': _user!.id,
-        'username': username ?? defaultUsername,
+        'username': resolvedUsername,
         'display_name': displayName,
         'avatar_url': avatarUrl,
       });
@@ -169,23 +182,92 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Signs in with LINE OAuth (via Custom OIDC Provider).
+  // ── LINE Login (official LINE SDK for Flutter) ────────────────
+  // Uses flutter_line_sdk which wraps LINE's native iOS/Android SDKs.
+  // No deep-link callback, no manual token exchange — the SDK handles it all.
+
+  /// Signs in with LINE using the official LINE SDK for Flutter.
+  /// Gets the LINE profile, then creates/updates the Supabase profile row.
   Future<String?> signInWithLine() async {
     try {
-      await _supabase.auth.signInWithOAuth(
-        OAuthProvider('custom:line'), // custom: prefix is required for custom OIDC providers
-        redirectTo: 'io.supabase.kidtang://login-callback',
-        authScreenLaunchMode: LaunchMode.externalApplication,
+      // Login via LINE SDK — opens LINE app or web login
+      final result = await LineSDK.instance.login(
+        scopes: ['profile', 'openid'],
       );
+
+      final lineUserId   = result.userProfile?.userId ?? '';
+      final displayName  = result.userProfile?.displayName ?? 'LINE User';
+      final avatarUrl    = result.userProfile?.pictureUrl?.toString();
+
+      // We use a deterministic email + password derived from the LINE userId
+      // to create/sign in to a Supabase account. This avoids needing a custom
+      // OIDC provider on Supabase entirely.
+      final fakeEmail    = 'line_$lineUserId@kidtang.app';
+      final fakePassword = 'LINE_${lineUserId}_KIDTANG';
+
+      // Try signing in first; if account doesn't exist, sign up.
+      AuthResponse? authResponse;
+      try {
+        authResponse = await _supabase.auth.signInWithPassword(
+          email: fakeEmail,
+          password: fakePassword,
+        );
+      } on AuthException catch (e) {
+        // Account not found → sign up
+        if (e.statusCode == '400' || e.message.toLowerCase().contains('invalid')) {
+          authResponse = await _supabase.auth.signUp(
+            email: fakeEmail,
+            password: fakePassword,
+            data: {
+              'display_name': displayName,
+              'avatar_url': avatarUrl,
+              'line_user_id': lineUserId,
+              'provider': 'line',
+            },
+          );
+        } else {
+          rethrow;
+        }
+      }
+
+      // Upsert the public profile row with LINE's display name & avatar
+      if (authResponse.user != null) {
+        final uid = authResponse.user!.id;
+
+        // Use LINE's display name as the username base (sanitized),
+        // e.g. "สมชาย ใจดี" → "สมชาย_ใจดี". Fall back to line_<uid> if empty.
+        final sanitized = displayName
+            .trim()
+            .replaceAll(RegExp(r'\s+'), '_')
+            .replaceAll(RegExp(r'[^\w\u0E00-\u0E7F]'), '');
+        final usernameBase = sanitized.isNotEmpty
+            ? sanitized
+            : 'line_${lineUserId.substring(0, 8)}';
+
+        await _supabase.from('profiles').upsert({
+          'id': uid,
+          'username': usernameBase,
+          'display_name': displayName,
+          'avatar_url': avatarUrl,
+        }, onConflict: 'id');
+      }
+
       return null;
+    } on PlatformException catch (e) {
+      debugPrint('LINE SDK error: ${e.code} — ${e.message}');
+      if (e.code == '3003') return null; // user cancelled — not an error
+      return e.message ?? 'LINE login failed';
     } on AuthException catch (e) {
       return e.message;
     } catch (e) {
+      debugPrint('signInWithLine error: $e');
       return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
     }
   }
 
   Future<void> signOut() async {
+    // Sign out from LINE SDK if logged in via LINE
+    try { await LineSDK.instance.logout(); } catch (_) {}
     await _supabase.auth.signOut();
     _profile = null;
     notifyListeners();

@@ -53,8 +53,15 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>io.supabase.kidtang</string>
+				<!-- LINE SDK: scheme to return from LINE app back to this app -->
+				<string>line3rdp.$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 			</array>
 		</dict>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<!-- LINE SDK: allows launching the LINE app for login -->
+		<string>lineauth2</string>
 	</array>
 </dict>
 </plist>
