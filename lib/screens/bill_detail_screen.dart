@@ -9,7 +9,7 @@ import '../models/models.dart';
 import '../providers/bill_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
-import '../widgets/bill_card.dart';
+import '../widgets/confirm_dialog.dart';
 import '../widgets/member_avatar.dart';
 
 class BillDetailScreen extends StatefulWidget {
@@ -23,11 +23,17 @@ class BillDetailScreen extends StatefulWidget {
 class _BillDetailScreenState extends State<BillDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  int _currentTab = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() => _currentTab = _tabController.index);
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<BillProvider>().loadBill(widget.billId);
     });
@@ -77,220 +83,249 @@ class _BillDetailScreenState extends State<BillDetailScreen>
       items: billProvider.items,
     ));
 
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final isOwner = bill.ownerId == currentUserId;
+    final isCompleted = bill.isCompleted;
+    final members = billProvider.members;
+    final items = billProvider.items;
+
     return Scaffold(
       backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
             pinned: true,
-            backgroundColor:
-                isDark ? AppColors.bgDark.withOpacity(0.95) : Colors.white.withOpacity(0.95),
+            expandedHeight: 0,
+            backgroundColor: isDark
+                ? AppColors.bgDark.withValues(alpha: 0.95)
+                : Colors.white.withValues(alpha: 0.95),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_rounded),
               onPressed: () => context.pop(),
             ),
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            title: Row(
               children: [
-                Text(
-                  '${bill.emoji ?? '🧾'} ${bill.title}',
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight,
+                // Emoji + title
+                Expanded(
+                  child: Row(
+                    children: [
+                      Text(
+                        bill.emoji ?? '🧾',
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          bill.title,
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimaryLight,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isCompleted) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.emerald.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.lock_rounded,
+                                  size: 11, color: AppColors.emerald),
+                              const SizedBox(width: 3),
+                              Text(
+                                'ปิดแล้ว',
+                                style: GoogleFonts.notoSansThai(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.emerald,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ],
             ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.more_vert_rounded),
-                onPressed: () => _showBillMenu(context, bill, billProvider),
-              ),
-            ],
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(100),
-              child: Column(
-                children: [
-                  // Total amount
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              // ปิดบิล / เปิดใหม่ button
+              if (!isCompleted)
+                GestureDetector(
+                  onTap: () async {
+                    final ok = await showConfirmDialog(
+                      context,
+                      title: 'ปิดบิลนี้?',
+                      description:
+                          'หลังจากปิดแล้ว จะไม่สามารถแก้ไขสมาชิกหรือรายการได้ แต่ยังสามารถทำเครื่องหมายว่าจ่ายแล้วได้',
+                      confirmLabel: 'ปิดบิล',
+                    );
+                    if (ok == true) {
+                      await billProvider.completeBill(bill.id);
+                      _tabController.animateTo(2); // switch to สรุป
+                    }
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.emerald,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'ยอดรวม',
-                                style: GoogleFonts.notoSansThai(
-                                  fontSize: 12,
-                                  color: isDark
-                                      ? AppColors.textSecondaryDark
-                                      : AppColors.textSecondaryLight,
-                                ),
-                              ),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    formatNumber(calc.total),
-                                    style: GoogleFonts.notoSansThai(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                      color: isDark
-                                          ? AppColors.textPrimaryDark
-                                          : AppColors.textPrimaryLight,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 4),
-                                    child: Text(
-                                      bill.settings.currency,
-                                      style: GoogleFonts.notoSansThai(
-                                        fontSize: 14,
-                                        color: isDark
-                                            ? AppColors.textSecondaryDark
-                                            : AppColors.textSecondaryLight,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                        const Icon(Icons.lock_rounded,
+                            size: 14, color: Colors.white),
+                        const SizedBox(width: 4),
+                        Text(
+                          'ปิดบิล',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
                           ),
                         ),
-                        BillStatusPill(isCompleted: bill.isCompleted),
                       ],
                     ),
                   ),
-                  // Tabs
-                  TabBar(
-                    controller: _tabController,
-                    labelColor: AppColors.primary,
-                    unselectedLabelColor: isDark
-                        ? AppColors.textTertiaryDark
-                        : AppColors.textTertiaryLight,
-                    indicatorColor: AppColors.primary,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    dividerColor: isDark ? AppColors.borderDark : AppColors.borderLight,
-                    labelStyle: GoogleFonts.notoSansThai(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                )
+              else
+                GestureDetector(
+                  onTap: () async {
+                    final ok = await showConfirmDialog(
+                      context,
+                      title: 'เปิดบิลใหม่?',
+                      description: 'บิลจะกลับมาแก้ไขได้อีกครั้ง',
+                      confirmLabel: 'เปิดใหม่',
+                    );
+                    if (ok == true) {
+                      await billProvider.reopenBill(bill.id);
+                    }
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF374151)
+                          : const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    unselectedLabelStyle: GoogleFonts.notoSansThai(fontSize: 13),
-                    tabs: const [
-                      Tab(text: 'รายการ'),
-                      Tab(text: 'สมาชิก'),
-                      Tab(text: 'สรุป'),
-                    ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.lock_open_rounded,
+                            size: 14,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight),
+                        const SizedBox(width: 4),
+                        Text(
+                          'เปิดใหม่',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
+              // ⚙️ gear — only owner + draft
+              if (isOwner && !isCompleted)
+                IconButton(
+                  icon: const Icon(Icons.settings_outlined),
+                  onPressed: () => _showSettingsSheet(context, bill, billProvider),
+                ),
+              const SizedBox(width: 4),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(56),
+              child: _PillTabBar(
+                controller: _tabController,
+                currentIndex: _currentTab,
+                isDark: isDark,
+                membersCount: members.length,
+                itemsCount: items.length,
               ),
             ),
           ),
         ],
-        body: TabBarView(
-          controller: _tabController,
+        body: Column(
           children: [
-            _ItemsTab(bill: bill, billProvider: billProvider, calc: calc),
-            _MembersTab(bill: bill, billProvider: billProvider, calc: calc),
-            _SummaryTab(bill: bill, billProvider: billProvider, calc: calc),
+            // Completed banner
+            if (isCompleted)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  border: Border(
+                    bottom: BorderSide(
+                        color: const Color(0xFFA7F3D0), width: 1),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.lock_rounded,
+                        size: 14, color: Color(0xFF065F46)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'บิลนี้ปิดแล้ว — ดูได้อย่างเดียว ไม่สามารถแก้ไขได้',
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF065F46),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _MembersTab(
+                      bill: bill,
+                      billProvider: billProvider,
+                      calc: calc,
+                      readOnly: isCompleted),
+                  _ItemsTab(
+                      bill: bill,
+                      billProvider: billProvider,
+                      calc: calc,
+                      readOnly: isCompleted),
+                  _SummaryTab(
+                      bill: bill, billProvider: billProvider, calc: calc),
+                  _AnalyticsTab(
+                      bill: bill, billProvider: billProvider, calc: calc),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  void _showBillMenu(
-      BuildContext context, Bill bill, BillProvider billProvider) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 8),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (!bill.isCompleted)
-                ListTile(
-                  leading: const Icon(Icons.check_circle_outline_rounded,
-                      color: AppColors.emerald),
-                  title: Text('ปิดบิล',
-                      style: GoogleFonts.notoSansThai(
-                          color: AppColors.emerald,
-                          fontWeight: FontWeight.w500)),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    await billProvider.completeBill(bill.id);
-                  },
-                )
-              else
-                ListTile(
-                  leading: Icon(Icons.refresh_rounded,
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight),
-                  title: Text('เปิดบิลอีกครั้ง',
-                      style: GoogleFonts.notoSansThai()),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    await billProvider.reopenBill(bill.id);
-                  },
-                ),
-              ListTile(
-                leading: const Icon(Icons.settings_outlined,
-                    color: AppColors.primary),
-                title: Text('ตั้งค่าบิล',
-                    style: GoogleFonts.notoSansThai(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w500)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showSettingsSheet(context, bill, billProvider);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete_outline_rounded,
-                    color: AppColors.red),
-                title: Text('ลบบิล',
-                    style: GoogleFonts.notoSansThai(
-                        color: AppColors.red, fontWeight: FontWeight.w500)),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  final confirm = await _showConfirm(
-                      context, 'ลบบิล', 'คุณแน่ใจหรือไม่ว่าต้องการลบบิลนี้?');
-                  if (confirm == true) {
-                    await billProvider.deleteBill(bill.id);
-                    if (context.mounted) context.pop();
-                  }
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   void _showSettingsSheet(
       BuildContext context, Bill bill, BillProvider billProvider) {
@@ -630,36 +665,125 @@ class _BillDetailScreenState extends State<BillDetailScreen>
     );
   }
 
-  Future<bool?> _showConfirm(
-      BuildContext context, String title, String message) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(title,
-            style: GoogleFonts.notoSansThai(fontWeight: FontWeight.bold)),
-        content: Text(message, style: GoogleFonts.notoSansThai()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('ยกเลิก',
-                style: GoogleFonts.notoSansThai(
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('ยืนยัน',
-                style: GoogleFonts.notoSansThai(
-                    color: AppColors.red, fontWeight: FontWeight.w600)),
-          ),
-        ],
+}
+
+// ── Pill Tab Bar ──────────────────────────────────────────────
+class _PillTabBar extends StatelessWidget {
+  final TabController controller;
+  final int currentIndex;
+  final bool isDark;
+  final int membersCount;
+  final int itemsCount;
+
+  const _PillTabBar({
+    required this.controller,
+    required this.currentIndex,
+    required this.isDark,
+    required this.membersCount,
+    required this.itemsCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tabs = [
+      _TabDef(id: 0, label: 'สมาชิก', count: membersCount),
+      _TabDef(id: 1, label: 'รายการ', count: itemsCount),
+      _TabDef(id: 2, label: 'สรุป', count: null),
+      _TabDef(id: 3, label: 'วิเคราะห์', count: null),
+    ];
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: tabs.map((tab) {
+          final isActive = currentIndex == tab.id;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => controller.animateTo(tab.id),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? (isDark ? const Color(0xFF374151) : Colors.white)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: isActive
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          )
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      tab.label,
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 12,
+                        fontWeight: isActive
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        color: isActive
+                            ? AppColors.primary
+                            : (isDark
+                                ? AppColors.textTertiaryDark
+                                : const Color(0xFF6B7280)),
+                      ),
+                    ),
+                    if (tab.count != null) ...[
+                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? AppColors.primary.withValues(alpha: 0.1)
+                              : (isDark
+                                  ? const Color(0xFF374151)
+                                  : const Color(0xFFE5E7EB)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${tab.count}',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: isActive
+                                ? AppColors.primary
+                                : (isDark
+                                    ? AppColors.textTertiaryDark
+                                    : const Color(0xFF6B7280)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
+}
+
+class _TabDef {
+  final int id;
+  final String label;
+  final int? count;
+  const _TabDef({required this.id, required this.label, this.count});
 }
 
 // ── Items Tab ─────────────────────────────────────────────────
@@ -667,11 +791,14 @@ class _ItemsTab extends StatelessWidget {
   final Bill bill;
   final BillProvider billProvider;
   final BillCalculation calc;
+  final bool readOnly;
 
-  const _ItemsTab(
-      {required this.bill,
-      required this.billProvider,
-      required this.calc});
+  const _ItemsTab({
+    required this.bill,
+    required this.billProvider,
+    required this.calc,
+    this.readOnly = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -683,7 +810,7 @@ class _ItemsTab extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         // Add item button
-        if (!bill.isCompleted)
+        if (!readOnly)
           GestureDetector(
             onTap: () => _showAddItemSheet(context, bill, billProvider),
             child: Container(
@@ -741,6 +868,7 @@ class _ItemsTab extends StatelessWidget {
                 members: members,
                 bill: bill,
                 billProvider: billProvider,
+                readOnly: readOnly,
               )),
         ],
 
@@ -773,12 +901,14 @@ class _ItemTile extends StatelessWidget {
   final List<BillMember> members;
   final Bill bill;
   final BillProvider billProvider;
+  final bool readOnly;
 
   const _ItemTile({
     required this.item,
     required this.members,
     required this.bill,
     required this.billProvider,
+    this.readOnly = false,
   });
 
   @override
@@ -796,7 +926,7 @@ class _ItemTile extends StatelessWidget {
         : 0.0;
 
     return GestureDetector(
-      onTap: bill.isCompleted ? null : () => _showEditItemSheet(context),
+      onTap: readOnly ? null : () => _showEditItemSheet(context),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(14),
@@ -853,7 +983,7 @@ class _ItemTile extends StatelessWidget {
                         : AppColors.textPrimaryLight,
                   ),
                 ),
-                if (!bill.isCompleted) ...[
+                if (!readOnly) ...[
                   const SizedBox(width: 8),
                   Icon(
                     Icons.edit_outlined,
@@ -1084,11 +1214,14 @@ class _MembersTab extends StatelessWidget {
   final Bill bill;
   final BillProvider billProvider;
   final BillCalculation calc;
+  final bool readOnly;
 
-  const _MembersTab(
-      {required this.bill,
-      required this.billProvider,
-      required this.calc});
+  const _MembersTab({
+    required this.bill,
+    required this.billProvider,
+    required this.calc,
+    this.readOnly = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1097,7 +1230,7 @@ class _MembersTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        if (!bill.isCompleted)
+        if (!readOnly)
           GestureDetector(
             onTap: () => _showAddMemberSheet(context, bill, billProvider),
             child: Container(
@@ -1165,6 +1298,7 @@ class _MembersTab extends StatelessWidget {
               bill: bill,
               billProvider: billProvider,
               currency: bill.settings.currency,
+              readOnly: readOnly,
             );
           }),
         ],
@@ -1184,6 +1318,7 @@ class _MembersTab extends StatelessWidget {
       ),
     );
   }
+
 }
 
 class _MemberTile extends StatelessWidget {
@@ -1193,6 +1328,7 @@ class _MemberTile extends StatelessWidget {
   final Bill bill;
   final BillProvider billProvider;
   final String currency;
+  final bool readOnly;
 
   const _MemberTile({
     required this.member,
@@ -1201,6 +1337,7 @@ class _MemberTile extends StatelessWidget {
     required this.bill,
     required this.billProvider,
     required this.currency,
+    this.readOnly = false,
   });
 
   @override
@@ -1208,18 +1345,31 @@ class _MemberTile extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = colorFromHex(member.color);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight),
-      ),
-      child: Row(
-        children: [
-          MemberAvatar(name: member.name, color: color, size: 40),
+    return GestureDetector(
+      onTap: readOnly
+          ? null
+          : () => showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (ctx) => _MemberFormSheet(
+                  bill: bill,
+                  billProvider: billProvider,
+                  editMember: member,
+                ),
+              ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+              color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        ),
+        child: Row(
+          children: [
+            MemberAvatar(name: member.name, color: color, size: 40),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1271,37 +1421,248 @@ class _MemberTile extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(width: 8),
-          // Paid toggle
-          GestureDetector(
-            onTap: () async {
-              await billProvider.toggleMemberPaid(
-                  bill.id, member.id, bill.paidMemberIds);
-            },
-            child: Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: isPaid
-                    ? AppColors.emerald
-                    : (isDark
-                        ? const Color(0xFF374151)
-                        : const Color(0xFFF3F4F6)),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isPaid ? Icons.check_rounded : Icons.circle_outlined,
-                color: isPaid
-                    ? Colors.white
-                    : (isDark
-                        ? AppColors.textTertiaryDark
-                        : AppColors.textTertiaryLight),
-                size: 16,
+            const SizedBox(width: 8),
+            // Paid toggle
+            GestureDetector(
+              onTap: () async {
+                await billProvider.toggleMemberPaid(
+                    bill.id, member.id, bill.paidMemberIds);
+              },
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: isPaid
+                      ? AppColors.emerald
+                      : (isDark
+                          ? const Color(0xFF374151)
+                          : const Color(0xFFF3F4F6)),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isPaid ? Icons.check_rounded : Icons.circle_outlined,
+                  color: isPaid
+                      ? Colors.white
+                      : (isDark
+                          ? AppColors.textTertiaryDark
+                          : AppColors.textTertiaryLight),
+                  size: 16,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+}
+
+// ── Analytics Tab ─────────────────────────────────────────────
+class _AnalyticsTab extends StatelessWidget {
+  final Bill bill;
+  final BillProvider billProvider;
+  final BillCalculation calc;
+
+  const _AnalyticsTab({
+    required this.bill,
+    required this.billProvider,
+    required this.calc,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final members = billProvider.members;
+    final items = billProvider.items;
+    final total = calc.total;
+
+    if (items.isEmpty || members.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('📊', style: TextStyle(fontSize: 40)),
+            const SizedBox(height: 12),
+            Text(
+              'ยังไม่มีข้อมูลเพียงพอ',
+              style: GoogleFonts.notoSansThai(
+                fontSize: 14,
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Per-member bar chart
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'สัดส่วนค่าใช้จ่ายต่อคน',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...calc.memberSummaries.map((s) {
+                final pct = total > 0 ? s.total / total : 0.0;
+                final color = colorFromHex(s.member.color);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              MemberAvatar(
+                                  name: s.member.name,
+                                  color: color,
+                                  size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                s.member.name,
+                                style: GoogleFonts.notoSansThai(
+                                  fontSize: 13,
+                                  color: isDark
+                                      ? AppColors.textPrimaryDark
+                                      : AppColors.textPrimaryLight,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '฿${formatNumber(s.total)} (${(pct * 100).toStringAsFixed(1)}%)',
+                            style: GoogleFonts.notoSansThai(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: color,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: pct.clamp(0.0, 1.0),
+                          backgroundColor: isDark
+                              ? const Color(0xFF374151)
+                              : const Color(0xFFF3F4F6),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(color),
+                          minHeight: 8,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Top items
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'รายการที่แพงที่สุด',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...(List<BillItem>.from(items)
+                    ..sort((a, b) => b.price.compareTo(a.price)))
+                  .take(5)
+                  .map((item) {
+                final pct = total > 0 ? item.price / total : 0.0;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.name,
+                              style: GoogleFonts.notoSansThai(
+                                fontSize: 13,
+                                color: isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: pct.clamp(0.0, 1.0),
+                                backgroundColor: isDark
+                                    ? const Color(0xFF374151)
+                                    : const Color(0xFFF3F4F6),
+                                valueColor:
+                                    const AlwaysStoppedAnimation<Color>(
+                                        AppColors.primary),
+                                minHeight: 6,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '฿${formatNumber(item.price)}',
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1319,8 +1680,6 @@ class _SummaryTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
