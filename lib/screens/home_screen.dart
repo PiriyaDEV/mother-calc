@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/bill_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -148,10 +149,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _allBills.fold(0, (s, b) => s + _billTotal(b));
 
   int get _totalItems =>
-      _allBills.fold(0, (s, b) => s + (b.items?.length ?? 0));
+      _allBills.fold(0, (s, b) => s + b.items.length);
 
   double _billTotal(Bill b) =>
-      (b.items ?? []).fold(0.0, (s, i) => s + i.price);
+      b.items.fold(0.0, (s, i) => s + i.price);
 
   List<Bill> get _recentBills {
     final sorted = [..._allBills]
@@ -169,11 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
         .reduce((a, b) => _billTotal(a) >= _billTotal(b) ? a : b);
   }
 
-  String _formatBaht(double n) =>
-      n.toStringAsFixed(2).replaceAllMapped(
-            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-            (m) => '${m[1]},',
-          );
+  String _formatBaht(double n) => formatNumber(n);
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF286BFE).withOpacity(0.3),
+                          color: const Color(0xFF286BFE).withValues(alpha: 0.3),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -232,7 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     style: GoogleFonts.notoSansThai(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.white.withOpacity(0.85),
+                                      color: Colors.white.withValues(alpha: 0.85),
                                     ),
                                   ),
                                   const SizedBox(height: 2),
@@ -240,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     'ยอดรวมทั้งหมดของคุณ',
                                     style: GoogleFonts.notoSansThai(
                                       fontSize: 12,
-                                      color: Colors.white.withOpacity(0.6),
+                                      color: Colors.white.withValues(alpha: 0.6),
                                     ),
                                   ),
                                 ],
@@ -250,7 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               width: 36,
                               height: 36,
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
@@ -288,7 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 '${_groups.length} กลุ่ม',
                                 style: GoogleFonts.notoSansThai(
                                   fontSize: 12,
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: Colors.white.withValues(alpha: 0.7),
                                 ),
                               ),
                               Padding(
@@ -297,14 +294,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: Text(
                                   '·',
                                   style: TextStyle(
-                                      color: Colors.white.withOpacity(0.4)),
+                                      color: Colors.white.withValues(alpha: 0.4)),
                                 ),
                               ),
                               Text(
                                 '${_personalBills.length} บิลส่วนตัว',
                                 style: GoogleFonts.notoSansThai(
                                   fontSize: 12,
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: Colors.white.withValues(alpha: 0.7),
                                 ),
                               ),
                               Padding(
@@ -313,14 +310,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: Text(
                                   '·',
                                   style: TextStyle(
-                                      color: Colors.white.withOpacity(0.4)),
+                                      color: Colors.white.withValues(alpha: 0.4)),
                                 ),
                               ),
                               Text(
                                 '$_totalItems รายการ',
                                 style: GoogleFonts.notoSansThai(
                                   fontSize: 12,
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: Colors.white.withValues(alpha: 0.7),
                                 ),
                               ),
                             ],
@@ -767,7 +764,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       Text(
-                                        '${_biggestBill!.items?.length ?? 0} รายการ',
+                                        '${_biggestBill!.items.length} รายการ',
                                         style: GoogleFonts.notoSansThai(
                                           fontSize: 12,
                                           color: isDark
@@ -929,10 +926,10 @@ class _QuickActionCard extends StatelessWidget {
               : Border.all(
                   color:
                       isDark ? AppColors.borderDark : AppColors.borderLight),
-          boxShadow: isPrimary
+                  boxShadow: isPrimary
               ? [
                   BoxShadow(
-                    color: const Color(0xFF286BFE).withOpacity(0.3),
+                    color: const Color(0xFF286BFE).withValues(alpha: 0.3),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   )
@@ -946,7 +943,7 @@ class _QuickActionCard extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 color: isPrimary
-                    ? Colors.white.withOpacity(0.2)
+                    ? Colors.white.withValues(alpha: 0.2)
                     : (isDark ? iconBgDark : iconBg),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -973,7 +970,7 @@ class _QuickActionCard extends StatelessWidget {
               style: GoogleFonts.notoSansThai(
                 fontSize: 10,
                 color: isPrimary
-                    ? Colors.white.withOpacity(0.7)
+                    ? Colors.white.withValues(alpha: 0.7)
                     : (isDark
                         ? AppColors.textTertiaryDark
                         : AppColors.textTertiaryLight),
@@ -1139,7 +1136,7 @@ class _RecentBillRow extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.1),
+                          color: statusColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -1153,7 +1150,7 @@ class _RecentBillRow extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        '${bill.items?.length ?? 0} รายการ · ${_formatDate(bill.updatedAt)}',
+                        '${bill.items.length} รายการ · ${_formatDate(bill.updatedAt)}',
                         style: GoogleFonts.notoSansThai(
                           fontSize: 10,
                           color: isDark
