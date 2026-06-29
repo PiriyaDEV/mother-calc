@@ -921,10 +921,6 @@ class _ItemTile extends StatelessWidget {
     final paidByMember = item.paidBy != null
         ? members.where((m) => m.id == item.paidBy).firstOrNull
         : null;
-    final shareCount = assignedMembers.length;
-    final perPerson = shareCount > 0 && !item.isUnequalSplit
-        ? item.price / shareCount
-        : 0.0;
 
     return GestureDetector(
       onTap: readOnly ? null : () => _showEditItemSheet(context),
@@ -1000,72 +996,38 @@ class _ItemTile extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  // Member chips
+                  // Stacked avatars
+                  _StackedAvatars(members: assignedMembers),
+                  const SizedBox(width: 6),
+                  // "X คน · ฿Y/คน"
                   Expanded(
-                    child: Wrap(
-                      spacing: 4,
-                      runSpacing: 4,
-                      children: assignedMembers.map((m) {
-                        final memberColor = colorFromHex(m.color);
-                        final amount = item.isUnequalSplit
-                            ? item.customShares[m.id] ?? 0
-                            : perPerson;
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: memberColor.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                m.name,
-                                style: GoogleFonts.notoSansThai(
-                                  fontSize: 11,
-                                  color: memberColor,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              if (amount > 0) ...[
-                                const SizedBox(width: 3),
-                                Text(
-                                  '฿${formatNumber(amount)}',
-                                  style: GoogleFonts.notoSansThai(
-                                    fontSize: 10,
-                                    color: memberColor.withOpacity(0.8),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        );
-                      }).toList(),
+                    child: Text(
+                      '${assignedMembers.length} คน'
+                      '${!item.isUnequalSplit && assignedMembers.isNotEmpty ? ' · ฿${formatNumber(item.price / assignedMembers.length)}/คน' : ''}',
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 11,
+                        color: isDark
+                            ? AppColors.textTertiaryDark
+                            : AppColors.textTertiaryLight,
+                      ),
                     ),
                   ),
                   // Paid by avatar
                   if (paidByMember != null) ...[
-                    const SizedBox(width: 8),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'จ่ายโดย',
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 10,
-                            color: isDark
-                                ? AppColors.textTertiaryDark
-                                : AppColors.textTertiaryLight,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        MemberAvatar(
-                          name: paidByMember.name,
-                          color: colorFromHex(paidByMember.color),
-                          size: 20,
-                        ),
-                      ],
+                    Text(
+                      'จ่ายโดย',
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 10,
+                        color: isDark
+                            ? AppColors.textTertiaryDark
+                            : AppColors.textTertiaryLight,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    MemberAvatar(
+                      name: paidByMember.name,
+                      color: colorFromHex(paidByMember.color),
+                      size: 20,
                     ),
                   ],
                 ],
@@ -2305,6 +2267,82 @@ class _SettingsRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Stacked Avatars ───────────────────────────────────────────
+class _StackedAvatars extends StatelessWidget {
+  final List<BillMember> members;
+
+  const _StackedAvatars({required this.members});
+
+  @override
+  Widget build(BuildContext context) {
+    const maxShow = 3;
+    final shown = members.take(maxShow).toList();
+    final extra = members.length - shown.length;
+    final totalWidth = shown.isEmpty
+        ? 0.0
+        : 24.0 + (shown.length - 1) * 16.0 + (extra > 0 ? 20.0 : 0.0);
+
+    if (shown.isEmpty) return const SizedBox.shrink();
+
+    return SizedBox(
+      width: totalWidth,
+      height: 24,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ...shown.asMap().entries.map((e) => Positioned(
+                left: e.key * 16.0,
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: colorFromHex(e.value.color),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.5),
+                  ),
+                  child: Center(
+                    child: Text(
+                      e.value.name.isNotEmpty
+                          ? e.value.name[0].toUpperCase()
+                          : '?',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              )),
+          if (extra > 0)
+            Positioned(
+              left: shown.length * 16.0,
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF9CA3AF),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+                child: Center(
+                  child: Text(
+                    '+$extra',
+                    style: const TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
