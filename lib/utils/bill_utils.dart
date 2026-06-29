@@ -20,13 +20,11 @@ String formatCurrency(double value, String currency) {
 
 // ── Total emoji ───────────────────────────────────────────────
 String getTotalEmoji(double total) {
-  if (total < 100) return '🍜';
-  if (total < 300) return '🍱';
-  if (total < 500) return '🍣';
-  if (total < 1000) return '🥩';
-  if (total < 2000) return '🦞';
-  if (total < 5000) return '🎉';
-  return '💸';
+  if (total < 100) return '🤏';
+  if (total < 500) return '💸';
+  if (total < 1000) return '💰';
+  if (total < 3000) return '🤑';
+  return '🏦';
 }
 
 // ── Color from hex string ─────────────────────────────────────
