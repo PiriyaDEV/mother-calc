@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../providers/friends_provider.dart';
 import '../theme/app_theme.dart';
-import '../widgets/member_avatar.dart';
 
 class FriendsScreen extends StatefulWidget {
   const FriendsScreen({super.key});
@@ -15,6 +14,13 @@ class FriendsScreen extends StatefulWidget {
 }
 
 class _FriendsScreenState extends State<FriendsScreen> {
+  bool _showAdd = false;
+  final _addCtrl = TextEditingController();
+  bool _addLoading = false;
+  String _addError = '';
+  String _addSuccess = '';
+  String? _respondingId;
+
   @override
   void initState() {
     super.initState();
@@ -24,159 +30,79 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final provider = context.watch<FriendsProvider>();
-
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Row(
-                children: [
-                  Text(
-                    'เพื่อน',
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimaryLight,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => _showAddFriendSheet(context),
-                    icon: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.person_add_outlined,
-                          color: AppColors.primary, size: 20),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: provider.loading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                          color: AppColors.primary, strokeWidth: 2))
-                  : RefreshIndicator(
-                      onRefresh: () => provider.loadFriends(),
-                      color: AppColors.primary,
-                      child: ListView(
-                        padding: const EdgeInsets.all(16),
-                        children: [
-                          // Pending received requests
-                          if (provider.pendingReceived.isNotEmpty) ...[
-                            _SectionHeader(
-                              title: 'คำขอเป็นเพื่อน',
-                              count: provider.pendingReceived.length,
-                            ),
-                            const SizedBox(height: 8),
-                            ...provider.pendingReceived.map((f) =>
-                                _PendingRequestTile(
-                                  friend: f,
-                                  onAccept: () async {
-                                    final err = await provider
-                                        .acceptFriendRequest(f.id);
-                                    if (err != null && context.mounted) {
-                                      _showSnack(context, err, isError: true);
-                                    }
-                                  },
-                                  onDecline: () async {
-                                    final err = await provider
-                                        .declineFriendRequest(f.id);
-                                    if (err != null && context.mounted) {
-                                      _showSnack(context, err, isError: true);
-                                    }
-                                  },
-                                )),
-                            const SizedBox(height: 20),
-                          ],
-
-                          // Friends list
-                          _SectionHeader(
-                            title: 'เพื่อนทั้งหมด',
-                            count: provider.friends.length,
-                          ),
-                          const SizedBox(height: 8),
-                          if (provider.friends.isEmpty)
-                            _EmptyState(
-                              emoji: '👥',
-                              message: 'ยังไม่มีเพื่อน\nกดปุ่ม + เพื่อเพิ่มเพื่อน',
-                            )
-                          else
-                            ...provider.friends.map((f) => _FriendTile(
-                                  friend: f,
-                                  onRemove: () =>
-                                      _confirmRemove(context, f, provider),
-                                )),
-
-                          // Pending sent
-                          if (provider.pendingSent.isNotEmpty) ...[
-                            const SizedBox(height: 20),
-                            _SectionHeader(
-                              title: 'คำขอที่ส่งออก',
-                              count: provider.pendingSent.length,
-                            ),
-                            const SizedBox(height: 8),
-                            ...provider.pendingSent.map((f) =>
-                                _SentRequestTile(
-                                  friend: f,
-                                  onCancel: () async {
-                                    final err = await provider
-                                        .declineFriendRequest(f.id);
-                                    if (err != null && context.mounted) {
-                                      _showSnack(context, err, isError: true);
-                                    }
-                                  },
-                                )),
-                          ],
-                        ],
-                      ),
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
+  void dispose() {
+    _addCtrl.dispose();
+    super.dispose();
   }
 
-  void _showAddFriendSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _AddFriendSheet(
-        onSend: (username) async {
-          final provider = context.read<FriendsProvider>();
-          final profile = await provider.searchByUsername(username);
-          if (profile == null) {
-            return 'ไม่พบผู้ใช้ @$username';
-          }
-          return await provider.sendFriendRequest(profile.id);
-        },
-      ),
-    );
+  Future<void> _handleSendRequest() async {
+    final username = _addCtrl.text.trim().replaceAll('@', '');
+    if (username.isEmpty) return;
+    setState(() {
+      _addLoading = true;
+      _addError = '';
+      _addSuccess = '';
+    });
+    final provider = context.read<FriendsProvider>();
+    final profile = await provider.searchByUsername(username);
+    if (!mounted) return;
+    if (profile == null) {
+      setState(() {
+        _addLoading = false;
+        _addError = 'ไม่พบผู้ใช้ @$username';
+      });
+      return;
+    }
+    final err = await provider.sendFriendRequest(profile.id);
+    if (!mounted) return;
+    setState(() {
+      _addLoading = false;
+      if (err != null) {
+        _addError = err;
+      } else {
+        _addSuccess = 'ส่งคำขอเป็นเพื่อนไปยัง @$username แล้ว!';
+        _addCtrl.clear();
+      }
+    });
   }
 
-  Future<void> _confirmRemove(
-      BuildContext context, Friend friend, FriendsProvider provider) async {
+  Future<void> _handleAccept(Friend friend) async {
+    setState(() => _respondingId = friend.id);
+    final provider = context.read<FriendsProvider>();
+    final err = await provider.acceptFriendRequest(friend.id);
+    if (!mounted) return;
+    setState(() => _respondingId = null);
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(err, style: GoogleFonts.notoSansThai()),
+        backgroundColor: AppColors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ));
+    }
+  }
+
+  Future<void> _handleDecline(Friend friend) async {
+    setState(() => _respondingId = friend.id);
+    final provider = context.read<FriendsProvider>();
+    final err = await provider.declineFriendRequest(friend.id);
+    if (!mounted) return;
+    setState(() => _respondingId = null);
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(err, style: GoogleFonts.notoSansThai()),
+        backgroundColor: AppColors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ));
+    }
+  }
+
+  Future<void> _handleRemove(Friend friend) async {
+    final myId = Supabase.instance.client.auth.currentUser?.id ?? '';
+    final profile = friend.otherProfile(myId);
+    final name = profile?.displayName ?? profile?.username ?? 'เพื่อน';
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final _myId = Supabase.instance.client.auth.currentUser?.id ?? '';
-    final displayProfile = friend.otherProfile(_myId);
-    final name = displayProfile?.displayName ??
-        displayProfile?.username ??
-        'เพื่อน';
 
     final confirm = await showDialog<bool>(
       context: context,
@@ -190,11 +116,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('ยกเลิก',
-                style: GoogleFonts.notoSansThai(
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight)),
+            child: Text('ยกเลิก', style: GoogleFonts.notoSansThai()),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -206,21 +128,491 @@ class _FriendsScreenState extends State<FriendsScreen> {
       ),
     );
 
-    if (confirm == true) {
-      final err = await provider.removeFriend(friend.id);
-      if (err != null && context.mounted) {
-        _showSnack(context, err, isError: true);
-      }
+    if (confirm == true && mounted) {
+      await context.read<FriendsProvider>().removeFriend(friend.id);
     }
   }
 
-  void _showSnack(BuildContext context, String msg, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: GoogleFonts.notoSansThai()),
-      backgroundColor: isError ? AppColors.red : AppColors.emerald,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    ));
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final provider = context.watch<FriendsProvider>();
+    final friends = provider.friends;
+    final requests = provider.pendingReceived;
+
+    return Scaffold(
+      backgroundColor: isDark ? AppColors.bgDark : const Color(0xFFF4F6FB),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header ──────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'เพื่อน',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimaryLight,
+                          ),
+                        ),
+                        Text(
+                          requests.isNotEmpty
+                              ? '${friends.length} เพื่อน · ${requests.length} คำขอใหม่'
+                              : '${friends.length} เพื่อน',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 12,
+                            color: isDark
+                                ? AppColors.textTertiaryDark
+                                : const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => setState(() {
+                      _showAdd = !_showAdd;
+                      _addError = '';
+                      _addSuccess = '';
+                    }),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF286BFE),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.person_add_outlined,
+                              color: Colors.white, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            'เพิ่มเพื่อน',
+                            style: GoogleFonts.notoSansThai(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Add Friend Panel (inline) ─────────────────
+            if (_showAdd)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.surfaceDark : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark
+                          ? AppColors.borderDark
+                          : const Color(0xFFF3F4F6),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'เพิ่มเพื่อนใหม่',
+                              style: GoogleFonts.notoSansThai(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight,
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => setState(() => _showAdd = false),
+                            child: Icon(
+                              Icons.close_rounded,
+                              size: 18,
+                              color: isDark
+                                  ? AppColors.textTertiaryDark
+                                  : const Color(0xFF9CA3AF),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Stack(
+                              alignment: Alignment.centerLeft,
+                              children: [
+                                TextField(
+                                  controller: _addCtrl,
+                                  autofocus: true,
+                                  style: GoogleFonts.notoSansThai(
+                                      fontSize: 14),
+                                  decoration: InputDecoration(
+                                    hintText: '@username',
+                                    hintStyle: GoogleFonts.notoSansThai(
+                                      fontSize: 14,
+                                      color: const Color(0xFF9CA3AF),
+                                    ),
+                                    contentPadding:
+                                        const EdgeInsets.fromLTRB(
+                                            36, 10, 12, 10),
+                                    filled: true,
+                                    fillColor: isDark
+                                        ? const Color(0xFF1F2937)
+                                        : const Color(0xFFF9FAFB),
+                                    border: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: isDark
+                                            ? AppColors.borderDark
+                                            : const Color(0xFFF3F4F6),
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: isDark
+                                            ? AppColors.borderDark
+                                            : const Color(0xFFF3F4F6),
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(12),
+                                      borderSide: const BorderSide(
+                                          color: Color(0xFF286BFE)),
+                                    ),
+                                  ),
+                                  onChanged: (v) {
+                                    // strip @ prefix automatically
+                                    if (v.startsWith('@')) {
+                                      _addCtrl.value = TextEditingValue(
+                                        text: v.substring(1),
+                                        selection: TextSelection.collapsed(
+                                            offset: v.length - 1),
+                                      );
+                                    }
+                                  },
+                                  onSubmitted: (_) => _handleSendRequest(),
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.only(left: 10),
+                                  child: Icon(Icons.search_rounded,
+                                      size: 16,
+                                      color: Color(0xFF9CA3AF)),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: _addLoading ||
+                                    _addCtrl.text.trim().isEmpty
+                                ? null
+                                : _handleSendRequest,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: _addCtrl.text.trim().isEmpty
+                                    ? const Color(0xFF9CA3AF)
+                                    : const Color(0xFF286BFE),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: _addLoading
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white),
+                                    )
+                                  : Text(
+                                      'ส่ง',
+                                      style: GoogleFonts.notoSansThai(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_addError.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            _addError,
+                            style: GoogleFonts.notoSansThai(
+                              fontSize: 12,
+                              color: const Color(0xFFEF4444),
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (_addSuccess.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.check_rounded,
+                                  size: 14,
+                                  color: Color(0xFF16A34A)),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  _addSuccess,
+                                  style: GoogleFonts.notoSansThai(
+                                    fontSize: 12,
+                                    color: const Color(0xFF16A34A),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
+            // ── Body ─────────────────────────────────────────
+            Expanded(
+              child: provider.loading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                          color: AppColors.primary, strokeWidth: 2))
+                  : RefreshIndicator(
+                      onRefresh: () => provider.loadFriends(),
+                      color: AppColors.primary,
+                      child: ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          // ── Pending Requests ──
+                          if (requests.isNotEmpty) ...[
+                            _SectionHeader(
+                              title: 'คำขอเป็นเพื่อน',
+                              count: requests.length,
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? AppColors.surfaceDark
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isDark
+                                      ? AppColors.borderDark
+                                      : const Color(0xFFDBEAFE),
+                                ),
+                              ),
+                              child: Column(
+                                children: requests.asMap().entries.map((e) {
+                                  final idx = e.key;
+                                  final req = e.value;
+                                  final myId = Supabase.instance.client.auth
+                                          .currentUser?.id ??
+                                      '';
+                                  final profile = req.requesterProfile ??
+                                      req.otherProfile(myId);
+                                  final name = profile?.displayName ??
+                                      profile?.username ??
+                                      'ผู้ใช้';
+                                  final username = profile?.username;
+                                  final isResponding =
+                                      _respondingId == req.id;
+                                  final isLast =
+                                      idx == requests.length - 1;
+
+                                  return Column(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(14),
+                                        child: Row(
+                                          children: [
+                                            // Avatar (rounded rect 16)
+                                            _RoundedAvatar(
+                                              name: name,
+                                              avatarUrl: profile?.avatarUrl,
+                                              size: 40,
+                                              radius: 16,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment
+                                                        .start,
+                                                children: [
+                                                  Text(
+                                                    name,
+                                                    style: GoogleFonts
+                                                        .notoSansThai(
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: isDark
+                                                          ? AppColors
+                                                              .textPrimaryDark
+                                                          : AppColors
+                                                              .textPrimaryLight,
+                                                    ),
+                                                  ),
+                                                  if (username != null)
+                                                    Text(
+                                                      '@$username',
+                                                      style: GoogleFonts
+                                                          .notoSansThai(
+                                                        fontSize: 12,
+                                                        color: isDark
+                                                            ? AppColors
+                                                                .textTertiaryDark
+                                                            : AppColors
+                                                                .textTertiaryLight,
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                            // ✓ Accept
+                                            GestureDetector(
+                                              onTap: isResponding
+                                                  ? null
+                                                  : () =>
+                                                      _handleAccept(req),
+                                              child: Container(
+                                                width: 32,
+                                                height: 32,
+                                                decoration: BoxDecoration(
+                                                  color: isResponding
+                                                      ? const Color(
+                                                          0xFF9CA3AF)
+                                                      : const Color(
+                                                          0xFF286BFE),
+                                                  borderRadius:
+                                                      BorderRadius
+                                                          .circular(12),
+                                                ),
+                                                child: const Icon(
+                                                    Icons.check_rounded,
+                                                    color: Colors.white,
+                                                    size: 16),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            // ✗ Decline
+                                            GestureDetector(
+                                              onTap: isResponding
+                                                  ? null
+                                                  : () =>
+                                                      _handleDecline(req),
+                                              child: Container(
+                                                width: 32,
+                                                height: 32,
+                                                decoration: BoxDecoration(
+                                                  color: isDark
+                                                      ? const Color(
+                                                          0xFF374151)
+                                                      : const Color(
+                                                          0xFFF3F4F6),
+                                                  borderRadius:
+                                                      BorderRadius
+                                                          .circular(12),
+                                                ),
+                                                child: Icon(
+                                                    Icons.close_rounded,
+                                                    color: isDark
+                                                        ? AppColors
+                                                            .textTertiaryDark
+                                                        : const Color(
+                                                            0xFF6B7280),
+                                                    size: 16),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (!isLast)
+                                        Divider(
+                                          height: 1,
+                                          color: isDark
+                                              ? AppColors.borderDark
+                                              : AppColors.borderLight,
+                                        ),
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+
+                          // ── Friends List ──
+                          _SectionHeader(
+                            title: 'เพื่อนทั้งหมด',
+                            count: friends.length,
+                          ),
+                          const SizedBox(height: 8),
+
+                          if (friends.isEmpty)
+                            _EmptyFriendsState(
+                              isDark: isDark,
+                              onAdd: () => setState(() => _showAdd = true),
+                            )
+                          else
+                            ...friends.map((f) => _FriendRow(
+                                  friend: f,
+                                  isDark: isDark,
+                                  onRemove: () => _handleRemove(f),
+                                )),
+                        ],
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -248,17 +640,18 @@ class _SectionHeader extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(10),
+            color: const Color(0xFF286BFE),
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             '$count',
             style: GoogleFonts.notoSansThai(
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
-              color: AppColors.primary,
+              color: Colors.white,
             ),
           ),
         ),
@@ -267,108 +660,69 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-// ── Empty State ────────────────────────────────────────────────
-class _EmptyState extends StatelessWidget {
-  final String emoji;
-  final String message;
-  const _EmptyState({required this.emoji, required this.message});
+// ── Empty Friends State ────────────────────────────────────────
+class _EmptyFriendsState extends StatelessWidget {
+  final bool isDark;
+  final VoidCallback onAdd;
+  const _EmptyFriendsState({required this.isDark, required this.onAdd});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 32),
-      child: Center(
-        child: Column(
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 40)),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.notoSansThai(
-                fontSize: 14,
-                color: isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Friend Tile ────────────────────────────────────────────────
-class _FriendTile extends StatelessWidget {
-  final Friend friend;
-  final VoidCallback onRemove;
-  const _FriendTile({required this.friend, required this.onRemove});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final _myId = Supabase.instance.client.auth.currentUser?.id ?? '';
-    final profile = friend.otherProfile(_myId);
-    final name =
-        profile?.displayName ?? profile?.username ?? 'ผู้ใช้';
-    final username = profile?.username;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight),
-      ),
-      child: Row(
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      child: Column(
         children: [
-          MemberAvatar(
-            name: name,
-            color: AppColors.primary,
-            size: 44,
-            avatarUrl: profile?.avatarUrl,
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(Icons.people_outline_rounded,
+                size: 28, color: Color(0xFF286BFE)),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight,
-                  ),
-                ),
-                if (username != null)
-                  Text(
-                    '@$username',
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 12,
-                      color: isDark
-                          ? AppColors.textTertiaryDark
-                          : AppColors.textTertiaryLight,
-                    ),
-                  ),
-              ],
+          const SizedBox(height: 16),
+          Text(
+            'ยังไม่มีเพื่อน',
+            style: GoogleFonts.notoSansThai(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight,
             ),
           ),
-          IconButton(
-            onPressed: onRemove,
-            icon: Icon(
-              Icons.person_remove_outlined,
-              size: 20,
+          const SizedBox(height: 6),
+          Text(
+            'เพิ่มเพื่อนด้วย @username เพื่อเพิ่มเข้ากลุ่มได้',
+            style: GoogleFonts.notoSansThai(
+              fontSize: 12,
               color: isDark
                   ? AppColors.textTertiaryDark
                   : AppColors.textTertiaryLight,
             ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          GestureDetector(
+            onTap: onAdd,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF286BFE),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'เพิ่มเพื่อนคนแรก',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -376,23 +730,82 @@ class _FriendTile extends StatelessWidget {
   }
 }
 
-// ── Pending Request Tile ───────────────────────────────────────
-class _PendingRequestTile extends StatelessWidget {
-  final Friend friend;
-  final VoidCallback onAccept;
-  final VoidCallback onDecline;
-  const _PendingRequestTile(
-      {required this.friend,
-      required this.onAccept,
-      required this.onDecline});
+// ── Rounded Avatar (borderRadius variant) ─────────────────────
+class _RoundedAvatar extends StatelessWidget {
+  final String name;
+  final String? avatarUrl;
+  final double size;
+  final double radius;
+
+  const _RoundedAvatar({
+    required this.name,
+    required this.size,
+    required this.radius,
+    this.avatarUrl,
+  });
+
+  String get _initial {
+    final t = name.trim();
+    return t.isNotEmpty ? t[0].toUpperCase() : '?';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final _myId = Supabase.instance.client.auth.currentUser?.id ?? '';
-    final profile = friend.requesterProfile ?? friend.otherProfile(_myId);
-    final name =
-        profile?.displayName ?? profile?.username ?? 'ผู้ใช้';
+    if (avatarUrl != null && avatarUrl!.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: Image.network(
+          avatarUrl!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildInitials(),
+        ),
+      );
+    }
+    return _buildInitials();
+  }
+
+  Widget _buildInitials() {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: const Color(0xFF286BFE),
+        borderRadius: BorderRadius.circular(radius),
+      ),
+      child: Center(
+        child: Text(
+          _initial,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: size * 0.38,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Friend Row ─────────────────────────────────────────────────
+class _FriendRow extends StatelessWidget {
+  final Friend friend;
+  final bool isDark;
+  final VoidCallback onRemove;
+
+  const _FriendRow({
+    required this.friend,
+    required this.isDark,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final myId =
+        Supabase.instance.client.auth.currentUser?.id ?? '';
+    final profile = friend.otherProfile(myId);
+    final name = profile?.displayName ?? profile?.username ?? 'ผู้ใช้';
     final username = profile?.username;
 
     return Container(
@@ -400,17 +813,18 @@ class _PendingRequestTile extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight),
+          color: isDark ? AppColors.borderDark : const Color(0xFFF3F4F6),
+        ),
       ),
       child: Row(
         children: [
-          MemberAvatar(
+          _RoundedAvatar(
             name: name,
-            color: AppColors.amber,
-            size: 44,
             avatarUrl: profile?.avatarUrl,
+            size: 40,
+            radius: 16,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -440,254 +854,54 @@ class _PendingRequestTile extends StatelessWidget {
               ],
             ),
           ),
-          Row(
-            children: [
-              GestureDetector(
-                onTap: onDecline,
-                child: Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: AppColors.red.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.close_rounded,
-                      color: AppColors.red, size: 18),
-                ),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: onAccept,
-                child: Container(
-                  width: 34,
-                  height: 34,
-                  decoration: const BoxDecoration(
-                    color: AppColors.emerald,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.check_rounded,
-                      color: Colors.white, size: 18),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Sent Request Tile ──────────────────────────────────────────
-class _SentRequestTile extends StatelessWidget {
-  final Friend friend;
-  final VoidCallback onCancel;
-  const _SentRequestTile({required this.friend, required this.onCancel});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final _myId = Supabase.instance.client.auth.currentUser?.id ?? '';
-    final profile = friend.otherProfile(_myId);
-    final name =
-        profile?.displayName ?? profile?.username ?? 'ผู้ใช้';
-    final username = profile?.username;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight),
-      ),
-      child: Row(
-        children: [
-          MemberAvatar(
-            name: name,
-            color: AppColors.primary,
-            size: 44,
-            avatarUrl: profile?.avatarUrl,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // "เพื่อน ✓" badge
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
+                const Icon(Icons.person_outline_rounded,
+                    size: 12, color: Color(0xFF16A34A)),
+                const SizedBox(width: 4),
                 Text(
-                  name,
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight,
-                  ),
-                ),
-                if (username != null)
-                  Text(
-                    '@$username',
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 12,
-                      color: isDark
-                          ? AppColors.textTertiaryDark
-                          : AppColors.textTertiaryLight,
-                    ),
-                  ),
-                Text(
-                  'รอการตอบรับ',
+                  'เพื่อน',
                   style: GoogleFonts.notoSansThai(
                     fontSize: 11,
-                    color: AppColors.amber,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF16A34A),
                   ),
                 ),
               ],
             ),
           ),
-          TextButton(
-            onPressed: onCancel,
-            child: Text(
-              'ยกเลิก',
-              style: GoogleFonts.notoSansThai(
-                fontSize: 12,
-                color: AppColors.red,
+          const SizedBox(width: 8),
+          // 🗑️ Remove button
+          GestureDetector(
+            onTap: onRemove,
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF374151)
+                    : const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.delete_outline_rounded,
+                size: 14,
+                color: isDark
+                    ? AppColors.textTertiaryDark
+                    : const Color(0xFF6B7280),
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Add Friend Sheet ───────────────────────────────────────────
-class _AddFriendSheet extends StatefulWidget {
-  final Future<String?> Function(String username) onSend;
-  const _AddFriendSheet({required this.onSend});
-
-  @override
-  State<_AddFriendSheet> createState() => _AddFriendSheetState();
-}
-
-class _AddFriendSheetState extends State<_AddFriendSheet> {
-  final _ctrl = TextEditingController();
-  bool _loading = false;
-  String? _error;
-  String? _success;
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _send() async {
-    final username = _ctrl.text.trim().replaceAll('@', '');
-    if (username.isEmpty) return;
-    setState(() {
-      _loading = true;
-      _error = null;
-      _success = null;
-    });
-    final err = await widget.onSend(username);
-    if (mounted) {
-      setState(() {
-        _loading = false;
-        if (err != null) {
-          _error = err;
-        } else {
-          _success = 'ส่งคำขอเป็นเพื่อนแล้ว!';
-          _ctrl.clear();
-        }
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'เพิ่มเพื่อน',
-              style: GoogleFonts.notoSansThai(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'ค้นหาด้วย username',
-              style: GoogleFonts.notoSansThai(
-                fontSize: 13,
-                color: isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _ctrl,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: '@username',
-                prefixIcon: const Icon(Icons.alternate_email_rounded,
-                    color: AppColors.primary, size: 20),
-              ),
-              onSubmitted: (_) => _send(),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 10),
-              Text(_error!,
-                  style: GoogleFonts.notoSansThai(
-                      fontSize: 13, color: AppColors.red)),
-            ],
-            if (_success != null) ...[
-              const SizedBox(height: 10),
-              Text(_success!,
-                  style: GoogleFonts.notoSansThai(
-                      fontSize: 13, color: AppColors.emerald)),
-            ],
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loading ? null : _send,
-              child: _loading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
-                  : Text('ส่งคำขอ',
-                      style: GoogleFonts.notoSansThai(
-                          fontSize: 15, fontWeight: FontWeight.w600)),
-            ),
-          ],
-        ),
       ),
     );
   }
