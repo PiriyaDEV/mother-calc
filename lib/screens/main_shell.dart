@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -58,67 +59,93 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final notifCount =
-        context.watch<NotificationsProvider>().unreadCount;
-    final friendCount =
-        context.watch<FriendsProvider>().pendingCount;
+    final notifCount = context.watch<NotificationsProvider>().unreadCount;
+    final friendCount = context.watch<FriendsProvider>().pendingCount;
 
     return Scaffold(
       body: widget.child,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF111827) : Colors.white,
-          border: Border(
-            top: BorderSide(
-              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-              width: 1,
-            ),
-          ),
-        ),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: 60,
-            child: Row(
-              children: [
-                _NavItem(
-                  icon: Icons.home_outlined,
-                  activeIcon: Icons.home_rounded,
-                  label: 'หน้าหลัก',
-                  isActive: _currentIndex == 0,
-                  onTap: () => _onTap(0),
+      extendBody: true,
+      bottomNavigationBar: _FloatingNavBar(
+        currentIndex: _currentIndex,
+        isDark: isDark,
+        notifCount: notifCount,
+        friendCount: friendCount,
+        onTap: _onTap,
+      ),
+    );
+  }
+}
+
+// ── Floating Nav Bar ──────────────────────────────────────────
+class _FloatingNavBar extends StatelessWidget {
+  final int currentIndex;
+  final bool isDark;
+  final int notifCount;
+  final int friendCount;
+  final ValueChanged<int> onTap;
+
+  const _FloatingNavBar({
+    required this.currentIndex,
+    required this.isDark,
+    required this.notifCount,
+    required this.friendCount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [
+      _NavDef(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'หน้าหลัก'),
+      _NavDef(icon: Icons.receipt_long_outlined, activeIcon: Icons.receipt_long_rounded, label: 'บิล'),
+      _NavDef(icon: Icons.group_outlined, activeIcon: Icons.group_rounded, label: 'กลุ่ม'),
+      _NavDef(icon: Icons.people_outline_rounded, activeIcon: Icons.people_rounded, label: 'เพื่อน', badge: friendCount),
+      _NavDef(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'ฉัน', badge: notifCount),
+    ];
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              height: 64,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF1C2333).withValues(alpha: 0.92)
+                    : Colors.white.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.black.withValues(alpha: 0.06),
+                  width: 1,
                 ),
-                _NavItem(
-                  icon: Icons.receipt_long_outlined,
-                  activeIcon: Icons.receipt_long_rounded,
-                  label: 'บิล',
-                  isActive: _currentIndex == 1,
-                  onTap: () => _onTap(1),
-                ),
-                _NavItem(
-                  icon: Icons.group_outlined,
-                  activeIcon: Icons.group_rounded,
-                  label: 'กลุ่ม',
-                  isActive: _currentIndex == 2,
-                  onTap: () => _onTap(2),
-                ),
-                _NavItem(
-                  icon: Icons.people_outline_rounded,
-                  activeIcon: Icons.people_rounded,
-                  label: 'เพื่อน',
-                  isActive: _currentIndex == 3,
-                  badge: friendCount,
-                  onTap: () => _onTap(3),
-                ),
-                _NavItem(
-                  icon: Icons.person_outline_rounded,
-                  activeIcon: Icons.person_rounded,
-                  label: 'ฉัน',
-                  isActive: _currentIndex == 4,
-                  badge: notifCount,
-                  onTap: () => _onTap(4),
-                ),
-              ],
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.4)
+                        : Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: items.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final item = entry.value;
+                  final isActive = currentIndex == idx;
+                  return _NavItem(
+                    item: item,
+                    isActive: isActive,
+                    isDark: isDark,
+                    onTap: () => onTap(idx),
+                  );
+                }).toList(),
+              ),
             ),
           ),
         ),
@@ -127,83 +154,115 @@ class _MainShellState extends State<MainShell> {
   }
 }
 
-class _NavItem extends StatelessWidget {
+class _NavDef {
   final IconData icon;
   final IconData activeIcon;
   final String label;
-  final bool isActive;
-  final VoidCallback onTap;
   final int badge;
-
-  const _NavItem({
+  const _NavDef({
     required this.icon,
     required this.activeIcon,
     required this.label,
-    required this.isActive,
-    required this.onTap,
     this.badge = 0,
+  });
+}
+
+class _NavItem extends StatelessWidget {
+  final _NavDef item;
+  final bool isActive;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.item,
+    required this.isActive,
+    required this.isDark,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = isActive
-        ? AppColors.primary
-        : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight);
-
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  isActive ? activeIcon : icon,
-                  color: color,
-                  size: 24,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icon with pill background when active
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? AppColors.primary.withValues(alpha: 0.12)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                if (badge > 0)
-                  Positioned(
-                    top: -4,
-                    right: -6,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: const BoxDecoration(
-                        color: AppColors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        badge > 99 ? '99+' : '$badge',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        isActive ? item.activeIcon : item.icon,
+                        key: ValueKey(isActive),
+                        size: 22,
+                        color: isActive
+                            ? AppColors.primary
+                            : (isDark
+                                ? AppColors.textTertiaryDark
+                                : const Color(0xFF9CA3AF)),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: GoogleFonts.notoSansThai(
-                fontSize: 10,
-                color: color,
-                fontWeight:
-                    isActive ? FontWeight.w600 : FontWeight.normal,
+                    if (item.badge > 0)
+                      Positioned(
+                        top: -5,
+                        right: -8,
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: const BoxDecoration(
+                            color: AppColors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            item.badge > 99 ? '99+' : '${item.badge}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 2),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 10,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
+                  color: isActive
+                      ? AppColors.primary
+                      : (isDark
+                          ? AppColors.textTertiaryDark
+                          : const Color(0xFF9CA3AF)),
+                ),
+                child: Text(item.label),
+              ),
+            ],
+          ),
         ),
       ),
     );

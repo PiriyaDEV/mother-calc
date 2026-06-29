@@ -863,7 +863,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
               ],
 
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              // Extra bottom padding for floating nav bar
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
         ),

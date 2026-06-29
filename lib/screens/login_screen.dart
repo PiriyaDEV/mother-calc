@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -10,159 +11,454 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   bool _lineLoading = false;
   bool _googleLoading = false;
   String? _error;
+  late AnimationController _animCtrl;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut));
+    _animCtrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _animCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _signInWithLine() async {
-    setState(() { _lineLoading = true; _error = null; });
+    setState(() {
+      _lineLoading = true;
+      _error = null;
+    });
     final err = await context.read<AuthProvider>().signInWithLine();
-    if (mounted) setState(() { _lineLoading = false; _error = err; });
+    if (mounted) {
+      setState(() {
+        _lineLoading = false;
+        _error = err;
+      });
+    }
   }
 
   Future<void> _signInWithGoogle() async {
-    setState(() { _googleLoading = true; _error = null; });
+    setState(() {
+      _googleLoading = true;
+      _error = null;
+    });
     final err = await context.read<AuthProvider>().signInWithGoogle();
-    if (mounted) setState(() { _googleLoading = false; _error = err; });
+    if (mounted) {
+      setState(() {
+        _googleLoading = false;
+        _error = err;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset("assets/images/logo.png", width: 88, height: 88),
-                const SizedBox(height: 20),
-                Text("Kidtang",
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                    )),
-                const SizedBox(height: 8),
-                Text("\u0e41\u0e1a\u0e48\u0e07\u0e04\u0e48\u0e32\u0e43\u0e0a\u0e49\u0e08\u0e48\u0e32\u0e22\u0e07\u0e48\u0e32\u0e22\u0e46 \u0e01\u0e31\u0e1a\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e19",
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 14,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                    )),
-                const SizedBox(height: 52),
-                _SocialButton(
-                  onTap: _lineLoading || _googleLoading ? null : _signInWithLine,
-                  isLoading: _lineLoading,
-                  backgroundColor: const Color(0xFF06C755),
-                  icon: _LineIcon(),
-                  label: "\u0e40\u0e02\u0e49\u0e32\u0e2a\u0e39\u0e48\u0e23\u0e30\u0e1a\u0e1a\u0e14\u0e49\u0e27\u0e22 LINE",
-                  labelColor: Colors.white,
-                ),
-                const SizedBox(height: 14),
-                _SocialButton(
-                  onTap: _lineLoading || _googleLoading ? null : _signInWithGoogle,
-                  isLoading: _googleLoading,
-                  backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
-                  icon: _GoogleIcon(),
-                  label: "\u0e40\u0e02\u0e49\u0e32\u0e2a\u0e39\u0e48\u0e23\u0e30\u0e1a\u0e1a\u0e14\u0e49\u0e27\u0e22 Google",
-                  labelColor: isDark ? Colors.white : const Color(0xFF111827),
-                  border: Border.all(
-                    color: isDark ? AppColors.borderDark : const Color(0xFFE5E7EB),
-                    width: 1.5,
-                  ),
-                ),
-                if (_error != null) ...[
-                  const SizedBox(height: 20),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.red.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.red.withOpacity(0.25)),
+      body: Stack(
+        children: [
+          // ── Gradient background ──────────────────────────────
+          Container(
+            width: size.width,
+            height: size.height,
+            decoration: BoxDecoration(
+              gradient: isDark
+                  ? const LinearGradient(
+                      colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    )
+                  : const LinearGradient(
+                      colors: [Color(0xFFEFF6FF), Color(0xFFF8FAFF), Color(0xFFFFFFFF)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                     ),
-                    child: Text(_error!,
-                        style: GoogleFonts.notoSansThai(fontSize: 13, color: AppColors.red),
-                        textAlign: TextAlign.center),
-                  ),
-                ],
-                const SizedBox(height: 40),
-                Text(
-                  "\u0e01\u0e32\u0e23\u0e40\u0e02\u0e49\u0e32\u0e2a\u0e39\u0e48\u0e23\u0e30\u0e1a\u0e1a\u0e04\u0e23\u0e31\u0e49\u0e07\u0e41\u0e23\u0e01 \u0e23\u0e30\u0e1a\u0e1a\u0e08\u0e30\u0e2a\u0e23\u0e49\u0e32\u0e07\u0e1a\u0e31\u0e0d\u0e0a\u0e35\u0e43\u0e2b\u0e49\u0e42\u0e14\u0e22\u0e2d\u0e31\u0e15\u0e42\u0e19\u0e21\u0e31\u0e15\u0e34",
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 12,
-                    color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
             ),
           ),
+
+          // ── Decorative blobs ─────────────────────────────────
+          Positioned(
+            top: -80,
+            right: -60,
+            child: _Blob(
+              size: 260,
+              color: AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.12),
+            ),
+          ),
+          Positioned(
+            top: 120,
+            left: -100,
+            child: _Blob(
+              size: 200,
+              color: const Color(0xFF6B8AFF).withValues(alpha: isDark ? 0.1 : 0.08),
+            ),
+          ),
+          Positioned(
+            bottom: -60,
+            left: -40,
+            child: _Blob(
+              size: 220,
+              color: AppColors.primary.withValues(alpha: isDark ? 0.12 : 0.08),
+            ),
+          ),
+          Positioned(
+            bottom: 100,
+            right: -80,
+            child: _Blob(
+              size: 180,
+              color: const Color(0xFFA855F7).withValues(alpha: isDark ? 0.08 : 0.06),
+            ),
+          ),
+
+          // ── Content ──────────────────────────────────────────
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: FadeTransition(
+                  opacity: _fadeAnim,
+                  child: SlideTransition(
+                    position: _slideAnim,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 40),
+
+                        // Logo with glow
+                        Container(
+                          width: 96,
+                          height: 96,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(28),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.3),
+                                blurRadius: 32,
+                                offset: const Offset(0, 12),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(28),
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              width: 96,
+                              height: 96,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // App name
+                        Text(
+                          'Kidtang',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimaryLight,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'แบ่งค่าใช้จ่ายง่ายๆ กับเพื่อน',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 15,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Feature pills
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            _FeaturePill(label: '💸 หารบิล', isDark: isDark),
+                            _FeaturePill(label: '👥 จัดกลุ่ม', isDark: isDark),
+                            _FeaturePill(label: '📊 สรุปยอด', isDark: isDark),
+                          ],
+                        ),
+
+                        const SizedBox(height: 52),
+
+                        // LINE button
+                        _SocialButton(
+                          onTap: _lineLoading || _googleLoading
+                              ? null
+                              : _signInWithLine,
+                          isLoading: _lineLoading,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF06C755), Color(0xFF00A843)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          icon: Image.asset(
+                            'assets/images/line-logo.png',
+                            width: 22,
+                            height: 22,
+                          ),
+                          label: 'เข้าสู่ระบบด้วย LINE',
+                          labelColor: Colors.white,
+                          shadowColor: const Color(0xFF06C755),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Google button
+                        _SocialButton(
+                          onTap: _lineLoading || _googleLoading
+                              ? null
+                              : _signInWithGoogle,
+                          isLoading: _googleLoading,
+                          backgroundColor: isDark
+                              ? const Color(0xFF1F2937)
+                              : Colors.white,
+                          icon: Image.asset(
+                            'assets/images/google-logo.png',
+                            width: 22,
+                            height: 22,
+                          ),
+                          label: 'เข้าสู่ระบบด้วย Google',
+                          labelColor: isDark
+                              ? Colors.white
+                              : const Color(0xFF111827),
+                          border: Border.all(
+                            color: isDark
+                                ? AppColors.borderDark
+                                : const Color(0xFFE5E7EB),
+                            width: 1.5,
+                          ),
+                        ),
+
+                        // Error
+                        if (_error != null) ...[
+                          const SizedBox(height: 20),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.red.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: AppColors.red.withValues(alpha: 0.25)),
+                            ),
+                            child: Text(
+                              _error!,
+                              style: GoogleFonts.notoSansThai(
+                                  fontSize: 13, color: AppColors.red),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 40),
+                        Text(
+                          'การเข้าสู่ระบบครั้งแรก ระบบจะสร้างบัญชีให้โดยอัตโนมัติ',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 12,
+                            color: isDark
+                                ? AppColors.textTertiaryDark
+                                : AppColors.textTertiaryLight,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Decorative blob ───────────────────────────────────────────
+class _Blob extends StatelessWidget {
+  final double size;
+  final Color color;
+  const _Blob({required this.size, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+// ── Feature pill ──────────────────────────────────────────────
+class _FeaturePill extends StatelessWidget {
+  final String label;
+  final bool isDark;
+  const _FeaturePill({required this.label, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF1F2937)
+            : Colors.white.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark
+              ? AppColors.borderDark
+              : const Color(0xFFE5E7EB),
+        ),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.notoSansThai(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: isDark
+              ? AppColors.textSecondaryDark
+              : AppColors.textSecondaryLight,
         ),
       ),
     );
   }
 }
 
+// ── Social button ─────────────────────────────────────────────
 class _SocialButton extends StatelessWidget {
   final VoidCallback? onTap;
   final bool isLoading;
-  final Color backgroundColor;
+  final Gradient? gradient;
+  final Color? backgroundColor;
   final Widget icon;
   final String label;
   final Color labelColor;
   final BoxBorder? border;
+  final Color? shadowColor;
 
   const _SocialButton({
     required this.onTap,
     required this.isLoading,
-    required this.backgroundColor,
+    this.gradient,
+    this.backgroundColor,
     required this.icon,
     required this.label,
     required this.labelColor,
     this.border,
+    this.shadowColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDisabled = onTap == null;
     return SizedBox(
       width: double.infinity,
-      height: 52,
+      height: 56,
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Ink(
           decoration: BoxDecoration(
-            color: onTap == null ? backgroundColor.withOpacity(0.5) : backgroundColor,
-            borderRadius: BorderRadius.circular(14),
+            gradient: isDisabled
+                ? null
+                : gradient,
+            color: gradient == null
+                ? (isDisabled
+                    ? (backgroundColor ?? Colors.grey).withValues(alpha: 0.5)
+                    : backgroundColor)
+                : null,
+            borderRadius: BorderRadius.circular(16),
             border: border,
+            boxShadow: shadowColor != null && !isDisabled
+                ? [
+                    BoxShadow(
+                      color: shadowColor!.withValues(alpha: 0.35),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : border == null
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
           ),
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: isLoading
                   ? Center(
                       child: SizedBox(
-                        width: 22, height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2.5, color: labelColor),
-                      ))
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: labelColor,
+                        ),
+                      ),
+                    )
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         icon,
-                        const SizedBox(width: 10),
-                        Text(label,
-                            style: GoogleFonts.notoSansThai(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: labelColor,
-                            )),
+                        const SizedBox(width: 12),
+                        Text(
+                          label,
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: labelColor,
+                          ),
+                        ),
                       ],
                     ),
             ),
@@ -173,24 +469,5 @@ class _SocialButton extends StatelessWidget {
   }
 }
 
-class _LineIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/images/line-logo.png',
-      width: 22,
-      height: 22,
-    );
-  }
-}
-
-class _GoogleIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/images/google-logo.png',
-      width: 22,
-      height: 22,
-    );
-  }
-}
+// ignore: unused_element
+double _deg(double deg) => deg * math.pi / 180;

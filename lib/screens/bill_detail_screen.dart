@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../providers/bill_provider.dart';
+import '../providers/groups_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import '../widgets/confirm_dialog.dart';
@@ -35,8 +36,13 @@ class _BillDetailScreenState extends State<BillDetailScreen>
         setState(() => _currentTab = _tabController.index);
       }
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<BillProvider>().loadBill(widget.billId);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final bp = context.read<BillProvider>();
+      await bp.loadBill(widget.billId);
+      // Auto-add current user as first member if bill is new (no members yet)
+      if (bp.members.isEmpty && bp.bill != null && !bp.bill!.isCompleted) {
+        await bp.autoAddCurrentUser();
+      }
     });
   }
 
@@ -2057,7 +2063,10 @@ class _MemberFormSheet extends StatefulWidget {
   State<_MemberFormSheet> createState() => _MemberFormSheetState();
 }
 
-class _MemberFormSheetState extends State<_MemberFormSheet> {
+class _MemberFormSheetState extends State<_MemberFormSheet>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabCtrl;
+  // "สร้างเอง" fields
   late TextEditingController _nameCtrl;
   late TextEditingController _promptpayCtrl;
   late Color _selectedColor;
@@ -2066,10 +2075,11 @@ class _MemberFormSheetState extends State<_MemberFormSheet> {
   @override
   void initState() {
     super.initState();
-    _nameCtrl =
-        TextEditingController(text: widget.editMember?.name ?? '');
-    _promptpayCtrl = TextEditingController(
-        text: widget.editMember?.promptpay ?? '');
+    // If editing, no tabs — just show edit form
+    _tabCtrl = TabController(length: 2, vsync: this);
+    _nameCtrl = TextEditingController(text: widget.editMember?.name ?? '');
+    _promptpayCtrl =
+        TextEditingController(text: widget.editMember?.promptpay ?? '');
     _selectedColor = widget.editMember != null
         ? colorFromHex(widget.editMember!.color)
         : AppColors.memberColors[
@@ -2079,15 +2089,15 @@ class _MemberFormSheetState extends State<_MemberFormSheet> {
 
   @override
   void dispose() {
+    _tabCtrl.dispose();
     _nameCtrl.dispose();
     _promptpayCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _save() async {
+  Future<void> _saveCustom() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) return;
-
     setState(() => _loading = true);
     try {
       if (widget.editMember != null) {
@@ -2114,18 +2124,339 @@ class _MemberFormSheetState extends State<_MemberFormSheet> {
     }
   }
 
+  Future<void> _addFromGroupMember(GroupMember gm) async {
+    final name = gm.profile?.displayName ?? gm.profile?.username ?? 'สมาชิก';
+    final colorIdx =
+        widget.billProvider.members.length % AppColors.memberColors.length;
+    final color = hexFromColor(AppColors.memberColors[colorIdx]);
+    setState(() => _loading = true);
+    try {
+      await widget.billProvider.addMemberFromGroupMember(
+        userId: gm.userId,
+        name: name,
+        color: color,
+      );
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      setState(() => _loading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isEdit = widget.editMember != null;
 
+    // If editing, show simple edit form (no tabs)
+    if (isEdit) {
+      return _buildEditForm(context, isDark);
+    }
+
+    // Check if bill belongs to a group
+    final groupId = widget.bill.groupId;
+    final gp = groupId != null ? context.read<GroupsProvider>() : null;
+    final groupMembers = gp?.currentGroup?.members
+            .where((m) => m.isAccepted)
+            .toList() ??
+        [];
+    // Filter out already-added members
+    final alreadyAddedUserIds = widget.billProvider.members
+        .where((m) => m.userId != null)
+        .map((m) => m.userId!)
+        .toSet();
+    final availableGroupMembers = groupMembers
+        .where((m) => !alreadyAddedUserIds.contains(m.userId))
+        .toList();
+
+    // If no group, show only custom form
+    if (groupId == null || groupMembers.isEmpty) {
+      return _buildCustomForm(context, isDark);
+    }
+
     return Container(
-      padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle bar
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color:
+                      isDark ? AppColors.borderDark : AppColors.borderLight,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Text(
+              'เพิ่มสมาชิก',
+              style: GoogleFonts.notoSansThai(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Tab bar
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF1F2937)
+                  : const Color(0xFFF3F4F6),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: TabBar(
+              controller: _tabCtrl,
+              indicator: BoxDecoration(
+                color: isDark ? const Color(0xFF374151) : Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              labelColor: AppColors.primary,
+              unselectedLabelColor: isDark
+                  ? AppColors.textTertiaryDark
+                  : const Color(0xFF6B7280),
+              labelStyle: GoogleFonts.notoSansThai(
+                  fontSize: 13, fontWeight: FontWeight.w600),
+              unselectedLabelStyle:
+                  GoogleFonts.notoSansThai(fontSize: 13),
+              tabs: const [
+                Tab(text: 'สมาชิกในกลุ่ม'),
+                Tab(text: 'สร้างเอง'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Tab content
+          Flexible(
+            child: TabBarView(
+              controller: _tabCtrl,
+              children: [
+                // ── Tab 0: Group members ──
+                _buildGroupMembersTab(
+                    context, isDark, availableGroupMembers),
+                // ── Tab 1: Custom ──
+                _buildCustomForm(context, isDark),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGroupMembersTab(
+      BuildContext context, bool isDark, List<GroupMember> available) {
+    if (available.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(32),
+        child: Center(
+          child: Text(
+            'สมาชิกในกลุ่มทุกคนถูกเพิ่มแล้ว',
+            style: GoogleFonts.notoSansThai(
+              fontSize: 14,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+      itemCount: available.length,
+      itemBuilder: (ctx, i) {
+        final gm = available[i];
+        final name =
+            gm.profile?.displayName ?? gm.profile?.username ?? 'สมาชิก';
+        final username = gm.profile?.username;
+        final avatarUrl = gm.profile?.avatarUrl;
+        final colorIdx = i % AppColors.memberColors.length;
+        final color = AppColors.memberColors[colorIdx];
+
+        return GestureDetector(
+          onTap: _loading ? null : () => _addFromGroupMember(gm),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF1F2937)
+                  : const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark
+                    ? AppColors.borderDark
+                    : AppColors.borderLight,
+              ),
+            ),
+            child: Row(
+              children: [
+                MemberAvatar(
+                  name: name,
+                  color: color,
+                  size: 36,
+                  avatarUrl: avatarUrl,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight,
+                        ),
+                      ),
+                      if (username != null)
+                        Text(
+                          '@$username',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 12,
+                            color: isDark
+                                ? AppColors.textTertiaryDark
+                                : AppColors.textTertiaryLight,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (_loading)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: AppColors.primary),
+                  )
+                else
+                  const Icon(Icons.add_circle_outline_rounded,
+                      color: AppColors.primary, size: 22),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCustomForm(BuildContext context, bool isDark) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _nameCtrl,
+            autofocus: widget.editMember == null,
+            decoration: const InputDecoration(hintText: 'ชื่อสมาชิก'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _promptpayCtrl,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+                hintText: 'เบอร์ PromptPay (ไม่บังคับ)'),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'สีประจำตัว',
+            style: GoogleFonts.notoSansThai(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isDark
+                  ? AppColors.textPrimaryDark
+                  : AppColors.textPrimaryLight,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: AppColors.memberColors.map((color) {
+              final isSelected = _selectedColor == color;
+              return GestureDetector(
+                onTap: () => setState(() => _selectedColor = color),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: isSelected
+                        ? Border.all(
+                            color: isDark ? Colors.white : Colors.black,
+                            width: 2)
+                        : null,
+                  ),
+                  child: isSelected
+                      ? const Icon(Icons.check_rounded,
+                          color: Colors.white, size: 18)
+                      : null,
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _loading ? null : _saveCustom,
+            child: _loading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : Text(
+                    'เพิ่มสมาชิก',
+                    style: GoogleFonts.notoSansThai(
+                        fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditForm(BuildContext context, bool isDark) {
+    return Container(
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
@@ -2146,7 +2477,7 @@ class _MemberFormSheetState extends State<_MemberFormSheet> {
             ),
             const SizedBox(height: 20),
             Text(
-              isEdit ? 'แก้ไขสมาชิก' : 'เพิ่มสมาชิก',
+              'แก้ไขสมาชิก',
               style: GoogleFonts.notoSansThai(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -2209,7 +2540,7 @@ class _MemberFormSheetState extends State<_MemberFormSheet> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _loading ? null : _save,
+              onPressed: _loading ? null : _saveCustom,
               child: _loading
                   ? const SizedBox(
                       width: 20,
@@ -2217,7 +2548,7 @@ class _MemberFormSheetState extends State<_MemberFormSheet> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : Text(
-                      isEdit ? 'บันทึก' : 'เพิ่มสมาชิก',
+                      'บันทึก',
                       style: GoogleFonts.notoSansThai(
                           fontSize: 15, fontWeight: FontWeight.w600),
                     ),

@@ -42,7 +42,7 @@ class _BillsScreenState extends State<BillsScreen>
     try {
       final data = await _supabase
           .from('bills')
-          .select('*, bill_members(*), bill_items(*)')
+          .select('*, bill_members(*), bill_items(*), groups!bills_group_id_fkey(id, name, emoji)')
           .eq('owner_id', user.id)
           .order('updated_at', ascending: false);
       if (mounted) {
@@ -328,22 +328,169 @@ class _BillList extends StatelessWidget {
       );
     }
 
+    // Separate standalone vs group bills
+    final standaloneBills = bills.where((b) => b.groupId == null).toList();
+    final groupBills = bills.where((b) => b.groupId != null).toList();
+
+    // Group the group bills by groupId
+    final Map<String, List<Bill>> byGroup = {};
+    for (final b in groupBills) {
+      byGroup.putIfAbsent(b.groupId!, () => []).add(b);
+    }
+
+    // Build flat list of items: section headers + bill cards
+    final List<_ListItem> items = [];
+
+    if (standaloneBills.isNotEmpty) {
+      items.add(_SectionHeader(label: 'บิลเดี่ยว', count: standaloneBills.length));
+      for (final b in standaloneBills) {
+        items.add(_BillEntry(bill: b));
+      }
+    }
+
+    if (byGroup.isNotEmpty) {
+      for (final entry in byGroup.entries) {
+        final groupBillList = entry.value;
+        final groupName = groupBillList.first.groupName ?? 'กลุ่ม';
+        final groupEmoji = groupBillList.first.groupEmoji ?? '👥';
+        items.add(_SectionHeader(
+          label: '$groupEmoji $groupName',
+          count: groupBillList.length,
+          isGroup: true,
+        ));
+        for (final b in groupBillList) {
+          items.add(_BillEntry(bill: b));
+        }
+      }
+    }
+
     return RefreshIndicator(
       onRefresh: onRefresh,
       color: AppColors.primary,
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: bills.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+        itemCount: items.length,
         itemBuilder: (context, index) {
-          final bill = bills[index];
-          return _BillListCard(
-            bill: bill,
-            onTap: () => context.push('/bills/${bill.id}'),
-            onEdit: () => onEdit(bill),
-            onDelete: () => onDelete(bill),
+          final item = items[index];
+          if (item is _SectionHeader) {
+            return _SectionHeaderWidget(item: item, isDark: isDark);
+          }
+          final bill = (item as _BillEntry).bill;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _BillListCard(
+              bill: bill,
+              onTap: () => context.push('/bills/${bill.id}'),
+              onEdit: () => onEdit(bill),
+              onDelete: () => onDelete(bill),
+            ),
           );
         },
+      ),
+    );
+  }
+}
+
+// ── List item types ────────────────────────────────────────────
+abstract class _ListItem {}
+
+class _SectionHeader extends _ListItem {
+  final String label;
+  final int count;
+  final bool isGroup;
+  _SectionHeader({required this.label, required this.count, this.isGroup = false});
+}
+
+class _BillEntry extends _ListItem {
+  final Bill bill;
+  _BillEntry({required this.bill});
+}
+
+class _SectionHeaderWidget extends StatelessWidget {
+  final _SectionHeader item;
+  final bool isDark;
+  const _SectionHeaderWidget({required this.item, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, top: 4),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: item.isGroup
+                  ? const Color(0xFFF0F4FF)
+                  : (isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6)),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: item.isGroup
+                    ? AppColors.primary.withValues(alpha: 0.2)
+                    : (isDark ? AppColors.borderDark : AppColors.borderLight),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (item.isGroup)
+                  Icon(Icons.group_rounded,
+                      size: 13, color: AppColors.primary),
+                if (!item.isGroup)
+                  Icon(Icons.receipt_outlined,
+                      size: 13,
+                      color: isDark
+                          ? AppColors.textTertiaryDark
+                          : AppColors.textTertiaryLight),
+                const SizedBox(width: 5),
+                Text(
+                  item.label,
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: item.isGroup
+                        ? AppColors.primary
+                        : (isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: item.isGroup
+                        ? AppColors.primary.withValues(alpha: 0.12)
+                        : (isDark
+                            ? const Color(0xFF374151)
+                            : const Color(0xFFE5E7EB)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${item.count}',
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: item.isGroup
+                          ? AppColors.primary
+                          : (isDark
+                              ? AppColors.textTertiaryDark
+                              : const Color(0xFF6B7280)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Divider(
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              height: 1,
+            ),
+          ),
+        ],
       ),
     );
   }

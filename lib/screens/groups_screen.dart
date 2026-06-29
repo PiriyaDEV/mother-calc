@@ -183,7 +183,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                               ],
                             )
                           : ListView.separated(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                               itemCount: provider.groups.length,
                               separatorBuilder: (_, __) =>
                                   const SizedBox(height: 8),
@@ -288,12 +288,13 @@ class _GroupTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Gear + Trash buttons
+                // Gear + Trash buttons — stop tap propagation to card
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     GestureDetector(
                       onTap: onEdit,
+                      behavior: HitTestBehavior.opaque,
                       child: Container(
                         width: 28,
                         height: 28,
@@ -315,6 +316,7 @@ class _GroupTile extends StatelessWidget {
                     const SizedBox(width: 6),
                     GestureDetector(
                       onTap: onDelete,
+                      behavior: HitTestBehavior.opaque,
                       child: Container(
                         width: 28,
                         height: 28,

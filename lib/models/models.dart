@@ -315,6 +315,8 @@ class Bill {
   final String status; // 'draft' | 'completed'
   final String ownerId;
   final String? groupId;
+  final String? groupName;
+  final String? groupEmoji;
   final BillSettings settings;
   final List<String> paidMemberIds;
   final List<BillMember> members;
@@ -330,6 +332,8 @@ class Bill {
     this.status = 'draft',
     required this.ownerId,
     this.groupId,
+    this.groupName,
+    this.groupEmoji,
     this.settings = const BillSettings(),
     this.paidMemberIds = const [],
     this.members = const [],
@@ -381,6 +385,17 @@ class Bill {
           .toList();
     }
 
+    // Parse joined group info — try multiple FK hint keys
+    String? groupName;
+    String? groupEmoji;
+    final groupRaw = json['groups!bills_group_id_fkey'] ??
+        json['groups'] ??
+        json['group'];
+    if (groupRaw is Map<String, dynamic>) {
+      groupName = groupRaw['name'] as String?;
+      groupEmoji = groupRaw['emoji'] as String?;
+    }
+
     return Bill(
       id: json['id'] as String,
       title: json['title'] as String,
@@ -389,6 +404,8 @@ class Bill {
       status: json['status'] as String? ?? 'draft',
       ownerId: json['owner_id'] as String,
       groupId: json['group_id'] as String?,
+      groupName: groupName,
+      groupEmoji: groupEmoji,
       settings: settings,
       paidMemberIds: paidMemberIds,
       members: members,

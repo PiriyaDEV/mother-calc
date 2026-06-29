@@ -115,6 +115,69 @@ class BillProvider extends ChangeNotifier {
   }
 
   // ── Members ───────────────────────────────────────────────
+
+  /// Auto-add current logged-in user as first member (is_external=false).
+  /// Called after loadBill when members list is empty.
+  Future<void> autoAddCurrentUser() async {
+    if (_bill == null) return;
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+    // Check if already added
+    if (_members.any((m) => m.userId == user.id)) return;
+    try {
+      // Fetch profile for display name
+      final profileData = await _supabase
+          .from('profiles')
+          .select('username, display_name, avatar_url')
+          .eq('id', user.id)
+          .maybeSingle();
+      final displayName = profileData?['display_name'] as String? ??
+          profileData?['username'] as String? ??
+          user.email?.split('@').first ??
+          'ฉัน';
+      final data = await _supabase.from('bill_members').insert({
+        'bill_id': _bill!.id,
+        'user_id': user.id,
+        'name': displayName,
+        'color': '#4366F4',
+        'is_external': false,
+      }).select().single();
+      final member = BillMember.fromJson(data);
+      _members = [..._members, member];
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error auto-adding current user: $e');
+    }
+  }
+
+  /// Add a group member (linked user) to the bill.
+  Future<void> addMemberFromGroupMember({
+    required String userId,
+    required String name,
+    required String color,
+    String? promptpay,
+  }) async {
+    if (_bill == null) return;
+    // Prevent duplicate
+    if (_members.any((m) => m.userId == userId)) return;
+    try {
+      final data = await _supabase.from('bill_members').insert({
+        'bill_id': _bill!.id,
+        'user_id': userId,
+        'name': name,
+        'color': color,
+        if (promptpay != null) 'promptpay': promptpay,
+        'is_external': false,
+      }).select().single();
+      final member = BillMember.fromJson(data);
+      _members = [..._members, member];
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error adding group member: $e');
+      rethrow;
+    }
+  }
+
   Future<void> addMember({
     required String name,
     required String color,
@@ -194,6 +257,7 @@ class BillProvider extends ChangeNotifier {
     required String name,
     required double price,
     required List<String> memberIds,
+    // NOTE: custom_shares and paid_by are NOT in the DB schema — kept in-memory only
     Map<String, double> customShares = const {},
     String? paidBy,
   }) async {
@@ -204,10 +268,13 @@ class BillProvider extends ChangeNotifier {
         'name': name,
         'price': price,
         'member_ids': memberIds,
-        if (customShares.isNotEmpty) 'custom_shares': customShares,
-        'paid_by': paidBy,
+        // custom_shares & paid_by columns don't exist in schema — omit from insert
       }).select().single();
-      final item = BillItem.fromJson(data);
+      // Merge in-memory fields not stored in DB
+      final item = BillItem.fromJson(data).copyWith(
+        customShares: customShares,
+        paidBy: paidBy,
+      );
       _items = [..._items, item];
       notifyListeners();
     } catch (e) {
@@ -227,13 +294,12 @@ class BillProvider extends ChangeNotifier {
     bool clearCustomShares = false,
   }) async {
     try {
+      // Only update columns that exist in the schema
       final updates = <String, dynamic>{
         if (name != null) 'name': name,
         if (price != null) 'price': price,
         if (memberIds != null) 'member_ids': memberIds,
-        if (customShares != null) 'custom_shares': customShares.isEmpty ? null : customShares,
-        if (clearCustomShares) 'custom_shares': null,
-        'paid_by': clearPaidBy ? null : paidBy,
+        // custom_shares & paid_by columns don't exist in schema — omit from update
       };
       await _supabase.from('bill_items').update(updates).eq('id', itemId);
       _items = _items.map((item) {
