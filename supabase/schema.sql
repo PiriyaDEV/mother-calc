@@ -151,6 +151,7 @@ create table public.bill_items (
   price       numeric not null default 0,
   quantity    numeric not null default 1,
   member_ids  jsonb not null default '[]',
+  paid_by     text,
   created_at  timestamptz not null default now()
 );
 

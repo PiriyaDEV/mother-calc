@@ -71,6 +71,7 @@ Future<EntityFormResult?> showCreateEntitySheet(
   return showModalBottomSheet<EntityFormResult>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     backgroundColor: Colors.transparent,
     builder: (_) => _CreateEntitySheet(
       type: type,
@@ -312,7 +313,7 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
                             ),
                             child: Center(
                               child: Text(
-                                _emoji ?? (isBill ? '💰' : '👥'),
+                                _emoji ?? (isBill ? '💸' : '👥'),
                                 style: const TextStyle(fontSize: 22),
                               ),
                             ),

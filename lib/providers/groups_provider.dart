@@ -57,6 +57,21 @@ class GroupsProvider extends ChangeNotifier {
     final user = _supabase.auth.currentUser;
     if (user == null) return null;
     try {
+      // Guard: ensure profile row exists before FK-constrained insert.
+      // The handle_new_user trigger can silently miss on LINE/OAuth sign-ups.
+      final meta = user.userMetadata ?? {};
+      final fallbackName = user.email?.split('@').first ??
+          'user_${user.id.substring(0, 8)}';
+      await _supabase.from('profiles').upsert({
+        'id': user.id,
+        'username': meta['username'] as String? ?? fallbackName,
+        'display_name': meta['display_name'] as String? ??
+            meta['full_name'] as String? ??
+            meta['name'] as String? ??
+            fallbackName,
+        'avatar_url': meta['avatar_url'] as String? ?? meta['picture'] as String?,
+      }, onConflict: 'id', ignoreDuplicates: true);
+
       final data = await _supabase.from('groups').insert({
         'name': name,
         'emoji': emoji,

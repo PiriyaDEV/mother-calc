@@ -31,8 +31,8 @@ class FriendsProvider extends ChangeNotifier {
           .from('friends')
           .select(
             '*, '
-            'profiles!friends_requester_id_fkey(id, username, display_name, avatar_url, promptpay), '
-            'profiles!friends_addressee_id_fkey(id, username, display_name, avatar_url, promptpay)',
+            'requester_profile:profiles!friends_requester_id_fkey(id, username, display_name, avatar_url, promptpay), '
+            'addressee_profile:profiles!friends_addressee_id_fkey(id, username, display_name, avatar_url, promptpay)',
           )
           .or('requester_id.eq.${user.id},addressee_id.eq.${user.id}');
 
@@ -43,8 +43,8 @@ class FriendsProvider extends ChangeNotifier {
       for (final row in (data as List)) {
         final map = Map<String, dynamic>.from(row as Map);
 
-        final rp = map['profiles!friends_requester_id_fkey'];
-        final ap = map['profiles!friends_addressee_id_fkey'];
+        final rp = map['requester_profile'];
+        final ap = map['addressee_profile'];
 
         final friend = Friend(
           id: map['id'] as String,

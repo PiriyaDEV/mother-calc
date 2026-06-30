@@ -132,7 +132,7 @@ class BillProvider extends ChangeNotifier {
       // Fetch profile for display name and avatar
       final profileData = await _supabase
           .from('profiles')
-          .select('username, display_name, avatar_url')
+          .select('username, display_name, avatar_url, promptpay')
           .eq('id', user.id)
           .maybeSingle();
       final displayName = profileData?['display_name'] as String? ??
@@ -140,12 +140,14 @@ class BillProvider extends ChangeNotifier {
           user.email?.split('@').first ??
           'ฉัน';
       final avatarUrl = profileData?['avatar_url'] as String?;
+      final promptpay = profileData?['promptpay'] as String?;
       final data = await _supabase.from('bill_members').insert({
         'bill_id': _bill!.id,
         'user_id': user.id,
         'name': displayName,
         'color': '#4366F4',
         'is_external': false,
+        if (promptpay != null) 'promptpay': promptpay,
       }).select().single();
       // Attach profile data (avatar_url) in-memory since it's not stored in bill_members
       final member = BillMember.fromJson({
@@ -273,7 +275,6 @@ class BillProvider extends ChangeNotifier {
     required String name,
     required double price,
     required List<String> memberIds,
-    // NOTE: custom_shares and paid_by are NOT in the DB schema — kept in-memory only
     Map<String, double> customShares = const {},
     String? paidBy,
   }) async {
@@ -284,12 +285,10 @@ class BillProvider extends ChangeNotifier {
         'name': name,
         'price': price,
         'member_ids': memberIds,
-        // custom_shares & paid_by columns don't exist in schema — omit from insert
+        if (paidBy != null) 'paid_by': paidBy,
       }).select().single();
-      // Merge in-memory fields not stored in DB
       final item = BillItem.fromJson(data).copyWith(
         customShares: customShares,
-        paidBy: paidBy,
       );
       _items = [..._items, item];
       notifyListeners();
@@ -310,12 +309,12 @@ class BillProvider extends ChangeNotifier {
     bool clearCustomShares = false,
   }) async {
     try {
-      // Only update columns that exist in the schema
       final updates = <String, dynamic>{
         if (name != null) 'name': name,
         if (price != null) 'price': price,
         if (memberIds != null) 'member_ids': memberIds,
-        // custom_shares & paid_by columns don't exist in schema — omit from update
+        if (clearPaidBy) 'paid_by': null
+        else if (paidBy != null) 'paid_by': paidBy,
       };
       await _supabase.from('bill_items').update(updates).eq('id', itemId);
       _items = _items.map((item) {

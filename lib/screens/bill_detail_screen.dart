@@ -1317,7 +1317,7 @@ class _MemberTile extends StatelessWidget {
     final color = colorFromHex(member.color);
 
     return GestureDetector(
-      onTap: readOnly
+      onTap: readOnly || !member.isExternal
           ? null
           : () => showModalBottomSheet(
                 context: context,
@@ -1352,15 +1352,41 @@ class _MemberTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  member.name,
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        member.name,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight,
+                        ),
+                      ),
+                    ),
+                    if (!member.isExternal) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4366F4).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'ถูกเพิ่มมา',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF4366F4),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 Text(
                   '${summary.items.length} รายการ',
