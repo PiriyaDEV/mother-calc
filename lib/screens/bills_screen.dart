@@ -4,11 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
-import '../utils/bill_utils.dart';
-import '../widgets/bill_status_pill.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/create_entity_sheet.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/shared_bill_card.dart';
 
 class BillsScreen extends StatefulWidget {
   const BillsScreen({super.key});
@@ -368,7 +367,7 @@ class _BillList extends StatelessWidget {
           final bill = (item as _BillEntry).bill;
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: _BillListCard(
+            child: SharedBillCard(
               bill: bill,
               onTap: () => context.push('/bills/${bill.id}'),
               onEdit: () => onEdit(bill),
@@ -481,213 +480,6 @@ class _SectionHeaderWidget extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Bill List Card ─────────────────────────────────────────────
-class _BillListCard extends StatelessWidget {
-  final Bill bill;
-  final VoidCallback onTap;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  const _BillListCard({
-    required this.bill,
-    required this.onTap,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final total = bill.items.fold(0.0, (s, i) => s + i.price);
-    final memberCount = bill.members.length;
-    final stripeColor = bill.isCompleted ? AppColors.emerald : AppColors.primary;
-    final visibleTags = bill.tags.take(2).toList();
-    final extraTags = bill.tags.length > 2 ? bill.tags.length - 2 : 0;
-    final textTertiary = isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: isDark ? null : AppColors.shadowCard,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Left color stripe
-                Container(width: 5, color: stripeColor),
-                // Card content
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 14, 14, 14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Emoji icon
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: stripeColor.withValues(alpha: 0.10),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Center(
-                                child: Text(bill.emoji ?? '🧾', style: const TextStyle(fontSize: 20)),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            // Title + meta
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    bill.title,
-                                    style: GoogleFonts.notoSansThai(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  // Group badge (if group bill)
-                                  if (bill.groupName != null) ...[
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.3) : AppColors.primaryFaint,
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        '${bill.groupEmoji ?? '👥'} ${bill.groupName}',
-                                        style: GoogleFonts.notoSansThai(
-                                          fontSize: 11,
-                                          color: AppColors.primary,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                  ],
-                                  Row(
-                                    children: [
-                                      BillStatusPill(status: bill.status),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        '${bill.items.length} รายการ · $memberCount คน',
-                                        style: GoogleFonts.notoSansThai(fontSize: 11, color: textTertiary),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            // Amount + action buttons
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  formatNumber(total),
-                                  style: GoogleFonts.notoSansThai(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
-                                    color: stripeColor,
-                                  ),
-                                ),
-                                Text(
-                                  bill.settings.currency,
-                                  style: GoogleFonts.notoSansThai(
-                                    fontSize: 11,
-                                    color: textTertiary,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: onEdit,
-                                      child: Container(
-                                        width: 28, height: 28,
-                                        decoration: BoxDecoration(
-                                          color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Icon(Icons.settings_outlined, size: 15,
-                                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    GestureDetector(
-                                      onTap: onDelete,
-                                      child: Container(
-                                        width: 28, height: 28,
-                                        decoration: BoxDecoration(
-                                          color: AppColors.red.withValues(alpha: 0.08),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: const Icon(Icons.delete_outline_rounded, size: 15, color: AppColors.red),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        // Tags row
-                        if (bill.tags.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              ...visibleTags.map((tag) => Padding(
-                                    padding: const EdgeInsets.only(right: 6),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary.withValues(alpha: 0.08),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text('#$tag',
-                                          style: GoogleFonts.notoSansThai(
-                                              fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w500)),
-                                    ),
-                                  )),
-                              if (extraTags > 0)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text('+$extraTags',
-                                      style: GoogleFonts.notoSansThai(fontSize: 11, color: textTertiary)),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

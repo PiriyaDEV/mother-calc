@@ -10,6 +10,7 @@ import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import '../widgets/section_header.dart';
+import '../widgets/shared_bill_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -454,7 +455,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                         Positioned(
                                           right: -6,
                                           bottom: -10,
+                                          child: Opacity(
+                                          opacity: 0.5,
                                           child: Text(cfg.flag, style: const TextStyle(fontSize: 56)),
+                                        ),
                                         ),
                                         Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -535,7 +539,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisCount: 2,
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 1.7,
+                        childAspectRatio: 1.5,
                       ),
                       delegate: SliverChildListDelegate([
                         _FactCard(
@@ -607,12 +611,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           final bill = _recentBills[index];
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 8),
-                            child: _RecentBillRow(
+                            child: SharedBillCard(
                               bill: bill,
-                              total: _billTotal(bill),
-                              formatBaht: _formatBaht,
-                              onTap: () =>
-                                  context.push('/bills/${bill.id}'),
+                              onTap: () => context.push('/bills/${bill.id}'),
                             ),
                           );
                         },
@@ -950,219 +951,51 @@ class _FactCard extends StatelessWidget {
             ? null
             : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
         children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: isDark ? iconBgDark : iconBg,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 17, color: iconColor),
+          Positioned(
+            right: -10,
+            bottom: -10,
+            child: Icon(icon, size: 60, color: iconColor.withValues(alpha: isDark ? 0.06 : 0.08)),
           ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: GoogleFonts.notoSansThai(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: GoogleFonts.notoSansThai(
-              fontSize: 10,
-              color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RecentBillRow extends StatelessWidget {
-  final Bill bill;
-  final double total;
-  final String Function(double) formatBaht;
-  final VoidCallback onTap;
-
-  const _RecentBillRow({
-    required this.bill,
-    required this.total,
-    required this.formatBaht,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final statusColor = bill.status == 'settled'
-        ? const Color(0xFF22C55E)
-        : bill.status == 'active'
-            ? const Color(0xFF286BFE)
-            : const Color(0xFF9CA3AF);
-    final statusLabel = bill.status == 'settled'
-        ? 'ชำระแล้ว'
-        : bill.status == 'active'
-            ? 'กำลังใช้งาน'
-            : 'ร่าง';
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
-          boxShadow: isDark
-              ? null
-              : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(14),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: isDark ? iconBgDark : iconBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 18, color: iconColor),
               ),
-              child: Center(
-                child: Text(bill.emoji ?? '🧾', style: const TextStyle(fontSize: 22)),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    bill.title,
+                    value,
                     style: GoogleFonts.notoSansThai(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: iconColor,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          statusLabel,
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: statusColor,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${bill.items.length} รายการ · ${_formatDate(bill.updatedAt)}',
-                        style: GoogleFonts.notoSansThai(
-                          fontSize: 11,
-                          color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 1),
+                  Text(
+                    label,
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 10,
+                      color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                    ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '฿${formatBaht(total)}',
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                // Member avatar dots
-                if (bill.members.isNotEmpty)
-                  _MemberAvatarStrip(members: bill.members, isDark: isDark),
-                Icon(Icons.chevron_right_rounded, size: 18,
-                    color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatDate(DateTime? dt) {
-    if (dt == null) return '';
-    const months = [
-      '', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-      'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
-    ];
-    return '${dt.day} ${months[dt.month]}';
-  }
-}
-
-class _MemberAvatarStrip extends StatelessWidget {
-  final List<BillMember> members;
-  final bool isDark;
-  const _MemberAvatarStrip({required this.members, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    final visible = members.take(3).toList();
-    final extra = members.length > 3 ? members.length - 3 : 0;
-    return SizedBox(
-      height: 20,
-      width: visible.length * 14.0 + 20 + (extra > 0 ? 18 : 0),
-      child: Stack(
-        children: [
-          ...visible.asMap().entries.map((e) => Positioned(
-                left: e.key * 14.0,
-                child: Container(
-                  width: 20, height: 20,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.memberColors[e.key % AppColors.memberColors.length],
-                    border: Border.all(color: isDark ? AppColors.surfaceDark : Colors.white, width: 1.5),
-                  ),
-                ),
-              )),
-          if (extra > 0)
-            Positioned(
-              left: visible.length * 14.0,
-              child: Container(
-                width: 20, height: 20,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
-                  border: Border.all(color: isDark ? AppColors.surfaceDark : Colors.white, width: 1.5),
-                ),
-                child: Center(
-                  child: Text('+$extra',
-                      style: GoogleFonts.notoSansThai(
-                          fontSize: 7, fontWeight: FontWeight.w700,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight)),
-                ),
-              ),
-            ),
+            ],
+          ),
         ],
       ),
     );

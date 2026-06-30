@@ -9,8 +9,8 @@ import '../providers/bill_provider.dart';
 import '../providers/groups_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
-import '../widgets/bill_status_pill.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/shared_bill_card.dart';
 import '../widgets/create_entity_sheet.dart';
 import '../widgets/member_avatar.dart';
 import '../widgets/summary_tab.dart';
@@ -673,14 +673,57 @@ class _BillsTab extends StatelessWidget {
             ),
           )
         else
-          ...bills.map((bill) => _BillRow(
-                bill: bill,
-                isDark: isDark,
-                gp: gp,
-                groupId: group.id,
+          ...bills.map((bill) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: SharedBillCard(
+                  bill: bill,
+                  onTap: () async {
+                    await context.push('/bills/${bill.id}');
+                    if (context.mounted) gp.loadGroupDetail(group.id);
+                  },
+                  onEdit: () => _editBill(context, bill),
+                  onDelete: () => _deleteBill(context, bill),
+                ),
               )),
       ],
     );
+  }
+
+  Future<void> _editBill(BuildContext context, Bill bill) async {
+    final result = await showCreateEntitySheet(
+      context,
+      type: 'bill',
+      mode: 'edit',
+      initialData: EntityFormResult(
+        name: bill.title,
+        emoji: bill.emoji,
+        tags: bill.tags,
+        settings: bill.settings,
+        description: '',
+      ),
+    );
+    if (result == null) return;
+    try {
+      await Supabase.instance.client.from('bills').update({
+        'title': result.name,
+        'emoji': result.emoji,
+        'tags': result.tags,
+      }).eq('id', bill.id);
+      await gp.loadGroupDetail(group.id);
+    } catch (_) {}
+  }
+
+  Future<void> _deleteBill(BuildContext context, Bill bill) async {
+    final ok = await showConfirmDialog(
+      context,
+      title: 'ลบบิล "${bill.title}"?',
+      description: 'การกระทำนี้ไม่สามารถย้อนกลับได้',
+      confirmLabel: 'ลบบิล',
+      danger: true,
+    );
+    if (ok == true) {
+      await gp.deleteGroupBill(bill.id);
+    }
   }
 
   Future<void> _createBill(BuildContext context) async {
@@ -698,253 +741,6 @@ class _BillsTab extends StatelessWidget {
     );
     if (newBill != null && context.mounted) {
       context.push('/bills/${newBill.id}');
-    }
-  }
-}
-
-class _BillRow extends StatelessWidget {
-  final Bill bill;
-  final bool isDark;
-  final GroupsProvider gp;
-  final String groupId;
-
-  const _BillRow({
-    required this.bill,
-    required this.isDark,
-    required this.gp,
-    required this.groupId,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final dateStr = formatDate(bill.updatedAt);
-    final visibleTags = bill.tags.take(2).toList();
-    final extraTags = bill.tags.length > 2 ? bill.tags.length - 2 : 0;
-
-    // Compute total from bill items
-    final calc = calculateBill(bill);
-    final totalStr = calc.total > 0
-        ? formatNumber(calc.total)
-        : null;
-    final memberCount = bill.members.length;
-
-    return GestureDetector(
-      onTap: () async {
-        await context.push('/bills/${bill.id}');
-        // Refresh group bills after returning from bill detail
-        if (context.mounted) {
-          gp.loadGroupDetail(groupId);
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-              color: isDark ? AppColors.borderDark : AppColors.borderLight),
-        ),
-        child: Row(
-          children: [
-            // Emoji / icon
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF374151)
-                    : const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(
-                  bill.emoji ?? '🧾',
-                  style: const TextStyle(fontSize: 20),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    bill.title,
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimaryLight,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 4,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      BillStatusPill(status: bill.status),
-                      if (dateStr.isNotEmpty)
-                        Text(
-                          dateStr,
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 11,
-                            color: isDark
-                                ? AppColors.textTertiaryDark
-                                : AppColors.textTertiaryLight,
-                          ),
-                        ),
-                      // Member count badge
-                      if (memberCount > 0)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.people_outline_rounded,
-                              size: 11,
-                              color: isDark
-                                  ? AppColors.textTertiaryDark
-                                  : AppColors.textTertiaryLight,
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              '$memberCount คน',
-                              style: GoogleFonts.notoSansThai(
-                                fontSize: 11,
-                                color: isDark
-                                    ? AppColors.textTertiaryDark
-                                    : AppColors.textTertiaryLight,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ...visibleTags.map((tag) => Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF374151)
-                                  : const Color(0xFFF3F4F6),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              '#$tag',
-                              style: GoogleFonts.notoSansThai(
-                                fontSize: 10,
-                                color: isDark
-                                    ? AppColors.textTertiaryDark
-                                    : AppColors.textTertiaryLight,
-                              ),
-                            ),
-                          )),
-                      if (extraTags > 0)
-                        Text(
-                          '+$extraTags',
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 10,
-                            color: isDark
-                                ? AppColors.textTertiaryDark
-                                : AppColors.textTertiaryLight,
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            // Right side: total + actions
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (totalStr != null)
-                  Text(
-                    '฿$totalStr',
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Edit
-                    GestureDetector(
-                      onTap: () => _editBill(context),
-                      child: Padding(
-                        padding: const EdgeInsets.all(6),
-                        child: Icon(
-                          Icons.settings_outlined,
-                          size: 18,
-                          color: isDark
-                              ? AppColors.textTertiaryDark
-                              : AppColors.textTertiaryLight,
-                        ),
-                      ),
-                    ),
-                    // Delete
-                    GestureDetector(
-                      onTap: () => _deleteBill(context),
-                      child: const Padding(
-                        padding: EdgeInsets.all(6),
-                        child: Icon(Icons.delete_outline_rounded,
-                            size: 18, color: AppColors.red),
-                      ),
-                    ),
-                    // Navigate
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 20,
-                      color: isDark
-                          ? AppColors.textTertiaryDark
-                          : AppColors.textTertiaryLight,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _editBill(BuildContext context) async {
-    final result = await showCreateEntitySheet(
-      context,
-      type: 'bill',
-      mode: 'edit',
-      initialData: EntityFormResult(
-        name: bill.title,
-        emoji: bill.emoji,
-        tags: bill.tags,
-        settings: bill.settings,
-      ),
-    );
-    if (result == null) return;
-    try {
-      await Supabase.instance.client.from('bills').update({
-        'title': result.name,
-        'emoji': result.emoji,
-        'tags': result.tags,
-      }).eq('id', bill.id);
-      await gp.loadGroupDetail(groupId);
-    } catch (_) {}
-  }
-
-  Future<void> _deleteBill(BuildContext context) async {
-    final ok = await showConfirmDialog(
-      context,
-      title: 'ลบบิล "${bill.title}"?',
-      description: 'การกระทำนี้ไม่สามารถย้อนกลับได้',
-      confirmLabel: 'ลบบิล',
-      danger: true,
-    );
-    if (ok == true) {
-      await gp.deleteGroupBill(bill.id);
     }
   }
 }
