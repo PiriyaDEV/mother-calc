@@ -4,7 +4,6 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../providers/bill_provider.dart';
-import '../providers/user_stats_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import 'member_avatar.dart';
@@ -146,13 +145,6 @@ class _SummaryTabState extends State<SummaryTab> {
     final paidCount = bill.paidMemberIds.length;
     final allPaid = paidCount == members.length && members.isNotEmpty;
 
-    // Build member amounts map for podium
-    final memberAmounts = <String, double>{};
-    for (final s in calc.memberSummaries) {
-      memberAmounts[s.member.name] = s.total;
-    }
-    final podium = UserStatsProvider.computePodium(memberAmounts);
-
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -165,17 +157,6 @@ class _SummaryTabState extends State<SummaryTab> {
           isCompleted: isCompleted,
         ),
         const SizedBox(height: 12),
-
-        // ── Podium (completed bills only) ──────────────────────
-        if (isCompleted && podium.isNotEmpty) ...[
-          _PodiumCard(
-            podium: podium,
-            isDark: isDark,
-            currentUserId: currentUserId,
-            members: members,
-          ),
-          const SizedBox(height: 12),
-        ],
 
         // ── Bill Breakdown ─────────────────────────────────────
         _BillBreakdownCard(calc: calc, bill: bill, isDark: isDark),
@@ -1606,228 +1587,6 @@ class _AllMembersSection extends StatelessWidget {
             }),
             const SizedBox(height: 4),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-// ── Podium Card ───────────────────────────────────────────────
-class _PodiumCard extends StatefulWidget {
-  final List<BillRankResult> podium;
-  final bool isDark;
-  final String? currentUserId;
-  final List<BillMember> members;
-
-  const _PodiumCard({
-    required this.podium,
-    required this.isDark,
-    required this.currentUserId,
-    required this.members,
-  });
-
-  @override
-  State<_PodiumCard> createState() => _PodiumCardState();
-}
-
-class _PodiumCardState extends State<_PodiumCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _scaleAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 700));
-    _scaleAnim = CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut);
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (mounted) _ctrl.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  static const _rankColors = [
-    Color(0xFFFFD700), // gold
-    Color(0xFFC0C0C0), // silver
-    Color(0xFFCD7F32), // bronze
-  ];
-  static const _rankEmojis = ['🥇', '🥈', '🥉'];
-  static const _rankLabels = ['อันดับ 1', 'อันดับ 2', 'อันดับ 3'];
-  static const _podiumHeights = [90.0, 70.0, 55.0];
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = widget.isDark;
-    final podium = widget.podium;
-
-    // Reorder for display: 2nd, 1st, 3rd
-    final displayOrder = <int>[];
-    if (podium.length >= 2) displayOrder.add(1);
-    displayOrder.add(0);
-    if (podium.length >= 3) displayOrder.add(2);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF1E1B4B), const Color(0xFF312E81)]
-              : [const Color(0xFFF5F3FF), const Color(0xFFEDE9FE)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark
-              ? const Color(0xFF4C1D95).withValues(alpha: 0.5)
-              : const Color(0xFFDDD6FE),
-        ),
-      ),
-      child: Column(
-        children: [
-          // Title
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('🏆', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: 8),
-              Text(
-                'ผลการแข่งขัน',
-                style: GoogleFonts.notoSansThai(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: isDark
-                      ? Colors.white
-                      : const Color(0xFF4C1D95),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Podium visual
-          ScaleTransition(
-            scale: _scaleAnim,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: displayOrder.map((idx) {
-                final entry = podium[idx];
-                final color = _rankColors[idx];
-                final emoji = _rankEmojis[idx];
-                final label = _rankLabels[idx];
-                final height = _podiumHeights[idx];
-                final isFirst = idx == 0;
-
-                return Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      // Crown for 1st
-                      if (isFirst)
-                        const Text('👑',
-                            style: TextStyle(fontSize: 20)),
-                      const SizedBox(height: 4),
-                      // Medal emoji
-                      Text(emoji,
-                          style: TextStyle(
-                              fontSize: isFirst ? 28 : 22)),
-                      const SizedBox(height: 4),
-                      // Name
-                      Text(
-                        entry.memberName,
-                        style: GoogleFonts.notoSansThai(
-                          fontSize: isFirst ? 13 : 12,
-                          fontWeight: FontWeight.w700,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF1F2937),
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      // Amount
-                      Text(
-                        '฿${formatNumber(entry.amount)}',
-                        style: GoogleFonts.notoSansThai(
-                          fontSize: 11,
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.7)
-                              : const Color(0xFF6B7280),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      // Podium block
-                      Container(
-                        height: height,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        decoration: BoxDecoration(
-                          color: color.withValues(
-                              alpha: isDark ? 0.8 : 0.9),
-                          borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(8)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: color.withValues(alpha: 0.4),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            label,
-                            style: GoogleFonts.notoSansThai(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Points earned note
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.white.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('⭐', style: TextStyle(fontSize: 14)),
-                const SizedBox(width: 6),
-                Text(
-                  'อันดับ 1 +30pts  •  อันดับ 2 +20pts  •  อันดับ 3 +10pts',
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 11,
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.7)
-                        : const Color(0xFF6B7280),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );

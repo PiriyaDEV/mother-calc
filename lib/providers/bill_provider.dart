@@ -168,16 +168,20 @@ class BillProvider extends ChangeNotifier {
     }
   }
 
-  /// Add a group member (linked user) to the bill.
+  /// Add a group member (linked user or external) to the bill.
   Future<void> addMemberFromGroupMember({
-    required String userId,
+    required String? userId,
     required String name,
     required String color,
     String? promptpay,
   }) async {
     if (_bill == null) return;
-    // Prevent duplicate
-    if (_members.any((m) => m.userId == userId)) return;
+    // Prevent duplicate: by userId for linked users, by name for external
+    if (userId != null) {
+      if (_members.any((m) => m.userId == userId)) return;
+    } else {
+      if (_members.any((m) => m.userId == null && m.name == name)) return;
+    }
     try {
       final data = await _supabase.from('bill_members').insert({
         'bill_id': _bill!.id,
@@ -185,7 +189,7 @@ class BillProvider extends ChangeNotifier {
         'name': name,
         'color': color,
         if (promptpay != null) 'promptpay': promptpay,
-        'is_external': false,
+        'is_external': userId == null,
       }).select().single();
       final member = BillMember.fromJson(data);
       _members = [..._members, member];

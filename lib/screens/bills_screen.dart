@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
+import '../providers/bills_list_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/create_entity_sheet.dart';
 import '../widgets/empty_state.dart';
@@ -18,41 +20,21 @@ class BillsScreen extends StatefulWidget {
 class _BillsScreenState extends State<BillsScreen>
     with SingleTickerProviderStateMixin {
   final _supabase = Supabase.instance.client;
-  List<Bill> _bills = [];
-  bool _loading = true;
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadBills();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<BillsListProvider>().loadBills();
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadBills() async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return;
-    try {
-      final data = await _supabase
-          .from('bills')
-          .select('*, bill_members(*, profiles(id, username, display_name, avatar_url)), bill_items(*), groups!bills_group_id_fkey(id, name, emoji)')
-          .eq('owner_id', user.id)
-          .order('updated_at', ascending: false);
-      if (mounted) {
-        setState(() {
-          _bills = (data as List).map((e) => Bill.fromJson(e)).toList();
-          _loading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _loading = false);
-    }
   }
 
   Future<void> _createBill() async {
@@ -78,10 +60,11 @@ class _BillsScreenState extends State<BillsScreen>
           'paid_member_ids': [],
         }).select('*, bill_members(*), bill_items(*)').single();
 
-        final bill = Bill.fromJson(data);
+        final bill = Bill.fromJson(data as Map<String, dynamic>);
         if (mounted) {
-          context.push('/bills/${bill.id}');
-          _loadBills();
+          context.read<BillsListProvider>().addBill(bill);
+          await context.push('/bills/${bill.id}');
+          if (mounted) context.read<BillsListProvider>().loadBills(force: true);
         }
       } catch (e) {
         debugPrint('Error creating bill: $e');
@@ -92,8 +75,10 @@ class _BillsScreenState extends State<BillsScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final activeBills = _bills.where((b) => !b.isCompleted).toList();
-    final completedBills = _bills.where((b) => b.isCompleted).toList();
+    final provider = context.watch<BillsListProvider>();
+    final activeBills = provider.activeBills;
+    final completedBills = provider.completedBills;
+    final allBills = provider.bills;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -120,10 +105,10 @@ class _BillsScreenState extends State<BillsScreen>
                             height: 1.1,
                           ),
                         ),
-                        if (_bills.isNotEmpty) ...[
+                        if (allBills.isNotEmpty) ...[
                           const SizedBox(height: 2),
                           Text(
-                            '${_bills.length} บิลทั้งหมด',
+                            '${allBills.length} บิลทั้งหมด',
                             style: GoogleFonts.notoSansThai(
                               fontSize: 13,
                               color: isDark
@@ -135,7 +120,6 @@ class _BillsScreenState extends State<BillsScreen>
                       ],
                     ),
                   ),
-                  // Add button
                   GestureDetector(
                     onTap: _createBill,
                     child: Container(
@@ -213,7 +197,7 @@ class _BillsScreenState extends State<BillsScreen>
 
             // ── Content ──────────────────────────────────────────
             Expanded(
-              child: _loading
+              child: provider.loading && !provider.hasLoaded
                   ? const Center(
                       child: CircularProgressIndicator(
                         color: AppColors.primary,
@@ -230,14 +214,14 @@ class _BillsScreenState extends State<BillsScreen>
                           emptySubtext: 'กดปุ่ม + เพื่อสร้างบิลแรกของคุณ',
                           emptyCtaLabel: 'สร้างบิล',
                           onEmptyCta: _createBill,
-                          onRefresh: _loadBills,
+                          onRefresh: () => context.read<BillsListProvider>().loadBills(force: true),
                         ),
                         _BillList(
                           bills: completedBills,
                           emptyEmoji: '✅',
                           emptyText: 'ยังไม่มีบิลที่เสร็จ',
                           emptySubtext: 'บิลที่ชำระครบแล้วจะปรากฏที่นี่',
-                          onRefresh: _loadBills,
+                          onRefresh: () => context.read<BillsListProvider>().loadBills(force: true),
                         ),
                       ],
                     ),
@@ -332,7 +316,12 @@ class _BillList extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 10),
             child: SharedBillCard(
               bill: bill,
-              onTap: () => context.push('/bills/${bill.id}'),
+              onTap: () async {
+                await context.push('/bills/${bill.id}');
+                if (context.mounted) {
+                  context.read<BillsListProvider>().loadBills(force: true);
+                }
+              },
             ),
           );
         },

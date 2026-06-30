@@ -11,6 +11,7 @@ class GroupsProvider extends ChangeNotifier {
   List<Bill> _currentGroupBills = [];
   bool _loading = false;
   bool _detailLoading = false;
+  bool _hasLoaded = false;
   String? _error;
 
   List<Group> get groups => _groups;
@@ -19,9 +20,11 @@ class GroupsProvider extends ChangeNotifier {
   List<Bill> get currentGroupBills => _currentGroupBills;
   bool get loading => _loading;
   bool get detailLoading => _detailLoading;
+  bool get hasLoaded => _hasLoaded;
   String? get error => _error;
 
-  Future<void> loadGroups() async {
+  Future<void> loadGroups({bool force = false}) async {
+    if (_hasLoaded && !force) return;
     final user = _supabase.auth.currentUser;
     if (user == null) return;
     _loading = true;
@@ -41,6 +44,7 @@ class GroupsProvider extends ChangeNotifier {
         final groupData = e['group'] as Map<String, dynamic>;
         return Group.fromJson(groupData);
       }).toList();
+      _hasLoaded = true;
     } catch (e) {
       _error = 'ไม่สามารถโหลดข้อมูลกลุ่มได้';
       debugPrint('Error loading groups: $e');
@@ -228,6 +232,26 @@ class GroupsProvider extends ChangeNotifier {
     }
   }
 
+  /// Add an external (non-app-user) member to the group by name.
+  /// Requires DB: group_members.user_id nullable + display_name column.
+  Future<String?> addExternalMember(String groupId, String name) async {
+    if (name.trim().isEmpty) return 'กรุณาใส่ชื่อ';
+    try {
+      await _supabase.from('group_members').insert({
+        'group_id': groupId,
+        'user_id': null,
+        'display_name': name.trim(),
+        'role': 'member',
+        'status': 'accepted',
+      });
+      await loadGroupDetail(groupId);
+      return null;
+    } catch (e) {
+      debugPrint('Error adding external member: $e');
+      return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+    }
+  }
+
   Future<String?> removeMember(String groupId, String memberId) async {
     try {
       await _supabase
@@ -342,6 +366,7 @@ class GroupsProvider extends ChangeNotifier {
     _currentGroup = null;
     _currentMembers = [];
     _currentGroupBills = [];
+    _hasLoaded = false;
     _error = null;
     notifyListeners();
   }

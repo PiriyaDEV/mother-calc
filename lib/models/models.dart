@@ -72,15 +72,6 @@ class Profile {
   final String? promptpay;
   final bool onboardingCompleted;
   final DateTime? createdAt;
-  // ── Gamification stats ──────────────────────────────────────
-  final int billsCompleted;
-  final double totalSpent;
-  final int goldMedals;
-  final int silverMedals;
-  final int bronzeMedals;
-  final int totalPoints;
-  /// Map of achievementId → {unlocked: bool, unlockedAt: String?}
-  final Map<String, dynamic> achievements;
   // ── i18n ────────────────────────────────────────────────────
   final String locale;
 
@@ -92,22 +83,10 @@ class Profile {
     this.promptpay,
     this.onboardingCompleted = false,
     this.createdAt,
-    this.billsCompleted = 0,
-    this.totalSpent = 0,
-    this.goldMedals = 0,
-    this.silverMedals = 0,
-    this.bronzeMedals = 0,
-    this.totalPoints = 0,
-    this.achievements = const {},
     this.locale = 'th',
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
-    Map<String, dynamic> achievements = {};
-    final rawAch = json['achievements'];
-    if (rawAch is Map) {
-      achievements = Map<String, dynamic>.from(rawAch);
-    }
     return Profile(
       id: json['id'] as String,
       username: json['username'] as String?,
@@ -118,13 +97,6 @@ class Profile {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
           : null,
-      billsCompleted: (json['bills_completed'] as num?)?.toInt() ?? 0,
-      totalSpent: (json['total_spent'] as num?)?.toDouble() ?? 0,
-      goldMedals: (json['gold_medals'] as num?)?.toInt() ?? 0,
-      silverMedals: (json['silver_medals'] as num?)?.toInt() ?? 0,
-      bronzeMedals: (json['bronze_medals'] as num?)?.toInt() ?? 0,
-      totalPoints: (json['total_points'] as num?)?.toInt() ?? 0,
-      achievements: achievements,
       locale: json['locale'] as String? ?? 'th',
     );
   }
@@ -137,13 +109,6 @@ class Profile {
         'promptpay': promptpay,
         'onboarding_completed': onboardingCompleted,
         'created_at': createdAt?.toIso8601String(),
-        'bills_completed': billsCompleted,
-        'total_spent': totalSpent,
-        'gold_medals': goldMedals,
-        'silver_medals': silverMedals,
-        'bronze_medals': bronzeMedals,
-        'total_points': totalPoints,
-        'achievements': achievements,
         'locale': locale,
       };
 
@@ -153,13 +118,6 @@ class Profile {
     String? avatarUrl,
     String? promptpay,
     bool? onboardingCompleted,
-    int? billsCompleted,
-    double? totalSpent,
-    int? goldMedals,
-    int? silverMedals,
-    int? bronzeMedals,
-    int? totalPoints,
-    Map<String, dynamic>? achievements,
     String? locale,
   }) {
     return Profile(
@@ -170,13 +128,6 @@ class Profile {
       promptpay: promptpay ?? this.promptpay,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       createdAt: createdAt,
-      billsCompleted: billsCompleted ?? this.billsCompleted,
-      totalSpent: totalSpent ?? this.totalSpent,
-      goldMedals: goldMedals ?? this.goldMedals,
-      silverMedals: silverMedals ?? this.silverMedals,
-      bronzeMedals: bronzeMedals ?? this.bronzeMedals,
-      totalPoints: totalPoints ?? this.totalPoints,
-      achievements: achievements ?? this.achievements,
       locale: locale ?? this.locale,
     );
   }
@@ -577,7 +528,8 @@ class Group {
 class GroupMember {
   final String id;
   final String groupId;
-  final String userId;
+  final String? userId;       // null for external (non-app) members
+  final String? displayName;  // set for external members without a profile
   final String role;   // 'owner' | 'member'
   final String status; // 'pending' | 'accepted' | 'declined'
   final String? invitedBy;
@@ -586,7 +538,8 @@ class GroupMember {
   const GroupMember({
     required this.id,
     required this.groupId,
-    required this.userId,
+    this.userId,
+    this.displayName,
     required this.role,
     this.status = 'pending',
     this.invitedBy,
@@ -595,6 +548,14 @@ class GroupMember {
 
   bool get isAccepted => status == 'accepted';
   bool get isPending => status == 'pending';
+  bool get isExternal => userId == null;
+
+  // Best display name: profile name > displayName field > fallback
+  String get name =>
+      profile?.displayName ??
+      profile?.username ??
+      displayName ??
+      'สมาชิก';
 
   factory GroupMember.fromJson(Map<String, dynamic> json) {
     // Supabase returns the joined profile under the FK hint key
@@ -608,7 +569,8 @@ class GroupMember {
     return GroupMember(
       id: json['id'] as String,
       groupId: json['group_id'] as String,
-      userId: json['user_id'] as String,
+      userId: json['user_id'] as String?,
+      displayName: json['display_name'] as String?,
       role: json['role'] as String? ?? 'member',
       status: json['status'] as String? ?? 'pending',
       invitedBy: json['invited_by'] as String?,

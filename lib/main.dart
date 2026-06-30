@@ -10,11 +10,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/bill_provider.dart';
+import 'providers/bills_list_provider.dart';
 import 'providers/friends_provider.dart';
 import 'providers/notifications_provider.dart';
 import 'providers/groups_provider.dart';
 import 'providers/locale_provider.dart';
-import 'providers/user_stats_provider.dart';
 import 'theme/app_theme.dart';
 import 'router.dart';
 
@@ -50,11 +50,11 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => BillProvider()),
+        ChangeNotifierProvider(create: (_) => BillsListProvider()),
         ChangeNotifierProvider(create: (_) => FriendsProvider()),
         ChangeNotifierProvider(create: (_) => NotificationsProvider()),
         ChangeNotifierProvider(create: (_) => GroupsProvider()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
-        ChangeNotifierProvider(create: (_) => UserStatsProvider()),
       ],
       child: const KidtangApp(),
     ),
@@ -78,7 +78,8 @@ class _KidtangAppState extends State<KidtangApp> {
     // Wire sibling providers so profile data flows into locale + stats.
     authProvider.setSiblingProviders(
       localeProvider: context.read<LocaleProvider>(),
-      statsProvider: context.read<UserStatsProvider>(),
+      groupsProvider: context.read<GroupsProvider>(),
+      billsListProvider: context.read<BillsListProvider>(),
     );
     _router = AppRouter.router(authProvider);
   }

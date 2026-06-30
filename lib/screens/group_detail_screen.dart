@@ -471,9 +471,7 @@ class _MembersTab extends StatelessWidget {
           )
         else
           ...acceptedMembers.map((m) {
-            final name = m.profile?.displayName ??
-                m.profile?.username ??
-                'ผู้ใช้';
+            final name = m.name;
             final username = m.profile?.username;
             final avatarUrl = m.profile?.avatarUrl;
             final isOwner = m.role == 'owner';
@@ -494,7 +492,9 @@ class _MembersTab extends StatelessWidget {
                   // Avatar
                   MemberAvatar(
                     name: name,
-                    color: AppColors.primary,
+                    color: m.isExternal
+                        ? AppColors.neutral400
+                        : AppColors.primary,
                     size: 36,
                     avatarUrl: avatarUrl,
                   ),
@@ -526,24 +526,32 @@ class _MembersTab extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Role badge
+                  // Role/external badge
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: isOwner
-                          ? AppColors.accentIce
-                          : AppColors.neutral100,
+                      color: m.isExternal
+                          ? AppColors.neutral100
+                          : isOwner
+                              ? AppColors.accentIce
+                              : AppColors.neutral100,
                       borderRadius: BorderRadius.circular(AppRadii.xl),
                     ),
                     child: Text(
-                      isOwner ? 'เจ้าของ' : 'สมาชิก',
+                      m.isExternal
+                          ? 'ภายนอก'
+                          : isOwner
+                              ? 'เจ้าของ'
+                              : 'สมาชิก',
                       style: GoogleFonts.notoSansThai(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: isOwner
-                            ? AppColors.primaryBlue
-                            : AppColors.neutral600,
+                        color: m.isExternal
+                            ? AppColors.neutral600
+                            : isOwner
+                                ? AppColors.primaryBlue
+                                : AppColors.neutral600,
                       ),
                     ),
                   ),
@@ -1497,14 +1505,41 @@ class _ManageMembersSheet extends StatefulWidget {
 
 class _ManageMembersSheetState extends State<_ManageMembersSheet> {
   final _usernameCtrl = TextEditingController();
+  final _externalNameCtrl = TextEditingController();
   bool _inviting = false;
+  bool _addingExternal = false;
   String? _inviteError;
   String? _inviteSuccess;
+  String? _externalError;
+  String? _externalSuccess;
 
   @override
   void dispose() {
     _usernameCtrl.dispose();
+    _externalNameCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _addExternal() async {
+    final name = _externalNameCtrl.text.trim();
+    if (name.isEmpty) return;
+    setState(() {
+      _addingExternal = true;
+      _externalError = null;
+      _externalSuccess = null;
+    });
+    final gp = context.read<GroupsProvider>();
+    final err = await gp.addExternalMember(widget.group.id, name);
+    if (!mounted) return;
+    setState(() {
+      _addingExternal = false;
+      if (err != null) {
+        _externalError = err;
+      } else {
+        _externalSuccess = 'เพิ่ม "$name" เรียบร้อย';
+        _externalNameCtrl.clear();
+      }
+    });
   }
 
   Future<void> _invite() async {
@@ -1653,6 +1688,81 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet> {
             ],
             const SizedBox(height: AppSpacing.xl),
 
+            // ── External member section ──
+            Text(
+              'เพิ่มสมาชิกภายนอก (ไม่มีบัญชี)',
+              style: GoogleFonts.notoSansThai(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'สมาชิกที่ไม่ได้ใช้แอป สามารถเพิ่มลงบิลในกลุ่มได้',
+              style: GoogleFonts.notoSansThai(
+                fontSize: 12,
+                color: isDark
+                    ? AppColors.textTertiaryDark
+                    : AppColors.textTertiaryLight,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _externalNameCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'ชื่อสมาชิก',
+                      hintStyle: GoogleFonts.notoSansThai(fontSize: 13),
+                    ),
+                    onSubmitted: (_) => _addExternal(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _addingExternal ? null : _addExternal,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
+                    backgroundColor: AppColors.emerald,
+                  ),
+                  child: _addingExternal
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : Text(
+                          'เพิ่ม',
+                          style: GoogleFonts.notoSansThai(
+                              fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                ),
+              ],
+            ),
+            if (_externalError != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                _externalError!,
+                style: GoogleFonts.notoSansThai(
+                    fontSize: 12, color: AppColors.red),
+              ),
+            ],
+            if (_externalSuccess != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                _externalSuccess!,
+                style: GoogleFonts.notoSansThai(
+                    fontSize: 12, color: AppColors.emerald),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.xl),
+
             // ── Current members ──
             Text(
               'สมาชิกปัจจุบัน (${widget.acceptedMembers.length} คน)',
@@ -1666,9 +1776,7 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet> {
             ),
             const SizedBox(height: AppSpacing.sm),
             ...widget.acceptedMembers.map((m) {
-              final name = m.profile?.displayName ??
-                  m.profile?.username ??
-                  'ผู้ใช้';
+              final name = m.name;
               final username = m.profile?.username;
               final avatarUrl = m.profile?.avatarUrl;
               final isOwner = m.role == 'owner';
@@ -1693,7 +1801,9 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet> {
                   children: [
                     MemberAvatar(
                       name: name,
-                      color: AppColors.primary,
+                      color: m.isExternal
+                          ? AppColors.neutral400
+                          : AppColors.primary,
                       size: 32,
                       avatarUrl: avatarUrl,
                     ),
@@ -1754,19 +1864,27 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
-                        color: isOwner
-                            ? const Color(0xFFFAF5FF)
-                            : const Color(0xFFF3F4F6),
+                        color: m.isExternal
+                            ? const Color(0xFFF3F4F6)
+                            : isOwner
+                                ? const Color(0xFFFAF5FF)
+                                : const Color(0xFFF3F4F6),
                         borderRadius: BorderRadius.circular(AppRadii.xl),
                       ),
                       child: Text(
-                        isOwner ? 'เจ้าของ' : 'สมาชิก',
+                        m.isExternal
+                            ? 'ภายนอก'
+                            : isOwner
+                                ? 'เจ้าของ'
+                                : 'สมาชิก',
                         style: GoogleFonts.notoSansThai(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: isOwner
-                              ? const Color(0xFFA855F7)
-                              : const Color(0xFF6B7280),
+                          color: m.isExternal
+                              ? const Color(0xFF6B7280)
+                              : isOwner
+                                  ? const Color(0xFFA855F7)
+                                  : const Color(0xFF6B7280),
                         ),
                       ),
                     ),

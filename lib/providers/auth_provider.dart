@@ -3,15 +3,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
+import 'bills_list_provider.dart';
+import 'groups_provider.dart';
 import 'locale_provider.dart';
-import 'user_stats_provider.dart';
 
 class AuthProvider extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
 
   // Optional references to sibling providers — set after construction.
   LocaleProvider? _localeProvider;
-  UserStatsProvider? _statsProvider;
+  GroupsProvider? _groupsProvider;
+  BillsListProvider? _billsListProvider;
 
   User? _user;
   Profile? _profile;
@@ -34,10 +36,12 @@ class AuthProvider extends ChangeNotifier {
   /// Wire sibling providers so AuthProvider can push profile data into them.
   void setSiblingProviders({
     required LocaleProvider localeProvider,
-    required UserStatsProvider statsProvider,
+    required GroupsProvider groupsProvider,
+    required BillsListProvider billsListProvider,
   }) {
     _localeProvider = localeProvider;
-    _statsProvider = statsProvider;
+    _groupsProvider = groupsProvider;
+    _billsListProvider = billsListProvider;
     // If profile already loaded, sync immediately.
     if (_profile != null) {
       _syncSiblings(_profile!);
@@ -46,7 +50,6 @@ class AuthProvider extends ChangeNotifier {
 
   void _syncSiblings(Profile profile) {
     _localeProvider?.initFromProfile(profile.locale);
-    _statsProvider?.loadFromProfile(profile);
   }
 
   void _init() {
@@ -344,6 +347,8 @@ class AuthProvider extends ChangeNotifier {
     try { await LineSDK.instance.logout(); } catch (_) {}
     await _supabase.auth.signOut();
     _profile = null;
+    _groupsProvider?.clear();
+    _billsListProvider?.clear();
     notifyListeners();
   }
 
