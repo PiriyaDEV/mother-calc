@@ -40,16 +40,28 @@ class GroupDetailScreen extends StatefulWidget {
   State<GroupDetailScreen> createState() => _GroupDetailScreenState();
 }
 
-class _GroupDetailScreenState extends State<GroupDetailScreen> {
-  String _tab = 'bills'; // default = bills (ตรงกับ Next.js)
+class _GroupDetailScreenState extends State<GroupDetailScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   String? _expandedBillId; // for group summary collapsible
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(
+      length: 4,
+      vsync: this,
+      initialIndex: 1, // default = bills (ตรงกับ Next.js)
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<GroupsProvider>().loadGroupDetail(widget.groupId);
     });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -60,13 +72,13 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     final bills = gp.currentGroupBills;
 
     if (gp.detailLoading) {
-      return Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
-          ),
-          child: const Center(
+      return Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+        ),
+        child: const Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Center(
             child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
           ),
         ),
@@ -74,16 +86,21 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     }
 
     if (group == null) {
-      return Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_rounded),
-            onPressed: () => context.pop(),
-          ),
+      return Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
         ),
-        body: Center(
-          child: Text('ไม่พบกลุ่ม', style: GoogleFonts.notoSansThai(fontSize: 16)),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_rounded),
+              onPressed: () => context.pop(),
+            ),
+          ),
+          body: Center(
+            child: Text('ไม่พบกลุ่ม', style: GoogleFonts.notoSansThai(fontSize: 16)),
+          ),
         ),
       );
     }
@@ -91,13 +108,13 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     final acceptedMembers = group.members.where((m) => m.isAccepted).toList();
     final pendingMembers = group.members.where((m) => m.isPending).toList();
 
-    return Scaffold(
+    return Container(
+      decoration: BoxDecoration(
+        gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+      ),
+      child: Scaffold(
       backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
-        ),
-        child: NestedScrollView(
+      body: NestedScrollView(
         headerSliverBuilder: (context, _) => [
           SliverAppBar(
             pinned: true,
@@ -156,59 +173,43 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(56),
               child: _GroupTabBar(
-                currentTab: _tab,
+                controller: _tabController,
                 isDark: isDark,
                 acceptedCount: acceptedMembers.length,
                 billsCount: bills.length,
-                onTabChanged: (t) => setState(() => _tab = t),
               ),
             ),
           ),
         ],
-        body: _buildTabBody(context, group, bills, acceptedMembers, pendingMembers, isDark, gp),
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _MembersTab(
+              group: group,
+              acceptedMembers: acceptedMembers,
+              pendingMembers: pendingMembers,
+              isDark: isDark,
+            ),
+            _BillsTab(
+              group: group,
+              bills: bills,
+              isDark: isDark,
+              gp: gp,
+            ),
+            _GroupSummaryTab(
+              bills: bills,
+              isDark: isDark,
+              expandedBillId: _expandedBillId,
+              onToggle: (id) => setState(() {
+                _expandedBillId = _expandedBillId == id ? null : id;
+              }),
+            ),
+            _GroupAnalyticsTab(bills: bills, isDark: isDark),
+          ],
+        ),
       ),
       ),
     );
-  }
-
-  Widget _buildTabBody(
-    BuildContext context,
-    Group group,
-    List<Bill> bills,
-    List<GroupMember> acceptedMembers,
-    List<GroupMember> pendingMembers,
-    bool isDark,
-    GroupsProvider gp,
-  ) {
-    switch (_tab) {
-      case 'members':
-        return _MembersTab(
-          group: group,
-          acceptedMembers: acceptedMembers,
-          pendingMembers: pendingMembers,
-          isDark: isDark,
-        );
-      case 'bills':
-        return _BillsTab(
-          group: group,
-          bills: bills,
-          isDark: isDark,
-          gp: gp,
-        );
-      case 'summary':
-        return _GroupSummaryTab(
-          bills: bills,
-          isDark: isDark,
-          expandedBillId: _expandedBillId,
-          onToggle: (id) => setState(() {
-            _expandedBillId = _expandedBillId == id ? null : id;
-          }),
-        );
-      case 'analytics':
-        return _GroupAnalyticsTab(bills: bills, isDark: isDark);
-      default:
-        return const SizedBox.shrink();
-    }
   }
 
   // ── Edit Group Sheet ─────────────────────────────────────────
@@ -247,29 +248,20 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
 
 // ── Tab Bar ───────────────────────────────────────────────────
 class _GroupTabBar extends StatelessWidget {
-  final String currentTab;
+  final TabController controller;
   final bool isDark;
   final int acceptedCount;
   final int billsCount;
-  final ValueChanged<String> onTabChanged;
 
   const _GroupTabBar({
-    required this.currentTab,
+    required this.controller,
     required this.isDark,
     required this.acceptedCount,
     required this.billsCount,
-    required this.onTabChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    final tabs = [
-      _TabDef(id: 'members', label: 'สมาชิก', count: acceptedCount),
-      _TabDef(id: 'bills', label: 'บิล', count: billsCount),
-      const _TabDef(id: 'summary', label: 'สรุป', count: null),
-      const _TabDef(id: 'analytics', label: 'วิเคราะห์', count: null),
-    ];
-
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       padding: const EdgeInsets.all(4),
@@ -277,90 +269,83 @@ class _GroupTabBar extends StatelessWidget {
         color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
         borderRadius: BorderRadius.circular(AppRadii.lg),
       ),
-      child: Row(
-        children: tabs.map((tab) {
-          final isActive = currentTab == tab.id;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onTabChanged(tab.id),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? (isDark ? AppColors.borderDark : Colors.white)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(AppRadii.md),
-                  boxShadow: isActive
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          )
-                        ]
-                      : null,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      tab.label,
-                      style: GoogleFonts.notoSansThai(
-                        fontSize: 12,
-                        fontWeight:
-                            isActive ? FontWeight.w600 : FontWeight.normal,
-                        color: isActive
-                            ? AppColors.primary
-                            : (isDark
-                                ? AppColors.textTertiaryDark
-                                : AppColors.neutral600),
-                      ),
-                    ),
-                    if (tab.count != null) ...[
-                      const SizedBox(width: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? AppColors.primary.withValues(alpha: 0.1)
-                              : (isDark
-                                  ? AppColors.borderDark
-                                  : AppColors.neutral100),
-                          borderRadius: BorderRadius.circular(AppRadii.sm),
-                        ),
-                        child: Text(
-                          '${tab.count}',
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: isActive
-                                ? AppColors.primary
-                                : (isDark
-                                    ? AppColors.textTertiaryDark
-                                    : AppColors.neutral600),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+      child: TabBar(
+        controller: controller,
+        indicator: BoxDecoration(
+          color: isDark ? AppColors.borderDark : Colors.white,
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
-          );
-        }).toList(),
+          ],
+        ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Colors.transparent,
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
+        labelColor: AppColors.primary,
+        unselectedLabelColor: isDark
+            ? AppColors.textTertiaryDark
+            : AppColors.neutral600,
+        labelStyle: GoogleFonts.notoSansThai(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: GoogleFonts.notoSansThai(
+          fontSize: 12,
+          fontWeight: FontWeight.normal,
+        ),
+        tabs: [
+          _CountTab(label: 'สมาชิก', count: acceptedCount, isDark: isDark),
+          _CountTab(label: 'บิล', count: billsCount, isDark: isDark),
+          const Tab(text: 'สรุป'),
+          const Tab(text: 'วิเคราะห์'),
+        ],
       ),
     );
   }
 }
 
-class _TabDef {
-  final String id;
+class _CountTab extends StatelessWidget {
   final String label;
-  final int? count;
-  const _TabDef({required this.id, required this.label, this.count});
+  final int count;
+  final bool isDark;
+
+  const _CountTab({
+    required this.label,
+    required this.count,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tab(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label),
+          const SizedBox(width: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.borderDark : AppColors.neutral100,
+              borderRadius: BorderRadius.circular(AppRadii.sm),
+            ),
+            child: Text(
+              '$count',
+              style: GoogleFonts.notoSansThai(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ── Members Tab ───────────────────────────────────────────────

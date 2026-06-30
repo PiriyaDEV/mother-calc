@@ -27,17 +27,11 @@ class BillDetailScreen extends StatefulWidget {
 class _BillDetailScreenState extends State<BillDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  int _currentTab = 0;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        setState(() => _currentTab = _tabController.index);
-      }
-    });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final bp = context.read<BillProvider>();
       await bp.loadBill(widget.billId);
@@ -61,13 +55,13 @@ class _BillDetailScreenState extends State<BillDetailScreen>
     final bill = billProvider.bill;
 
     if (billProvider.loading) {
-      return Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
-          ),
-          child: const Center(
+      return Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+        ),
+        child: const Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Center(
             child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
           ),
         ),
@@ -75,18 +69,23 @@ class _BillDetailScreenState extends State<BillDetailScreen>
     }
 
     if (bill == null) {
-      return Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_rounded),
-            onPressed: () => context.pop(),
-          ),
+      return Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
         ),
-        body: Center(
-          child: Text(
-            'ไม่พบบิล',
-            style: GoogleFonts.notoSansThai(fontSize: 16),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_rounded),
+              onPressed: () => context.pop(),
+            ),
+          ),
+          body: Center(
+            child: Text(
+              'ไม่พบบิล',
+              style: GoogleFonts.notoSansThai(fontSize: 16),
+            ),
           ),
         ),
       );
@@ -103,13 +102,13 @@ class _BillDetailScreenState extends State<BillDetailScreen>
     final members = billProvider.members;
     final items = billProvider.items;
 
-    return Scaffold(
+    return Container(
+      decoration: BoxDecoration(
+        gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+      ),
+      child: Scaffold(
       backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
-        ),
-        child: NestedScrollView(
+      body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
             pinned: true,
@@ -278,7 +277,6 @@ class _BillDetailScreenState extends State<BillDetailScreen>
               preferredSize: const Size.fromHeight(56),
               child: _PillTabBar(
                 controller: _tabController,
-                currentIndex: _currentTab,
                 isDark: isDark,
                 membersCount: members.length,
                 itemsCount: items.length,
@@ -387,14 +385,12 @@ class _BillDetailScreenState extends State<BillDetailScreen>
 // ── Pill Tab Bar ──────────────────────────────────────────────
 class _PillTabBar extends StatelessWidget {
   final TabController controller;
-  final int currentIndex;
   final bool isDark;
   final int membersCount;
   final int itemsCount;
 
   const _PillTabBar({
     required this.controller,
-    required this.currentIndex,
     required this.isDark,
     required this.membersCount,
     required this.itemsCount,
@@ -402,13 +398,6 @@ class _PillTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tabs = [
-      _TabDef(id: 0, label: 'สมาชิก', count: membersCount),
-      _TabDef(id: 1, label: 'รายการ', count: itemsCount),
-      _TabDef(id: 2, label: 'สรุป', count: null),
-      _TabDef(id: 3, label: 'วิเคราะห์', count: null),
-    ];
-
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       padding: const EdgeInsets.all(4),
@@ -416,91 +405,81 @@ class _PillTabBar extends StatelessWidget {
         color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
-        children: tabs.map((tab) {
-          final isActive = currentIndex == tab.id;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => controller.animateTo(tab.id),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? (isDark ? AppColors.borderDark : Colors.white)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: isActive
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          )
-                        ]
-                      : null,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      tab.label,
-                      style: GoogleFonts.notoSansThai(
-                        fontSize: 12,
-                        fontWeight: isActive
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                        color: isActive
-                            ? AppColors.primary
-                            : (isDark
-                                ? AppColors.textTertiaryDark
-                                : AppColors.neutral600),
-                      ),
-                    ),
-                    if (tab.count != null) ...[
-                      const SizedBox(width: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? AppColors.primary.withValues(alpha: 0.1)
-                              : (isDark
-                                  ? AppColors.borderDark
-                                  : AppColors.neutral100),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '${tab.count}',
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: isActive
-                                ? AppColors.primary
-                                : (isDark
-                                    ? AppColors.textTertiaryDark
-                                    : AppColors.neutral600),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+      child: TabBar(
+        controller: controller,
+        indicator: BoxDecoration(
+          color: isDark ? AppColors.borderDark : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
-          );
-        }).toList(),
+          ],
+        ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Colors.transparent,
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
+        labelColor: AppColors.primary,
+        unselectedLabelColor: isDark
+            ? AppColors.textTertiaryDark
+            : AppColors.neutral600,
+        labelStyle: GoogleFonts.notoSansThai(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: GoogleFonts.notoSansThai(
+          fontSize: 12,
+          fontWeight: FontWeight.normal,
+        ),
+        tabs: [
+          _CountTab(label: 'สมาชิก', count: membersCount),
+          _CountTab(label: 'รายการ', count: itemsCount),
+          const Tab(text: 'สรุป'),
+          const Tab(text: 'วิเคราะห์'),
+        ],
       ),
     );
   }
 }
 
-class _TabDef {
-  final int id;
+/// A Tab that shows a label + count badge.
+/// The TabBar's labelColor/unselectedLabelColor handles text color automatically.
+class _CountTab extends StatelessWidget {
   final String label;
-  final int? count;
-  const _TabDef({required this.id, required this.label, this.count});
+  final int count;
+
+  const _CountTab({required this.label, required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Tab(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label),
+          const SizedBox(width: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.borderDark : AppColors.neutral100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '$count',
+              style: GoogleFonts.notoSansThai(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ── Items Tab ─────────────────────────────────────────────────

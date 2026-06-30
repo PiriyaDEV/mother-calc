@@ -10,7 +10,7 @@ import '../providers/groups_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class MainShell extends StatefulWidget {
-  final Widget child;
+  final StatefulNavigationShell child;
   const MainShell({super.key, required this.child});
 
   @override
@@ -18,10 +18,6 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  int _currentIndex = 0;
-
-  static const _routes = ['/home', '/bills', '/groups', '/friends', '/me'];
-
   @override
   void initState() {
     super.initState();
@@ -40,20 +36,10 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _onTap(int index) {
-    if (index != _currentIndex) {
-      setState(() => _currentIndex = index);
-      context.go(_routes[index]);
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final location = GoRouterState.of(context).matchedLocation;
-    final idx = _routes.indexOf(location);
-    if (idx != -1 && idx != _currentIndex) {
-      _currentIndex = idx;
-    }
+    widget.child.goBranch(
+      index,
+      initialLocation: index == widget.child.currentIndex,
+    );
   }
 
   @override
@@ -72,7 +58,7 @@ class _MainShellState extends State<MainShell> {
       ),
       extendBody: true,
       bottomNavigationBar: _FloatingNavBar(
-        currentIndex: _currentIndex,
+        currentIndex: widget.child.currentIndex,
         isDark: isDark,
         notifCount: notifCount,
         friendCount: friendCount,
@@ -101,9 +87,9 @@ class _FloatingNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      _NavDef(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'หน้าหลัก'),
-      _NavDef(icon: Icons.receipt_long_outlined, activeIcon: Icons.receipt_long_rounded, label: 'บิล'),
-      _NavDef(icon: Icons.group_outlined, activeIcon: Icons.group_rounded, label: 'กลุ่ม'),
+      const _NavDef(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'หน้าหลัก'),
+      const _NavDef(icon: Icons.receipt_long_outlined, activeIcon: Icons.receipt_long_rounded, label: 'บิล'),
+      const _NavDef(icon: Icons.group_outlined, activeIcon: Icons.group_rounded, label: 'กลุ่ม'),
       _NavDef(icon: Icons.people_outline_rounded, activeIcon: Icons.people_rounded, label: 'เพื่อน', badge: friendCount),
       _NavDef(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'ฉัน', badge: notifCount),
     ];
@@ -111,7 +97,7 @@ class _FloatingNavBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
           child: BackdropFilter(

@@ -76,7 +76,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final auth = context.watch<AuthProvider>();
     final profile = auth.profile;
 
-    return Scaffold(
+    return Container(
+      decoration: BoxDecoration(
+        gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+      ),
+      child: Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -99,11 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
-        ),
-        child: ListView(
+      body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // Avatar
@@ -200,7 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
           ),
         ],
-        ),
+      ),
       ),
     );
   }

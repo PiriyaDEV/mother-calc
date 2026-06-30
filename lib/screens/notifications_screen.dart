@@ -70,7 +70,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final provider = context.watch<NotificationsProvider>();
     final unread = provider.unreadCount;
 
-    return Scaffold(
+    return Container(
+      decoration: BoxDecoration(
+        gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+      ),
+      child: Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
@@ -208,6 +212,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

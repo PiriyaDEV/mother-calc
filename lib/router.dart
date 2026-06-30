@@ -62,28 +62,54 @@ class AppRouter {
           path: '/login',
           builder: (context, state) => const LoginScreen(),
         ),
-        ShellRoute(
-          builder: (context, state, child) => MainShell(child: child),
-          routes: [
-            GoRoute(
-              path: '/home',
-              builder: (context, state) => const HomeScreen(),
+        StatefulShellRoute.indexedStack(
+          builder: (context, state, navigationShell) =>
+              MainShell(child: navigationShell),
+          branches: [
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/home',
+                  pageBuilder: (context, state) =>
+                      const NoTransitionPage(child: HomeScreen()),
+                ),
+              ],
             ),
-            GoRoute(
-              path: '/bills',
-              builder: (context, state) => const BillsScreen(),
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/bills',
+                  pageBuilder: (context, state) =>
+                      const NoTransitionPage(child: BillsScreen()),
+                ),
+              ],
             ),
-            GoRoute(
-              path: '/groups',
-              builder: (context, state) => const GroupsScreen(),
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/groups',
+                  pageBuilder: (context, state) =>
+                      const NoTransitionPage(child: GroupsScreen()),
+                ),
+              ],
             ),
-            GoRoute(
-              path: '/friends',
-              builder: (context, state) => const FriendsScreen(),
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/friends',
+                  pageBuilder: (context, state) =>
+                      const NoTransitionPage(child: FriendsScreen()),
+                ),
+              ],
             ),
-            GoRoute(
-              path: '/me',
-              builder: (context, state) => const MeScreen(),
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/me',
+                  pageBuilder: (context, state) =>
+                      const NoTransitionPage(child: MeScreen()),
+                ),
+              ],
             ),
           ],
         ),
