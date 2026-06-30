@@ -993,7 +993,7 @@ class _LanguageSheet extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(
             top: Radius.circular(AppRadii.lg)),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+      padding: EdgeInsets.fromLTRB(20, 12, 20, 32 + MediaQuery.viewPaddingOf(context).bottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
