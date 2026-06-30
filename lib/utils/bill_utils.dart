@@ -253,12 +253,12 @@ String generatePromptPayPayload(String target, double amount) {
   final withCrc = '${payload}6304';
   int crc = 0xFFFF;
   for (int i = 0; i < withCrc.length; i++) {
-    crc ^= withCrc.codeUnitAt(i) << 8;
+    crc = (crc ^ (withCrc.codeUnitAt(i) << 8)) & 0xFFFF;
     for (int j = 0; j < 8; j++) {
-      crc = (crc & 0x8000) != 0 ? (crc << 1) ^ 0x1021 : crc << 1;
+      crc = ((crc & 0x8000) != 0 ? (crc << 1) ^ 0x1021 : crc << 1) & 0xFFFF;
     }
   }
-  return '$withCrc${(crc & 0xFFFF).toRadixString(16).toUpperCase().padLeft(4, '0')}';
+  return '$withCrc${crc.toRadixString(16).toUpperCase().padLeft(4, '0')}';
 }
 
 // ── Username validation ───────────────────────────────────────
