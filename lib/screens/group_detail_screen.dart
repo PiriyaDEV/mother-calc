@@ -681,50 +681,12 @@ class _BillsTab extends StatelessWidget {
                     await context.push('/bills/${bill.id}');
                     if (context.mounted) gp.loadGroupDetail(group.id);
                   },
-                  onEdit: () => _editBill(context, bill),
-                  onDelete: () => _deleteBill(context, bill),
                 ),
               )),
       ],
     );
   }
 
-  Future<void> _editBill(BuildContext context, Bill bill) async {
-    final result = await showCreateEntitySheet(
-      context,
-      type: 'bill',
-      mode: 'edit',
-      initialData: EntityFormResult(
-        name: bill.title,
-        emoji: bill.emoji,
-        tags: bill.tags,
-        settings: bill.settings,
-        description: '',
-      ),
-    );
-    if (result == null) return;
-    try {
-      await Supabase.instance.client.from('bills').update({
-        'title': result.name,
-        'emoji': result.emoji,
-        'tags': result.tags,
-      }).eq('id', bill.id);
-      await gp.loadGroupDetail(group.id);
-    } catch (_) {}
-  }
-
-  Future<void> _deleteBill(BuildContext context, Bill bill) async {
-    final ok = await showConfirmDialog(
-      context,
-      title: 'ลบบิล "${bill.title}"?',
-      description: 'การกระทำนี้ไม่สามารถย้อนกลับได้',
-      confirmLabel: 'ลบบิล',
-      danger: true,
-    );
-    if (ok == true) {
-      await gp.deleteGroupBill(bill.id);
-    }
-  }
 
   Future<void> _createBill(BuildContext context) async {
     final result = await showCreateEntitySheet(

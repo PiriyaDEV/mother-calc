@@ -209,6 +209,24 @@ class _MeScreenState extends State<MeScreen> {
 
   // ── Sign Out ───────────────────────────────────────────────
   Future<void> _handleSignOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('ออกจากระบบ', style: GoogleFonts.notoSansThai(fontWeight: FontWeight.w600)),
+        content: Text('ต้องการออกจากระบบหรือไม่?', style: GoogleFonts.notoSansThai()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('ยกเลิก', style: GoogleFonts.notoSansThai(color: AppColors.textSecondaryLight)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('ออกจากระบบ', style: GoogleFonts.notoSansThai(color: AppColors.red, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
     final auth = context.read<AuthProvider>();
     await auth.signOut();
     if (mounted) context.go('/login');
@@ -232,42 +250,15 @@ class _MeScreenState extends State<MeScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             // ── Header ──────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'สวัสดี!, คุณ ${profile?.displayName ?? profile?.username ?? ''}',
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimaryLight,
-                    ),
-                  ),
-                ),
-                // Theme toggle
-                GestureDetector(
-                  onTap: () => themeProvider.toggle(),
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.surfaceDark
-                          : AppColors.borderLight,
-                      borderRadius: BorderRadius.circular(AppRadii.md),
-                    ),
-                    child: Icon(
-                      isDark
-                          ? Icons.wb_sunny_outlined
-                          : Icons.nightlight_round_outlined,
-                      size: 18,
-                      color: AppColors.textSecondaryLight,
-                    ),
-                  ),
-                ),
-              ],
+            Text(
+              'สวัสดี!, คุณ ${profile?.displayName ?? profile?.username ?? ''}',
+              style: GoogleFonts.notoSansThai(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight,
+              ),
             ),
             const SizedBox(height: AppSpacing.lg),
 
@@ -712,8 +703,7 @@ class _MeScreenState extends State<MeScreen> {
 
     Widget inner;
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      inner = ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+      inner = ClipOval(
         child: Image.network(
           avatarUrl,
           width: size,
@@ -735,7 +725,7 @@ class _MeScreenState extends State<MeScreen> {
             height: size,
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(16),
+              shape: BoxShape.circle,
             ),
             child: const Center(
               child: SizedBox(
@@ -756,9 +746,9 @@ class _MeScreenState extends State<MeScreen> {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.circular(AppRadii.lg),
+        shape: BoxShape.circle,
       ),
       child: Center(
         child: Icon(Icons.person_outline_rounded,

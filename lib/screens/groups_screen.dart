@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../models/models.dart';
 import '../providers/groups_provider.dart';
 import '../theme/app_theme.dart';
-import '../widgets/confirm_dialog.dart';
 import '../widgets/create_entity_sheet.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/shared_group_card.dart';
@@ -44,51 +42,6 @@ class _GroupsScreenState extends State<GroupsScreen> {
     }
   }
 
-  Future<void> _showEditGroupSheet(Group group) async {
-    final result = await showCreateEntitySheet(
-      context,
-      type: 'group',
-      mode: 'edit',
-      initialData: EntityFormResult(
-        name: group.name,
-        emoji: group.emoji,
-        description: group.description ?? '',
-        tags: group.tags,
-      ),
-      onDelete: () async {
-        final provider = context.read<GroupsProvider>();
-        await provider.deleteGroup(group.id);
-      },
-    );
-    if (result != null && mounted) {
-      final provider = context.read<GroupsProvider>();
-      final err = await provider.updateGroup(
-        groupId: group.id,
-        name: result.name,
-        emoji: result.emoji,
-      );
-      if (err != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(err, style: GoogleFonts.notoSansThai()),
-          backgroundColor: AppColors.red,
-          behavior: SnackBarBehavior.floating,
-        ));
-      }
-    }
-  }
-
-  Future<void> _confirmDelete(Group group) async {
-    final confirm = await showConfirmDialog(
-      context,
-      title: 'ลบกลุ่ม',
-      description: 'ต้องการลบกลุ่ม "${group.name}" หรือไม่?',
-      confirmLabel: 'ลบ',
-      danger: true,
-    );
-    if (confirm && mounted) {
-      await context.read<GroupsProvider>().deleteGroup(group.id);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,8 +132,6 @@ class _GroupsScreenState extends State<GroupsScreen> {
                                   group: group,
                                   onTap: () =>
                                       context.push('/groups/${group.id}'),
-                                  onEdit: () => _showEditGroupSheet(group),
-                                  onDelete: () => _confirmDelete(group),
                                 );
                               },
                             ),

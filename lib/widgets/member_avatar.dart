@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -33,22 +34,33 @@ class MemberAvatar extends StatelessWidget {
     Widget avatar;
 
     if (avatarUrl != null && avatarUrl!.isNotEmpty) {
-      avatar = CachedNetworkImage(
-        imageUrl: avatarUrl!,
-        imageBuilder: (ctx, imageProvider) => Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            image: DecorationImage(
-              image: imageProvider,
+      if (avatarUrl!.startsWith('data:')) {
+        // base64 data URI — CachedNetworkImage can't handle these
+        try {
+          final bytes = base64Decode(avatarUrl!.split(',').last);
+          avatar = ClipOval(
+            child: Image.memory(
+              bytes,
               fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _buildInitials(fontSize),
             ),
+          );
+        } catch (_) {
+          avatar = _buildInitials(fontSize);
+        }
+      } else {
+        avatar = CachedNetworkImage(
+          imageUrl: avatarUrl!,
+          imageBuilder: (ctx, imageProvider) => DecoratedBox(
+            decoration: BoxDecoration(
+              image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
+            ),
+            child: const SizedBox.expand(),
           ),
-        ),
-        placeholder: (ctx, url) => _buildInitials(fontSize),
-        errorWidget: (ctx, url, err) => _buildInitials(fontSize),
-      );
+          placeholder: (ctx, url) => _buildInitials(fontSize),
+          errorWidget: (ctx, url, err) => _buildInitials(fontSize),
+        );
+      }
     } else {
       avatar = _buildInitials(fontSize);
     }
@@ -57,6 +69,7 @@ class MemberAvatar extends StatelessWidget {
       return Container(
         width: size + 4,
         height: size + 4,
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
@@ -111,8 +124,8 @@ class MemberAvatarStack extends StatelessWidget {
     final extra = members.length - maxVisible;
 
     return SizedBox(
-      height: size,
-      width: visible.length * (size * 0.7) + size * 0.3 + (extra > 0 ? size * 0.7 : 0),
+      height: size + 4,
+      width: visible.length * (size * 0.7) + size * 0.3 + 4.0 + (extra > 0 ? size * 0.7 : 0),
       child: Stack(
         children: [
           ...visible.asMap().entries.map((entry) {

@@ -68,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // Load personal bills
       final billsData = await _supabase
           .from('bills')
-          .select('*, bill_members(*), bill_items(*)')
+          .select('*, bill_members(*, profiles(id, username, display_name, avatar_url)), bill_items(*)')
           .eq('owner_id', user.id)
           .isFilter('group_id', null)
           .order('updated_at', ascending: false);
@@ -80,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
       for (final g in groups) {
         final gBillsData = await _supabase
             .from('bills')
-            .select('*, bill_members(*), bill_items(*)')
+            .select('*, bill_members(*, profiles(id, username, display_name, avatar_url)), bill_items(*)')
             .eq('group_id', g.id)
             .order('updated_at', ascending: false);
         groupBills[g.id] =
@@ -209,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         end: Alignment.bottomRight,
                         stops: [0.0, 0.5, 1.0],
                       ),
-                      borderRadius: BorderRadius.circular(AppRadii.full),
+                      borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFF286BFE).withValues(alpha: 0.4),
@@ -311,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   _HeroPill(label: '${_groups.length} กลุ่ม', icon: Icons.people_rounded),
                                   const SizedBox(width: AppSpacing.sm),
-                                  _HeroPill(label: '${_personalBills.length} บิล', icon: Icons.receipt_rounded),
+                                  _HeroPill(label: '${_allBills.length} บิล', icon: Icons.receipt_rounded),
                                   const SizedBox(width: AppSpacing.sm),
                                   _HeroPill(label: '$_totalItems รายการ', icon: Icons.list_rounded),
                                 ],
@@ -335,7 +335,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: _QuickActionCard(
                           icon: Icons.receipt_long_outlined,
                           label: 'บิล',
-                          sublabel: '${_personalBills.length} บิล',
+                          sublabel: 'จัดการบิล',
                           gradientColors: const [Color(0xFF4366F4), Color(0xFF6B8AF7)],
                           onTap: () => context.go('/bills'),
                         ),
@@ -345,7 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: _QuickActionCard(
                           icon: Icons.people_outline_rounded,
                           label: 'กลุ่ม',
-                          sublabel: '${_groups.length} กลุ่ม',
+                          sublabel: 'จัดการกลุ่ม',
                           gradientColors: const [Color(0xFF10B981), Color(0xFF34D399)],
                           onTap: () => context.go('/groups'),
                         ),
@@ -456,7 +456,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           right: -6,
                                           bottom: -10,
                                           child: Opacity(
-                                          opacity: 0.5,
+                                          opacity: 0.2,
                                           child: Text(cfg.flag, style: const TextStyle(fontSize: 56)),
                                         ),
                                         ),
@@ -622,107 +622,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ],
-
-                // Biggest bill highlight
-                if (_biggestBill != null)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
-                      child: Container(
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.surfaceDark : Colors.white,
-                          borderRadius: BorderRadius.circular(AppRadii.lg),
-                          border: Border.all(
-                            color: isDark
-                                ? AppColors.borderDark
-                                : AppColors.borderLight,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.star_outline_rounded,
-                                    size: 14,
-                                    color: AppColors.amber),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'บิลที่ใหญ่ที่สุด',
-                                  style: GoogleFonts.notoSansThai(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: isDark
-                                        ? AppColors.textSecondaryDark
-                                        : AppColors.textSecondaryLight,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            Row(
-                              children: [
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: isDark ? AppColors.borderDark : AppColors.amberFaint,
-                                    borderRadius: BorderRadius.circular(AppRadii.md),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      _biggestBill!.emoji ?? '🧾',
-                                      style:
-                                          const TextStyle(fontSize: 20),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.md),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _biggestBill!.title,
-                                        style: GoogleFonts.notoSansThai(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: isDark
-                                              ? AppColors.textPrimaryDark
-                                              : AppColors.textPrimaryLight,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      Text(
-                                        '${_biggestBill!.items.length} รายการ',
-                                        style: GoogleFonts.notoSansThai(
-                                          fontSize: 12,
-                                          color: isDark
-                                              ? AppColors.textTertiaryDark
-                                              : AppColors.textTertiaryLight,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Text(
-                                  '${_formatBaht(_billTotal(_biggestBill!))} ฿',
-                                  style: GoogleFonts.notoSansThai(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.amber,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
 
                 // Empty state
                 if (_allBills.isEmpty)

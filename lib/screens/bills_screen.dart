@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
-import '../widgets/confirm_dialog.dart';
 import '../widgets/create_entity_sheet.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/shared_bill_card.dart';
@@ -42,7 +41,7 @@ class _BillsScreenState extends State<BillsScreen>
     try {
       final data = await _supabase
           .from('bills')
-          .select('*, bill_members(*), bill_items(*), groups!bills_group_id_fkey(id, name, emoji)')
+          .select('*, bill_members(*, profiles(id, username, display_name, avatar_url)), bill_items(*), groups!bills_group_id_fkey(id, name, emoji)')
           .eq('owner_id', user.id)
           .order('updated_at', ascending: false);
       if (mounted) {
@@ -90,58 +89,6 @@ class _BillsScreenState extends State<BillsScreen>
     }
   }
 
-  Future<void> _editBill(Bill bill) async {
-    final result = await showCreateEntitySheet(
-      context,
-      type: 'bill',
-      mode: 'edit',
-      initialData: EntityFormResult(
-        name: bill.title,
-        emoji: bill.emoji,
-        description: '',
-        tags: bill.tags,
-        settings: bill.settings,
-      ),
-      onDelete: () => _deleteBillById(bill.id),
-    );
-
-    if (result != null && mounted) {
-      try {
-        final settings = result.settings ?? bill.settings;
-        await _supabase.from('bills').update({
-          'title': result.name,
-          'emoji': result.emoji,
-          'tags': result.tags,
-          'settings': settings.toJson(),
-        }).eq('id', bill.id);
-        _loadBills();
-      } catch (e) {
-        debugPrint('Error editing bill: $e');
-      }
-    }
-  }
-
-  Future<void> _deleteBill(Bill bill) async {
-    final confirm = await showConfirmDialog(
-      context,
-      title: 'ลบบิล',
-      description: 'ต้องการลบบิล "${bill.title}" หรือไม่?',
-      confirmLabel: 'ลบ',
-      danger: true,
-    );
-    if (confirm) {
-      await _deleteBillById(bill.id);
-    }
-  }
-
-  Future<void> _deleteBillById(String id) async {
-    try {
-      await _supabase.from('bills').delete().eq('id', id);
-      if (mounted) _loadBills();
-    } catch (e) {
-      debugPrint('Error deleting bill: $e');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -216,6 +163,7 @@ class _BillsScreenState extends State<BillsScreen>
                   ),
                   indicatorSize: TabBarIndicatorSize.tab,
                   dividerColor: Colors.transparent,
+                  overlayColor: WidgetStateProperty.all(Colors.transparent),
                   labelColor: isDark
                       ? AppColors.textPrimaryDark
                       : AppColors.textPrimaryLight,
@@ -257,8 +205,6 @@ class _BillsScreenState extends State<BillsScreen>
                           emptyCtaLabel: 'สร้างบิล',
                           onEmptyCta: _createBill,
                           onRefresh: _loadBills,
-                          onEdit: _editBill,
-                          onDelete: _deleteBill,
                         ),
                         _BillList(
                           bills: completedBills,
@@ -266,8 +212,6 @@ class _BillsScreenState extends State<BillsScreen>
                           emptyText: 'ยังไม่มีบิลที่เสร็จ',
                           emptySubtext: 'บิลที่ชำระครบแล้วจะปรากฏที่นี่',
                           onRefresh: _loadBills,
-                          onEdit: _editBill,
-                          onDelete: _deleteBill,
                         ),
                       ],
                     ),
@@ -288,8 +232,6 @@ class _BillList extends StatelessWidget {
   final String? emptyCtaLabel;
   final VoidCallback? onEmptyCta;
   final Future<void> Function() onRefresh;
-  final Future<void> Function(Bill) onEdit;
-  final Future<void> Function(Bill) onDelete;
 
   const _BillList({
     required this.bills,
@@ -299,8 +241,6 @@ class _BillList extends StatelessWidget {
     this.emptyCtaLabel,
     this.onEmptyCta,
     required this.onRefresh,
-    required this.onEdit,
-    required this.onDelete,
   });
 
   @override
@@ -370,8 +310,6 @@ class _BillList extends StatelessWidget {
             child: SharedBillCard(
               bill: bill,
               onTap: () => context.push('/bills/${bill.id}'),
-              onEdit: () => onEdit(bill),
-              onDelete: () => onDelete(bill),
             ),
           );
         },
