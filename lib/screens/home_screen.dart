@@ -199,130 +199,124 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF286BFE), Color(0xFF6B8AFF)],
+                        colors: [Color(0xFF286BFE), Color(0xFF4366F4), Color(0xFF8B5CF6)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
+                        stops: [0.0, 0.5, 1.0],
                       ),
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF286BFE).withValues(alpha: 0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
+                          color: const Color(0xFF286BFE).withValues(alpha: 0.4),
+                          blurRadius: 28,
+                          offset: const Offset(0, 10),
                         ),
                       ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Stack(
                       children: [
-                        Row(
+                        // Decorative circles
+                        Positioned(
+                          right: -20,
+                          top: -30,
+                          child: Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(alpha: 0.06),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          right: 20,
+                          bottom: -40,
+                          child: Container(
+                            width: 90,
+                            height: 90,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(alpha: 0.05),
+                            ),
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'สวัสดี, $firstName 👋',
+                                        style: GoogleFonts.notoSansThai(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white.withValues(alpha: 0.9),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'ยอดรวมทั้งหมดของคุณ',
+                                        style: GoogleFonts.notoSansThai(
+                                          fontSize: 12,
+                                          color: Colors.white.withValues(alpha: 0.6),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.18),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                                  ),
+                                  child: const Icon(
+                                    Icons.account_balance_wallet_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 18),
+                            if (_dataLoading)
+                              const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            else ...[
+                              Text(
+                                '฿${_formatBaht(_grandTotal)}',
+                                style: GoogleFonts.notoSansThai(
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: -1,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
                                 children: [
-                                  Text(
-                                    'สวัสดี, $firstName 👋',
-                                    style: GoogleFonts.notoSansThai(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.white.withValues(alpha: 0.85),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'ยอดรวมทั้งหมดของคุณ',
-                                    style: GoogleFonts.notoSansThai(
-                                      fontSize: 12,
-                                      color: Colors.white.withValues(alpha: 0.6),
-                                    ),
-                                  ),
+                                  _HeroPill(label: '${_groups.length} กลุ่ม', icon: Icons.people_rounded),
+                                  const SizedBox(width: 8),
+                                  _HeroPill(label: '${_personalBills.length} บิล', icon: Icons.receipt_rounded),
+                                  const SizedBox(width: 8),
+                                  _HeroPill(label: '$_totalItems รายการ', icon: Icons.list_rounded),
                                 ],
                               ),
-                            ),
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.account_balance_wallet_outlined,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                            ),
+                            ],
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        if (_dataLoading)
-                          const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        else ...[
-                          Text(
-                            '${_formatBaht(_grandTotal)} บาท',
-                            style: GoogleFonts.notoSansThai(
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Text(
-                                '${_groups.length} กลุ่ม',
-                                style: GoogleFonts.notoSansThai(
-                                  fontSize: 12,
-                                  color: Colors.white.withValues(alpha: 0.7),
-                                ),
-                              ),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 6),
-                                child: Text(
-                                  '·',
-                                  style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.4)),
-                                ),
-                              ),
-                              Text(
-                                '${_personalBills.length} บิลส่วนตัว',
-                                style: GoogleFonts.notoSansThai(
-                                  fontSize: 12,
-                                  color: Colors.white.withValues(alpha: 0.7),
-                                ),
-                              ),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 6),
-                                child: Text(
-                                  '·',
-                                  style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.4)),
-                                ),
-                              ),
-                              Text(
-                                '$_totalItems รายการ',
-                                style: GoogleFonts.notoSansThai(
-                                  fontSize: 12,
-                                  color: Colors.white.withValues(alpha: 0.7),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -480,62 +474,65 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ? r.rate.toStringAsFixed(4)
                                       : r.rate.toStringAsFixed(2);
                                   return Container(
-                                    width: 136,
+                                    width: 140,
                                     padding: const EdgeInsets.all(14),
                                     decoration: BoxDecoration(
-                                      color: isDark
-                                          ? AppColors.surfaceDark
-                                          : Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
+                                      color: isDark ? AppColors.surfaceDark : Colors.white,
+                                      borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                        color: isDark
-                                            ? AppColors.borderDark
-                                            : AppColors.borderLight,
+                                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
                                       ),
+                                      boxShadow: isDark
+                                          ? null
+                                          : [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(alpha: 0.04),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              )
+                                            ],
                                     ),
                                     child: Stack(
+                                      clipBehavior: Clip.none,
                                       children: [
                                         Positioned(
-                                          right: -4,
-                                          bottom: -8,
-                                          child: Text(
-                                            cfg.flag,
-                                            style: const TextStyle(
-                                                fontSize: 52),
-                                          ),
+                                          right: -6,
+                                          bottom: -10,
+                                          child: Text(cfg.flag, style: const TextStyle(fontSize: 56)),
                                         ),
                                         Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.primary.withValues(alpha: 0.1),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                r.code,
+                                                style: GoogleFonts.notoSansThai(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppColors.primary,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
                                             Text(
                                               '฿$rateStr',
                                               style: GoogleFonts.notoSansThai(
-                                                fontSize: 16,
+                                                fontSize: 17,
                                                 fontWeight: FontWeight.bold,
-                                                color: isDark
-                                                    ? AppColors.textPrimaryDark
-                                                    : AppColors.textPrimaryLight,
-                                              ),
-                                            ),
-                                            Text(
-                                              '1 ${r.code}',
-                                              style: GoogleFonts.notoSansThai(
-                                                fontSize: 10,
-                                                color: isDark
-                                                    ? AppColors.textTertiaryDark
-                                                    : AppColors.textTertiaryLight,
+                                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                                               ),
                                             ),
                                             Text(
                                               cfg.name,
                                               style: GoogleFonts.notoSansThai(
                                                 fontSize: 10,
-                                                color: isDark
-                                                    ? AppColors.textSecondaryDark
-                                                    : AppColors.textSecondaryLight,
+                                                color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
                                               ),
                                               overflow: TextOverflow.ellipsis,
                                             ),
@@ -591,7 +588,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisCount: 2,
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 2.4,
+                        childAspectRatio: 1.7,
                       ),
                       delegate: SliverChildListDelegate([
                         _FactCard(
@@ -888,6 +885,40 @@ class _RateData {
   const _RateData({required this.code, required this.rate});
 }
 
+class _HeroPill extends StatelessWidget {
+  final String label;
+  final IconData icon;
+
+  const _HeroPill({required this.label, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.white.withValues(alpha: 0.9)),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: GoogleFonts.notoSansThai(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _QuickActionCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -1005,53 +1036,44 @@ class _FactCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        boxShadow: isDark
+            ? null
+            : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: isDark ? iconBgDark : iconBg,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 18, color: iconColor),
+            child: Icon(icon, size: 17, color: iconColor),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 10,
-                    color: isDark
-                        ? AppColors.textTertiaryDark
-                        : AppColors.textTertiaryLight,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: GoogleFonts.notoSansThai(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: GoogleFonts.notoSansThai(
+              fontSize: 10,
+              color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
             ),
           ),
         ],
@@ -1093,25 +1115,23 @@ class _RecentBillRow extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
-          ),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+          boxShadow: isDark
+              ? null
+              : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
         ),
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Center(
-                child: Text(
-                  bill.emoji ?? '🧾',
-                  style: const TextStyle(fontSize: 20),
-                ),
+                child: Text(bill.emoji ?? '🧾', style: const TextStyle(fontSize: 22)),
               ),
             ),
             const SizedBox(width: 12),
@@ -1124,9 +1144,7 @@ class _RecentBillRow extends StatelessWidget {
                     style: GoogleFonts.notoSansThai(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimaryLight,
+                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1134,17 +1152,16 @@ class _RecentBillRow extends StatelessWidget {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                         decoration: BoxDecoration(
                           color: statusColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           statusLabel,
                           style: GoogleFonts.notoSansThai(
                             fontSize: 10,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                             color: statusColor,
                           ),
                         ),
@@ -1153,10 +1170,8 @@ class _RecentBillRow extends StatelessWidget {
                       Text(
                         '${bill.items.length} รายการ · ${_formatDate(bill.updatedAt)}',
                         style: GoogleFonts.notoSansThai(
-                          fontSize: 10,
-                          color: isDark
-                              ? AppColors.textTertiaryDark
-                              : AppColors.textTertiaryLight,
+                          fontSize: 11,
+                          color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
                         ),
                       ),
                     ],
@@ -1164,13 +1179,21 @@ class _RecentBillRow extends StatelessWidget {
                 ],
               ),
             ),
-            Text(
-              '${formatBaht(total)} ฿',
-              style: GoogleFonts.notoSansThai(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF286BFE),
-              ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '฿${formatBaht(total)}',
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, size: 18,
+                    color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
+              ],
             ),
           ],
         ),

@@ -46,6 +46,9 @@ dependencies:
   # Sign in with Apple
   sign_in_with_apple: ^6.1.4
 
+  # Charts
+  fl_chart: ^0.68.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

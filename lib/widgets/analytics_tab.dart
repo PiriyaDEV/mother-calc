@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/models.dart';
@@ -6,28 +7,14 @@ import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import 'member_avatar.dart';
 
-// ── Color constants ───────────────────────────────────────────
-const _kStatBlueFrom   = Color(0xFFEFF6FF); // blue-50
-const _kStatBlueTo     = Color(0xFFEEF2FF); // indigo-50
-const _kStatBlueBorder = Color(0xFFBFDBFE); // blue-100
-const _kStatPurpleFrom = Color(0xFFFAF5FF); // purple-50
-const _kStatPurpleTo   = Color(0xFFF5F3FF); // violet-50
-const _kStatPurpleBorder = Color(0xFFE9D5FF); // purple-100
-const _kStatGreenFrom  = Color(0xFFECFDF5); // emerald-50
-const _kStatGreenTo    = Color(0xFFF0FDFA); // teal-50
-const _kStatGreenBorder = Color(0xFFA7F3D0); // emerald-100
-
-const _kAmber50   = Color(0xFFFFFBEB);
-const _kOrange50  = Color(0xFFFFF7ED);
-const _kAmberBorder = Color(0xFFFDE68A); // amber-100
-const _kAmber500  = Color(0xFFF59E0B);
-const _kAmber600  = Color(0xFFD97706);
-
-const _kBlue400 = Color(0xFF4366f4);
-const _kBlue500 = Color(0xFF6b8aff);
+const _kAmber50    = Color(0xFFFFFBEB);
+const _kOrange50   = Color(0xFFFFF7ED);
+const _kAmberBorder = Color(0xFFFDE68A);
+const _kAmber500   = Color(0xFFF59E0B);
+const _kAmber600   = Color(0xFFD97706);
 const _kEmerald500 = Color(0xFF10B981);
 
-class AnalyticsTab extends StatelessWidget {
+class AnalyticsTab extends StatefulWidget {
   final Bill bill;
   final BillProvider billProvider;
   final BillCalculation calc;
@@ -40,37 +27,54 @@ class AnalyticsTab extends StatelessWidget {
   });
 
   @override
+  State<AnalyticsTab> createState() => _AnalyticsTabState();
+}
+
+class _AnalyticsTabState extends State<AnalyticsTab> {
+  int _pieTouchedIndex = -1;
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final members = billProvider.members;
-    final items = billProvider.items;
+    final members = widget.billProvider.members;
+    final items = widget.billProvider.items;
 
-    // Empty state
     if (items.isEmpty || members.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('📊', style: TextStyle(fontSize: 48)),
-            const SizedBox(height: 12),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary.withValues(alpha: 0.12),
+                    AppColors.primaryLight.withValues(alpha: 0.08),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: const Center(
+                child: Text('📊', style: TextStyle(fontSize: 36)),
+              ),
+            ),
+            const SizedBox(height: 16),
             Text(
               'เพิ่มสมาชิกและรายการก่อน',
               style: GoogleFonts.notoSansThai(
-                fontSize: 15,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
-              'Analytics จะแสดงเมื่อมีข้อมูล',
+              'กราฟและสถิติจะแสดงเมื่อมีข้อมูล',
               style: GoogleFonts.notoSansThai(
                 fontSize: 13,
-                color: isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight,
+                color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
               ),
             ),
           ],
@@ -78,12 +82,9 @@ class AnalyticsTab extends StatelessWidget {
       );
     }
 
-    // Computed data
-    final avgPerPerson =
-        members.isNotEmpty ? calc.total / members.length : 0.0;
+    final avgPerPerson = members.isNotEmpty ? widget.calc.total / members.length : 0.0;
 
-    // Member totals sorted desc
-    final memberTotals = calc.memberSummaries
+    final memberTotals = widget.calc.memberSummaries
         .map((s) => _MemberTotal(
               member: s.member,
               total: s.total,
@@ -94,12 +95,9 @@ class AnalyticsTab extends StatelessWidget {
 
     final biggestPayer = memberTotals.isNotEmpty ? memberTotals.first : null;
     final smallestPayer = memberTotals.isNotEmpty ? memberTotals.last : null;
-    final maxMemberTotal =
-        memberTotals.isNotEmpty ? memberTotals.first.total : 1.0;
+    final maxMemberTotal = memberTotals.isNotEmpty ? memberTotals.first.total : 1.0;
 
-    // Top items sorted desc
-    final topItems = (List<BillItem>.from(items)
-          ..sort((a, b) => b.price.compareTo(a.price)))
+    final topItems = (List<BillItem>.from(items)..sort((a, b) => b.price.compareTo(a.price)))
         .take(5)
         .toList();
     final maxItemPrice = topItems.isNotEmpty ? topItems.first.price : 1.0;
@@ -107,59 +105,21 @@ class AnalyticsTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // ── 1. Stats Row ───────────────────────────────────────
-        Row(
-          children: [
-            Expanded(
-              child: _StatCard(
-                emoji: '🧾',
-                value: items.length.toString(),
-                sub: 'รายการ',
-                label: 'รายการทั้งหมด',
-                fromColor: _kStatBlueFrom,
-                toColor: _kStatBlueTo,
-                borderColor: _kStatBlueBorder,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _StatCard(
-                emoji: '👥',
-                value: members.length.toString(),
-                sub: 'คน',
-                label: 'สมาชิก',
-                fromColor: _kStatPurpleFrom,
-                toColor: _kStatPurpleTo,
-                borderColor: _kStatPurpleBorder,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _StatCard(
-                emoji: getTotalEmoji(avgPerPerson),
-                value: formatNumber(avgPerPerson, decimals: 0),
-                sub: 'บาท',
-                label: 'เฉลี่ย/คน',
-                fromColor: _kStatGreenFrom,
-                toColor: _kStatGreenTo,
-                borderColor: _kStatGreenBorder,
-              ),
-            ),
-          ],
-        ),
+        // ── Stats Row ──────────────────────────────────────────
+        _buildStatsRow(items, members, avgPerPerson, isDark),
+        const SizedBox(height: 16),
+
+        // ── Pie Chart - Member Spending ────────────────────────
+        _buildPieChartCard(memberTotals, isDark),
         const SizedBox(height: 12),
 
-        // ── 2. Biggest Spender ─────────────────────────────────
+        // ── Biggest Spender ────────────────────────────────────
         if (biggestPayer != null) ...[
-          _BiggestSpenderCard(
-            payer: biggestPayer,
-            total: calc.total,
-            isDark: isDark,
-          ),
+          _BiggestSpenderCard(payer: biggestPayer, total: widget.calc.total, isDark: isDark),
           const SizedBox(height: 12),
         ],
 
-        // ── 3. Member Spending Bar Chart ───────────────────────
+        // ── Member Spending Bars ───────────────────────────────
         _SectionCard(
           isDark: isDark,
           title: '💸 ค่าใช้จ่ายแต่ละคน',
@@ -167,183 +127,91 @@ class AnalyticsTab extends StatelessWidget {
             children: memberTotals.asMap().entries.map((entry) {
               final rank = entry.key;
               final mt = entry.value;
-              final pct = maxMemberTotal > 0
-                  ? (mt.total / maxMemberTotal)
-                  : 0.0;
-              final billPct = calc.total > 0
-                  ? (mt.total / calc.total * 100).round()
-                  : 0;
+              final pct = maxMemberTotal > 0 ? mt.total / maxMemberTotal : 0.0;
+              final billPct = widget.calc.total > 0 ? (mt.total / widget.calc.total * 100).round() : 0;
               final color = colorFromHex(mt.member.color);
-
               return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.only(bottom: 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        // Rank indicator
                         SizedBox(
                           width: 28,
                           child: rank == 0
-                              ? const Text('🥇',
-                                  style: TextStyle(fontSize: 16))
+                              ? const Text('🥇', style: TextStyle(fontSize: 16))
                               : rank == 1
-                                  ? const Text('🥈',
-                                      style: TextStyle(fontSize: 16))
+                                  ? const Text('🥈', style: TextStyle(fontSize: 16))
                                   : rank == 2
-                                      ? const Text('🥉',
-                                          style: TextStyle(fontSize: 16))
+                                      ? const Text('🥉', style: TextStyle(fontSize: 16))
                                       : MemberAvatar(
                                           name: mt.member.name,
                                           color: color,
-                                          size: 16,
+                                          size: 18,
                                           avatarUrl: mt.member.profile?.avatarUrl,
                                         ),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             mt.member.name,
                             style: GoogleFonts.notoSansThai(
                               fontSize: 13,
-                              color: isDark
-                                  ? AppColors.textPrimaryDark
-                                  : AppColors.textPrimaryLight,
+                              fontWeight: FontWeight.w500,
+                              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         Text(
-                          '${formatNumber(mt.total)} บาท ($billPct%)',
+                          '${formatNumber(mt.total)} บาท',
                           style: GoogleFonts.notoSansThai(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
                             color: color,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 34),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: pct.clamp(0.0, 1.0),
-                          backgroundColor: isDark
-                              ? const Color(0xFF374151)
-                              : const Color(0xFFE5E7EB),
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(color),
-                          minHeight: 8,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // ── 4. Top Items Bar Chart ─────────────────────────────
-        _SectionCard(
-          isDark: isDark,
-          title: '🔥 รายการแพงสุด',
-          child: Column(
-            children: topItems.asMap().entries.map((entry) {
-              final rank = entry.key;
-              final item = entry.value;
-              final pct = maxItemPrice > 0
-                  ? (item.price / maxItemPrice)
-                  : 0.0;
-              final sharedCount = item.shares.keys.length;
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        // Rank indicator
-                        SizedBox(
-                          width: 28,
-                          child: rank == 0
-                              ? const Text('🥇',
-                                  style: TextStyle(fontSize: 16))
-                              : rank == 1
-                                  ? const Text('🥈',
-                                      style: TextStyle(fontSize: 16))
-                                  : rank == 2
-                                      ? const Text('🥉',
-                                          style: TextStyle(fontSize: 16))
-                                      : Text(
-                                          '${rank + 1}.',
-                                          style: GoogleFonts.notoSansThai(
-                                            fontSize: 13,
-                                            color: isDark
-                                                ? AppColors.textTertiaryDark
-                                                : AppColors.textTertiaryLight,
-                                          ),
-                                        ),
-                        ),
                         const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            item.name,
-                            style: GoogleFonts.notoSansThai(
-                              fontSize: 13,
-                              color: isDark
-                                  ? AppColors.textPrimaryDark
-                                  : AppColors.textPrimaryLight,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                        ),
-                        Text(
-                          '${formatNumber(item.price)} บาท ($sharedCount คน)',
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: _kBlue400,
+                          child: Text(
+                            '$billPct%',
+                            style: GoogleFonts.notoSansThai(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: color,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     Padding(
-                      padding: const EdgeInsets.only(left: 34),
+                      padding: const EdgeInsets.only(left: 36),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: Container(
-                          height: 6,
-                          child: LayoutBuilder(
-                            builder: (ctx, constraints) {
-                              return Stack(
-                                children: [
-                                  Container(
-                                    width: constraints.maxWidth,
-                                    color: isDark
-                                        ? const Color(0xFF374151)
-                                        : const Color(0xFFE5E7EB),
-                                  ),
-                                  Container(
-                                    width: constraints.maxWidth *
-                                        pct.clamp(0.0, 1.0),
-                                    decoration: const BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [_kBlue400, _kBlue500],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Stack(
+                          children: [
+                            Container(
+                              height: 8,
+                              color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+                            ),
+                            FractionallySizedBox(
+                              widthFactor: pct.clamp(0.0, 1.0),
+                              child: Container(
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: color,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -355,10 +223,12 @@ class AnalyticsTab extends StatelessWidget {
         ),
         const SizedBox(height: 12),
 
-        // ── 5. Fairness Section ────────────────────────────────
-        if (memberTotals.length >= 2 &&
-            biggestPayer != null &&
-            smallestPayer != null) ...[
+        // ── Top Items Bar Chart ────────────────────────────────
+        _buildTopItemsCard(topItems, maxItemPrice, isDark),
+        const SizedBox(height: 12),
+
+        // ── Fairness Section ───────────────────────────────────
+        if (memberTotals.length >= 2 && biggestPayer != null && smallestPayer != null) ...[
           _FairnessCard(
             biggestPayer: biggestPayer,
             smallestPayer: smallestPayer,
@@ -368,42 +238,40 @@ class AnalyticsTab extends StatelessWidget {
           const SizedBox(height: 12),
         ],
 
-        // ── 6. Items Per Member Grid ───────────────────────────
+        // ── Items Per Member ───────────────────────────────────
         _SectionCard(
           isDark: isDark,
           title: '📋 รายการต่อคน',
           child: GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
-              childAspectRatio: 3.0,
+              childAspectRatio: 3.2,
             ),
             itemCount: memberTotals.length,
             itemBuilder: (ctx, i) {
               final mt = memberTotals[i];
               final color = colorFromHex(mt.member.color);
               return Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF1F2937)
-                      : Colors.white,
+                  color: isDark ? const Color(0xFF1F2937) : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isDark
-                        ? AppColors.borderDark
-                        : AppColors.borderLight,
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
                   ),
                 ),
                 child: Row(
                   children: [
                     MemberAvatar(
-                        name: mt.member.name, color: color, size: 24, avatarUrl: mt.member.profile?.avatarUrl),
+                      name: mt.member.name,
+                      color: color,
+                      size: 26,
+                      avatarUrl: mt.member.profile?.avatarUrl,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(
@@ -414,10 +282,8 @@ class AnalyticsTab extends StatelessWidget {
                             mt.member.name,
                             style: GoogleFonts.notoSansThai(
                               fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: isDark
-                                  ? AppColors.textPrimaryDark
-                                  : AppColors.textPrimaryLight,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -425,9 +291,7 @@ class AnalyticsTab extends StatelessWidget {
                             '${mt.itemCount} รายการ',
                             style: GoogleFonts.notoSansThai(
                               fontSize: 10,
-                              color: isDark
-                                  ? AppColors.textTertiaryDark
-                                  : const Color(0xFF9CA3AF),
+                              color: isDark ? AppColors.textTertiaryDark : const Color(0xFF9CA3AF),
                             ),
                           ),
                         ],
@@ -443,66 +307,301 @@ class AnalyticsTab extends StatelessWidget {
       ],
     );
   }
+
+  Widget _buildStatsRow(List<BillItem> items, List<BillMember> members, double avgPerPerson, bool isDark) {
+    return Row(
+      children: [
+        Expanded(
+          child: _GradientStatCard(
+            emoji: '🧾',
+            value: items.length.toString(),
+            label: 'รายการ',
+            gradientColors: const [Color(0xFFEFF6FF), Color(0xFFEEF2FF)],
+            borderColor: const Color(0xFFBFDBFE),
+            valueColor: AppColors.primary,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _GradientStatCard(
+            emoji: '👥',
+            value: members.length.toString(),
+            label: 'สมาชิก',
+            gradientColors: const [Color(0xFFFAF5FF), Color(0xFFF5F3FF)],
+            borderColor: const Color(0xFFE9D5FF),
+            valueColor: const Color(0xFFA855F7),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _GradientStatCard(
+            emoji: '💰',
+            value: formatNumber(avgPerPerson, decimals: 0),
+            label: 'เฉลี่ย/คน',
+            gradientColors: const [Color(0xFFECFDF5), Color(0xFFF0FDFA)],
+            borderColor: const Color(0xFFA7F3D0),
+            valueColor: _kEmerald500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPieChartCard(List<_MemberTotal> memberTotals, bool isDark) {
+    if (memberTotals.isEmpty || widget.calc.total == 0) return const SizedBox.shrink();
+
+    final sections = memberTotals.asMap().entries.map((entry) {
+      final i = entry.key;
+      final mt = entry.value;
+      final color = colorFromHex(mt.member.color);
+      final pct = widget.calc.total > 0 ? mt.total / widget.calc.total * 100 : 0.0;
+      final isTouched = i == _pieTouchedIndex;
+      return PieChartSectionData(
+        color: color,
+        value: mt.total,
+        title: pct >= 8 ? '${pct.toStringAsFixed(0)}%' : '',
+        radius: isTouched ? 90 : 75,
+        titleStyle: GoogleFonts.notoSansThai(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        titlePositionPercentageOffset: 0.6,
+      );
+    }).toList();
+
+    return _SectionCard(
+      isDark: isDark,
+      title: '🥧 สัดส่วนค่าใช้จ่าย',
+      child: Column(
+        children: [
+          SizedBox(
+            height: 200,
+            child: PieChart(
+              PieChartData(
+                pieTouchData: PieTouchData(
+                  touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                    setState(() {
+                      if (!event.isInterestedForInteractions ||
+                          pieTouchResponse == null ||
+                          pieTouchResponse.touchedSection == null) {
+                        _pieTouchedIndex = -1;
+                        return;
+                      }
+                      _pieTouchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                    });
+                  },
+                ),
+                sections: sections,
+                centerSpaceRadius: 44,
+                sectionsSpace: 2,
+              ),
+              swapAnimationDuration: const Duration(milliseconds: 300),
+              swapAnimationCurve: Curves.easeInOut,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: memberTotals.map((mt) {
+              final color = colorFromHex(mt.member.color);
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    mt.member.name,
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 12,
+                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopItemsCard(List<BillItem> topItems, double maxItemPrice, bool isDark) {
+    return _SectionCard(
+      isDark: isDark,
+      title: '🔥 รายการแพงสุด',
+      child: Column(
+        children: topItems.asMap().entries.map((entry) {
+          final rank = entry.key;
+          final item = entry.value;
+          final pct = maxItemPrice > 0 ? item.price / maxItemPrice : 0.0;
+          final sharedCount = item.shares.keys.length;
+
+          final barColors = [
+            const Color(0xFF4366f4),
+            const Color(0xFF7C3AED),
+            const Color(0xFFEC4899),
+            const Color(0xFF10B981),
+            const Color(0xFFF59E0B),
+          ];
+          final barColor = barColors[rank % barColors.length];
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 28,
+                      child: rank == 0
+                          ? const Text('🥇', style: TextStyle(fontSize: 16))
+                          : rank == 1
+                              ? const Text('🥈', style: TextStyle(fontSize: 16))
+                              : rank == 2
+                                  ? const Text('🥉', style: TextStyle(fontSize: 16))
+                                  : Text(
+                                      '${rank + 1}.',
+                                      style: GoogleFonts.notoSansThai(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                                      ),
+                                    ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        item.name,
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                    Text(
+                      '${formatNumber(item.price)} บาท',
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: barColor,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$sharedCount คน',
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 10,
+                          color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(left: 36),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Stack(
+                      children: [
+                        Container(
+                          height: 8,
+                          color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+                        ),
+                        FractionallySizedBox(
+                          widthFactor: pct.clamp(0.0, 1.0),
+                          child: Container(
+                            height: 8,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [barColor, barColor.withValues(alpha: 0.7)],
+                              ),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
 }
 
-// ── Stat Card ─────────────────────────────────────────────────
-class _StatCard extends StatelessWidget {
+// ── Gradient Stat Card ────────────────────────────────────────
+class _GradientStatCard extends StatelessWidget {
   final String emoji;
   final String value;
-  final String sub;
   final String label;
-  final Color fromColor;
-  final Color toColor;
+  final List<Color> gradientColors;
   final Color borderColor;
+  final Color valueColor;
 
-  const _StatCard({
+  const _GradientStatCard({
     required this.emoji,
     required this.value,
-    required this.sub,
     required this.label,
-    required this.fromColor,
-    required this.toColor,
+    required this.gradientColors,
     required this.borderColor,
+    required this.valueColor,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [fromColor, toColor],
+          colors: gradientColors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 20)),
-          const SizedBox(height: 4),
+          Text(emoji, style: const TextStyle(fontSize: 22)),
+          const SizedBox(height: 6),
           Text(
             value,
             style: GoogleFonts.notoSansThai(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF111827), // gray-900
-            ),
-          ),
-          Text(
-            sub,
-            style: GoogleFonts.notoSansThai(
-              fontSize: 10,
-              color: const Color(0xFF6B7280), // gray-500
+              color: valueColor,
             ),
           ),
           Text(
             label,
             style: GoogleFonts.notoSansThai(
-              fontSize: 10,
-              color: const Color(0xFF9CA3AF), // gray-400
+              fontSize: 11,
+              color: const Color(0xFF6B7280),
             ),
           ),
         ],
@@ -517,11 +616,7 @@ class _BiggestSpenderCard extends StatelessWidget {
   final double total;
   final bool isDark;
 
-  const _BiggestSpenderCard({
-    required this.payer,
-    required this.total,
-    required this.isDark,
-  });
+  const _BiggestSpenderCard({required this.payer, required this.total, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -539,64 +634,79 @@ class _BiggestSpenderCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _kAmberBorder),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            '🏆 จ่ายเยอะสุด',
-            style: GoogleFonts.notoSansThai(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: _kAmber600,
-              letterSpacing: 0.5,
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: _kAmber500.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Center(
+              child: Text('🏆', style: TextStyle(fontSize: 22)),
             ),
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              MemberAvatar(name: payer.member.name, color: color, size: 40, avatarUrl: payer.member.profile?.avatarUrl),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'จ่ายเยอะสุด',
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: _kAmber600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Row(
                   children: [
+                    MemberAvatar(name: payer.member.name, color: color, size: 20, avatarUrl: payer.member.profile?.avatarUrl),
+                    const SizedBox(width: 6),
                     Text(
                       payer.member.name,
                       style: GoogleFonts.notoSansThai(
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF111827),
                       ),
                     ),
-                    Text(
-                      '${payer.itemCount} รายการ',
-                      style: GoogleFonts.notoSansThai(
-                        fontSize: 12,
-                        color: const Color(0xFF6B7280),
-                      ),
-                    ),
                   ],
                 ),
+                Text(
+                  '${payer.itemCount} รายการ',
+                  style: GoogleFonts.notoSansThai(fontSize: 11, color: const Color(0xFF6B7280)),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${formatNumber(payer.total)} บาท',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: _kAmber600,
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '${formatNumber(payer.total)} บาท',
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: _kAmber600,
-                    ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: _kAmber500.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$pct% ของบิล',
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: _kAmber600,
                   ),
-                  Text(
-                    '$pct% ของบิล',
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 11,
-                      color: const Color(0xFF9CA3AF),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -622,15 +732,18 @@ class _FairnessCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ratio = biggestPayer.total /
-        (smallestPayer.total > 0 ? smallestPayer.total : 1);
+    final ratio = biggestPayer.total / (smallestPayer.total > 0 ? smallestPayer.total : 1);
     final String fairnessEmoji;
+    final Color fairnessColor;
     if (ratio > 3.0) {
       fairnessEmoji = '😬';
+      fairnessColor = AppColors.red;
     } else if (ratio > 1.5) {
       fairnessEmoji = '🤔';
+      fairnessColor = _kAmber500;
     } else {
       fairnessEmoji = '😊';
+      fairnessColor = _kEmerald500;
     }
     final ratioText = '${ratio.toStringAsFixed(1)}x';
 
@@ -639,112 +752,41 @@ class _FairnessCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '⚖️ ความเท่าเทียม',
-            style: GoogleFonts.notoSansThai(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: isDark
-                  ? AppColors.textPrimaryDark
-                  : AppColors.textPrimaryLight,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Divider(
-              height: 1,
-              color: isDark ? AppColors.borderDark : AppColors.borderLight),
-          const SizedBox(height: 12),
           Row(
             children: [
-              // Smallest payer
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'จ่ายน้อยสุด',
-                      style: GoogleFonts.notoSansThai(
-                        fontSize: 11,
-                        color: isDark
-                            ? AppColors.textTertiaryDark
-                            : const Color(0xFF9CA3AF),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      smallestPayer.member.name,
-                      style: GoogleFonts.notoSansThai(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isDark
-                            ? AppColors.textPrimaryDark
-                            : AppColors.textPrimaryLight,
-                      ),
-                    ),
-                    Text(
-                      '${formatNumber(smallestPayer.total)} บาท',
-                      style: GoogleFonts.notoSansThai(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: _kEmerald500,
-                      ),
-                    ),
-                  ],
+              const Text('⚖️', style: TextStyle(fontSize: 16)),
+              const SizedBox(width: 8),
+              Text(
+                'ความเท่าเทียม',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                 ),
               ),
-              // Center emoji + ratio
-              Column(
-                children: [
-                  Text(fairnessEmoji,
-                      style: const TextStyle(fontSize: 28)),
-                  Text(
-                    ratioText,
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 10,
-                      color: isDark
-                          ? AppColors.textTertiaryDark
-                          : const Color(0xFF9CA3AF),
-                    ),
-                  ),
-                ],
-              ),
-              // Biggest payer
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: fairnessColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
+                    Text(fairnessEmoji, style: const TextStyle(fontSize: 14)),
+                    const SizedBox(width: 4),
                     Text(
-                      'จ่ายเยอะสุด',
+                      ratioText,
                       style: GoogleFonts.notoSansThai(
-                        fontSize: 11,
-                        color: isDark
-                            ? AppColors.textTertiaryDark
-                            : const Color(0xFF9CA3AF),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      biggestPayer.member.name,
-                      style: GoogleFonts.notoSansThai(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isDark
-                            ? AppColors.textPrimaryDark
-                            : AppColors.textPrimaryLight,
-                      ),
-                    ),
-                    Text(
-                      '${formatNumber(biggestPayer.total)} บาท',
-                      style: GoogleFonts.notoSansThai(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: _kAmber500,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: fairnessColor,
                       ),
                     ),
                   ],
@@ -752,11 +794,45 @@ class _FairnessCard extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 14),
+          Divider(height: 1, color: isDark ? AppColors.borderDark : AppColors.borderLight),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _FairnessPersonCol(
+                  label: 'จ่ายน้อยสุด',
+                  name: smallestPayer.member.name,
+                  amount: smallestPayer.total,
+                  color: _kEmerald500,
+                  isDark: isDark,
+                  align: CrossAxisAlignment.start,
+                ),
+              ),
+              Column(
+                children: [
+                  Container(
+                    width: 1,
+                    height: 40,
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                  ),
+                ],
+              ),
+              Expanded(
+                child: _FairnessPersonCol(
+                  label: 'จ่ายเยอะสุด',
+                  name: biggestPayer.member.name,
+                  amount: biggestPayer.total,
+                  color: _kAmber500,
+                  isDark: isDark,
+                  align: CrossAxisAlignment.end,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Divider(height: 1, color: isDark ? AppColors.borderDark : AppColors.borderLight),
           const SizedBox(height: 12),
-          Divider(
-              height: 1,
-              color: isDark ? AppColors.borderDark : AppColors.borderLight),
-          const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -764,19 +840,15 @@ class _FairnessCard extends StatelessWidget {
                 'เฉลี่ยต่อคน',
                 style: GoogleFonts.notoSansThai(
                   fontSize: 13,
-                  color: isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight,
+                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                 ),
               ),
               Text(
                 '${formatNumber(avgPerPerson)} บาท',
                 style: GoogleFonts.notoSansThai(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isDark
-                      ? const Color(0xFFD1D5DB)
-                      : const Color(0xFF4B5563),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
                 ),
               ),
             ],
@@ -787,17 +859,67 @@ class _FairnessCard extends StatelessWidget {
   }
 }
 
-// ── Section Card wrapper ──────────────────────────────────────
+class _FairnessPersonCol extends StatelessWidget {
+  final String label;
+  final String name;
+  final double amount;
+  final Color color;
+  final bool isDark;
+  final CrossAxisAlignment align;
+
+  const _FairnessPersonCol({
+    required this.label,
+    required this.name,
+    required this.amount,
+    required this.color,
+    required this.isDark,
+    required this.align,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Column(
+        crossAxisAlignment: align,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.notoSansThai(
+              fontSize: 11,
+              color: isDark ? AppColors.textTertiaryDark : const Color(0xFF9CA3AF),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            name,
+            style: GoogleFonts.notoSansThai(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+            ),
+          ),
+          Text(
+            '${formatNumber(amount)} บาท',
+            style: GoogleFonts.notoSansThai(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Section Card ──────────────────────────────────────────────
 class _SectionCard extends StatelessWidget {
   final bool isDark;
   final String title;
   final Widget child;
 
-  const _SectionCard({
-    required this.isDark,
-    required this.title,
-    required this.child,
-  });
+  const _SectionCard({required this.isDark, required this.title, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -806,8 +928,16 @@ class _SectionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -816,10 +946,8 @@ class _SectionCard extends StatelessWidget {
             title,
             style: GoogleFonts.notoSansThai(
               fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: isDark
-                  ? AppColors.textPrimaryDark
-                  : AppColors.textPrimaryLight,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
             ),
           ),
           const SizedBox(height: 14),
@@ -836,9 +964,5 @@ class _MemberTotal {
   final double total;
   final int itemCount;
 
-  const _MemberTotal({
-    required this.member,
-    required this.total,
-    required this.itemCount,
-  });
+  const _MemberTotal({required this.member, required this.total, required this.itemCount});
 }

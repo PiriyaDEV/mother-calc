@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -1166,16 +1167,33 @@ class _GroupSummaryTab extends StatelessWidget {
 }
 
 // ── Group Analytics Tab ───────────────────────────────────────
-class _GroupAnalyticsTab extends StatelessWidget {
+class _GroupAnalyticsTab extends StatefulWidget {
   final List<Bill> bills;
   final bool isDark;
 
   const _GroupAnalyticsTab({required this.bills, required this.isDark});
 
   @override
+  State<_GroupAnalyticsTab> createState() => _GroupAnalyticsTabState();
+}
+
+class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
+  int _pieTouchedIndex = -1;
+
+  static const _chartColors = [
+    Color(0xFF4366f4),
+    Color(0xFFA855F7),
+    Color(0xFF10B981),
+    Color(0xFFF59E0B),
+    Color(0xFFEF4444),
+    Color(0xFF06B6D4),
+    Color(0xFFEC4899),
+    Color(0xFF84CC16),
+  ];
+
+  @override
   Widget build(BuildContext context) {
-    final allItems =
-        bills.expand((b) => b.items).toList();
+    final allItems = widget.bills.expand((b) => b.items).toList();
 
     if (allItems.isEmpty) {
       return Center(
@@ -1183,354 +1201,531 @@ class _GroupAnalyticsTab extends StatelessWidget {
           icon: Icons.analytics_outlined,
           label: 'ยังไม่มีข้อมูลวิเคราะห์',
           sub: 'สร้างบิลและเพิ่มรายการก่อน',
-          isDark: isDark,
+          isDark: widget.isDark,
         ),
       );
     }
 
-    final totalAmount =
-        allItems.fold<double>(0, (s, i) => s + i.price);
-    final avgPerBill =
-        bills.isNotEmpty ? totalAmount / bills.length : 0.0;
+    final totalAmount = allItems.fold<double>(0, (s, i) => s + i.price);
+    final avgPerBill = widget.bills.isNotEmpty ? totalAmount / widget.bills.length : 0.0;
+    final totalMembers = widget.bills.expand((b) => b.members).map((m) => m.id).toSet().length;
 
-    // Top items sorted by price desc
-    final sortedItems = List<BillItem>.from(allItems)
-      ..sort((a, b) => b.price.compareTo(a.price));
-    final topItems = sortedItems.take(5).toList();
-
-    // Recent bills sorted by updatedAt desc
-    final recentBills = List<Bill>.from(bills)
+    final sortedBills = List<Bill>.from(widget.bills)
       ..sort((a, b) {
-        final at = a.updatedAt ?? DateTime(2000);
-        final bt = b.updatedAt ?? DateTime(2000);
-        return bt.compareTo(at);
+        final at = b.items.fold<double>(0, (s, i) => s + i.price);
+        final bt = a.items.fold<double>(0, (s, i) => s + i.price);
+        return at.compareTo(bt);
       });
-    final recentTop = recentBills.take(5).toList();
+
+    final topItems = (List<BillItem>.from(allItems)..sort((a, b) => b.price.compareTo(a.price))).take(5).toList();
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // ── Stats Row ──
-        Row(
-          children: [
-            Expanded(
-              child: _AnalyticsStatCard(
-                label: 'บิลทั้งหมด',
-                value: '${bills.length}',
-                sub: 'บิล',
-                valueColor: const Color(0xFF4366f4),
-                isDark: isDark,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _AnalyticsStatCard(
-                label: 'รายการทั้งหมด',
-                value: '${allItems.length}',
-                sub: 'รายการ',
-                valueColor: const Color(0xFFA855F7),
-                isDark: isDark,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _AnalyticsStatCard(
-                label: 'เฉลี่ย/บิล',
-                value: formatNumber(avgPerBill),
-                sub: 'บาท',
-                valueColor: const Color(0xFF10B981),
-                isDark: isDark,
-              ),
-            ),
-          ],
-        ),
+        // ── Hero Stats ──
+        _buildHeroStats(totalAmount, allItems.length, avgPerBill, totalMembers),
         const SizedBox(height: 16),
 
+        // ── Pie Chart: Bills Distribution ──
+        if (widget.bills.length > 1) ...[
+          _buildBillsPieChart(sortedBills, totalAmount),
+          const SizedBox(height: 12),
+        ],
+
+        // ── Bar Chart: Bills Comparison ──
+        if (widget.bills.length >= 2) ...[
+          _buildBillsBarChart(sortedBills),
+          const SizedBox(height: 12),
+        ],
+
         // ── Top Items ──
+        _buildTopItemsCard(topItems, totalAmount),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildHeroStats(double total, int itemCount, double avgPerBill, int memberCount) {
+    final isDark = widget.isDark;
+    return Column(
+      children: [
+        // Total hero card
         Container(
-          padding: const EdgeInsets.all(16),
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF4366f4), Color(0xFF7C3AED)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF4366f4).withValues(alpha: 0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'รายการราคาสูงสุด',
+                'ยอดรวมทั้งกลุ่ม',
                 style: GoogleFonts.notoSansThai(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDark
-                      ? AppColors.textPrimaryDark
-                      : AppColors.textPrimaryLight,
+                  fontSize: 13,
+                  color: Colors.white.withValues(alpha: 0.8),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '฿${formatNumber(total)}',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 12),
-              ...topItems.asMap().entries.map((entry) {
-                final idx = entry.key;
-                final item = entry.value;
-                final pct =
-                    totalAmount > 0 ? item.price / totalAmount : 0.0;
-                final isLast = idx == topItems.length - 1;
-
-                return Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 20,
-                            child: Text(
-                              '${idx + 1}',
-                              style: GoogleFonts.notoSansThai(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: isDark
-                                    ? AppColors.textTertiaryDark
-                                    : const Color(0xFF9CA3AF),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        item.name,
-                                        style: GoogleFonts.notoSansThai(
-                                          fontSize: 13,
-                                          color: isDark
-                                              ? AppColors.textPrimaryDark
-                                              : AppColors.textPrimaryLight,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    Text(
-                                      '${formatNumber(item.price)} บาท',
-                                      style: GoogleFonts.notoSansThai(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: isDark
-                                            ? AppColors.textPrimaryDark
-                                            : AppColors.textPrimaryLight,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(3),
-                                  child: LinearProgressIndicator(
-                                    value: pct.clamp(0.0, 1.0),
-                                    backgroundColor: isDark
-                                        ? const Color(0xFF374151)
-                                        : const Color(0xFFE5E7EB),
-                                    valueColor:
-                                        const AlwaysStoppedAnimation<Color>(
-                                            Color(0xFF4366f4)),
-                                    minHeight: 6,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (!isLast)
-                      Divider(
-                        height: 1,
-                        color: isDark
-                            ? AppColors.borderDark
-                            : AppColors.borderLight,
-                      ),
-                  ],
-                );
-              }),
+              Row(
+                children: [
+                  _HeroStatPill(label: '${widget.bills.length} บิล', icon: Icons.receipt_rounded),
+                  const SizedBox(width: 8),
+                  _HeroStatPill(label: '$itemCount รายการ', icon: Icons.list_rounded),
+                  const SizedBox(width: 8),
+                  _HeroStatPill(label: '$memberCount คน', icon: Icons.people_rounded),
+                ],
+              ),
             ],
           ),
         ),
         const SizedBox(height: 12),
-
-        // ── Recent Bills ──
+        // Avg per bill stat
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
             color: isDark ? AppColors.surfaceDark : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight),
+            border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Text(
-                'บิลล่าสุด',
-                style: GoogleFonts.notoSansThai(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDark
-                      ? AppColors.textPrimaryDark
-                      : AppColors.textPrimaryLight,
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(child: Text('📊', style: TextStyle(fontSize: 20))),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  'เฉลี่ยต่อบิล',
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 14,
+                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
-              ...recentTop.map((bill) {
-                final billTotal =
-                    bill.items.fold<double>(0, (s, i) => s + i.price);
-                final pct =
-                    totalAmount > 0 ? billTotal / totalAmount : 0.0;
-                final dateStr = formatDate(bill.updatedAt);
-                final pctStr =
-                    '${(pct * 100).toStringAsFixed(1)}% ของทั้งหมด';
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              bill.title,
-                              style: GoogleFonts.notoSansThai(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: isDark
-                                    ? AppColors.textPrimaryDark
-                                    : AppColors.textPrimaryLight,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Text(
-                            '${formatNumber(billTotal)} บาท',
-                            style: GoogleFonts.notoSansThai(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? AppColors.textPrimaryDark
-                                  : AppColors.textPrimaryLight,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(3),
-                        child: Container(
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? const Color(0xFF374151)
-                                : const Color(0xFFE5E7EB),
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                          child: FractionallySizedBox(
-                            alignment: Alignment.centerLeft,
-                            widthFactor: pct.clamp(0.0, 1.0),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF4366f4),
-                                    Color(0xFF6b8aff)
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(3),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$dateStr · $pctStr',
-                        style: GoogleFonts.notoSansThai(
-                          fontSize: 10,
-                          color: isDark
-                              ? AppColors.textTertiaryDark
-                              : const Color(0xFF9CA3AF),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
+              Text(
+                '฿${formatNumber(avgPerBill)}',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF10B981),
+                ),
+              ),
             ],
           ),
         ),
       ],
     );
   }
-}
 
-// ── Analytics Stat Card ───────────────────────────────────────
-class _AnalyticsStatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final String sub;
-  final Color valueColor;
-  final bool isDark;
+  Widget _buildBillsPieChart(List<Bill> sortedBills, double totalAmount) {
+    final isDark = widget.isDark;
+    final displayBills = sortedBills.take(8).toList();
 
-  const _AnalyticsStatCard({
-    required this.label,
-    required this.value,
-    required this.sub,
-    required this.valueColor,
-    required this.isDark,
-  });
+    final sections = displayBills.asMap().entries.map((entry) {
+      final i = entry.key;
+      final bill = entry.value;
+      final billTotal = bill.items.fold<double>(0, (s, item) => s + item.price);
+      final pct = totalAmount > 0 ? billTotal / totalAmount * 100 : 0.0;
+      final color = _chartColors[i % _chartColors.length];
+      final isTouched = i == _pieTouchedIndex;
 
-  @override
-  Widget build(BuildContext context) {
+      return PieChartSectionData(
+        color: color,
+        value: billTotal,
+        title: pct >= 10 ? '${pct.toStringAsFixed(0)}%' : '',
+        radius: isTouched ? 90 : 75,
+        titleStyle: GoogleFonts.notoSansThai(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        titlePositionPercentageOffset: 0.6,
+      );
+    }).toList();
+
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : const Color(0xFFF9FAFB),
+        color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        boxShadow: isDark ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
+            '🥧 สัดส่วนค่าใช้จ่ายต่อบิล',
+            style: GoogleFonts.notoSansThai(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 200,
+            child: PieChart(
+              PieChartData(
+                pieTouchData: PieTouchData(
+                  touchCallback: (FlTouchEvent event, response) {
+                    setState(() {
+                      if (!event.isInterestedForInteractions || response?.touchedSection == null) {
+                        _pieTouchedIndex = -1;
+                        return;
+                      }
+                      _pieTouchedIndex = response!.touchedSection!.touchedSectionIndex;
+                    });
+                  },
+                ),
+                sections: sections,
+                centerSpaceRadius: 44,
+                sectionsSpace: 2,
+              ),
+              swapAnimationDuration: const Duration(milliseconds: 300),
+              swapAnimationCurve: Curves.easeInOut,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Legend
+          ...displayBills.asMap().entries.map((entry) {
+            final i = entry.key;
+            final bill = entry.value;
+            final billTotal = bill.items.fold<double>(0, (s, item) => s + item.price);
+            final pct = totalAmount > 0 ? (billTotal / totalAmount * 100).toStringAsFixed(1) : '0';
+            final color = _chartColors[i % _chartColors.length];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3)),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${bill.emoji ?? '🧾'} ${bill.title}',
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 12,
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    '$pct%',
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '฿${formatNumber(billTotal)}',
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 12,
+                      color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBillsBarChart(List<Bill> sortedBills) {
+    final isDark = widget.isDark;
+    final displayBills = sortedBills.take(6).toList();
+    final maxVal = displayBills.fold<double>(0, (max, b) {
+      final t = b.items.fold<double>(0, (s, i) => s + i.price);
+      return t > max ? t : max;
+    });
+
+    final barGroups = displayBills.asMap().entries.map((entry) {
+      final i = entry.key;
+      final bill = entry.value;
+      final billTotal = bill.items.fold<double>(0, (s, item) => s + item.price);
+      final color = _chartColors[i % _chartColors.length];
+      return BarChartGroupData(
+        x: i,
+        barRods: [
+          BarChartRodData(
+            toY: billTotal,
+            gradient: LinearGradient(
+              colors: [color, color.withValues(alpha: 0.7)],
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+            ),
+            width: 28,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+          ),
+        ],
+      );
+    }).toList();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        boxShadow: isDark ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '📊 เปรียบเทียบยอดแต่ละบิล',
+            style: GoogleFonts.notoSansThai(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 180,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: maxVal * 1.2,
+                barTouchData: BarTouchData(
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      final bill = displayBills[group.x];
+                      return BarTooltipItem(
+                        '${bill.emoji ?? '🧾'} ${bill.title}\n฿${formatNumber(rod.toY)}',
+                        GoogleFonts.notoSansThai(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  show: true,
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        final i = value.toInt();
+                        if (i >= displayBills.length) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            displayBills[i].emoji ?? '🧾',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      getTitlesWidget: (value, meta) {
+                        if (value == 0) return const SizedBox.shrink();
+                        return Text(
+                          formatNumber(value, decimals: 0),
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 9,
+                            color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: maxVal / 4,
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+                    strokeWidth: 1,
+                    dashArray: [4, 4],
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                barGroups: barGroups,
+              ),
+              swapAnimationDuration: const Duration(milliseconds: 400),
+              swapAnimationCurve: Curves.easeInOut,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopItemsCard(List<BillItem> topItems, double totalAmount) {
+    final isDark = widget.isDark;
+    final maxPrice = topItems.isNotEmpty ? topItems.first.price : 1.0;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        boxShadow: isDark ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '🔥 รายการแพงสุด',
+            style: GoogleFonts.notoSansThai(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+            ),
+          ),
+          const SizedBox(height: 14),
+          ...topItems.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final item = entry.value;
+            final pct = maxPrice > 0 ? item.price / maxPrice : 0.0;
+            final colors = [
+              const Color(0xFF4366f4),
+              const Color(0xFF7C3AED),
+              const Color(0xFFEC4899),
+              const Color(0xFF10B981),
+              const Color(0xFFF59E0B),
+            ];
+            final color = colors[idx % colors.length];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        child: Text(
+                          idx == 0 ? '🥇' : idx == 1 ? '🥈' : idx == 2 ? '🥉' : '${idx + 1}.',
+                          style: const TextStyle(fontSize: 14),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          item.name,
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        '฿${formatNumber(item.price)}',
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: color,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 32),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Stack(
+                        children: [
+                          Container(height: 7, color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB)),
+                          FractionallySizedBox(
+                            widthFactor: pct.clamp(0.0, 1.0),
+                            child: Container(
+                              height: 7,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.6)]),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroStatPill extends StatelessWidget {
+  final String label;
+  final IconData icon;
+
+  const _HeroStatPill({required this.label, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: Colors.white.withValues(alpha: 0.9)),
+          const SizedBox(width: 5),
+          Text(
             label,
             style: GoogleFonts.notoSansThai(
-              fontSize: 10,
-              color: isDark
-                  ? AppColors.textTertiaryDark
-                  : const Color(0xFF9CA3AF),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: GoogleFonts.notoSansThai(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: valueColor,
-            ),
-          ),
-          Text(
-            sub,
-            style: GoogleFonts.notoSansThai(
-              fontSize: 10,
-              color: isDark
-                  ? AppColors.textTertiaryDark
-                  : const Color(0xFF9CA3AF),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
         ],
