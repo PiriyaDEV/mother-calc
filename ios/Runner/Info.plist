@@ -45,9 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<!-- AdMob App ID — replace with real value from AdMob console -->
+	<!-- AdMob App ID — test ID for development; replace with real value from AdMob console for production -->
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-REPLACE_WITH_ADMOB_APP_ID</string>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
 	<!-- Google Sign-In: iOS OAuth Client ID from Google Cloud Console -->
 	<key>GIDClientID</key>
 	<string>YOUR_IOS_CLIENT_ID.apps.googleusercontent.com</string>
