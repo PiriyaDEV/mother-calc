@@ -29,12 +29,12 @@ class SectionHeaderWidget extends StatelessWidget {
           ),
         ),
         if (trailingCount != null) ...[
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
             decoration: BoxDecoration(
               color: AppColors.primaryFaint,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadii.xl),
             ),
             child: Text(
               '$trailingCount',

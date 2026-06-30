@@ -20,10 +20,10 @@ class BillCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
           border: Border.all(
             color: isDark ? AppColors.borderDark : AppColors.borderLight,
           ),
@@ -39,9 +39,9 @@ class BillCard extends StatelessWidget {
                   height: 44,
                   decoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF1F2937)
-                        : const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(12),
+                        ? AppColors.borderDark
+                        : AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(AppRadii.md),
                   ),
                   child: Center(
                     child: Text(
@@ -50,7 +50,7 @@ class BillCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,7 +107,7 @@ class BillCard extends StatelessWidget {
               ],
             ),
             if (bill.members.isNotEmpty) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   // Member avatars
@@ -122,7 +122,7 @@ class BillCard extends StatelessWidget {
                     size: 24,
                     maxVisible: 5,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.sm),
                   Text(
                     '${bill.members.length} คน',
                     style: GoogleFonts.notoSansThai(
@@ -138,7 +138,7 @@ class BillCard extends StatelessWidget {
                 ],
               ),
             ] else ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -165,8 +165,8 @@ class _BillStatusBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: isCompleted
             ? AppColors.emeraldLight
-            : const Color(0xFFFEF3C7),
-        borderRadius: BorderRadius.circular(20),
+            : AppColors.amberLight,
+        borderRadius: BorderRadius.circular(AppRadii.xl),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -179,7 +179,7 @@ class _BillStatusBadge extends StatelessWidget {
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSpacing.xs),
           Text(
             isCompleted ? 'เสร็จแล้ว' : 'กำลังดำเนินการ',
             style: GoogleFonts.notoSansThai(

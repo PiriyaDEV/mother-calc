@@ -255,21 +255,21 @@ class _MeScreenState extends State<MeScreen> {
                     decoration: BoxDecoration(
                       color: isDark
                           ? AppColors.surfaceDark
-                          : const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(12),
+                          : AppColors.borderLight,
+                      borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
                     child: Icon(
                       isDark
                           ? Icons.wb_sunny_outlined
                           : Icons.nightlight_round_outlined,
                       size: 18,
-                      color: const Color(0xFF6B7280),
+                      color: AppColors.textSecondaryLight,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
 
             // ── Toast ────────────────────────────────────────
             if (_success != null) ...[
@@ -277,61 +277,61 @@ class _MeScreenState extends State<MeScreen> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0FDF4),
-                  border: Border.all(color: const Color(0xFFBBF7D0)),
-                  borderRadius: BorderRadius.circular(16),
+                  color: isDark ? AppColors.emeraldDark.withValues(alpha: 0.3) : const Color(0xFFF0FDF4),
+                  border: Border.all(color: isDark ? AppColors.emeraldDark : const Color(0xFFBBF7D0)),
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle_outline_rounded,
-                        size: 16, color: Color(0xFF15803D)),
-                    const SizedBox(width: 8),
+                    Icon(Icons.check_circle_outline_rounded,
+                        size: 16, color: isDark ? AppColors.emerald : const Color(0xFF15803D)),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
                         _success!,
                         style: GoogleFonts.notoSansThai(
                           fontSize: 13,
-                          color: const Color(0xFF15803D),
+                          color: isDark ? AppColors.emerald : const Color(0xFF15803D),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
             ],
             if (_error != null) ...[
               Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF2F2),
-                  border: Border.all(color: const Color(0xFFFECACA)),
-                  borderRadius: BorderRadius.circular(16),
+                  color: isDark ? AppColors.red.withValues(alpha: 0.15) : AppColors.redFaint,
+                  border: Border.all(color: isDark ? AppColors.red.withValues(alpha: 0.4) : const Color(0xFFFECACA)),
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline_rounded,
-                        size: 16, color: Color(0xFFDC2626)),
-                    const SizedBox(width: 8),
+                    Icon(Icons.error_outline_rounded,
+                        size: 16, color: isDark ? AppColors.red : const Color(0xFFDC2626)),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
                         _error!,
                         style: GoogleFonts.notoSansThai(
                           fontSize: 13,
-                          color: const Color(0xFFDC2626),
+                          color: isDark ? AppColors.red : const Color(0xFFDC2626),
                         ),
                       ),
                     ),
                     GestureDetector(
                       onTap: () => setState(() => _error = null),
-                      child: const Icon(Icons.close_rounded,
-                          size: 14, color: Color(0xFFDC2626)),
+                      child: Icon(Icons.close_rounded,
+                          size: 14, color: isDark ? AppColors.red : const Color(0xFFDC2626)),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
             ],
 
             // ── Profile Hero Card ────────────────────────────
@@ -400,7 +400,7 @@ class _MeScreenState extends State<MeScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
 
             // ── Section: บัญชี ───────────────────────────────
             SectionHeaderWidget(label: 'บัญชี'),
@@ -410,11 +410,11 @@ class _MeScreenState extends State<MeScreen> {
             Container(
               decoration: BoxDecoration(
                 color: isDark ? AppColors.surfaceDark : Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppRadii.lg),
                 border: Border.all(
                   color: isDark
                       ? AppColors.borderDark
-                      : const Color(0xFFF3F4F6),
+                      : AppColors.borderLight,
                 ),
               ),
               child: Column(
@@ -442,7 +442,7 @@ class _MeScreenState extends State<MeScreen> {
                     height: 1,
                     color: isDark
                         ? AppColors.borderDark
-                        : const Color(0xFFF3F4F6),
+                        : AppColors.borderLight,
                   ),
                   // ── Username ──
                   _ProfileFieldRow(
@@ -469,7 +469,7 @@ class _MeScreenState extends State<MeScreen> {
                     height: 1,
                     color: isDark
                         ? AppColors.borderDark
-                        : const Color(0xFFF3F4F6),
+                        : AppColors.borderLight,
                   ),
                   // ── พร้อมเพย์ ──
                   _ProfileFieldRow(
@@ -481,7 +481,7 @@ class _MeScreenState extends State<MeScreen> {
                         : 'ยังไม่ได้ตั้งค่า',
                     valueColor: profile?.promptpay == null ||
                             profile!.promptpay!.isEmpty
-                        ? const Color(0xFF9CA3AF)
+                        ? AppColors.textTertiaryLight
                         : null,
                     isEditing: _editingPromptpay,
                     controller: _promptpayCtrl,
@@ -501,7 +501,7 @@ class _MeScreenState extends State<MeScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
 
             // ── Section: ความปลอดภัย ─────────────────────────
             if (!isGoogleUser) ...[
@@ -514,17 +514,17 @@ class _MeScreenState extends State<MeScreen> {
               Container(
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.surfaceDark : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
                   border: Border.all(
                     color: isDark
                         ? AppColors.borderDark
-                        : const Color(0xFFF3F4F6),
+                        : AppColors.borderLight,
                   ),
                 ),
                 child: Column(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(AppSpacing.lg),
                       child: Row(
                         children: [
                           Expanded(
@@ -547,9 +547,9 @@ class _MeScreenState extends State<MeScreen> {
                               height: 32,
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? const Color(0xFF374151)
-                                    : const Color(0xFFF3F4F6),
-                                borderRadius: BorderRadius.circular(12),
+                                    ? AppColors.borderDark
+                                    : AppColors.borderLight,
+                                borderRadius: BorderRadius.circular(AppRadii.md),
                               ),
                               child: Icon(
                                 _editingPassword
@@ -558,7 +558,7 @@ class _MeScreenState extends State<MeScreen> {
                                 size: 15,
                                 color: isDark
                                     ? AppColors.textTertiaryDark
-                                    : const Color(0xFF6B7280),
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                           ),
@@ -570,10 +570,10 @@ class _MeScreenState extends State<MeScreen> {
                         height: 1,
                         color: isDark
                             ? AppColors.borderDark
-                            : const Color(0xFFF3F4F6),
+                            : AppColors.borderLight,
                       ),
                       Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppSpacing.lg),
                         child: Column(
                           children: [
                             _PasswordField(
@@ -593,12 +593,12 @@ class _MeScreenState extends State<MeScreen> {
                               child: Container(
                                 width: double.infinity,
                                 padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
+                                    const EdgeInsets.symmetric(vertical: AppSpacing.md),
                                 decoration: BoxDecoration(
                                   color: _saving
-                                      ? const Color(0xFF9CA3AF)
-                                      : const Color(0xFF4366F4),
-                                  borderRadius: BorderRadius.circular(12),
+                                      ? AppColors.textTertiaryLight
+                                      : AppColors.primary,
+                                  borderRadius: BorderRadius.circular(AppRadii.md),
                                 ),
                                 child: Center(
                                   child: Text(
@@ -620,7 +620,7 @@ class _MeScreenState extends State<MeScreen> {
                 ),
               ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
 
             // ── Section: การตั้งค่า ──────────────────────────
             SectionHeaderWidget(label: 'การตั้งค่า'),
@@ -631,16 +631,16 @@ class _MeScreenState extends State<MeScreen> {
               onTap: () => themeProvider.toggle(),
               child: Container(
                 height: 56,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.surfaceDark : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
                   boxShadow: isDark ? null : AppColors.shadowSubtle,
                 ),
                 child: Row(
                   children: [
                     Text(isDark ? '🌙' : '☀️', style: const TextStyle(fontSize: 20)),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
                         'โหมดสีเข้ม',
@@ -663,7 +663,7 @@ class _MeScreenState extends State<MeScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
 
             // ── Sign Out ─────────────────────────────────────
             GestureDetector(
@@ -673,27 +673,31 @@ class _MeScreenState extends State<MeScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.surfaceDark : AppColors.redFaint,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFFEE2E2)),
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
+                  border: Border.all(
+                    color: isDark
+                        ? AppColors.red.withValues(alpha: 0.3)
+                        : const Color(0xFFFEE2E2),
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.logout_rounded, size: 18, color: Color(0xFFEF4444)),
-                    const SizedBox(width: 8),
+                    const Icon(Icons.logout_rounded, size: 18, color: AppColors.red),
+                    const SizedBox(width: AppSpacing.sm),
                     Text(
                       'ออกจากระบบ',
                       style: GoogleFonts.notoSansThai(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFFEF4444),
+                        color: AppColors.red,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.xxxl),
           ],
         ),
       ),
@@ -753,8 +757,8 @@ class _MeScreenState extends State<MeScreen> {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: const Color(0xFF4366F4),
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
       ),
       child: Center(
         child: Icon(Icons.person_outline_rounded,
@@ -799,7 +803,7 @@ class _ProfileFieldRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -810,9 +814,7 @@ class _ProfileFieldRow extends StatelessWidget {
                   label,
                   style: GoogleFonts.notoSansThai(
                     fontSize: 12,
-                    color: isDark
-                        ? AppColors.textTertiaryDark
-                        : const Color(0xFF6B7280),
+                    color: ThemeColors.textTertiary(isDark),
                   ),
                 ),
               ),
@@ -824,16 +826,14 @@ class _ProfileFieldRow extends StatelessWidget {
                     height: 32,
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFF374151)
-                          : const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(12),
+                          ? AppColors.borderDark
+                          : AppColors.borderLight,
+                      borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
                     child: Icon(
                       Icons.edit_outlined,
                       size: 15,
-                      color: isDark
-                          ? AppColors.textTertiaryDark
-                          : const Color(0xFF6B7280),
+                      color: ThemeColors.textTertiary(isDark),
                     ),
                   ),
                 )
@@ -846,9 +846,9 @@ class _ProfileFieldRow extends StatelessWidget {
                     height: 32,
                     decoration: BoxDecoration(
                       color: saving
-                          ? const Color(0xFF9CA3AF)
-                          : const Color(0xFF4366F4),
-                      borderRadius: BorderRadius.circular(12),
+                          ? AppColors.textTertiaryLight
+                          : AppColors.primary,
+                      borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
                     child: saving
                         ? const Center(
@@ -872,16 +872,14 @@ class _ProfileFieldRow extends StatelessWidget {
                     height: 32,
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFF374151)
-                          : const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(12),
+                          ? AppColors.borderDark
+                          : AppColors.borderLight,
+                      borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
                     child: Icon(
                       Icons.close_rounded,
                       size: 16,
-                      color: isDark
-                          ? AppColors.textTertiaryDark
-                          : const Color(0xFF6B7280),
+                      color: ThemeColors.textTertiary(isDark),
                     ),
                   ),
                 ),
@@ -894,10 +892,7 @@ class _ProfileFieldRow extends StatelessWidget {
               value,
               style: GoogleFonts.notoSansThai(
                 fontSize: 14,
-                color: valueColor ??
-                    (isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight),
+                color: valueColor ?? ThemeColors.textPrimary(isDark),
               ),
             )
           else
@@ -908,9 +903,7 @@ class _ProfileFieldRow extends StatelessWidget {
                     prefix!,
                     style: GoogleFonts.notoSansThai(
                       fontSize: 14,
-                      color: isDark
-                          ? AppColors.textTertiaryDark
-                          : const Color(0xFF6B7280),
+                      color: ThemeColors.textTertiary(isDark),
                     ),
                   ),
                 Expanded(
@@ -923,21 +916,19 @@ class _ProfileFieldRow extends StatelessWidget {
                       hintText: hintText,
                       hintStyle: GoogleFonts.notoSansThai(
                         fontSize: 14,
-                        color: const Color(0xFF9CA3AF),
+                        color: AppColors.textTertiaryLight,
                       ),
                       isDense: true,
                       contentPadding:
                           const EdgeInsets.symmetric(vertical: 6),
                       enabledBorder: UnderlineInputBorder(
                         borderSide: BorderSide(
-                          color: isDark
-                              ? AppColors.borderDark
-                              : const Color(0xFFE5E7EB),
+                          color: ThemeColors.border(isDark),
                         ),
                       ),
                       focusedBorder: const UnderlineInputBorder(
                         borderSide: BorderSide(
-                          color: Color(0xFF4366F4),
+                          color: AppColors.primary,
                           width: 2,
                         ),
                       ),
@@ -982,16 +973,16 @@ class _PasswordFieldState extends State<_PasswordField> {
         hintText: widget.hint,
         hintStyle: GoogleFonts.notoSansThai(
           fontSize: 14,
-          color: const Color(0xFF9CA3AF),
+          color: AppColors.textTertiaryLight,
         ),
         filled: true,
         fillColor: widget.isDark
-            ? const Color(0xFF1F2937)
+            ? AppColors.borderDark
             : const Color(0xFFF9FAFB),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            const EdgeInsets.symmetric(horizontal: 14, vertical: AppSpacing.md),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           borderSide: BorderSide(
             color: widget.isDark
                 ? AppColors.borderDark
@@ -999,7 +990,7 @@ class _PasswordFieldState extends State<_PasswordField> {
           ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           borderSide: BorderSide(
             color: widget.isDark
                 ? AppColors.borderDark
@@ -1007,15 +998,15 @@ class _PasswordFieldState extends State<_PasswordField> {
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF4366F4)),
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          borderSide: const BorderSide(color: AppColors.primary),
         ),
         suffixIcon: GestureDetector(
           onTap: () => setState(() => _obscure = !_obscure),
           child: Icon(
             _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
             size: 18,
-            color: const Color(0xFF9CA3AF),
+            color: AppColors.textTertiaryLight,
           ),
         ),
       ),

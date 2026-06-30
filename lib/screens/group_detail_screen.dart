@@ -273,7 +273,7 @@ class _GroupTabBar extends StatelessWidget {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
       ),
       child: Row(
         children: tabs.map((tab) {
@@ -288,7 +288,7 @@ class _GroupTabBar extends StatelessWidget {
                   color: isActive
                       ? (isDark ? const Color(0xFF374151) : Colors.white)
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadii.md),
                   boxShadow: isActive
                       ? [
                           BoxShadow(
@@ -327,7 +327,7 @@ class _GroupTabBar extends StatelessWidget {
                               : (isDark
                                   ? const Color(0xFF374151)
                                   : const Color(0xFFE5E7EB)),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(AppRadii.sm),
                         ),
                         child: Text(
                           '${tab.count}',
@@ -391,7 +391,7 @@ class _MembersTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         // ── จัดการสมาชิก button ──
         SizedBox(
@@ -406,16 +406,16 @@ class _MembersTab extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
         // ── Pending Invites Banner ──
         if (pendingMembers.isNotEmpty) ...[
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFBEB),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFDE68A)),
+              color: AppColors.amberFaint,
+              borderRadius: BorderRadius.circular(AppRadii.md),
+              border: Border.all(color: AppColors.amberLight),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,10 +425,10 @@ class _MembersTab extends StatelessWidget {
                   style: GoogleFonts.notoSansThai(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFFD97706),
+                    color: AppColors.amberText,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 ...pendingMembers.map((m) {
                   final name = m.profile?.displayName ??
                       m.profile?.username ??
@@ -441,7 +441,7 @@ class _MembersTab extends StatelessWidget {
                           width: 28,
                           height: 28,
                           decoration: const BoxDecoration(
-                            color: Color(0xFFFDE68A),
+                            color: AppColors.amberLight,
                             shape: BoxShape.circle,
                           ),
                           child: Center(
@@ -457,12 +457,12 @@ class _MembersTab extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpacing.sm),
                         Text(
                           name,
                           style: GoogleFonts.notoSansThai(
                             fontSize: 13,
-                            color: const Color(0xFFD97706),
+                            color: AppColors.amberText,
                           ),
                         ),
                       ],
@@ -472,7 +472,7 @@ class _MembersTab extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
         ],
 
         // ── Accepted Members List ──
@@ -492,11 +492,11 @@ class _MembersTab extends StatelessWidget {
             final isOwner = m.role == 'owner';
 
             return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(14),
+              margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.surfaceDark : Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadii.md),
                 border: Border.all(
                     color: isDark
                         ? AppColors.borderDark
@@ -547,7 +547,7 @@ class _MembersTab extends StatelessWidget {
                       color: isOwner
                           ? const Color(0xFFFAF5FF)
                           : const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(AppRadii.xl),
                     ),
                     child: Text(
                       isOwner ? 'เจ้าของ' : 'สมาชิก',
@@ -586,7 +586,7 @@ class _BillsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         // ── สร้างบิลใหม่ button ──
         SizedBox(
@@ -601,17 +601,17 @@ class _BillsTab extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
         // ── Empty State ──
         if (bills.isEmpty)
           GestureDetector(
             onTap: () => _createBill(context),
             child: Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppSpacing.xl),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.surfaceDark : Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppRadii.lg),
                 border: Border.all(
                   color: isDark
                       ? AppColors.borderDark
@@ -626,7 +626,7 @@ class _BillsTab extends StatelessWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       color: const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
                     child: const Icon(Icons.receipt_outlined,
                         color: AppColors.primary, size: 20),
@@ -663,7 +663,7 @@ class _BillsTab extends StatelessWidget {
                     height: 28,
                     decoration: const BoxDecoration(
                       color: AppColors.primary,
-                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                      borderRadius: BorderRadius.all(Radius.circular(AppRadii.sm)),
                     ),
                     child: const Icon(Icons.add_rounded,
                         color: Colors.white, size: 18),
@@ -784,18 +784,18 @@ class _GroupSummaryTab extends StatelessWidget {
     );
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         // ── Hero Card ──
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFF4366f4), Color(0xFF6b8aff)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppRadii.xl),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -827,7 +827,7 @@ class _GroupSummaryTab extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
         // ── Per-Bill Collapsible ──
         ...bills.map((bill) {
@@ -836,10 +836,10 @@ class _GroupSummaryTab extends StatelessWidget {
           final isExpanded = expandedBillId == bill.id;
 
           return Container(
-            margin: const EdgeInsets.only(bottom: 8),
+            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
             decoration: BoxDecoration(
               color: isDark ? AppColors.surfaceDark : Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadii.md),
               border: Border.all(
                   color: isDark
                       ? AppColors.borderDark
@@ -851,7 +851,7 @@ class _GroupSummaryTab extends StatelessWidget {
                 GestureDetector(
                   onTap: () => onToggle(bill.id),
                   child: Padding(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     child: Row(
                       children: [
                         Container(
@@ -1016,27 +1016,27 @@ class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
     final topItems = (List<BillItem>.from(allItems)..sort((a, b) => b.price.compareTo(a.price))).take(5).toList();
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         // ── Hero Stats ──
         _buildHeroStats(totalAmount, allItems.length, avgPerBill, totalMembers),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
         // ── Pie Chart: Bills Distribution ──
         if (widget.bills.length > 1) ...[
           _buildBillsPieChart(sortedBills, totalAmount),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
         ],
 
         // ── Bar Chart: Bills Comparison ──
         if (widget.bills.length >= 2) ...[
           _buildBillsBarChart(sortedBills),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
         ],
 
         // ── Top Items ──
         _buildTopItemsCard(topItems, totalAmount),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.xxl),
       ],
     );
   }
@@ -1048,14 +1048,14 @@ class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
         // Total hero card
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFF4366f4), Color(0xFF7C3AED)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppRadii.xl),
             boxShadow: [
               BoxShadow(
                 color: const Color(0xFF4366f4).withValues(alpha: 0.3),
@@ -1083,7 +1083,7 @@ class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   _HeroStatPill(label: '${widget.bills.length} บิล', icon: Icons.receipt_rounded),
@@ -1096,13 +1096,13 @@ class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         // Avg per bill stat
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
             color: isDark ? AppColors.surfaceDark : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadii.lg),
             border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
           ),
           child: Row(
@@ -1112,7 +1112,7 @@ class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
                 height: 42,
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadii.md),
                 ),
                 child: const Center(child: Text('📊', style: TextStyle(fontSize: 20))),
               ),
@@ -1168,10 +1168,10 @@ class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
     }).toList();
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
         boxShadow: isDark ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
       ),
@@ -1186,7 +1186,7 @@ class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
               color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           SizedBox(
             height: 200,
             child: PieChart(
@@ -1210,7 +1210,7 @@ class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
               swapAnimationCurve: Curves.easeInOut,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           // Legend
           ...displayBills.asMap().entries.map((entry) {
             final i = entry.key;
@@ -1294,10 +1294,10 @@ class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
     }).toList();
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
         boxShadow: isDark ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
       ),
@@ -1312,7 +1312,7 @@ class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
               color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           SizedBox(
             height: 180,
             child: BarChart(
@@ -1397,10 +1397,10 @@ class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
     final isDark = widget.isDark;
     final maxPrice = topItems.isNotEmpty ? topItems.first.price : 1.0;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
         boxShadow: isDark ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
       ),
@@ -1509,7 +1509,7 @@ class _HeroStatPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadii.xl),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1626,7 +1626,7 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             Text(
               'จัดการสมาชิก',
               style: GoogleFonts.notoSansThai(
@@ -1637,7 +1637,7 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet> {
                     : AppColors.textPrimaryLight,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
 
             // ── Invite section ──
             Text(
@@ -1650,7 +1650,7 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet> {
                     : AppColors.textPrimaryLight,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 Expanded(
@@ -1702,7 +1702,7 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet> {
                     fontSize: 12, color: AppColors.emerald),
               ),
             ],
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
 
             // ── Current members ──
             Text(
@@ -1715,7 +1715,7 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet> {
                     : AppColors.textPrimaryLight,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             ...widget.acceptedMembers.map((m) {
               final name = m.profile?.displayName ??
                   m.profile?.username ??
@@ -1726,14 +1726,14 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet> {
               final isMe = m.userId == currentUserId;
 
               return Container(
-                margin: const EdgeInsets.only(bottom: 8),
+                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: isDark
                       ? const Color(0xFF1F2937)
                       : const Color(0xFFF9FAFB),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadii.md),
                   border: Border.all(
                     color: isDark
                         ? AppColors.borderDark
@@ -1808,7 +1808,7 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet> {
                         color: isOwner
                             ? const Color(0xFFFAF5FF)
                             : const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(AppRadii.xl),
                       ),
                       child: Text(
                         isOwner ? 'เจ้าของ' : 'สมาชิก',
@@ -1870,7 +1870,7 @@ class _EmptyState extends StatelessWidget {
             color: isDark
                 ? const Color(0xFF374151)
                 : const Color(0xFFF3F4F6),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadii.lg),
           ),
           child: Icon(
             icon,
@@ -1880,7 +1880,7 @@ class _EmptyState extends StatelessWidget {
                 : AppColors.textTertiaryLight,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Text(
           label,
           style: GoogleFonts.notoSansThai(

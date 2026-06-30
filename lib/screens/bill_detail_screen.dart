@@ -285,23 +285,29 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                 padding: const EdgeInsets.symmetric(
                     horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
+                  color: isDark
+                      ? AppColors.emeraldDark.withValues(alpha: 0.25)
+                      : const Color(0xFFECFDF5),
                   border: Border(
                     bottom: BorderSide(
-                        color: const Color(0xFFA7F3D0), width: 1),
+                        color: isDark
+                            ? AppColors.emeraldDark
+                            : const Color(0xFFA7F3D0),
+                        width: 1),
                   ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.lock_rounded,
-                        size: 14, color: Color(0xFF065F46)),
+                    Icon(Icons.lock_rounded,
+                        size: 14,
+                        color: isDark ? AppColors.emerald : const Color(0xFF065F46)),
                     const SizedBox(width: 8),
                     Text(
                       'บิลนี้ปิดแล้ว — ดูได้อย่างเดียว ไม่สามารถแก้ไขได้',
                       style: GoogleFonts.notoSansThai(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: const Color(0xFF065F46),
+                        color: isDark ? AppColors.emerald : const Color(0xFF065F46),
                       ),
                     ),
                   ],

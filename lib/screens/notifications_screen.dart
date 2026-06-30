@@ -78,7 +78,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             // ── Header ──────────────────────────────────────
             Container(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
               decoration: BoxDecoration(
                 color: isDark
                     ? AppColors.bgDark.withValues(alpha: 0.8)
@@ -87,7 +87,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   bottom: BorderSide(
                     color: isDark
                         ? AppColors.borderDark
-                        : const Color(0xFFF3F4F6),
+                        : AppColors.borderLight,
                   ),
                 ),
               ),
@@ -102,7 +102,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       decoration: BoxDecoration(
                         color: isDark
                             ? AppColors.surfaceDark
-                            : const Color(0xFFF3F4F6),
+                            : AppColors.borderLight,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
@@ -114,7 +114,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.md),
                   Text(
                     'การแจ้งเตือน',
                     style: GoogleFonts.notoSansThai(
@@ -126,13 +126,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ),
                   ),
                   if (unread > 0) ...[
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF4366F4),
-                        borderRadius: BorderRadius.circular(20),
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(AppRadii.xl),
                       ),
                       child: Text(
                         '$unread',
@@ -152,13 +152,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.done_all_rounded,
-                              size: 14, color: Color(0xFF4366F4)),
+                              size: 14, color: AppColors.primary),
                           const SizedBox(width: 4),
                           Text(
                             'อ่านทั้งหมด',
                             style: GoogleFonts.notoSansThai(
                               fontSize: 12,
-                              color: const Color(0xFF4366F4),
+                              color: AppColors.primary,
                             ),
                           ),
                         ],
@@ -180,10 +180,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       child: provider.notifications.isEmpty
                           ? _buildEmpty(isDark)
                           : ListView.separated(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(AppSpacing.lg),
                               itemCount: provider.notifications.length,
                               separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: AppSpacing.sm),
                               itemBuilder: (context, index) {
                                 final notif =
                                     provider.notifications[index];
@@ -292,11 +292,11 @@ class _NotificationCard extends StatelessWidget {
                   ? const Color(0xFF1E3A5F)
                   : const Color(0xFFEFF6FF))
               : (isDark ? AppColors.surfaceDark : Colors.white),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
           border: Border.all(
             color: isUnread
-                ? const Color(0xFFDBEAFE)
-                : (isDark ? AppColors.borderDark : const Color(0xFFF3F4F6)),
+                ? (isDark ? AppColors.primary.withValues(alpha: 0.4) : const Color(0xFFDBEAFE))
+                : (isDark ? AppColors.borderDark : AppColors.borderLight),
           ),
         ),
         child: Column(
@@ -310,8 +310,8 @@ class _NotificationCard extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4366F4),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(AppRadii.md),
                   ),
                   child: Center(
                     child: Text(
@@ -324,7 +324,7 @@ class _NotificationCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,7 +350,7 @@ class _NotificationCard extends StatelessWidget {
                               text: groupName,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF4366F4),
+                                color: AppColors.primary,
                               ),
                             ),
                           ],
@@ -363,7 +363,7 @@ class _NotificationCard extends StatelessWidget {
                           fontSize: 11,
                           color: isDark
                               ? AppColors.textTertiaryDark
-                              : const Color(0xFF9CA3AF),
+                              : AppColors.textTertiaryLight,
                         ),
                       ),
                     ],
@@ -376,7 +376,7 @@ class _NotificationCard extends StatelessWidget {
                     height: 8,
                     margin: const EdgeInsets.only(top: 4),
                     decoration: const BoxDecoration(
-                      color: Color(0xFF4366F4),
+                      color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -385,7 +385,7 @@ class _NotificationCard extends StatelessWidget {
 
             // Action buttons
             if (showActions) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   // ปฏิเสธ — border-only
@@ -413,7 +413,7 @@ class _NotificationCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.sm),
                   // รับคำเชิญ — green filled
                   Expanded(
                     child: GestureDetector(

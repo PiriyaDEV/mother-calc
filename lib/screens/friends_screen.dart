@@ -141,14 +141,14 @@ class _FriendsScreenState extends State<FriendsScreen> {
     final requests = provider.pendingReceived;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : const Color(0xFFF4F6FB),
+      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Header ──────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
               child: Row(
                 children: [
                   Expanded(
@@ -187,10 +187,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     }),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                       decoration: BoxDecoration(
                         color: const Color(0xFF286BFE),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppRadii.md),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -217,12 +217,12 @@ class _FriendsScreenState extends State<FriendsScreen> {
             // ── Add Friend Panel (inline) ─────────────────
             if (_showAdd)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
                 child: Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.surfaceDark : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
                     border: Border.all(
                       color: isDark
                           ? AppColors.borderDark
@@ -258,7 +258,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.md),
                       Row(
                         children: [
                           Expanded(
@@ -285,25 +285,25 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                         : const Color(0xFFF9FAFB),
                                     border: OutlineInputBorder(
                                       borderRadius:
-                                          BorderRadius.circular(12),
+                                          BorderRadius.circular(AppRadii.md),
                                       borderSide: BorderSide(
                                         color: isDark
                                             ? AppColors.borderDark
-                                            : const Color(0xFFF3F4F6),
+                                            : AppColors.borderLight,
                                       ),
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius:
-                                          BorderRadius.circular(12),
+                                          BorderRadius.circular(AppRadii.md),
                                       borderSide: BorderSide(
                                         color: isDark
                                             ? AppColors.borderDark
-                                            : const Color(0xFFF3F4F6),
+                                            : AppColors.borderLight,
                                       ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius:
-                                          BorderRadius.circular(12),
+                                          BorderRadius.circular(AppRadii.md),
                                       borderSide: const BorderSide(
                                           color: Color(0xFF286BFE)),
                                     ),
@@ -329,7 +329,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: AppSpacing.sm),
                           GestureDetector(
                             onTap: _addLoading ||
                                     _addCtrl.text.trim().isEmpty
@@ -337,12 +337,12 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                 : _handleSendRequest,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 10),
+                                  horizontal: AppSpacing.lg, vertical: 10),
                               decoration: BoxDecoration(
                                 color: _addCtrl.text.trim().isEmpty
                                     ? const Color(0xFF9CA3AF)
                                     : const Color(0xFF286BFE),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(AppRadii.md),
                               ),
                               child: _addLoading
                                   ? const SizedBox(
@@ -365,13 +365,13 @@ class _FriendsScreenState extends State<FriendsScreen> {
                         ],
                       ),
                       if (_addError.isNotEmpty) ...[
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.sm),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
+                              horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFEF2F2),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(AppRadii.md),
                           ),
                           child: Text(
                             _addError,
@@ -383,13 +383,13 @@ class _FriendsScreenState extends State<FriendsScreen> {
                         ),
                       ],
                       if (_addSuccess.isNotEmpty) ...[
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.sm),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
+                              horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF0FDF4),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(AppRadii.md),
                           ),
                           child: Row(
                             children: [
@@ -425,7 +425,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       onRefresh: () => provider.loadFriends(),
                       color: AppColors.primary,
                       child: ListView(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppSpacing.lg),
                         children: [
                           // ── Pending Requests ──
                           if (requests.isNotEmpty) ...[
@@ -433,13 +433,13 @@ class _FriendsScreenState extends State<FriendsScreen> {
                               title: 'คำขอเป็นเพื่อน',
                               count: requests.length,
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: AppSpacing.sm),
                             Container(
                               decoration: BoxDecoration(
                                 color: isDark
                                     ? AppColors.surfaceDark
                                     : Colors.white,
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(AppRadii.lg),
                                 border: Border.all(
                                   color: isDark
                                       ? AppColors.borderDark
@@ -477,7 +477,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                               size: 40,
                                               radius: 16,
                                             ),
-                                            const SizedBox(width: 12),
+                                            const SizedBox(width: AppSpacing.md),
                                             Expanded(
                                               child: Column(
                                                 crossAxisAlignment:
@@ -531,7 +531,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                                           0xFF286BFE),
                                                   borderRadius:
                                                       BorderRadius
-                                                          .circular(12),
+                                                          .circular(AppRadii.md),
                                                 ),
                                                 child: const Icon(
                                                     Icons.check_rounded,
@@ -539,7 +539,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                                     size: 16),
                                               ),
                                             ),
-                                            const SizedBox(width: 8),
+                                            const SizedBox(width: AppSpacing.sm),
                                             // ✗ Decline
                                             GestureDetector(
                                               onTap: isResponding
@@ -553,11 +553,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                                   color: isDark
                                                       ? const Color(
                                                           0xFF374151)
-                                                      : const Color(
-                                                          0xFFF3F4F6),
+                                                      : AppColors.borderLight,
                                                   borderRadius:
                                                       BorderRadius
-                                                          .circular(12),
+                                                          .circular(AppRadii.md),
                                                 ),
                                                 child: Icon(
                                                     Icons.close_rounded,
@@ -584,7 +583,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                 }).toList(),
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: AppSpacing.xl),
                           ],
 
                           // ── Friends List ──
@@ -592,7 +591,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                             title: 'เพื่อนทั้งหมด',
                             count: friends.length,
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: AppSpacing.sm),
 
                           if (friends.isEmpty)
                             _EmptyFriendsState(
@@ -677,12 +676,12 @@ class _EmptyFriendsState extends StatelessWidget {
             height: 64,
             decoration: BoxDecoration(
               color: const Color(0xFFEFF6FF),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
             ),
             child: const Icon(Icons.people_outline_rounded,
                 size: 28, color: Color(0xFF286BFE)),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             'ยังไม่มีเพื่อน',
             style: GoogleFonts.notoSansThai(
@@ -704,15 +703,15 @@ class _EmptyFriendsState extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
           GestureDetector(
             onTap: onAdd,
             child: Container(
               padding: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 10),
+                  horizontal: AppSpacing.xl, vertical: 10),
               decoration: BoxDecoration(
                 color: const Color(0xFF286BFE),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadii.md),
               ),
               child: Text(
                 'เพิ่มเพื่อนคนแรก',
@@ -809,13 +808,13 @@ class _FriendRow extends StatelessWidget {
     final username = profile?.username;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(
-          color: isDark ? AppColors.borderDark : const Color(0xFFF3F4F6),
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
       ),
       child: Row(
@@ -826,7 +825,7 @@ class _FriendRow extends StatelessWidget {
             size: 40,
             radius: 16,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -857,10 +856,10 @@ class _FriendRow extends StatelessWidget {
           // "เพื่อน ✓" badge
           Container(
             padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
             decoration: BoxDecoration(
               color: const Color(0xFFF0FDF4),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppRadii.sm),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -879,7 +878,7 @@ class _FriendRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           // 🗑️ Remove button
           GestureDetector(
             onTap: onRemove,
@@ -889,8 +888,8 @@ class _FriendRow extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isDark
                     ? const Color(0xFF374151)
-                    : const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(8),
+                    : AppColors.borderLight,
+                borderRadius: BorderRadius.circular(AppRadii.sm),
               ),
               child: Icon(
                 Icons.delete_outline_rounded,

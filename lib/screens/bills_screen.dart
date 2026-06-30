@@ -192,7 +192,7 @@ class _BillsScreenState extends State<BillsScreen>
 
             // Tabs
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
               child: Container(
                 height: 40,
                 decoration: BoxDecoration(
@@ -205,7 +205,7 @@ class _BillsScreenState extends State<BillsScreen>
                   controller: _tabController,
                   indicator: BoxDecoration(
                     color: isDark ? AppColors.surfaceDark : Colors.white,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadii.sm),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.06),
@@ -403,7 +403,7 @@ class _SectionHeaderWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8, top: 4),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm, top: AppSpacing.xs),
       child: Row(
         children: [
           Container(
@@ -411,8 +411,8 @@ class _SectionHeaderWidget extends StatelessWidget {
             decoration: BoxDecoration(
               color: item.isGroup
                   ? const Color(0xFFF0F4FF)
-                  : (isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6)),
-              borderRadius: BorderRadius.circular(20),
+                  : (isDark ? AppColors.borderDark : AppColors.borderLight),
+              borderRadius: BorderRadius.circular(AppRadii.xl),
               border: Border.all(
                 color: item.isGroup
                     ? AppColors.primary.withValues(alpha: 0.2)
@@ -472,7 +472,7 @@ class _SectionHeaderWidget extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Divider(
               color: isDark ? AppColors.borderDark : AppColors.borderLight,

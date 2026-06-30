@@ -18,7 +18,7 @@ Future<bool> showConfirmDialog(
     context: context,
     builder: (ctx) => AlertDialog(
       backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg)),
       title: Text(
         title,
         style: GoogleFonts.notoSansThai(

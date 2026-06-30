@@ -32,10 +32,10 @@ class SharedGroupCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppRadii.xl),
           border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
           boxShadow: isDark
               ? null
@@ -60,7 +60,7 @@ class SharedGroupCard extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
                     border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
                   ),
                   child: Center(
@@ -85,7 +85,7 @@ class SharedGroupCard extends StatelessWidget {
                         children: [
                           Icon(Icons.people_outline_rounded, size: 13,
                               color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppSpacing.xs),
                           Text(
                             '${acceptedMembers.length} สมาชิก',
                             style: GoogleFonts.notoSansThai(
@@ -94,19 +94,19 @@ class SharedGroupCard extends StatelessWidget {
                             ),
                           ),
                           if (pendingCount > 0) ...[
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSpacing.sm),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFEF3C7),
-                                borderRadius: BorderRadius.circular(8),
+                                color: AppColors.amberLight,
+                                borderRadius: BorderRadius.circular(AppRadii.sm),
                               ),
                               child: Text(
                                 'รอ $pendingCount',
                                 style: GoogleFonts.notoSansThai(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFFD97706),
+                                  color: AppColors.amberText,
                                 ),
                               ),
                             ),
@@ -127,7 +127,7 @@ class SharedGroupCard extends StatelessWidget {
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6),
+                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(Icons.settings_outlined, size: 16,
@@ -157,7 +157,7 @@ class SharedGroupCard extends StatelessWidget {
             if (acceptedMembers.isNotEmpty) ...[
               const SizedBox(height: 14),
               Divider(height: 1, color: isDark ? AppColors.borderDark : AppColors.borderLight),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   // Overlapping avatars
@@ -233,7 +233,7 @@ class SharedGroupCard extends StatelessWidget {
                             color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
                       ),
                     ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppSpacing.xs),
                   Icon(Icons.chevron_right_rounded, size: 20,
                       color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
                 ],

@@ -132,7 +132,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
 
           // Form fields
           _FormLabel(label: 'ชื่อที่แสดง'),
@@ -141,7 +141,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             controller: _displayNameCtrl,
             decoration: const InputDecoration(hintText: 'ชื่อที่แสดงในแอป'),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           _FormLabel(label: 'ชื่อผู้ใช้'),
           const SizedBox(height: 6),
@@ -149,7 +149,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             controller: _usernameCtrl,
             decoration: const InputDecoration(hintText: 'username'),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           _FormLabel(label: 'เบอร์ PromptPay'),
           const SizedBox(height: 6),
@@ -158,15 +158,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             keyboardType: TextInputType.phone,
             decoration: const InputDecoration(hintText: 'เบอร์โทรหรือเลขบัตรประชาชน'),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           _FormLabel(label: 'อีเมล'),
           const SizedBox(height: 6),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 14),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6),
-              borderRadius: BorderRadius.circular(12),
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              borderRadius: BorderRadius.circular(AppRadii.md),
               border: Border.all(
                 color: isDark ? AppColors.borderDark : AppColors.borderLight,
               ),
@@ -180,7 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.xxxl),
 
           ElevatedButton(
             onPressed: _loading ? null : _save,

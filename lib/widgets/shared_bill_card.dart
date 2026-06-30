@@ -36,11 +36,11 @@ class SharedBillCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
           boxShadow: isDark ? null : AppColors.shadowCard,
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
           child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -63,13 +63,13 @@ class SharedBillCard extends StatelessWidget {
                               height: 44,
                               decoration: BoxDecoration(
                                 color: stripeColor.withValues(alpha: 0.10),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(AppRadii.md),
                               ),
                               child: Center(
                                 child: Text(bill.emoji ?? '🧾', style: const TextStyle(fontSize: 20)),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: AppSpacing.md),
                             // Title + status + meta
                             Expanded(
                               child: Column(
@@ -90,9 +90,9 @@ class SharedBillCard extends StatelessWidget {
                                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: isDark
-                                            ? const Color(0xFF1E3A8A).withValues(alpha: 0.3)
+                                            ? AppColors.primary.withValues(alpha: 0.15)
                                             : AppColors.primaryFaint,
-                                        borderRadius: BorderRadius.circular(6),
+                                        borderRadius: BorderRadius.circular(AppRadii.xs),
                                       ),
                                       child: Text(
                                         '${bill.groupEmoji ?? '👥'} ${bill.groupName}',
@@ -121,7 +121,7 @@ class SharedBillCard extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSpacing.sm),
                             // Amount + optional action buttons
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
@@ -150,8 +150,8 @@ class SharedBillCard extends StatelessWidget {
                                             width: 28,
                                             height: 28,
                                             decoration: BoxDecoration(
-                                              color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6),
-                                              borderRadius: BorderRadius.circular(8),
+                                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                              borderRadius: BorderRadius.circular(AppRadii.sm),
                                             ),
                                             child: Icon(
                                               Icons.settings_outlined,
@@ -169,7 +169,7 @@ class SharedBillCard extends StatelessWidget {
                                             height: 28,
                                             decoration: BoxDecoration(
                                               color: AppColors.red.withValues(alpha: 0.08),
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius: BorderRadius.circular(AppRadii.sm),
                                             ),
                                             child: const Icon(Icons.delete_outline_rounded, size: 15, color: AppColors.red),
                                           ),

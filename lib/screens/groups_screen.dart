@@ -102,7 +102,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
               child: Row(
                 children: [
                   Text(
@@ -114,12 +114,12 @@ class _GroupsScreenState extends State<GroupsScreen> {
                     ),
                   ),
                   if (provider.groups.isNotEmpty) ...[
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.primaryFaint,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(AppRadii.xl),
                       ),
                       child: Text(
                         '${provider.groups.length}',
@@ -135,7 +135,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                       decoration: BoxDecoration(
                         color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppRadii.md),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -169,10 +169,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
                               onCta: _showCreateGroupSheet,
                             )
                           : ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 100),
                               itemCount: provider.groups.length,
                               separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: AppSpacing.sm),
                               itemBuilder: (context, index) {
                                 final group = provider.groups[index];
                                 return SharedGroupCard(

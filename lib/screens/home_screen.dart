@@ -199,9 +199,9 @@ class _HomeScreenState extends State<HomeScreen> {
               // ── Hero card ──────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
                   child: Container(
-                    padding: const EdgeInsets.all(22),
+                    padding: const EdgeInsets.all(AppSpacing.xxl),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFF286BFE), Color(0xFF4366F4), Color(0xFF8B5CF6)],
@@ -209,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         end: Alignment.bottomRight,
                         stops: [0.0, 0.5, 1.0],
                       ),
-                      borderRadius: BorderRadius.circular(28),
+                      borderRadius: BorderRadius.circular(AppRadii.full),
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFF286BFE).withValues(alpha: 0.4),
@@ -306,13 +306,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                   letterSpacing: -1,
                                 ),
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: AppSpacing.md),
                               Row(
                                 children: [
                                   _HeroPill(label: '${_groups.length} กลุ่ม', icon: Icons.people_rounded),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: AppSpacing.sm),
                                   _HeroPill(label: '${_personalBills.length} บิล', icon: Icons.receipt_rounded),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: AppSpacing.sm),
                                   _HeroPill(label: '$_totalItems รายการ', icon: Icons.list_rounded),
                                 ],
                               ),
@@ -328,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
               // ── Quick actions ──────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
                   child: Row(
                     children: [
                       Expanded(
@@ -368,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
               // ── Currency exchange rates ─────────────────────
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xxl, AppSpacing.lg, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -380,7 +380,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: 28, height: 28,
                             decoration: BoxDecoration(
                               color: isDark ? AppColors.surfaceDark : const Color(0xFFF3F4F6),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(AppRadii.sm),
                             ),
                             child: _ratesLoading
                                 ? const Padding(
@@ -392,7 +392,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.md),
                       SizedBox(
                         height: 110,
                         child: _ratesLoading
@@ -407,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     color: isDark
                                         ? AppColors.surfaceDark
                                         : Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(AppRadii.lg),
                                     border: Border.all(
                                       color: isDark
                                           ? AppColors.borderDark
@@ -435,7 +435,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     padding: const EdgeInsets.all(14),
                                     decoration: BoxDecoration(
                                       color: isDark ? AppColors.surfaceDark : Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(AppRadii.xl),
                                       border: Border.all(
                                         color: isDark ? AppColors.borderDark : AppColors.borderLight,
                                       ),
@@ -468,7 +468,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                                               decoration: BoxDecoration(
                                                 color: AppColors.primary.withValues(alpha: 0.1),
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius: BorderRadius.circular(AppRadii.sm),
                                               ),
                                               child: Text(
                                                 r.code,
@@ -527,12 +527,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (_allBills.isNotEmpty) ...[
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xxl, AppSpacing.lg, AppSpacing.md),
                       child: SectionHeaderWidget(label: 'สถิติของคุณ'),
                     ),
                   ),
                   SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                     sliver: SliverGrid(
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
@@ -548,24 +548,24 @@ class _HomeScreenState extends State<HomeScreen> {
                           value:
                               '${_formatBaht(_allBills.isEmpty ? 0 : _grandTotal / _allBills.length)} ฿',
                           iconColor: const Color(0xFF286BFE),
-                          iconBg: const Color(0xFFEFF6FF),
-                          iconBgDark: const Color(0xFF1E3A5F),
+                          iconBg: AppColors.primaryFaint,
+                          iconBgDark: AppColors.primary.withValues(alpha: 0.12),
                         ),
                         _FactCard(
                           icon: Icons.receipt_long_outlined,
                           label: 'บิลทั้งหมด',
                           value: '${_allBills.length} บิล',
                           iconColor: const Color(0xFFA855F7),
-                          iconBg: const Color(0xFFF5F3FF),
-                          iconBgDark: const Color(0xFF2D1B69),
+                          iconBg: AppColors.primary.withValues(alpha: 0.08),
+                          iconBgDark: AppColors.primary.withValues(alpha: 0.12),
                         ),
                         _FactCard(
                           icon: Icons.local_fire_department_outlined,
                           label: 'รายการทั้งหมด',
                           value: '$_totalItems รายการ',
                           iconColor: const Color(0xFFF97316),
-                          iconBg: const Color(0xFFFFF7ED),
-                          iconBgDark: const Color(0xFF431407),
+                          iconBg: AppColors.amberFaint,
+                          iconBgDark: AppColors.amber.withValues(alpha: 0.12),
                         ),
                         _FactCard(
                           icon: Icons.star_outline_rounded,
@@ -573,9 +573,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           value: _biggestBill != null
                               ? '${_formatBaht(_billTotal(_biggestBill!))} ฿'
                               : '—',
-                          iconColor: const Color(0xFFF59E0B),
-                          iconBg: const Color(0xFFFFFBEB),
-                          iconBgDark: const Color(0xFF451A03),
+                          iconColor: AppColors.amber,
+                          iconBg: AppColors.amberFaint,
+                          iconBgDark: AppColors.amber.withValues(alpha: 0.12),
                         ),
                       ]),
                     ),
@@ -586,7 +586,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (_recentBills.isNotEmpty) ...[
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xxl, AppSpacing.lg, AppSpacing.md),
                       child: SectionHeaderWidget(
                         label: 'บิลล่าสุด',
                         trailingWidget: GestureDetector(
@@ -604,13 +604,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           final bill = _recentBills[index];
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                             child: SharedBillCard(
                               bill: bill,
                               onTap: () => context.push('/bills/${bill.id}'),
@@ -627,12 +627,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (_biggestBill != null)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
                       child: Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
                           color: isDark ? AppColors.surfaceDark : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(AppRadii.lg),
                           border: Border.all(
                             color: isDark
                                 ? AppColors.borderDark
@@ -646,7 +646,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 const Icon(Icons.star_outline_rounded,
                                     size: 14,
-                                    color: Color(0xFFF59E0B)),
+                                    color: AppColors.amber),
                                 const SizedBox(width: 6),
                                 Text(
                                   'บิลที่ใหญ่ที่สุด',
@@ -661,15 +661,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: AppSpacing.md),
                             Row(
                               children: [
                                 Container(
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFFFFBEB),
-                                    borderRadius: BorderRadius.circular(12),
+                                    color: isDark ? AppColors.borderDark : AppColors.amberFaint,
+                                    borderRadius: BorderRadius.circular(AppRadii.md),
                                   ),
                                   child: Center(
                                     child: Text(
@@ -679,7 +679,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: AppSpacing.md),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -713,7 +713,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: GoogleFonts.notoSansThai(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: const Color(0xFFF59E0B),
+                                    color: AppColors.amber,
                                   ),
                                 ),
                               ],
@@ -735,16 +735,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: 64,
                             height: 64,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEFF6FF),
-                              borderRadius: BorderRadius.circular(16),
+                              color: isDark ? AppColors.borderDark : AppColors.primaryFaint,
+                              borderRadius: BorderRadius.circular(AppRadii.lg),
                             ),
                             child: const Icon(
                               Icons.receipt_long_outlined,
                               size: 28,
-                              color: Color(0xFF286BFE),
+                              color: AppColors.primary,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.lg),
                           Text(
                             'ยังไม่มีบิล',
                             style: GoogleFonts.notoSansThai(
@@ -765,7 +765,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   : AppColors.textTertiaryLight,
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: AppSpacing.xl),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -876,7 +876,7 @@ class _QuickActionCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg, horizontal: 10),
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : Colors.white,
           borderRadius: BorderRadius.circular(18),
@@ -893,7 +893,7 @@ class _QuickActionCard extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppRadii.lg),
               ),
               child: Icon(icon, size: 26, color: Colors.white),
             ),

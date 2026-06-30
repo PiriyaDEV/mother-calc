@@ -25,8 +25,11 @@ class AppColors {
   static const emerald = Color(0xFF10B981);
   static const emeraldLight = Color(0xFFD1FAE5);
   static const emeraldDark = Color(0xFF065F46);
+  static const emeraldText = Color(0xFF059669); // emerald-600 for readable text on light bg
   static const red = Color(0xFFEF4444);
   static const amber = Color(0xFFF59E0B);
+  static const amberLight = Color(0xFFFEF3C7); // amber-100 bg for pending states
+  static const amberText  = Color(0xFFD97706); // amber-600 text for pending states
 
   // Extra brand tints
   static const primaryFaint = Color(0xFFEEF1FE);
@@ -127,6 +130,24 @@ class AppTheme {
           color: AppColors.textPrimaryLight,
           fontSize: 14,
           fontWeight: FontWeight.w600,
+        ),
+        displayLarge: GoogleFonts.notoSansThai(
+          color: AppColors.textPrimaryLight,
+          fontSize: 40,
+          fontWeight: FontWeight.bold,
+          height: 1.1,
+        ),
+        displayMedium: GoogleFonts.notoSansThai(
+          color: AppColors.textPrimaryLight,
+          fontSize: 32,
+          fontWeight: FontWeight.bold,
+          height: 1.15,
+        ),
+        displaySmall: GoogleFonts.notoSansThai(
+          color: AppColors.textPrimaryLight,
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          height: 1.2,
         ),
       ),
       appBarTheme: AppBarTheme(
@@ -243,6 +264,24 @@ class AppTheme {
           color: AppColors.textPrimaryDark,
           fontSize: 14,
           fontWeight: FontWeight.w600,
+        ),
+        displayLarge: GoogleFonts.notoSansThai(
+          color: AppColors.textPrimaryDark,
+          fontSize: 40,
+          fontWeight: FontWeight.bold,
+          height: 1.1,
+        ),
+        displayMedium: GoogleFonts.notoSansThai(
+          color: AppColors.textPrimaryDark,
+          fontSize: 32,
+          fontWeight: FontWeight.bold,
+          height: 1.15,
+        ),
+        displaySmall: GoogleFonts.notoSansThai(
+          color: AppColors.textPrimaryDark,
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          height: 1.2,
         ),
       ),
       appBarTheme: AppBarTheme(

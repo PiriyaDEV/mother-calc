@@ -105,7 +105,7 @@ class _FloatingNavBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
           child: BackdropFilter(
@@ -167,7 +167,7 @@ class _NavDef {
   });
 }
 
-class _NavItem extends StatelessWidget {
+class _NavItem extends StatefulWidget {
   final _NavDef item;
   final bool isActive;
   final bool isDark;
@@ -181,87 +181,101 @@ class _NavItem extends StatelessWidget {
   });
 
   @override
+  State<_NavItem> createState() => _NavItemState();
+}
+
+class _NavItemState extends State<_NavItem> {
+  bool _isPressed = false;
+
+  @override
   Widget build(BuildContext context) {
     return Expanded(
       child: GestureDetector(
-        onTap: onTap,
+        onTap: widget.onTap,
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTapCancel: () => setState(() => _isPressed = false),
         behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Icon with pill background when active
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? AppColors.primary.withValues(alpha: 0.12)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(
-                        isActive ? item.activeIcon : item.icon,
-                        key: ValueKey(isActive),
-                        size: 22,
-                        color: isActive
-                            ? AppColors.primary
-                            : (isDark
-                                ? AppColors.textTertiaryDark
-                                : const Color(0xFF9CA3AF)),
-                      ),
-                    ),
-                    if (item.badge > 0)
-                      Positioned(
-                        top: -5,
-                        right: -8,
-                        child: Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: const BoxDecoration(
-                            color: AppColors.red,
-                            shape: BoxShape.circle,
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 16,
-                            minHeight: 16,
-                          ),
-                          child: Text(
-                            item.badge > 99 ? '99+' : '${item.badge}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
+        child: AnimatedScale(
+          scale: _isPressed ? 0.88 : 1.0,
+          duration: const Duration(milliseconds: 80),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Icon with pill background when active
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: widget.isActive
+                        ? AppColors.primary.withValues(alpha: 0.12)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
+                  ),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          widget.isActive ? widget.item.activeIcon : widget.item.icon,
+                          key: ValueKey(widget.isActive),
+                          size: 22,
+                          color: widget.isActive
+                              ? AppColors.primary
+                              : (widget.isDark
+                                  ? AppColors.textTertiaryDark
+                                  : const Color(0xFF9CA3AF)),
                         ),
                       ),
-                  ],
+                      if (widget.item.badge > 0)
+                        Positioned(
+                          top: -5,
+                          right: -8,
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: const BoxDecoration(
+                              color: AppColors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              widget.item.badge > 99 ? '99+' : '${widget.item.badge}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: GoogleFonts.notoSansThai(
-                  fontSize: 10,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
-                  color: isActive
-                      ? AppColors.primary
-                      : (isDark
-                          ? AppColors.textTertiaryDark
-                          : const Color(0xFF9CA3AF)),
+                const SizedBox(height: 2),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 200),
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 10,
+                    fontWeight: widget.isActive ? FontWeight.w700 : FontWeight.normal,
+                    color: widget.isActive
+                        ? AppColors.primary
+                        : (widget.isDark
+                            ? AppColors.textTertiaryDark
+                            : const Color(0xFF9CA3AF)),
+                  ),
+                  child: Text(widget.item.label),
                 ),
-                child: Text(item.label),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -28,7 +28,7 @@ class EmptyStateWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(emoji, style: const TextStyle(fontSize: 64)),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               title,
               style: GoogleFonts.notoSansThai(
@@ -38,7 +38,7 @@ class EmptyStateWidget extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 240),
               child: Text(
@@ -52,7 +52,7 @@ class EmptyStateWidget extends StatelessWidget {
               ),
             ),
             if (ctaLabel != null && onCta != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
               SizedBox(
                 width: double.infinity,
                 height: 48,
