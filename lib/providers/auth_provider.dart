@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_line_sdk/flutter_line_sdk.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import 'bills_list_provider.dart';
@@ -219,18 +220,69 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Signs in with Google OAuth.
+  /// Signs in with Google using the native SDK (same pattern as LINE).
   Future<String?> signInWithGoogle() async {
     try {
-      await _supabase.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: 'io.supabase.kidtang://login-callback',
-        authScreenLaunchMode: LaunchMode.externalApplication,
-      );
+      final googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return null; // user cancelled
+
+      final googleId    = googleUser.id;
+      final displayName = googleUser.displayName ?? 'Google User';
+      final avatarUrl   = googleUser.photoUrl;
+
+      final fakeEmail    = 'google_$googleId@kidtang.app';
+      final fakePassword = 'GOOGLE_${googleId}_KIDTANG';
+
+      AuthResponse? authResponse;
+      try {
+        authResponse = await _supabase.auth.signInWithPassword(
+          email: fakeEmail,
+          password: fakePassword,
+        );
+      } on AuthException catch (e) {
+        if (e.statusCode == '400' || e.message.toLowerCase().contains('invalid')) {
+          authResponse = await _supabase.auth.signUp(
+            email: fakeEmail,
+            password: fakePassword,
+            data: {
+              'display_name': displayName,
+              'avatar_url': avatarUrl,
+              'google_user_id': googleId,
+              'provider': 'google',
+            },
+          );
+        } else {
+          rethrow;
+        }
+      }
+
+      if (authResponse.user != null) {
+        final uid = authResponse.user!.id;
+        final sanitized = displayName
+            .trim()
+            .replaceAll(RegExp(r'\s+'), '_')
+            .replaceAll(RegExp(r'[^\w฀-๿]'), '');
+        final usernameBase = sanitized.isNotEmpty
+            ? sanitized
+            : 'google_${googleId.substring(0, 8)}';
+
+        await _supabase.from('profiles').upsert({
+          'id': uid,
+          'username': usernameBase,
+          'display_name': displayName,
+          'avatar_url': avatarUrl,
+        }, onConflict: 'id');
+      }
+
       return null;
+    } on PlatformException catch (e) {
+      debugPrint('Google SDK error: ${e.code} — ${e.message}');
+      if (e.code == 'sign_in_canceled') return null;
+      return e.message ?? 'Google login failed';
     } on AuthException catch (e) {
       return e.message;
     } catch (e) {
+      debugPrint('signInWithGoogle error: $e');
       return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
     }
   }
@@ -343,8 +395,8 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    // Sign out from LINE SDK if logged in via LINE
     try { await LineSDK.instance.logout(); } catch (_) {}
+    try { await GoogleSignIn().signOut(); } catch (_) {}
     await _supabase.auth.signOut();
     _profile = null;
     _groupsProvider?.clear();

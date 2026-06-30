@@ -45,6 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Google Sign-In: iOS OAuth Client ID from Google Cloud Console -->
+	<key>GIDClientID</key>
+	<string>YOUR_IOS_CLIENT_ID.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -55,6 +58,8 @@
 				<string>io.supabase.kidtang</string>
 				<!-- LINE SDK: scheme to return from LINE app back to this app -->
 				<string>line3rdp.$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+				<!-- Google Sign-In: reversed iOS client ID (com.googleusercontent.apps.YOUR_IOS_CLIENT_ID) -->
+				<string>com.googleusercontent.apps.YOUR_IOS_CLIENT_ID</string>
 			</array>
 		</dict>
 	</array>
