@@ -22,12 +22,16 @@ class BillProvider extends ChangeNotifier {
   Future<void> loadBill(String billId) async {
     _loading = true;
     _error = null;
+    // Clear stale data so UI doesn't flash old content
+    _bill = null;
+    _members = [];
+    _items = [];
     notifyListeners();
 
     try {
       final billData = await _supabase
           .from('bills')
-          .select('*, bill_members(*), bill_items(*)')
+          .select('*, bill_members(*, profiles(id, username, display_name, avatar_url)), bill_items(*)')
           .eq('id', billId)
           .single();
 
@@ -125,7 +129,7 @@ class BillProvider extends ChangeNotifier {
     // Check if already added
     if (_members.any((m) => m.userId == user.id)) return;
     try {
-      // Fetch profile for display name
+      // Fetch profile for display name and avatar
       final profileData = await _supabase
           .from('profiles')
           .select('username, display_name, avatar_url')
@@ -135,6 +139,7 @@ class BillProvider extends ChangeNotifier {
           profileData?['username'] as String? ??
           user.email?.split('@').first ??
           'ฉัน';
+      final avatarUrl = profileData?['avatar_url'] as String?;
       final data = await _supabase.from('bill_members').insert({
         'bill_id': _bill!.id,
         'user_id': user.id,
@@ -142,7 +147,18 @@ class BillProvider extends ChangeNotifier {
         'color': '#4366F4',
         'is_external': false,
       }).select().single();
-      final member = BillMember.fromJson(data);
+      // Attach profile data (avatar_url) in-memory since it's not stored in bill_members
+      final member = BillMember.fromJson({
+        ...data,
+        'profile': profileData != null
+            ? {
+                'id': user.id,
+                'username': profileData['username'],
+                'display_name': profileData['display_name'],
+                'avatar_url': avatarUrl,
+              }
+            : null,
+      });
       _members = [..._members, member];
       notifyListeners();
     } catch (e) {

@@ -143,6 +143,8 @@ class BillMember {
   });
 
   factory BillMember.fromJson(Map<String, dynamic> json) {
+    // Supabase join returns profile under 'profiles' (FK hint) or 'profile'
+    final profileRaw = json['profiles'] ?? json['profile'];
     return BillMember(
       id: json['id'] as String,
       billId: json['bill_id'] as String,
@@ -151,8 +153,8 @@ class BillMember {
       promptpay: json['promptpay'] as String?,
       isExternal: json['is_external'] as bool? ?? true,
       userId: json['user_id'] as String?,
-      profile: json['profile'] != null
-          ? Profile.fromJson(json['profile'] as Map<String, dynamic>)
+      profile: profileRaw != null
+          ? Profile.fromJson(profileRaw as Map<String, dynamic>)
           : null,
     );
   }

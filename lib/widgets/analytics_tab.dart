@@ -198,6 +198,7 @@ class AnalyticsTab extends StatelessWidget {
                                           name: mt.member.name,
                                           color: color,
                                           size: 16,
+                                          avatarUrl: mt.member.profile?.avatarUrl,
                                         ),
                         ),
                         const SizedBox(width: 6),
@@ -402,7 +403,7 @@ class AnalyticsTab extends StatelessWidget {
                 child: Row(
                   children: [
                     MemberAvatar(
-                        name: mt.member.name, color: color, size: 24),
+                        name: mt.member.name, color: color, size: 24, avatarUrl: mt.member.profile?.avatarUrl),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(
@@ -553,7 +554,7 @@ class _BiggestSpenderCard extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              MemberAvatar(name: payer.member.name, color: color, size: 40),
+              MemberAvatar(name: payer.member.name, color: color, size: 40, avatarUrl: payer.member.profile?.avatarUrl),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

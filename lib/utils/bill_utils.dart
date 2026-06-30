@@ -122,44 +122,99 @@ BillCalculation calculateBill(Bill bill) {
 }
 
 // ── Simplify debts ────────────────────────────────────────────
+/// Calculates who owes whom using per-item paid_by tracking.
+///
+/// For each member's share of each item:
+///   - If the item has a paidBy, the member owes the payer their share amount.
+///   - If no item has paidBy, falls back to: first non-external member paid
+///     everything, everyone else owes them their share.
+///
+/// Uses the minimum-transactions algorithm to reduce the number of transfers.
 List<DebtTransaction> simplifyDebts(
   List<MemberSummary> summaries,
   List<BillMember> members,
   String? excludeMemberId,
 ) {
-  // Build per-payer debts from items
-  final Map<String, Map<String, double>> owedTo = {};
+  if (summaries.isEmpty || members.isEmpty) return [];
 
-  for (final summary in summaries) {
-    if (summary.member.id == excludeMemberId) continue;
-    for (final itemShare in summary.items) {
-      final payerId = itemShare.item.paidBy;
-      if (payerId == null) continue;
-      if (payerId == summary.member.id) continue;
+  // net[memberId] = how much they are owed (positive) or owe (negative)
+  final Map<String, double> net = {
+    for (final m in members) m.id: 0.0,
+  };
 
-      owedTo.putIfAbsent(summary.member.id, () => {});
-      owedTo[summary.member.id]!.update(
-        payerId,
-        (v) => v + itemShare.amount,
-        ifAbsent: () => itemShare.amount,
-      );
+  // Check if any item has paidBy set
+  final hasPaidBy = summaries.any(
+    (s) => s.items.any((i) => i.item.paidBy != null),
+  );
+
+  if (hasPaidBy) {
+    // Per-item paidBy logic (matches Next.js simplifyDebtsPerItem)
+    for (final summary in summaries) {
+      for (final itemShare in summary.items) {
+        final payerId = itemShare.item.paidBy;
+        if (payerId == null) continue;
+        // Payer doesn't owe themselves
+        if (payerId == summary.member.id) continue;
+        // This member owes the payer their share of this item
+        net[summary.member.id] = (net[summary.member.id] ?? 0) - itemShare.amount;
+        net[payerId] = (net[payerId] ?? 0) + itemShare.amount;
+      }
+    }
+  } else {
+    // No paidBy — assume first non-external member paid everything.
+    // Everyone else owes them their share.
+    final payer = members.firstWhere(
+      (m) => !m.isExternal,
+      orElse: () => members.first,
+    );
+    for (final summary in summaries) {
+      if (summary.member.id == payer.id) continue;
+      if (summary.total <= 0) continue;
+      net[summary.member.id] = (net[summary.member.id] ?? 0) - summary.total;
+      net[payer.id] = (net[payer.id] ?? 0) + summary.total;
     }
   }
 
-  final List<DebtTransaction> debts = [];
-  for (final fromId in owedTo.keys) {
-    final from = members.firstWhere((m) => m.id == fromId,
+  // Separate into debtors (net < 0) and creditors (net > 0)
+  final debtors = <_NetEntry>[];
+  final creditors = <_NetEntry>[];
+
+  net.forEach((id, amt) {
+    if (id == excludeMemberId) return;
+    final member = members.firstWhere((m) => m.id == id,
         orElse: () => members.first);
-    for (final toId in owedTo[fromId]!.keys) {
-      final amount = owedTo[fromId]![toId]!;
-      if (amount < 0.005) continue;
-      final to = members.firstWhere((m) => m.id == toId,
-          orElse: () => members.first);
-      debts.add(DebtTransaction(from: from, to: to, amount: amount));
+    if (amt < -0.005) debtors.add(_NetEntry(member, -amt));
+    if (amt > 0.005) creditors.add(_NetEntry(member, amt));
+  });
+
+  // Minimum-transactions algorithm
+  final List<DebtTransaction> debts = [];
+  int di = 0, ci = 0;
+
+  while (di < debtors.length && ci < creditors.length) {
+    final transfer = debtors[di].amount < creditors[ci].amount
+        ? debtors[di].amount
+        : creditors[ci].amount;
+    if (transfer > 0.005) {
+      debts.add(DebtTransaction(
+        from: debtors[di].member,
+        to: creditors[ci].member,
+        amount: transfer,
+      ));
     }
+    debtors[di].amount -= transfer;
+    creditors[ci].amount -= transfer;
+    if (debtors[di].amount < 0.005) di++;
+    if (creditors[ci].amount < 0.005) ci++;
   }
 
   return debts;
+}
+
+class _NetEntry {
+  final BillMember member;
+  double amount;
+  _NetEntry(this.member, this.amount);
 }
 
 // ── PromptPay QR payload ──────────────────────────────────────

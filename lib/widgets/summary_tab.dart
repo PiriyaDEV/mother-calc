@@ -55,6 +55,39 @@ class _SummaryTabState extends State<SummaryTab> {
     }
   }
 
+  /// Compute per-payer debts for the selected member (no simplification).
+  /// Matches Next.js myDebts logic: group by payer, sum amounts, no greedy simplification.
+  /// Note: itemShare.amount in summary.items is already scaled (tax/SC applied).
+  List<DebtTransaction> _computeMyDebts({
+    required BillMember selectedMember,
+    required MemberSummary selectedSummary,
+    required List<BillMember> members,
+    required BillCalculation calc,
+  }) {
+    final Map<String, double> owedTo = {};
+
+    for (final itemShare in selectedSummary.items) {
+      final payerId = itemShare.item.paidBy;
+      if (payerId == null) continue;
+      if (payerId == selectedMember.id) continue; // don't owe yourself
+      // itemShare.amount is already scaled (includes VAT/SC multiplier)
+      owedTo[payerId] = (owedTo[payerId] ?? 0) + itemShare.amount;
+    }
+
+    final result = <DebtTransaction>[];
+    for (final entry in owedTo.entries) {
+      if (entry.value < 0.005) continue;
+      final payer = members.where((m) => m.id == entry.key).firstOrNull;
+      if (payer == null) continue;
+      result.add(DebtTransaction(
+        from: selectedMember,
+        to: payer,
+        amount: entry.value,
+      ));
+    }
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -98,10 +131,16 @@ class _SummaryTabState extends State<SummaryTab> {
           MemberSummary(member: selectedMember, total: 0, items: []),
     );
 
-    // Debts for selected member
+    // Debts for selected member — per-payer direct (no simplification), matches Next.js myDebts
+    final selectedDebts = _computeMyDebts(
+      selectedMember: selectedMember,
+      selectedSummary: selectedSummary,
+      members: members,
+      calc: calc,
+    );
+
+    // All debts (simplified) for the overview section
     final allDebts = simplifyDebts(calc.memberSummaries, members, null);
-    final selectedDebts =
-        allDebts.where((d) => d.from.id == selectedMember.id).toList();
 
     final paidCount = bill.paidMemberIds.length;
     final allPaid = paidCount == members.length && members.isNotEmpty;
@@ -557,6 +596,7 @@ class _MemberSelector extends StatelessWidget {
                         name: m.name,
                         color: isSelected ? Colors.white.withValues(alpha: 0.9) : color,
                         size: 22,
+                        avatarUrl: m.profile?.avatarUrl,
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -641,7 +681,7 @@ class _SelectedMemberCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                MemberAvatar(name: member.name, color: color, size: 44),
+                MemberAvatar(name: member.name, color: color, size: 44, avatarUrl: member.profile?.avatarUrl),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -963,7 +1003,7 @@ class _DebtCard extends StatelessWidget {
             child: Row(
               children: [
                 // From → To avatars
-                MemberAvatar(name: debt.from.name, color: fromColor, size: 32),
+                MemberAvatar(name: debt.from.name, color: fromColor, size: 32, avatarUrl: debt.from.profile?.avatarUrl),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: Icon(
@@ -974,7 +1014,7 @@ class _DebtCard extends StatelessWidget {
                         : AppColors.textTertiaryLight,
                   ),
                 ),
-                MemberAvatar(name: debt.to.name, color: toColor, size: 32),
+                MemberAvatar(name: debt.to.name, color: toColor, size: 32, avatarUrl: debt.to.profile?.avatarUrl),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -1291,8 +1331,8 @@ class _AllMembersSection extends StatelessWidget {
                       horizontal: 16, vertical: 6),
                   child: Row(
                     children: [
-                      MemberAvatar(
-                          name: debt.from.name, color: fromColor, size: 24),
+                        MemberAvatar(
+                            name: debt.from.name, color: fromColor, size: 24, avatarUrl: debt.from.profile?.avatarUrl),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: Text(
@@ -1315,7 +1355,7 @@ class _AllMembersSection extends StatelessWidget {
                               : AppColors.textTertiaryLight),
                       const SizedBox(width: 4),
                       MemberAvatar(
-                          name: debt.to.name, color: toColor, size: 24),
+                          name: debt.to.name, color: toColor, size: 24, avatarUrl: debt.to.profile?.avatarUrl),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: Text(
@@ -1391,7 +1431,7 @@ class _AllMembersSection extends StatelessWidget {
                     Row(
                       children: [
                         MemberAvatar(
-                            name: member.name, color: color, size: 36),
+                            name: member.name, color: color, size: 36, avatarUrl: member.profile?.avatarUrl),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(

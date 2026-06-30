@@ -1034,6 +1034,7 @@ class _ItemTile extends StatelessWidget {
                       name: paidByMember.name,
                       color: colorFromHex(paidByMember.color),
                       size: 20,
+                      avatarUrl: paidByMember.profile?.avatarUrl,
                     ),
                   ],
                 ],
@@ -1277,9 +1278,10 @@ class _MembersTab extends StatelessWidget {
 
   void _showAddMemberSheet(
       BuildContext context, Bill bill, BillProvider billProvider) {
-    showModalBottomSheet(
-      context: context,
+showModalBottomSheet(
+context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _MemberFormSheet(
         bill: bill,
@@ -1320,6 +1322,7 @@ class _MemberTile extends StatelessWidget {
           : () => showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
+                useSafeArea: true,
                 backgroundColor: Colors.transparent,
                 builder: (ctx) => _MemberFormSheet(
                   bill: bill,
@@ -1338,7 +1341,12 @@ class _MemberTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            MemberAvatar(name: member.name, color: color, size: 40),
+            MemberAvatar(
+              name: member.name,
+              color: color,
+              size: 40,
+              avatarUrl: member.profile?.avatarUrl,
+            ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1805,7 +1813,7 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                       ),
                       child: Row(
                         children: [
-                          MemberAvatar(name: m.name, color: color, size: 28),
+                          MemberAvatar(name: m.name, color: color, size: 28, avatarUrl: m.profile?.avatarUrl),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -2000,7 +2008,7 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             MemberAvatar(
-                                name: m.name, color: color, size: 18),
+                                name: m.name, color: color, size: 18, avatarUrl: m.profile?.avatarUrl),
                             const SizedBox(width: 6),
                             Text(
                               m.name,
@@ -2170,18 +2178,22 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
 
     // If no group, show only custom form
     if (groupId == null || groupMembers.isEmpty) {
-      return _buildCustomForm(context, isDark);
+      return _buildStandaloneCustomForm(context, isDark);
     }
 
-    return Container(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
         children: [
           // Handle bar
           Padding(
@@ -2266,6 +2278,126 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
             ),
           ),
         ],
+        ),
+      ),
+    );
+  }
+
+  /// Standalone custom form (no group) — wraps with keyboard-aware container
+  Widget _buildStandaloneCustomForm(BuildContext context, bool isDark) {
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.borderDark
+                        : AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'เพิ่มสมาชิก',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _nameCtrl,
+                autofocus: true,
+                decoration:
+                    const InputDecoration(hintText: 'ชื่อสมาชิก'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _promptpayCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                    hintText: 'เบอร์ PromptPay (ไม่บังคับ)'),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'สีประจำตัว',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: AppColors.memberColors.map((color) {
+                  final isSelected = _selectedColor == color;
+                  return GestureDetector(
+                    onTap: () =>
+                        setState(() => _selectedColor = color),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: isSelected
+                            ? Border.all(
+                                color:
+                                    isDark ? Colors.white : Colors.black,
+                                width: 2)
+                            : null,
+                      ),
+                      child: isSelected
+                          ? const Icon(Icons.check_rounded,
+                              color: Colors.white, size: 18)
+                          : null,
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _loading ? null : _saveCustom,
+                child: _loading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : Text(
+                        'เพิ่มสมาชิก',
+                        style: GoogleFonts.notoSansThai(
+                            fontSize: 15, fontWeight: FontWeight.w600),
+                      ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -2451,13 +2583,17 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
   }
 
   Widget _buildEditForm(BuildContext context, bool isDark) {
-    return Container(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         child: Column(
@@ -2556,6 +2692,7 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
           ],
         ),
       ),
+      ),
     );
   }
 }
@@ -2627,26 +2764,12 @@ class _StackedAvatars extends StatelessWidget {
         children: [
           ...shown.asMap().entries.map((e) => Positioned(
                 left: e.key * 16.0,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: colorFromHex(e.value.color),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1.5),
-                  ),
-                  child: Center(
-                    child: Text(
-                      e.value.name.isNotEmpty
-                          ? e.value.name[0].toUpperCase()
-                          : '?',
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+                child: MemberAvatar(
+                  name: e.value.name,
+                  color: colorFromHex(e.value.color),
+                  size: 24,
+                  avatarUrl: e.value.profile?.avatarUrl,
+                  showBorder: true,
                 ),
               )),
           if (extra > 0)
