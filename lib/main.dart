@@ -42,15 +42,24 @@ void main() async {
   );
 
   // Initialize AdMob SDK + fetch remote ads toggle from Supabase
-  await MobileAds.instance.initialize();
-  await AppConfigService.load();
-
-  // Initialize Firebase (guarded — app runs fine without config files until setup is complete)
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    await PushNotificationService.initialize();
+    await MobileAds.instance.initialize();
+    await AppConfigService.load();
+  } catch (e) {
+    debugPrint('[AdMob] Init error: $e');
+  }
+
+  // Initialize Firebase only when properly configured.
+  // Placeholder values (REPLACE_WITH_*) cause a native fatalError on iOS
+  // that Dart try-catch cannot intercept, so we guard before calling in.
+  try {
+    final options = DefaultFirebaseOptions.currentPlatform;
+    if (!options.projectId.startsWith('REPLACE_')) {
+      await Firebase.initializeApp(options: options);
+      await PushNotificationService.initialize();
+    } else {
+      debugPrint('[Firebase] Placeholder config — skipping init. Run: flutterfire configure');
+    }
   } catch (e) {
     debugPrint('[Firebase] Not configured yet: $e');
   }
