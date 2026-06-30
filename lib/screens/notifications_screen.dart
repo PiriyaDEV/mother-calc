@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/notifications_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/empty_state.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -212,46 +213,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildEmpty(bool isDark) {
-    return ListView(
-      children: [
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.5,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.surfaceDark
-                        : const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(
-                    Icons.notifications_none_rounded,
-                    size: 24,
-                    color: isDark
-                        ? AppColors.textTertiaryDark
-                        : const Color(0xFF9CA3AF),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'ไม่มีการแจ้งเตือน',
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 14,
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+    return const EmptyStateWidget(
+      emoji: '🔔',
+      title: 'ไม่มีการแจ้งเตือน',
+      subtitle: 'คำเชิญกลุ่มและการอัพเดตจะปรากฏที่นี่',
     );
   }
 }
@@ -423,30 +388,25 @@ class _NotificationCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  // ปฏิเสธ
+                  // ปฏิเสธ — border-only
                   Expanded(
                     child: GestureDetector(
                       onTap: isResponding ? null : onDecline,
                       child: Container(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 9),
+                        height: 40,
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF374151)
-                              : const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDark ? AppColors.borderDark : const Color(0xFFD1D5DB),
+                          ),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Center(
                           child: Text(
-                            isResponding
-                                ? 'กำลังดำเนินการ...'
-                                : 'ปฏิเสธ',
+                            isResponding ? 'กำลังดำเนินการ...' : 'ปฏิเสธ',
                             style: GoogleFonts.notoSansThai(
                               fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: isDark
-                                  ? AppColors.textSecondaryDark
-                                  : const Color(0xFF4B5563),
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? AppColors.textSecondaryDark : const Color(0xFF4B5563),
                             ),
                           ),
                         ),
@@ -454,27 +414,22 @@ class _NotificationCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // ยอมรับ
+                  // รับคำเชิญ — green filled
                   Expanded(
                     child: GestureDetector(
                       onTap: isResponding ? null : onAccept,
                       child: Container(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 9),
+                        height: 40,
                         decoration: BoxDecoration(
-                          color: isResponding
-                              ? const Color(0xFF9CA3AF)
-                              : const Color(0xFF4366F4),
-                          borderRadius: BorderRadius.circular(12),
+                          color: isResponding ? const Color(0xFF9CA3AF) : AppColors.emerald,
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Center(
                           child: Text(
-                            isResponding
-                                ? 'กำลังดำเนินการ...'
-                                : 'ยอมรับ',
+                            isResponding ? 'กำลังดำเนินการ...' : 'รับคำเชิญ',
                             style: GoogleFonts.notoSansThai(
                               fontSize: 13,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                               color: Colors.white,
                             ),
                           ),

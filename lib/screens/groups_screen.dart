@@ -7,6 +7,7 @@ import '../providers/groups_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/create_entity_sheet.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/member_avatar.dart';
 
 class GroupsScreen extends StatefulWidget {
@@ -109,25 +110,42 @@ class _GroupsScreenState extends State<GroupsScreen> {
                     style: GoogleFonts.notoSansThai(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimaryLight,
+                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                     ),
                   ),
+                  if (provider.groups.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryFaint,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${provider.groups.length}',
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary),
+                      ),
+                    ),
+                  ],
                   const Spacer(),
                   GestureDetector(
                     onTap: _showCreateGroupSheet,
                     child: Container(
-                      width: 36,
-                      height: 36,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                       decoration: BoxDecoration(
                         color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
-                        Icons.add_rounded,
-                        color: Colors.white,
-                        size: 22,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.add_rounded, color: Colors.white, size: 16),
+                          const SizedBox(width: 5),
+                          Text('สร้างกลุ่ม',
+                              style: GoogleFonts.notoSansThai(
+                                  fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
+                        ],
                       ),
                     ),
                   ),
@@ -143,45 +161,12 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       onRefresh: () => provider.loadGroups(),
                       color: AppColors.primary,
                       child: provider.groups.isEmpty
-                          ? ListView(
-                              children: [
-                                SizedBox(
-                                  height:
-                                      MediaQuery.of(context).size.height * 0.5,
-                                  child: Center(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        const Text('👥',
-                                            style: TextStyle(fontSize: 48)),
-                                        const SizedBox(height: 12),
-                                        Text(
-                                          'ยังไม่มีกลุ่ม',
-                                          style: GoogleFonts.notoSansThai(
-                                            fontSize: 15,
-                                            color: isDark
-                                                ? AppColors.textSecondaryDark
-                                                : AppColors.textSecondaryLight,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        TextButton.icon(
-                                          onPressed: _showCreateGroupSheet,
-                                          icon: const Icon(
-                                              Icons.add_circle_outline,
-                                              color: AppColors.primary),
-                                          label: Text(
-                                            'สร้างกลุ่มใหม่',
-                                            style: GoogleFonts.notoSansThai(
-                                                color: AppColors.primary),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
+                          ? EmptyStateWidget(
+                              emoji: '👥',
+                              title: 'ยังไม่มีกลุ่ม',
+                              subtitle: 'สร้างกลุ่มและเชิญเพื่อนมาหารค่าใช้จ่ายด้วยกัน',
+                              ctaLabel: 'สร้างกลุ่มแรก',
+                              onCta: _showCreateGroupSheet,
                             )
                           : ListView.separated(
                               padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),

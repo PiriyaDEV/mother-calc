@@ -28,6 +28,17 @@ class AppColors {
   static const red = Color(0xFFEF4444);
   static const amber = Color(0xFFF59E0B);
 
+  // Extra brand tints
+  static const primaryFaint = Color(0xFFEEF1FE);
+  static const amberFaint = Color(0xFFFFFBEB);
+  static const redFaint = Color(0xFFFEF2F2);
+  static const greenFaint = Color(0xFFECFDF5);
+
+  // Shadow tokens
+  static const shadowSubtle = [BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1))];
+  static const shadowCard   = [BoxShadow(color: Color(0x144366F4), blurRadius: 12, offset: Offset(0, 4))];
+  static const shadowFloat  = [BoxShadow(color: Color(0x1F4366F4), blurRadius: 24, offset: Offset(0, 8))];
+
   // Light theme
   static const bgLight = Color(0xFFF4F6FB);
   static const surfaceLight = Color(0xFFFFFFFF);

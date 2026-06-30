@@ -12,6 +12,7 @@ import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/section_header.dart';
 
 // ── Helpers ────────────────────────────────────────────────────
 bool _isValidUsername(String u) =>
@@ -333,50 +334,50 @@ class _MeScreenState extends State<MeScreen> {
               const SizedBox(height: 12),
             ],
 
-            // ── Avatar Card ──────────────────────────────────
+            // ── Profile Hero Card ────────────────────────────
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 24),
+              padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDark
-                      ? AppColors.borderDark
-                      : const Color(0xFFF3F4F6),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF4366F4), Color(0xFF6B8AF7)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: AppColors.shadowFloat,
               ),
               child: Column(
                 children: [
-                  // Avatar + camera button
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      // Avatar 80px
-                      _buildAvatar(profile, 80),
-                      // 📷 button
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                          boxShadow: AppColors.shadowFloat,
+                        ),
+                        child: _buildAvatar(profile, 80),
+                      ),
                       Positioned(
-                        bottom: -6,
-                        right: -6,
+                        bottom: -4,
+                        right: -4,
                         child: GestureDetector(
-                          onTap: _uploadingAvatar
-                              ? null
-                              : _handlePickAvatar,
+                          onTap: _uploadingAvatar ? null : _handlePickAvatar,
                           child: Container(
-                            width: 28,
-                            height: 28,
+                            width: 28, height: 28,
                             decoration: BoxDecoration(
                               color: _uploadingAvatar
-                                  ? const Color(0xFF9CA3AF)
-                                  : const Color(0xFF4366F4),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                  color: isDark
-                                      ? AppColors.bgDark
-                                      : Colors.white,
-                                  width: 2),
+                                  ? Colors.white.withValues(alpha: 0.5)
+                                  : Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: AppColors.shadowSubtle,
                             ),
-                            child: const Icon(Icons.camera_alt_outlined,
-                                size: 13, color: Colors.white),
+                            child: Icon(Icons.camera_alt_outlined,
+                                size: 13,
+                                color: _uploadingAvatar
+                                    ? const Color(0xFF9CA3AF)
+                                    : AppColors.primary),
                           ),
                         ),
                       ),
@@ -386,35 +387,24 @@ class _MeScreenState extends State<MeScreen> {
                   Text(
                     profile?.displayName ?? profile?.username ?? 'ผู้ใช้',
                     style: GoogleFonts.notoSansThai(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimaryLight,
-                    ),
+                      fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white),
                   ),
                   if (profile?.username != null) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
                       '@${profile!.username}',
                       style: GoogleFonts.notoSansThai(
-                        fontSize: 12,
-                        color: const Color(0xFF9CA3AF),
-                      ),
+                          fontSize: 13, color: Colors.white.withValues(alpha: 0.75)),
                     ),
                   ],
-                  const SizedBox(height: 2),
-                  Text(
-                    auth.user?.email ?? '',
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 12,
-                      color: const Color(0xFF9CA3AF),
-                    ),
-                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
+
+            // ── Section: บัญชี ───────────────────────────────
+            SectionHeaderWidget(label: 'บัญชี'),
+            const SizedBox(height: 10),
 
             // ── Profile Fields Card ──────────────────────────
             Container(
@@ -511,7 +501,13 @@ class _MeScreenState extends State<MeScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
+
+            // ── Section: ความปลอดภัย ─────────────────────────
+            if (!isGoogleUser) ...[
+              SectionHeaderWidget(label: 'ความปลอดภัย'),
+              const SizedBox(height: 10),
+            ],
 
             // ── Change Password Card (non-Google only) ───────
             if (!isGoogleUser)
@@ -624,7 +620,50 @@ class _MeScreenState extends State<MeScreen> {
                 ),
               ),
 
-            if (!isGoogleUser) const SizedBox(height: 16),
+            const SizedBox(height: 20),
+
+            // ── Section: การตั้งค่า ──────────────────────────
+            SectionHeaderWidget(label: 'การตั้งค่า'),
+            const SizedBox(height: 10),
+
+            // Theme toggle card
+            GestureDetector(
+              onTap: () => themeProvider.toggle(),
+              child: Container(
+                height: 56,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.surfaceDark : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: isDark ? null : AppColors.shadowSubtle,
+                ),
+                child: Row(
+                  children: [
+                    Text(isDark ? '🌙' : '☀️', style: const TextStyle(fontSize: 20)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'โหมดสีเข้ม',
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                        ),
+                      ),
+                    ),
+                    Switch(
+                      value: isDark,
+                      onChanged: (_) => themeProvider.toggle(),
+                      activeColor: AppColors.primary,
+                      activeTrackColor: AppColors.primaryFaint,
+                      inactiveThumbColor: const Color(0xFF9CA3AF),
+                      inactiveTrackColor: const Color(0xFFE5E7EB),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
 
             // ── Sign Out ─────────────────────────────────────
             GestureDetector(
@@ -633,21 +672,20 @@ class _MeScreenState extends State<MeScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? AppColors.surfaceDark : AppColors.redFaint,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: const Color(0xFFFEE2E2)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.logout_rounded,
-                        size: 18, color: Color(0xFFEF4444)),
+                    const Icon(Icons.logout_rounded, size: 18, color: Color(0xFFEF4444)),
                     const SizedBox(width: 8),
                     Text(
                       'ออกจากระบบ',
                       style: GoogleFonts.notoSansThai(
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                         color: const Color(0xFFEF4444),
                       ),
                     ),

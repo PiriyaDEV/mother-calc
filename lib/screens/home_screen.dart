@@ -9,6 +9,7 @@ import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
+import '../widgets/section_header.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -331,26 +332,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Expanded(
                         child: _QuickActionCard(
-                          icon: Icons.people_outline_rounded,
-                          label: 'กลุ่ม',
-                          sublabel: '${_groups.length} กลุ่ม',
-                          iconColor: const Color(0xFFA855F7),
-                          iconBg: const Color(0xFFF5F3FF),
-                          iconBgDark: const Color(0xFF2D1B69),
-                          onTap: () => context.go('/groups'),
+                          icon: Icons.receipt_long_outlined,
+                          label: 'บิล',
+                          sublabel: '${_personalBills.length} บิล',
+                          gradientColors: const [Color(0xFF4366F4), Color(0xFF6B8AF7)],
+                          onTap: () => context.go('/bills'),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: _QuickActionCard(
-                          icon: Icons.receipt_long_outlined,
-                          label: 'บิล',
-                          sublabel: '${_personalBills.length} บิล',
-                          iconColor: Colors.white,
-                          iconBg: const Color(0xFF286BFE),
-                          iconBgDark: const Color(0xFF286BFE),
-                          isPrimary: true,
-                          onTap: () => context.go('/bills'),
+                          icon: Icons.people_outline_rounded,
+                          label: 'กลุ่ม',
+                          sublabel: '${_groups.length} กลุ่ม',
+                          gradientColors: const [Color(0xFF10B981), Color(0xFF34D399)],
+                          onTap: () => context.go('/groups'),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -359,9 +355,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Icons.person_add_outlined,
                           label: 'เพื่อน',
                           sublabel: 'จัดการ',
-                          iconColor: const Color(0xFF22C55E),
-                          iconBg: const Color(0xFFF0FDF4),
-                          iconBgDark: const Color(0xFF14532D),
+                          gradientColors: const [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
                           onTap: () => context.go('/friends'),
                         ),
                       ),
@@ -377,63 +371,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'อัตราแลกเปลี่ยน',
-                                  style: GoogleFonts.notoSansThai(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDark
-                                        ? AppColors.textPrimaryDark
-                                        : AppColors.textPrimaryLight,
-                                  ),
-                                ),
-                                if (_ratesUpdated.isNotEmpty)
-                                  Text(
-                                    'อัปเดต $_ratesUpdated',
-                                    style: GoogleFonts.notoSansThai(
-                                      fontSize: 10,
-                                      color: isDark
-                                          ? AppColors.textTertiaryDark
-                                          : AppColors.textTertiaryLight,
-                                    ),
-                                  ),
-                              ],
+                      SectionHeaderWidget(
+                        label: 'อัตราแลกเปลี่ยน${_ratesUpdated.isNotEmpty ? ' · $_ratesUpdated' : ''}',
+                        trailingWidget: GestureDetector(
+                          onTap: _ratesLoading ? null : _loadRates,
+                          child: Container(
+                            width: 28, height: 28,
+                            decoration: BoxDecoration(
+                              color: isDark ? AppColors.surfaceDark : const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(8),
                             ),
+                            child: _ratesLoading
+                                ? const Padding(
+                                    padding: EdgeInsets.all(6),
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                                  )
+                                : Icon(Icons.refresh_rounded, size: 14,
+                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
                           ),
-                          GestureDetector(
-                            onTap: _ratesLoading ? null : _loadRates,
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? AppColors.surfaceDark
-                                    : const Color(0xFFF3F4F6),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: _ratesLoading
-                                  ? const Padding(
-                                      padding: EdgeInsets.all(6),
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: AppColors.primary),
-                                    )
-                                  : Icon(
-                                      Icons.refresh_rounded,
-                                      size: 14,
-                                      color: isDark
-                                          ? AppColors.textSecondaryDark
-                                          : AppColors.textSecondaryLight,
-                                    ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                       const SizedBox(height: 12),
                       SizedBox(
@@ -568,16 +524,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-                      child: Text(
-                        'สถิติของคุณ',
-                        style: GoogleFonts.notoSansThai(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? AppColors.textPrimaryDark
-                              : AppColors.textPrimaryLight,
-                        ),
-                      ),
+                      child: SectionHeaderWidget(label: 'สถิติของคุณ'),
                     ),
                   ),
                   SliverPadding(
@@ -636,31 +583,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'บิลล่าสุด',
+                      child: SectionHeaderWidget(
+                        label: 'บิลล่าสุด',
+                        trailingWidget: GestureDetector(
+                          onTap: () => context.go('/bills'),
+                          child: Text(
+                            'ดูทั้งหมด',
                             style: GoogleFonts.notoSansThai(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: isDark
-                                  ? AppColors.textPrimaryDark
-                                  : AppColors.textPrimaryLight,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
                             ),
                           ),
-                          GestureDetector(
-                            onTap: () => context.go('/bills'),
-                            child: Text(
-                              'ดูทั้งหมด',
-                              style: GoogleFonts.notoSansThai(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -923,77 +858,51 @@ class _QuickActionCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final String sublabel;
-  final Color iconColor;
-  final Color iconBg;
-  final Color iconBgDark;
-  final bool isPrimary;
+  final List<Color> gradientColors;
   final VoidCallback onTap;
 
   const _QuickActionCard({
     required this.icon,
     required this.label,
     required this.sublabel,
-    required this.iconColor,
-    required this.iconBg,
-    required this.iconBgDark,
+    required this.gradientColors,
     required this.onTap,
-    this.isPrimary = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
         decoration: BoxDecoration(
-          color: isPrimary
-              ? const Color(0xFF286BFE)
-              : (isDark ? AppColors.surfaceDark : Colors.white),
-          borderRadius: BorderRadius.circular(16),
-          border: isPrimary
-              ? null
-              : Border.all(
-                  color:
-                      isDark ? AppColors.borderDark : AppColors.borderLight),
-                  boxShadow: isPrimary
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF286BFE).withValues(alpha: 0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  )
-                ]
-              : null,
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: isDark ? null : AppColors.shadowCard,
         ),
         child: Column(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
-                color: isPrimary
-                    ? Colors.white.withValues(alpha: 0.2)
-                    : (isDark ? iconBgDark : iconBg),
-                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  colors: gradientColors,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(icon,
-                  size: 20,
-                  color: isPrimary ? Colors.white : iconColor),
+              child: Icon(icon, size: 26, color: Colors.white),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               label,
               style: GoogleFonts.notoSansThai(
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isPrimary
-                    ? Colors.white
-                    : (isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight),
+                fontWeight: FontWeight.w700,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
               ),
             ),
             const SizedBox(height: 2),
@@ -1001,11 +910,7 @@ class _QuickActionCard extends StatelessWidget {
               sublabel,
               style: GoogleFonts.notoSansThai(
                 fontSize: 10,
-                color: isPrimary
-                    ? Colors.white.withValues(alpha: 0.7)
-                    : (isDark
-                        ? AppColors.textTertiaryDark
-                        : AppColors.textTertiaryLight),
+                color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
               ),
             ),
           ],
@@ -1191,6 +1096,10 @@ class _RecentBillRow extends StatelessWidget {
                     color: AppColors.primary,
                   ),
                 ),
+                const SizedBox(height: 4),
+                // Member avatar dots
+                if (bill.members.isNotEmpty)
+                  _MemberAvatarStrip(members: bill.members, isDark: isDark),
                 Icon(Icons.chevron_right_rounded, size: 18,
                     color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
               ],
@@ -1208,5 +1117,54 @@ class _RecentBillRow extends StatelessWidget {
       'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
     ];
     return '${dt.day} ${months[dt.month]}';
+  }
+}
+
+class _MemberAvatarStrip extends StatelessWidget {
+  final List<BillMember> members;
+  final bool isDark;
+  const _MemberAvatarStrip({required this.members, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = members.take(3).toList();
+    final extra = members.length > 3 ? members.length - 3 : 0;
+    return SizedBox(
+      height: 20,
+      width: visible.length * 14.0 + 20 + (extra > 0 ? 18 : 0),
+      child: Stack(
+        children: [
+          ...visible.asMap().entries.map((e) => Positioned(
+                left: e.key * 14.0,
+                child: Container(
+                  width: 20, height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.memberColors[e.key % AppColors.memberColors.length],
+                    border: Border.all(color: isDark ? AppColors.surfaceDark : Colors.white, width: 1.5),
+                  ),
+                ),
+              )),
+          if (extra > 0)
+            Positioned(
+              left: visible.length * 14.0,
+              child: Container(
+                width: 20, height: 20,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+                  border: Border.all(color: isDark ? AppColors.surfaceDark : Colors.white, width: 1.5),
+                ),
+                child: Center(
+                  child: Text('+$extra',
+                      style: GoogleFonts.notoSansThai(
+                          fontSize: 7, fontWeight: FontWeight.w700,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight)),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
