@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../providers/bill_provider.dart';
+import '../providers/friends_provider.dart';
 import '../providers/groups_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
@@ -1197,6 +1198,12 @@ class _MembersTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final members = billProvider.members;
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final friendsProvider = context.read<FriendsProvider>();
+    final friendUserIds = friendsProvider.friends
+        .map((f) => f.otherProfile(currentUserId ?? '')?.id)
+        .whereType<String>()
+        .toSet();
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -1269,6 +1276,8 @@ class _MembersTab extends StatelessWidget {
               billProvider: billProvider,
               currency: bill.settings.currency,
               readOnly: readOnly,
+              currentUserId: currentUserId,
+              friendUserIds: friendUserIds,
             );
           }),
         ],
@@ -1300,6 +1309,8 @@ class _MemberTile extends StatelessWidget {
   final BillProvider billProvider;
   final String currency;
   final bool readOnly;
+  final String? currentUserId;
+  final Set<String> friendUserIds;
 
   const _MemberTile({
     required this.member,
@@ -1309,6 +1320,8 @@ class _MemberTile extends StatelessWidget {
     required this.billProvider,
     required this.currency,
     this.readOnly = false,
+    this.currentUserId,
+    this.friendUserIds = const {},
   });
 
   @override
@@ -1367,25 +1380,7 @@ class _MemberTile extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (!member.isExternal) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4366F4).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'ถูกเพิ่มมา',
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: const Color(0xFF4366F4),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ..._buildMemberPill(),
                   ],
                 ),
                 Text(
@@ -1457,6 +1452,43 @@ class _MemberTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildMemberPill() {
+    final String label;
+    final Color color;
+
+    if (member.isExternal) {
+      label = 'ภายนอก';
+      color = const Color(0xFF6B7280);
+    } else if (member.userId != null && member.userId == currentUserId) {
+      label = 'ฉัน';
+      color = AppColors.primary;
+    } else if (member.userId != null && friendUserIds.contains(member.userId)) {
+      label = 'เพื่อน';
+      color = AppColors.emerald;
+    } else {
+      return [];
+    }
+
+    return [
+      const SizedBox(width: 6),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.notoSansThai(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: color,
+          ),
+        ),
+      ),
+    ];
   }
 }
 

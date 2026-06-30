@@ -46,13 +46,14 @@ create extension if not exists "uuid-ossp";
 -- Auto-created by the handle_new_user trigger on signup.
 -- username is nullable to support LINE (no email) and other social providers.
 create table public.profiles (
-  id           uuid primary key references auth.users(id) on delete cascade,
-  username     text unique,
-  display_name text,
-  avatar_url   text,
-  promptpay    text,
-  created_at   timestamptz not null default now(),
-  updated_at   timestamptz not null default now()
+  id                   uuid primary key references auth.users(id) on delete cascade,
+  username             text unique,
+  display_name         text,
+  avatar_url           text,
+  promptpay            text,
+  onboarding_completed boolean not null default false,
+  created_at           timestamptz not null default now(),
+  updated_at           timestamptz not null default now()
 );
 
 -- Groups — a shared space that can contain multiple bills/trips.

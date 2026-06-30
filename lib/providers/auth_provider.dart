@@ -13,44 +13,49 @@ class AuthProvider extends ChangeNotifier {
 
   User? get user => _user;
   Profile? get profile => _profile;
-  /// True while waiting for the first auth state event from Supabase.
   bool get loading => !_initialized;
   bool get isLoggedIn => _user != null;
+  bool get needsOnboarding =>
+      _user != null &&
+      _initialized &&
+      _profile != null &&
+      !_profile!.onboardingCompleted;
 
   AuthProvider() {
     _init();
   }
 
   void _init() {
-    // Read the cached session synchronously first so we have an immediate value.
     _user = _supabase.auth.currentUser;
 
-    _supabase.auth.onAuthStateChange.listen((data) {
+    _supabase.auth.onAuthStateChange.listen((data) async {
       _user = data.session?.user;
-      _initialized = true;          // Auth state is now known
       if (_user != null) {
-        _loadProfile();
+        await _loadProfile();
       } else {
         _profile = null;
-        notifyListeners();
       }
+      _initialized = true;
+      notifyListeners();
     });
 
-    // If there is already a session (app reopen), mark as initialized right away
-    // and kick off profile load without waiting for the stream event.
+    // Cached session path — wait for profile before marking initialized.
     if (_user != null) {
-      _initialized = true;
-      _loadProfile();
+      _loadProfile().then((_) {
+        _initialized = true;
+        notifyListeners();
+      });
     } else {
-      // No cached session – wait a short tick to let Supabase restore session
-      // from storage, then mark initialized if still no user.
       Future.delayed(const Duration(milliseconds: 300), () {
         if (!_initialized) {
           _user = _supabase.auth.currentUser;
-          _initialized = true;
           if (_user != null) {
-            _loadProfile();
+            _loadProfile().then((_) {
+              _initialized = true;
+              notifyListeners();
+            });
           } else {
+            _initialized = true;
             notifyListeners();
           }
         }
@@ -68,9 +73,20 @@ class AuthProvider extends ChangeNotifier {
           .maybeSingle();
       if (data != null) {
         _profile = Profile.fromJson(data);
-        notifyListeners();
       } else {
         await _ensureProfile();
+      }
+      notifyListeners();
+    } on PostgrestException catch (e) {
+      // Stale cached session — user no longer exists in DB (e.g. after DB reset).
+      // Sign out so the user lands on the login screen cleanly.
+      if (e.code == '23503' || e.code == '42501') {
+        debugPrint('Stale session detected, signing out: $e');
+        await _supabase.auth.signOut();
+        _user = null;
+        _profile = null;
+      } else {
+        debugPrint('Error loading profile: $e');
       }
     } catch (e) {
       debugPrint('Error loading profile: $e');
@@ -80,34 +96,42 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _ensureProfile({String? username}) async {
     if (_user == null) return;
     try {
-      // LINE does not provide email, so email can be null — use a safe fallback.
       final email = _user!.email;
       final usernameFromEmail = email != null && email.isNotEmpty
           ? email.split('@').first.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_')
           : null;
 
-      // Derive a display name from any available metadata, then fall back to
-      // the username hint or a generic user-id-based name.
       final displayName = _user!.userMetadata?['full_name'] as String? ??
           _user!.userMetadata?['name'] as String? ??
           username ??
           usernameFromEmail ??
           'user_${_user!.id.substring(0, 8)}';
 
-      // Username priority: explicit arg → derived from email → id-based
-      final resolvedUsername = username ??
+      final preferredUsername = username ??
           usernameFromEmail ??
           'user_${_user!.id.substring(0, 8)}';
 
       final avatarUrl = _user!.userMetadata?['avatar_url'] as String?
           ?? _user!.userMetadata?['picture'] as String?;
 
-      await _supabase.from('profiles').upsert({
-        'id': _user!.id,
-        'username': resolvedUsername,
-        'display_name': displayName,
-        'avatar_url': avatarUrl,
-      });
+      // Try preferred username first; if unique constraint fires, fall back to
+      // username_<id prefix> which is always unique.
+      Future<void> doUpsert(String uname) => _supabase.from('profiles').upsert({
+            'id': _user!.id,
+            'username': uname,
+            'display_name': displayName,
+            'avatar_url': avatarUrl,
+          });
+
+      try {
+        await doUpsert(preferredUsername);
+      } on PostgrestException catch (e) {
+        if (e.code == '23505') {
+          await doUpsert('${preferredUsername}_${_user!.id.substring(0, 6)}');
+        } else {
+          rethrow; // FK (23503) and others bubble up to _loadProfile
+        }
+      }
 
       final data = await _supabase
           .from('profiles')
@@ -115,7 +139,8 @@ class AuthProvider extends ChangeNotifier {
           .eq('id', _user!.id)
           .single();
       _profile = Profile.fromJson(data);
-      notifyListeners();
+    } on PostgrestException {
+      rethrow; // let _loadProfile handle FK / permission errors
     } catch (e) {
       debugPrint('Error ensuring profile: $e');
     }
@@ -265,6 +290,30 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<String?> completeOnboarding({
+    required String displayName,
+    required String username,
+    String? promptpay,
+  }) async {
+    if (_user == null) return 'ไม่พบผู้ใช้';
+    try {
+      await _supabase.from('profiles').upsert({
+        'id': _user!.id,
+        'display_name': displayName,
+        'username': username,
+        if (promptpay != null && promptpay.isNotEmpty) 'promptpay': promptpay,
+        'onboarding_completed': true,
+      }, onConflict: 'id');
+      await _loadProfile();
+      return null;
+    } on PostgrestException catch (e) {
+      if (e.code == '23505') return 'ชื่อผู้ใช้นี้ถูกใช้แล้ว';
+      return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+    } catch (e) {
+      return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+    }
+  }
+
   Future<void> signOut() async {
     // Sign out from LINE SDK if logged in via LINE
     try { await LineSDK.instance.logout(); } catch (_) {}
@@ -300,6 +349,16 @@ class AuthProvider extends ChangeNotifier {
         if (promptpay != null) 'promptpay': promptpay,
       };
       await _supabase.from('profiles').upsert(updates);
+
+      // Sync new display name into all bill_members rows linked to this user
+      if (displayName != null) {
+        await _supabase
+            .from('bill_members')
+            .update({'name': displayName})
+            .eq('user_id', _user!.id)
+            .eq('is_external', false);
+      }
+
       _profile = _profile!.copyWith(
         displayName: displayName ?? _profile!.displayName,
         username: username ?? _profile!.username,

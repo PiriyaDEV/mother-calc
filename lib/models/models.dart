@@ -70,6 +70,7 @@ class Profile {
   final String? displayName;
   final String? avatarUrl;
   final String? promptpay;
+  final bool onboardingCompleted;
   final DateTime? createdAt;
 
   const Profile({
@@ -78,6 +79,7 @@ class Profile {
     this.displayName,
     this.avatarUrl,
     this.promptpay,
+    this.onboardingCompleted = false,
     this.createdAt,
   });
 
@@ -88,6 +90,7 @@ class Profile {
       displayName: json['display_name'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       promptpay: json['promptpay'] as String?,
+      onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
           : null,
@@ -100,6 +103,7 @@ class Profile {
         'display_name': displayName,
         'avatar_url': avatarUrl,
         'promptpay': promptpay,
+        'onboarding_completed': onboardingCompleted,
         'created_at': createdAt?.toIso8601String(),
       };
 
@@ -108,6 +112,7 @@ class Profile {
     String? displayName,
     String? avatarUrl,
     String? promptpay,
+    bool? onboardingCompleted,
   }) {
     return Profile(
       id: id,
@@ -115,6 +120,7 @@ class Profile {
       displayName: displayName ?? this.displayName,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       promptpay: promptpay ?? this.promptpay,
+      onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       createdAt: createdAt,
     );
   }

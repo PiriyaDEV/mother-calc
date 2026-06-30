@@ -12,6 +12,7 @@ import 'screens/me_screen.dart';
 import 'screens/bill_detail_screen.dart';
 import 'screens/group_detail_screen.dart';
 import 'screens/notifications_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/profile_screen.dart';
 import 'theme/app_theme.dart';
 
@@ -22,23 +23,32 @@ class AppRouter {
       redirect: (context, state) {
         final isLoading = authProvider.loading;
         final isLoggedIn = authProvider.isLoggedIn;
+        final needsOnboarding = authProvider.needsOnboarding;
         final location = state.matchedLocation;
 
-        // Still initializing — always go to splash
         if (isLoading) {
           return location == '/splash' ? null : '/splash';
         }
 
         final isLoginRoute = location == '/login';
         final isSplashRoute = location == '/splash';
+        final isOnboardingRoute = location == '/onboarding';
 
-        // Auth is ready: leave splash
         if (isSplashRoute) {
-          return isLoggedIn ? '/home' : '/login';
+          if (!isLoggedIn) return '/login';
+          return needsOnboarding ? '/onboarding' : '/home';
         }
 
         if (!isLoggedIn && !isLoginRoute) return '/login';
-        if (isLoggedIn && isLoginRoute) return '/home';
+        if (isLoggedIn && isLoginRoute) {
+          return needsOnboarding ? '/onboarding' : '/home';
+        }
+        if (isLoggedIn && needsOnboarding && !isOnboardingRoute) {
+          return '/onboarding';
+        }
+        if (isLoggedIn && !needsOnboarding && isOnboardingRoute) {
+          return '/home';
+        }
         return null;
       },
       refreshListenable: authProvider,
@@ -94,6 +104,10 @@ class AppRouter {
         GoRoute(
           path: '/profile',
           builder: (context, state) => const ProfileScreen(),
+        ),
+        GoRoute(
+          path: '/onboarding',
+          builder: (context, state) => const OnboardingScreen(),
         ),
       ],
     );
