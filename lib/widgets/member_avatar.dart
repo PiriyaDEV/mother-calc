@@ -68,18 +68,15 @@ class MemberAvatar extends StatelessWidget {
     }
 
     if (showBorder) {
+      // Wrap with a circle border; ClipOval ensures the image fills the full circle
       return Container(
         width: size + 4,
         height: size + 4,
-        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(
-            color: Colors.white,
-            width: 2,
-          ),
+          border: Border.all(color: Colors.white, width: 2),
         ),
-        child: Center(child: avatar),
+        child: ClipOval(child: avatar),
       );
     }
 

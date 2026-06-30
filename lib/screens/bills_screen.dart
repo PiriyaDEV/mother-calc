@@ -89,7 +89,6 @@ class _BillsScreenState extends State<BillsScreen>
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -101,35 +100,62 @@ class _BillsScreenState extends State<BillsScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // Header
+            // ── Header ──────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'บิลของฉัน',
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimaryLight,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'บิลของฉัน',
+                          style: GoogleFonts.anuphan(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? AppColors.neutral900Dark
+                                : AppColors.neutral900,
+                            height: 1.1,
+                          ),
+                        ),
+                        if (_bills.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            '${_bills.length} บิลทั้งหมด',
+                            style: GoogleFonts.notoSansThai(
+                              fontSize: 13,
+                              color: isDark
+                                  ? AppColors.neutral400Dark
+                                  : AppColors.neutral400,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
+                  // Add button
                   GestureDetector(
                     onTap: _createBill,
                     child: Container(
-                      width: 36,
-                      height: 36,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(10),
+                        gradient: AppGradients.primaryButtonLight,
+                        borderRadius: BorderRadius.circular(AppRadii.md),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryBlue.withValues(alpha: 0.35),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
                       child: const Icon(
                         Icons.add_rounded,
                         color: Colors.white,
-                        size: 22,
+                        size: 24,
                       ),
                     ),
                   ),
@@ -137,27 +163,26 @@ class _BillsScreenState extends State<BillsScreen>
               ),
             ),
 
-            // Tabs
+            // ── Tabs ─────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Container(
-                height: 40,
+                height: 44,
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.surfaceDark
-                      : AppColors.neutral100,
-                  borderRadius: BorderRadius.circular(10),
+                  color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
+                  borderRadius: BorderRadius.circular(AppRadii.md),
                 ),
                 child: TabBar(
                   controller: _tabController,
                   indicator: BoxDecoration(
-                    color: isDark ? AppColors.surfaceDark : Colors.white,
+                    color: isDark ? AppColors.bgDark : Colors.white,
                     borderRadius: BorderRadius.circular(AppRadii.sm),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
@@ -165,17 +190,18 @@ class _BillsScreenState extends State<BillsScreen>
                   dividerColor: Colors.transparent,
                   overlayColor: WidgetStateProperty.all(Colors.transparent),
                   labelColor: isDark
-                      ? AppColors.textPrimaryDark
-                      : AppColors.textPrimaryLight,
+                      ? AppColors.neutral900Dark
+                      : AppColors.neutral900,
                   unselectedLabelColor: isDark
-                      ? AppColors.textTertiaryDark
-                      : AppColors.textTertiaryLight,
+                      ? AppColors.neutral400Dark
+                      : AppColors.neutral400,
                   labelStyle: GoogleFonts.notoSansThai(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
                   unselectedLabelStyle: GoogleFonts.notoSansThai(
                     fontSize: 13,
+                    fontWeight: FontWeight.w400,
                   ),
                   tabs: [
                     Tab(text: 'กำลังดำเนินการ (${activeBills.length})'),
@@ -185,7 +211,7 @@ class _BillsScreenState extends State<BillsScreen>
               ),
             ),
 
-            // Content
+            // ── Content ──────────────────────────────────────────
             Expanded(
               child: _loading
                   ? const Center(
@@ -257,17 +283,14 @@ class _BillList extends StatelessWidget {
       );
     }
 
-    // Separate standalone vs group bills
     final standaloneBills = bills.where((b) => b.groupId == null).toList();
     final groupBills = bills.where((b) => b.groupId != null).toList();
 
-    // Group the group bills by groupId
     final Map<String, List<Bill>> byGroup = {};
     for (final b in groupBills) {
       byGroup.putIfAbsent(b.groupId!, () => []).add(b);
     }
 
-    // Build flat list of items: section headers + bill cards
     final List<_ListItem> items = [];
 
     if (standaloneBills.isNotEmpty) {
@@ -297,7 +320,7 @@ class _BillList extends StatelessWidget {
       onRefresh: onRefresh,
       color: AppColors.primary,
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
         itemCount: items.length,
         itemBuilder: (context, index) {
           final item = items[index];
@@ -341,34 +364,29 @@ class _SectionHeaderWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm, top: AppSpacing.xs),
+      padding: const EdgeInsets.only(bottom: 10, top: 6),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
               color: item.isGroup
-                  ? AppColors.accentIce
-                  : (isDark ? AppColors.borderDark : AppColors.borderLight),
-              borderRadius: BorderRadius.circular(AppRadii.xl),
-              border: Border.all(
-                color: item.isGroup
-                    ? AppColors.primary.withValues(alpha: 0.2)
-                    : (isDark ? AppColors.borderDark : AppColors.borderLight),
-              ),
+                  ? AppColors.primaryBlue.withValues(alpha: 0.10)
+                  : (isDark ? AppColors.surfaceDark : AppColors.neutral100),
+              borderRadius: BorderRadius.circular(AppRadii.full),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (item.isGroup)
-                  Icon(Icons.group_rounded,
-                      size: 13, color: AppColors.primary),
-                if (!item.isGroup)
-                  Icon(Icons.receipt_outlined,
-                      size: 13,
-                      color: isDark
-                          ? AppColors.textTertiaryDark
-                          : AppColors.textTertiaryLight),
+                Icon(
+                  item.isGroup ? Icons.group_rounded : Icons.receipt_outlined,
+                  size: 13,
+                  color: item.isGroup
+                      ? AppColors.primaryBlue
+                      : (isDark
+                          ? AppColors.neutral400Dark
+                          : AppColors.neutral400),
+                ),
                 const SizedBox(width: 5),
                 Text(
                   item.label,
@@ -376,33 +394,30 @@ class _SectionHeaderWidget extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: item.isGroup
-                        ? AppColors.primary
+                        ? AppColors.primaryBlue
                         : (isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight),
+                            ? AppColors.neutral600Dark
+                            : AppColors.neutral600),
                   ),
                 ),
                 const SizedBox(width: 6),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(
                     color: item.isGroup
-                        ? AppColors.primary.withValues(alpha: 0.12)
-                        : (isDark
-                            ? AppColors.borderDark
-                            : AppColors.neutral100),
-                    borderRadius: BorderRadius.circular(10),
+                        ? AppColors.primaryBlue.withValues(alpha: 0.15)
+                        : (isDark ? AppColors.borderDark : AppColors.neutral100),
+                    borderRadius: BorderRadius.circular(AppRadii.full),
                   ),
                   child: Text(
                     '${item.count}',
                     style: GoogleFonts.notoSansThai(
                       fontSize: 10,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       color: item.isGroup
-                          ? AppColors.primary
+                          ? AppColors.primaryBlue
                           : (isDark
-                              ? AppColors.textTertiaryDark
+                              ? AppColors.neutral400Dark
                               : AppColors.neutral600),
                     ),
                   ),
@@ -410,10 +425,10 @@ class _SectionHeaderWidget extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: 10),
           Expanded(
             child: Divider(
-              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              color: isDark ? AppColors.borderDark : AppColors.neutral100,
               height: 1,
             ),
           ),

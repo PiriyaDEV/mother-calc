@@ -42,7 +42,6 @@ class _GroupsScreenState extends State<GroupsScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -54,62 +53,78 @@ class _GroupsScreenState extends State<GroupsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Header ──────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
               child: Row(
                 children: [
-                  Text(
-                    'กลุ่ม',
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'กลุ่มของฉัน',
+                          style: GoogleFonts.anuphan(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? AppColors.neutral900Dark
+                                : AppColors.neutral900,
+                            height: 1.1,
+                          ),
+                        ),
+                        if (provider.groups.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            '${provider.groups.length} กลุ่มทั้งหมด',
+                            style: GoogleFonts.notoSansThai(
+                              fontSize: 13,
+                              color: isDark
+                                  ? AppColors.neutral400Dark
+                                  : AppColors.neutral400,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  if (provider.groups.isNotEmpty) ...[
-                    const SizedBox(width: AppSpacing.sm),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryFaint,
-                        borderRadius: BorderRadius.circular(AppRadii.xl),
-                      ),
-                      child: Text(
-                        '${provider.groups.length}',
-                        style: GoogleFonts.notoSansThai(
-                          fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary),
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
+                  // Add button
                   GestureDetector(
                     onTap: _showCreateGroupSheet,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
+                        gradient: AppGradients.primaryButtonLight,
                         borderRadius: BorderRadius.circular(AppRadii.md),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.add_rounded, color: Colors.white, size: 16),
-                          const SizedBox(width: 5),
-                          Text('สร้างกลุ่ม',
-                              style: GoogleFonts.notoSansThai(
-                                  fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryBlue.withValues(alpha: 0.35),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
                         ],
+                      ),
+                      child: const Icon(
+                        Icons.add_rounded,
+                        color: Colors.white,
+                        size: 24,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
+
+            // ── Content ──────────────────────────────────────────
             Expanded(
               child: provider.loading
                   ? const Center(
                       child: CircularProgressIndicator(
-                          color: AppColors.primary, strokeWidth: 2))
+                        color: AppColors.primary,
+                        strokeWidth: 2,
+                      ),
+                    )
                   : RefreshIndicator(
                       onRefresh: () => provider.loadGroups(),
                       color: AppColors.primary,
@@ -117,15 +132,17 @@ class _GroupsScreenState extends State<GroupsScreen> {
                           ? EmptyStateWidget(
                               emoji: '👥',
                               title: 'ยังไม่มีกลุ่ม',
-                              subtitle: 'สร้างกลุ่มและเชิญเพื่อนมาหารค่าใช้จ่ายด้วยกัน',
+                              subtitle:
+                                  'สร้างกลุ่มและเชิญเพื่อนมาหารค่าใช้จ่ายด้วยกัน',
                               ctaLabel: 'สร้างกลุ่มแรก',
                               onCta: _showCreateGroupSheet,
                             )
                           : ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 100),
+                              padding: const EdgeInsets.fromLTRB(
+                                  20, 16, 20, 110),
                               itemCount: provider.groups.length,
                               separatorBuilder: (_, __) =>
-                                  const SizedBox(height: AppSpacing.sm),
+                                  const SizedBox(height: 10),
                               itemBuilder: (context, index) {
                                 final group = provider.groups[index];
                                 return SharedGroupCard(
