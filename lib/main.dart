@@ -8,8 +8,11 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
+import 'services/app_config_service.dart';
 import 'services/push_notification_service.dart';
 import 'providers/theme_provider.dart';
 import 'providers/bill_provider.dart';
@@ -37,6 +40,10 @@ void main() async {
       authFlowType: AuthFlowType.implicit,
     ),
   );
+
+  // Initialize AdMob SDK + fetch remote ads toggle from Supabase
+  await MobileAds.instance.initialize();
+  await AppConfigService.load();
 
   // Initialize Firebase (guarded — app runs fine without config files until setup is complete)
   try {

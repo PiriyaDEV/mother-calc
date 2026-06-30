@@ -9,6 +9,7 @@ import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
+import '../widgets/banner_ad_widget.dart';
 import '../widgets/shared_bill_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -187,7 +188,10 @@ class _HomeScreenState extends State<HomeScreen> {
           gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
         ),
         child: SafeArea(
-          child: RefreshIndicator(
+          child: Column(
+            children: [
+              Expanded(
+                child: RefreshIndicator(
             onRefresh: () async {
               await _loadData();
               await _loadRates();
@@ -839,6 +843,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SliverToBoxAdapter(child: SizedBox(height: 110)),
               ],
             ),
+          ),
+        ),
+              const BannerAdWidget(),
+            ],
           ),
         ),
       ),

@@ -14,6 +14,7 @@ import '../widgets/confirm_dialog.dart';
 import '../widgets/create_entity_sheet.dart';
 import '../widgets/member_avatar.dart';
 import '../widgets/analytics_tab.dart';
+import '../widgets/banner_ad_widget.dart';
 import '../widgets/summary_tab.dart';
 
 class BillDetailScreen extends StatefulWidget {
@@ -117,7 +118,10 @@ class _BillDetailScreenState extends State<BillDetailScreen>
       ),
       child: Scaffold(
       backgroundColor: Colors.transparent,
-      body: NestedScrollView(
+      body: Column(
+        children: [
+          Expanded(
+            child: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
             pinned: true,
@@ -354,6 +358,10 @@ class _BillDetailScreenState extends State<BillDetailScreen>
             ),
           ],
         ),
+      ),
+          ),
+          const BannerAdWidget(),
+        ],
       ),
       ),
     );
