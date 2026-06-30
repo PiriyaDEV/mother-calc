@@ -327,7 +327,7 @@ class Bill {
   final String title;
   final String? emoji;
   final List<String> tags;
-  final String status; // 'draft' | 'completed'
+  final String status; // 'draft' | 'pending_payment' | 'completed'
   final String ownerId;
   final String? groupId;
   final String? groupName;
@@ -358,6 +358,8 @@ class Bill {
   });
 
   bool get isCompleted => status == 'completed';
+  bool get isPendingPayment => status == 'pending_payment';
+  bool get isDraft => status == 'draft';
 
   factory Bill.fromJson(Map<String, dynamic> json) {
     List<String> tags = [];

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 
-/// BillStatusPill — ตรงกับ BillStatusPill.tsx ใน Next.js
-/// status = 'completed' → สีเขียว "เสร็จแล้ว"
-/// status = 'draft'     → สีเทา  "ร่าง"
-/// other                → สีเหลือง "กำลังดำเนินการ"
+/// BillStatusPill — status pill widget
+/// status = 'completed'       → สีเขียว "เสร็จแล้ว"
+/// status = 'pending_payment' → สีส้ม   "รอจ่าย"
+/// status = 'draft'           → สีเทา   "ดราฟ"
 class BillStatusPill extends StatelessWidget {
   final String status;
 
@@ -23,16 +23,16 @@ class BillStatusPill extends StatelessWidget {
       dotColor = AppColors.emerald;
       textColor = AppColors.emeraldText;
       label = 'เสร็จแล้ว';
-    } else if (status == 'draft') {
-      bgColor = AppColors.borderLight;
-      dotColor = AppColors.textTertiaryLight;
-      textColor = AppColors.textSecondaryLight;
-      label = 'ร่าง';
-    } else {
+    } else if (status == 'pending_payment') {
       bgColor = AppColors.amberFaint;
       dotColor = AppColors.amber;
       textColor = AppColors.amberText;
-      label = 'กำลังดำเนินการ';
+      label = 'รอจ่าย';
+    } else {
+      bgColor = AppColors.borderLight;
+      dotColor = AppColors.textTertiaryLight;
+      textColor = AppColors.textSecondaryLight;
+      label = 'ดราฟ';
     }
 
     return Container(

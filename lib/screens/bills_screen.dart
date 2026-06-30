@@ -25,7 +25,7 @@ class _BillsScreenState extends State<BillsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<BillsListProvider>().loadBills();
     });
@@ -77,6 +77,7 @@ class _BillsScreenState extends State<BillsScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final provider = context.watch<BillsListProvider>();
     final activeBills = provider.activeBills;
+    final pendingPaymentBills = provider.pendingPaymentBills;
     final completedBills = provider.completedBills;
     final allBills = provider.bills;
 
@@ -188,7 +189,8 @@ class _BillsScreenState extends State<BillsScreen>
                     fontWeight: FontWeight.w400,
                   ),
                   tabs: [
-                    Tab(text: 'กำลังดำเนินการ (${activeBills.length})'),
+                    Tab(text: 'ดราฟ (${activeBills.length})'),
+                    Tab(text: 'รอจ่าย (${pendingPaymentBills.length})'),
                     Tab(text: 'เสร็จแล้ว (${completedBills.length})'),
                   ],
                 ),
@@ -214,6 +216,13 @@ class _BillsScreenState extends State<BillsScreen>
                           emptySubtext: 'กดปุ่ม + เพื่อสร้างบิลแรกของคุณ',
                           emptyCtaLabel: 'สร้างบิล',
                           onEmptyCta: _createBill,
+                          onRefresh: () => context.read<BillsListProvider>().loadBills(force: true),
+                        ),
+                        _BillList(
+                          bills: pendingPaymentBills,
+                          emptyEmoji: '⏳',
+                          emptyText: 'ยังไม่มีบิลที่รอจ่าย',
+                          emptySubtext: 'บิลที่ปิดแล้วและรอชำระเงินจะปรากฏที่นี่',
                           onRefresh: () => context.read<BillsListProvider>().loadBills(force: true),
                         ),
                         _BillList(

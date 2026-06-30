@@ -17,6 +17,8 @@ class BillsListProvider extends ChangeNotifier {
 
   List<Bill> get activeBills =>
       _bills.where((b) => b.status == 'draft').toList();
+  List<Bill> get pendingPaymentBills =>
+      _bills.where((b) => b.status == 'pending_payment').toList();
   List<Bill> get completedBills =>
       _bills.where((b) => b.status == 'completed').toList();
 

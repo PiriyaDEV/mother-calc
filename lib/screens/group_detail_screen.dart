@@ -6,10 +6,10 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../providers/bill_provider.dart';
+import '../providers/friends_provider.dart';
 import '../providers/groups_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
-import '../widgets/confirm_dialog.dart';
 import '../widgets/shared_bill_card.dart';
 import '../widgets/create_entity_sheet.dart';
 import '../widgets/member_avatar.dart';
@@ -1503,21 +1503,35 @@ class _ManageMembersSheet extends StatefulWidget {
   State<_ManageMembersSheet> createState() => _ManageMembersSheetState();
 }
 
-class _ManageMembersSheetState extends State<_ManageMembersSheet> {
-  final _usernameCtrl = TextEditingController();
+class _ManageMembersSheetState extends State<_ManageMembersSheet>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabCtrl;
   final _externalNameCtrl = TextEditingController();
-  bool _inviting = false;
+  bool _invitingFriend = false;
   bool _addingExternal = false;
-  String? _inviteError;
-  String? _inviteSuccess;
   String? _externalError;
   String? _externalSuccess;
 
   @override
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: 2, vsync: this);
+  }
+
+  @override
   void dispose() {
-    _usernameCtrl.dispose();
+    _tabCtrl.dispose();
     _externalNameCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _inviteFriend(Profile profile) async {
+    final username = profile.username;
+    if (username == null) return;
+    setState(() => _invitingFriend = true);
+    final gp = context.read<GroupsProvider>();
+    await gp.inviteMember(widget.group.id, username);
+    if (mounted) setState(() => _invitingFriend = false);
   }
 
   Future<void> _addExternal() async {
@@ -1542,370 +1556,245 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet> {
     });
   }
 
-  Future<void> _invite() async {
-    final username = _usernameCtrl.text.trim();
-    if (username.isEmpty) return;
-    setState(() {
-      _inviting = true;
-      _inviteError = null;
-      _inviteSuccess = null;
-    });
-    final gp = context.read<GroupsProvider>();
-    final err = await gp.inviteMember(widget.group.id, username);
-    if (!mounted) return;
-    setState(() {
-      _inviting = false;
-      if (err != null) {
-        _inviteError = err;
-      } else {
-        _inviteSuccess = 'ส่งคำเชิญให้ @$username แล้ว';
-        _usernameCtrl.clear();
-      }
-    });
-  }
-
-  Future<void> _remove(GroupMember member) async {
-    final name = member.profile?.displayName ??
-        member.profile?.username ??
-        'สมาชิก';
-    final ok = await showConfirmDialog(
-      context,
-      title: 'นำ $name ออกจากกลุ่ม?',
-      description: 'สมาชิกจะถูกลบออกจากกลุ่มนี้',
-      confirmLabel: 'นำออก',
-      danger: true,
-    );
-    if (ok != true || !mounted) return;
-    final gp = context.read<GroupsProvider>();
-    await gp.removeMember(widget.group.id, member.id);
-    if (mounted) Navigator.pop(context);
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = widget.isDark;
-    final currentUserId =
-        Supabase.instance.client.auth.currentUser?.id;
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id ?? '';
 
-    return Container(
-      padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+    // Friends not yet in this group
+    final groupUserIds = widget.acceptedMembers
+        .where((m) => m.userId != null)
+        .map((m) => m.userId!)
+        .toSet();
+    final friendsProvider = context.read<FriendsProvider>();
+    final availableFriends = friendsProvider.friends
+        .where((f) {
+          final p = f.otherProfile(currentUserId);
+          return p != null && !groupUserIds.contains(p.id);
+        })
+        .map((f) => f.otherProfile(currentUserId)!)
+        .toList();
+
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.75,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Handle bar
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                  borderRadius: BorderRadius.circular(2),
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
-            Text(
-              'จัดการสมาชิก',
-              style: GoogleFonts.notoSansThai(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Text(
+                'จัดการสมาชิก',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                ),
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
-
-            // ── Invite section ──
-            Text(
-              'เชิญสมาชิกใหม่',
-              style: GoogleFonts.notoSansThai(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight,
+            const SizedBox(height: 12),
+            // Tab bar
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
+                borderRadius: BorderRadius.circular(12),
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _usernameCtrl,
-                    decoration: InputDecoration(
-                      hintText: 'username (ไม่ต้องใส่ @)',
-                      hintStyle: GoogleFonts.notoSansThai(fontSize: 13),
-                      prefixText: '@',
+              child: TabBar(
+                controller: _tabCtrl,
+                indicator: BoxDecoration(
+                  color: isDark ? AppColors.borderDark : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
                     ),
-                    onSubmitted: (_) => _invite(),
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _inviting ? null : _invite,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                  ),
-                  child: _inviting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : Text(
-                          'เชิญ',
-                          style: GoogleFonts.notoSansThai(
-                              fontSize: 14, fontWeight: FontWeight.w600),
-                        ),
-                ),
-              ],
-            ),
-            if (_inviteError != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                _inviteError!,
-                style: GoogleFonts.notoSansThai(
-                    fontSize: 12, color: AppColors.red),
-              ),
-            ],
-            if (_inviteSuccess != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                _inviteSuccess!,
-                style: GoogleFonts.notoSansThai(
-                    fontSize: 12, color: AppColors.emerald),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.xl),
-
-            // ── External member section ──
-            Text(
-              'เพิ่มสมาชิกภายนอก (ไม่มีบัญชี)',
-              style: GoogleFonts.notoSansThai(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight,
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: isDark ? AppColors.textTertiaryDark : AppColors.neutral600,
+                labelStyle: GoogleFonts.notoSansThai(fontSize: 13, fontWeight: FontWeight.w600),
+                unselectedLabelStyle: GoogleFonts.notoSansThai(fontSize: 13),
+                tabs: const [Tab(text: 'ชวนเพื่อน'), Tab(text: 'เพิ่มสมาชิกภายนอก')],
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              'สมาชิกที่ไม่ได้ใช้แอป สามารถเพิ่มลงบิลในกลุ่มได้',
-              style: GoogleFonts.notoSansThai(
-                fontSize: 12,
-                color: isDark
-                    ? AppColors.textTertiaryDark
-                    : AppColors.textTertiaryLight,
+            Expanded(
+              child: TabBarView(
+                controller: _tabCtrl,
+                children: [
+                  // ── Tab 0: ชวนเพื่อน ──
+                  _buildFriendsTab(isDark, availableFriends),
+                  // ── Tab 1: เพิ่มสมาชิกภายนอก ──
+                  _buildExternalTab(isDark),
+                ],
               ),
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _externalNameCtrl,
-                    decoration: InputDecoration(
-                      hintText: 'ชื่อสมาชิก',
-                      hintStyle: GoogleFonts.notoSansThai(fontSize: 13),
-                    ),
-                    onSubmitted: (_) => _addExternal(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _addingExternal ? null : _addExternal,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    backgroundColor: AppColors.emerald,
-                  ),
-                  child: _addingExternal
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : Text(
-                          'เพิ่ม',
-                          style: GoogleFonts.notoSansThai(
-                              fontSize: 14, fontWeight: FontWeight.w600),
-                        ),
-                ),
-              ],
-            ),
-            if (_externalError != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                _externalError!,
-                style: GoogleFonts.notoSansThai(
-                    fontSize: 12, color: AppColors.red),
-              ),
-            ],
-            if (_externalSuccess != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                _externalSuccess!,
-                style: GoogleFonts.notoSansThai(
-                    fontSize: 12, color: AppColors.emerald),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.xl),
-
-            // ── Current members ──
-            Text(
-              'สมาชิกปัจจุบัน (${widget.acceptedMembers.length} คน)',
-              style: GoogleFonts.notoSansThai(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            ...widget.acceptedMembers.map((m) {
-              final name = m.name;
-              final username = m.profile?.username;
-              final avatarUrl = m.profile?.avatarUrl;
-              final isOwner = m.role == 'owner';
-              final isMe = m.userId == currentUserId;
-
-              return Container(
-                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF1F2937)
-                      : const Color(0xFFF9FAFB),
-                  borderRadius: BorderRadius.circular(AppRadii.md),
-                  border: Border.all(
-                    color: isDark
-                        ? AppColors.borderDark
-                        : AppColors.borderLight,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    MemberAvatar(
-                      name: name,
-                      color: m.isExternal
-                          ? AppColors.neutral400
-                          : AppColors.primary,
-                      size: 32,
-                      avatarUrl: avatarUrl,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                name,
-                                style: GoogleFonts.notoSansThai(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark
-                                      ? AppColors.textPrimaryDark
-                                      : AppColors.textPrimaryLight,
-                                ),
-                              ),
-                              if (isMe) ...[
-                                const SizedBox(width: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 5, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary
-                                        .withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(5),
-                                  ),
-                                  child: Text(
-                                    'คุณ',
-                                    style: GoogleFonts.notoSansThai(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          if (username != null)
-                            Text(
-                              '@$username',
-                              style: GoogleFonts.notoSansThai(
-                                fontSize: 11,
-                                color: isDark
-                                    ? AppColors.textTertiaryDark
-                                    : AppColors.textTertiaryLight,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    // Role badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: m.isExternal
-                            ? const Color(0xFFF3F4F6)
-                            : isOwner
-                                ? const Color(0xFFFAF5FF)
-                                : const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(AppRadii.xl),
-                      ),
-                      child: Text(
-                        m.isExternal
-                            ? 'ภายนอก'
-                            : isOwner
-                                ? 'เจ้าของ'
-                                : 'สมาชิก',
-                        style: GoogleFonts.notoSansThai(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: m.isExternal
-                              ? const Color(0xFF6B7280)
-                              : isOwner
-                                  ? const Color(0xFFA855F7)
-                                  : const Color(0xFF6B7280),
-                        ),
-                      ),
-                    ),
-                    // Remove button (not for owner, not for self)
-                    if (!isOwner && !isMe) ...[
-                      const SizedBox(width: 6),
-                      GestureDetector(
-                        onTap: () => _remove(m),
-                        child: const Icon(
-                          Icons.person_remove_outlined,
-                          size: 18,
-                          color: AppColors.red,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              );
-            }),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFriendsTab(bool isDark, List<Profile> available) {
+    if (available.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Text(
+            'ไม่มีเพื่อนที่สามารถเชิญได้\nลองเพิ่มเพื่อนในแอปก่อน',
+            style: GoogleFonts.notoSansThai(
+              fontSize: 14,
+              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+      itemCount: available.length,
+      itemBuilder: (ctx, i) {
+        final profile = available[i];
+        final name = profile.displayName ?? profile.username ?? 'เพื่อน';
+
+        return GestureDetector(
+          onTap: _invitingFriend ? null : () => _inviteFriend(profile),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceDark : AppColors.neutral50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              ),
+            ),
+            child: Row(
+              children: [
+                MemberAvatar(
+                  name: name,
+                  color: AppColors.primary,
+                  size: 36,
+                  avatarUrl: profile.avatarUrl,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                        ),
+                      ),
+                      if (profile.username != null)
+                        Text(
+                          '@${profile.username}',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 12,
+                            color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (_invitingFriend)
+                  const SizedBox(
+                    width: 20, height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                  )
+                else
+                  const Icon(Icons.person_add_outlined, color: AppColors.primary, size: 22),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildExternalTab(bool isDark) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.only(
+        left: 20, right: 20, top: 20,
+        bottom: 32 + MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'สมาชิกที่ไม่มีบัญชีในแอป สามารถเพิ่มลงบิลในกลุ่มได้',
+            style: GoogleFonts.notoSansThai(
+              fontSize: 13,
+              color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _externalNameCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'ชื่อสมาชิก',
+                    hintStyle: GoogleFonts.notoSansThai(fontSize: 13),
+                  ),
+                  onSubmitted: (_) => _addExternal(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _addingExternal ? null : _addExternal,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  backgroundColor: AppColors.emerald,
+                ),
+                child: _addingExternal
+                    ? const SizedBox(
+                        width: 18, height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : Text('เพิ่ม', style: GoogleFonts.notoSansThai(fontSize: 14, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+          if (_externalError != null) ...[
+            const SizedBox(height: 6),
+            Text(_externalError!, style: GoogleFonts.notoSansThai(fontSize: 12, color: AppColors.red)),
+          ],
+          if (_externalSuccess != null) ...[
+            const SizedBox(height: 6),
+            Text(_externalSuccess!, style: GoogleFonts.notoSansThai(fontSize: 12, color: AppColors.emerald)),
+          ],
+        ],
       ),
     );
   }

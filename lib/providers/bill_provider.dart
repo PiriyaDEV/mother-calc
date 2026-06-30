@@ -77,6 +77,20 @@ class BillProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> setPendingPayment(String billId) async {
+    try {
+      await _supabase
+          .from('bills')
+          .update({'status': 'pending_payment', 'updated_at': DateTime.now().toIso8601String()})
+          .eq('id', billId);
+      _bill = _bill?.copyWith(status: 'pending_payment');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error setting pending payment: $e');
+      rethrow;
+    }
+  }
+
   Future<void> completeBill(String billId) async {
     try {
       await _supabase

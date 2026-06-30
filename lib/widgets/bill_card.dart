@@ -132,7 +132,7 @@ class BillCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   // Status pill
-                  _BillStatusBadge(isCompleted: bill.isCompleted),
+                  _BillStatusBadge(status: bill.status),
                 ],
               ),
             ] else ...[
@@ -140,7 +140,7 @@ class BillCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  _BillStatusBadge(isCompleted: bill.isCompleted),
+                  _BillStatusBadge(status: bill.status),
                 ],
               ),
             ],
@@ -152,18 +152,38 @@ class BillCard extends StatelessWidget {
 }
 
 class _BillStatusBadge extends StatelessWidget {
-  final bool isCompleted;
+  final String status;
 
-  const _BillStatusBadge({required this.isCompleted});
+  const _BillStatusBadge({required this.status});
 
   @override
   Widget build(BuildContext context) {
+    final Color bgColor;
+    final Color dotColor;
+    final Color textColor;
+    final String label;
+
+    if (status == 'completed') {
+      bgColor = AppColors.emeraldLight;
+      dotColor = AppColors.emerald;
+      textColor = AppColors.emeraldText;
+      label = 'เสร็จแล้ว';
+    } else if (status == 'pending_payment') {
+      bgColor = AppColors.amberLight;
+      dotColor = AppColors.amber;
+      textColor = AppColors.amberText;
+      label = 'รอจ่าย';
+    } else {
+      bgColor = AppColors.borderLight;
+      dotColor = AppColors.textTertiaryLight;
+      textColor = AppColors.textSecondaryLight;
+      label = 'ดราฟ';
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isCompleted
-            ? AppColors.emeraldLight
-            : AppColors.amberLight,
+        color: bgColor,
         borderRadius: BorderRadius.circular(AppRadii.xl),
       ),
       child: Row(
@@ -173,17 +193,17 @@ class _BillStatusBadge extends StatelessWidget {
             width: 6,
             height: 6,
             decoration: BoxDecoration(
-              color: isCompleted ? AppColors.emerald : AppColors.amber,
+              color: dotColor,
               shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: AppSpacing.xs),
           Text(
-            isCompleted ? 'เสร็จแล้ว' : 'กำลังดำเนินการ',
+            label,
             style: GoogleFonts.notoSansThai(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: isCompleted ? AppColors.emeraldText : AppColors.amberText,
+              color: textColor,
             ),
           ),
         ],

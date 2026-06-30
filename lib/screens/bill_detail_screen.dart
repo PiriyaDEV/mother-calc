@@ -37,7 +37,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
       final bp = context.read<BillProvider>();
       await bp.loadBill(widget.billId);
       // Auto-add current user as first member if bill is new (no members yet)
-      if (bp.members.isEmpty && bp.bill != null && !bp.bill!.isCompleted) {
+      if (bp.members.isEmpty && bp.bill != null && bp.bill!.isDraft) {
         await bp.autoAddCurrentUser();
       }
       // Load group detail if this bill belongs to a group (ensures member picker works)
@@ -109,6 +109,8 @@ class _BillDetailScreenState extends State<BillDetailScreen>
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
     final isOwner = bill.ownerId == currentUserId;
     final isCompleted = bill.isCompleted;
+    final isPendingPayment = bill.isPendingPayment;
+    final isDraft = bill.isDraft;
     final members = billProvider.members;
     final items = billProvider.items;
 
@@ -157,7 +159,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (isCompleted) ...[
+                      if (!isDraft) ...[
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -190,8 +192,8 @@ class _BillDetailScreenState extends State<BillDetailScreen>
               ],
             ),
             actions: [
-              // ปิดบิล / เปิดใหม่ button
-              if (!isCompleted)
+              // action buttons by status
+              if (isDraft)
                 GestureDetector(
                   onTap: () async {
                     final ok = await showConfirmDialog(
@@ -202,9 +204,8 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                       confirmLabel: 'ปิดบิล',
                     );
                     if (ok == true) {
-                      await billProvider.completeBill(bill.id);
+                      await billProvider.setPendingPayment(bill.id);
                       _tabController.animateTo(2); // switch to สรุป
-
                     }
                   },
                   child: Container(
@@ -212,7 +213,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.emerald,
+                      color: AppColors.amber,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -233,7 +234,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                     ),
                   ),
                 )
-              else
+              else if (isPendingPayment) ...[
                 GestureDetector(
                   onTap: () async {
                     final ok = await showConfirmDialog(
@@ -251,9 +252,90 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.borderDark
-                          : AppColors.neutral100,
+                      color: isDark ? AppColors.borderDark : AppColors.neutral100,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.lock_open_rounded,
+                            size: 14,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight),
+                        const SizedBox(width: 4),
+                        Text(
+                          'เปิดใหม่',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () async {
+                    final ok = await showConfirmDialog(
+                      context,
+                      title: 'ยืนยันเสร็จสิ้น?',
+                      description: 'บิลจะถูกปิดสมบูรณ์ ทุกคนชำระเงินครบแล้ว',
+                      confirmLabel: 'เสร็จแล้ว',
+                    );
+                    if (ok == true) {
+                      await billProvider.completeBill(bill.id);
+                    }
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.emerald,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_rounded,
+                            size: 14, color: Colors.white),
+                        const SizedBox(width: 4),
+                        Text(
+                          'เสร็จแล้ว',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ] else
+                GestureDetector(
+                  onTap: () async {
+                    final ok = await showConfirmDialog(
+                      context,
+                      title: 'เปิดบิลใหม่?',
+                      description: 'บิลจะกลับมาแก้ไขได้อีกครั้ง',
+                      confirmLabel: 'เปิดใหม่',
+                    );
+                    if (ok == true) {
+                      await billProvider.reopenBill(bill.id);
+                    }
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.borderDark : AppColors.neutral100,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -280,7 +362,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                   ),
                 ),
               // ⚙️ gear — only owner + draft
-              if (isOwner && !isCompleted)
+              if (isOwner && isDraft)
                 IconButton(
                   icon: const Icon(Icons.edit_outlined),
                   onPressed: () => _showEditBillSheet(context, bill, billProvider),
@@ -300,36 +382,44 @@ class _BillDetailScreenState extends State<BillDetailScreen>
         ],
         body: Column(
           children: [
-            // Completed banner
-            if (isCompleted)
+            // Status banner (pending_payment or completed)
+            if (!isDraft)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.emeraldDark.withValues(alpha: 0.25)
-                      : AppColors.greenFaint,
+                  color: isCompleted
+                      ? (isDark ? AppColors.emeraldDark.withValues(alpha: 0.25) : AppColors.greenFaint)
+                      : (isDark ? AppColors.amber.withValues(alpha: 0.15) : AppColors.amberFaint),
                   border: Border(
                     bottom: BorderSide(
-                        color: isDark
-                            ? AppColors.emeraldDark
-                            : AppColors.emerald.withValues(alpha: 0.3),
+                        color: isCompleted
+                            ? (isDark ? AppColors.emeraldDark : AppColors.emerald.withValues(alpha: 0.3))
+                            : (isDark ? AppColors.amber.withValues(alpha: 0.4) : AppColors.amber.withValues(alpha: 0.3)),
                         width: 1),
                   ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.lock_rounded,
-                        size: 14,
-                        color: isDark ? AppColors.emerald : AppColors.emeraldText),
+                    Icon(
+                      isCompleted ? Icons.lock_rounded : Icons.hourglass_top_rounded,
+                      size: 14,
+                      color: isCompleted
+                          ? (isDark ? AppColors.emerald : AppColors.emeraldText)
+                          : AppColors.amber,
+                    ),
                     const SizedBox(width: 8),
                     Text(
-                      'บิลนี้ปิดแล้ว — ดูได้อย่างเดียว ไม่สามารถแก้ไขได้',
+                      isCompleted
+                          ? 'บิลนี้เสร็จแล้ว — ดูได้อย่างเดียว'
+                          : 'บิลนี้รอจ่าย — ดูได้อย่างเดียว ไม่สามารถแก้ไขได้',
                       style: GoogleFonts.notoSansThai(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: isDark ? AppColors.emerald : AppColors.emeraldText,
+                        color: isCompleted
+                            ? (isDark ? AppColors.emerald : AppColors.emeraldText)
+                            : AppColors.amber,
                       ),
                     ),
                   ],
@@ -343,12 +433,12 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                       bill: bill,
                       billProvider: billProvider,
                       calc: calc,
-                      readOnly: isCompleted),
+                      readOnly: !isDraft),
                   _ItemsTab(
                       bill: bill,
                       billProvider: billProvider,
                       calc: calc,
-                      readOnly: isCompleted),
+                      readOnly: !isDraft),
                   SummaryTab(
                       bill: bill, billProvider: billProvider, calc: calc),
                   AnalyticsTab(
@@ -1847,8 +1937,9 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
   @override
   void initState() {
     super.initState();
-    // If editing, no tabs — just show edit form
-    _tabCtrl = TabController(length: 2, vsync: this);
+    // Standalone → 2 tabs (friends, create); group bill / editing → 1 (unused but required)
+    final tabCount = (widget.editMember == null && widget.bill.groupId == null) ? 2 : 1;
+    _tabCtrl = TabController(length: tabCount, vsync: this);
     _nameCtrl = TextEditingController(text: widget.editMember?.name ?? '');
     _promptpayCtrl =
         TextEditingController(text: widget.editMember?.promptpay ?? '');
@@ -1896,6 +1987,25 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
     }
   }
 
+  Future<void> _addFriend(Profile profile) async {
+    final name = profile.displayName ?? profile.username ?? 'เพื่อน';
+    final colorIdx =
+        widget.billProvider.members.length % AppColors.memberColors.length;
+    final color = hexFromColor(AppColors.memberColors[colorIdx]);
+    setState(() => _loading = true);
+    try {
+      await widget.billProvider.addMemberFromGroupMember(
+        userId: profile.id,
+        name: name,
+        color: color,
+        promptpay: profile.promptpay,
+      );
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      setState(() => _loading = false);
+    }
+  }
+
   Future<void> _addFromGroupMember(GroupMember gm) async {
     final name = gm.name;
     final colorIdx =
@@ -1924,14 +2034,6 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
       return _buildEditForm(context, isDark);
     }
 
-    // Check if bill belongs to a group
-    final groupId = widget.bill.groupId;
-    final gp = groupId != null ? context.read<GroupsProvider>() : null;
-    final groupMembers = gp?.currentGroup?.members
-            .where((m) => m.isAccepted)
-            .toList() ??
-        [];
-    // Filter out already-added members
     final alreadyAddedUserIds = widget.billProvider.members
         .where((m) => m.userId != null)
         .map((m) => m.userId!)
@@ -1940,234 +2042,221 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
         .where((m) => m.userId == null)
         .map((m) => m.name)
         .toSet();
-    final availableGroupMembers = groupMembers.where((m) {
-      if (m.userId != null) return !alreadyAddedUserIds.contains(m.userId);
-      return !alreadyAddedExternalNames.contains(m.name);
-    }).toList();
 
-    // If no group, show only custom form
-    if (groupId == null || groupMembers.isEmpty) {
-      return _buildStandaloneCustomForm(context, isDark);
+    // ── Group bill: only show group members, no tabs ──
+    final groupId = widget.bill.groupId;
+    if (groupId != null) {
+      final gp = context.read<GroupsProvider>();
+      final groupMembers = gp.currentGroup?.members.where((m) => m.isAccepted).toList() ?? [];
+      final availableGroupMembers = groupMembers.where((m) {
+        if (m.userId != null) return !alreadyAddedUserIds.contains(m.userId);
+        return !alreadyAddedExternalNames.contains(m.name);
+      }).toList();
+
+      return SizedBox(
+        height: MediaQuery.of(context).size.height * 0.65,
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Center(
+                  child: Container(
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Text(
+                  'เพิ่มสมาชิก',
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 18, fontWeight: FontWeight.bold,
+                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                  ),
+                ),
+              ),
+              Expanded(child: _buildGroupMembersTab(context, isDark, availableGroupMembers)),
+            ],
+          ),
+        ),
+      );
     }
 
-    return AnimatedPadding(
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.easeOut,
-      padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+    // ── Standalone bill: 2 tabs (เพื่อน + สร้างเอง) ──
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id ?? '';
+    final friendsProvider = context.read<FriendsProvider>();
+    final availableFriends = friendsProvider.friends
+        .where((f) {
+          final p = f.otherProfile(currentUserId);
+          return p != null && !alreadyAddedUserIds.contains(p.id);
+        })
+        .map((f) => f.otherProfile(currentUserId)!)
+        .toList();
+
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.75,
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle bar
-          Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color:
-                      isDark ? AppColors.borderDark : AppColors.borderLight,
-                  borderRadius: BorderRadius.circular(2),
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-            child: Text(
-              'เพิ่มสมาชิก',
-              style: GoogleFonts.notoSansThai(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Text(
+                'เพิ่มสมาชิก',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 18, fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          // Tab bar
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.surfaceDark
-                  : AppColors.neutral100,
-              borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 12),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TabBar(
+                controller: _tabCtrl,
+                indicator: BoxDecoration(
+                  color: isDark ? AppColors.borderDark : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 1))],
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: isDark ? AppColors.textTertiaryDark : AppColors.neutral600,
+                labelStyle: GoogleFonts.notoSansThai(fontSize: 13, fontWeight: FontWeight.w600),
+                unselectedLabelStyle: GoogleFonts.notoSansThai(fontSize: 13),
+                tabs: const [Tab(text: 'เพื่อน'), Tab(text: 'สร้างเอง')],
+              ),
             ),
-            child: TabBar(
-              controller: _tabCtrl,
-              indicator: BoxDecoration(
-                color: isDark ? AppColors.borderDark : Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
+            const SizedBox(height: 4),
+            Expanded(
+              child: TabBarView(
+                controller: _tabCtrl,
+                children: [
+                  _buildFriendsTab(context, isDark, availableFriends),
+                  _buildCustomForm(context, isDark),
                 ],
               ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerColor: Colors.transparent,
-              labelColor: AppColors.primary,
-              unselectedLabelColor: isDark
-                  ? AppColors.textTertiaryDark
-                  : AppColors.neutral600,
-              labelStyle: GoogleFonts.notoSansThai(
-                  fontSize: 13, fontWeight: FontWeight.w600),
-              unselectedLabelStyle:
-                  GoogleFonts.notoSansThai(fontSize: 13),
-              tabs: const [
-                Tab(text: 'สมาชิกในกลุ่ม'),
-                Tab(text: 'สร้างเอง'),
-              ],
             ),
-          ),
-          const SizedBox(height: 4),
-          // Tab content
-          Flexible(
-            child: TabBarView(
-              controller: _tabCtrl,
-              children: [
-                // ── Tab 0: Group members ──
-                _buildGroupMembersTab(
-                    context, isDark, availableGroupMembers),
-                // ── Tab 1: Custom ──
-                _buildCustomForm(context, isDark),
-              ],
-            ),
-          ),
-        ],
+          ],
         ),
       ),
     );
   }
 
   /// Standalone custom form (no group) — wraps with keyboard-aware container
-  Widget _buildStandaloneCustomForm(BuildContext context, bool isDark) {
-    return AnimatedPadding(
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.easeOut,
-      padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Handle bar
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.borderDark
-                        : AppColors.borderLight,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'เพิ่มสมาชิก',
-                style: GoogleFonts.notoSansThai(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark
-                      ? AppColors.textPrimaryDark
-                      : AppColors.textPrimaryLight,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _nameCtrl,
-                autofocus: true,
-                decoration:
-                    const InputDecoration(hintText: 'ชื่อสมาชิก'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _promptpayCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                    hintText: 'เบอร์ PromptPay (ไม่บังคับ)'),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'สีประจำตัว',
-                style: GoogleFonts.notoSansThai(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDark
-                      ? AppColors.textPrimaryDark
-                      : AppColors.textPrimaryLight,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: AppColors.memberColors.map((color) {
-                  final isSelected = _selectedColor == color;
-                  return GestureDetector(
-                    onTap: () =>
-                        setState(() => _selectedColor = color),
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        border: isSelected
-                            ? Border.all(
-                                color:
-                                    isDark ? Colors.white : Colors.black,
-                                width: 2)
-                            : null,
-                      ),
-                      child: isSelected
-                          ? const Icon(Icons.check_rounded,
-                              color: Colors.white, size: 18)
-                          : null,
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _loading ? null : _saveCustom,
-                child: _loading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : Text(
-                        'เพิ่มสมาชิก',
-                        style: GoogleFonts.notoSansThai(
-                            fontSize: 15, fontWeight: FontWeight.w600),
-                      ),
-              ),
-            ],
+  Widget _buildFriendsTab(BuildContext context, bool isDark, List<Profile> available) {
+    if (available.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(32),
+        child: Center(
+          child: Text(
+            'ไม่มีเพื่อนที่สามารถเพิ่มได้\nลองเพิ่มเพื่อนในแอปก่อน',
+            style: GoogleFonts.notoSansThai(
+              fontSize: 14,
+              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            ),
+            textAlign: TextAlign.center,
           ),
         ),
-      ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+      itemCount: available.length,
+      itemBuilder: (ctx, i) {
+        final profile = available[i];
+        final name = profile.displayName ?? profile.username ?? 'เพื่อน';
+        final colorIdx = i % AppColors.memberColors.length;
+        final color = AppColors.memberColors[colorIdx];
+
+        return GestureDetector(
+          onTap: _loading ? null : () => _addFriend(profile),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceDark : AppColors.neutral50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              ),
+            ),
+            child: Row(
+              children: [
+                MemberAvatar(
+                  name: name,
+                  color: color,
+                  size: 36,
+                  avatarUrl: profile.avatarUrl,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                        ),
+                      ),
+                      if (profile.username != null)
+                        Text(
+                          '@${profile.username}',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 12,
+                            color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (_loading)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                  )
+                else
+                  const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 22),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
