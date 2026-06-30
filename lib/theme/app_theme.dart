@@ -56,6 +56,34 @@ class AppColors {
   static const textTertiaryDark = Color(0xFF6B7280);
 }
 
+class AppSpacing {
+  static const double xs = 4.0;
+  static const double sm = 8.0;
+  static const double md = 12.0;
+  static const double lg = 16.0;
+  static const double xl = 20.0;
+  static const double xxl = 24.0;
+  static const double xxxl = 32.0;
+}
+
+class AppRadii {
+  static const double xs = 6.0;
+  static const double sm = 8.0;
+  static const double md = 12.0;
+  static const double lg = 16.0;
+  static const double xl = 20.0;
+  static const double full = 999.0;
+}
+
+class ThemeColors {
+  static Color bg(bool isDark) => isDark ? AppColors.bgDark : AppColors.bgLight;
+  static Color surface(bool isDark) => isDark ? AppColors.surfaceDark : Colors.white;
+  static Color border(bool isDark) => isDark ? AppColors.borderDark : AppColors.borderLight;
+  static Color textPrimary(bool isDark) => isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
+  static Color textSecondary(bool isDark) => isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+  static Color textTertiary(bool isDark) => isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight;
+}
+
 class AppTheme {
   static ThemeData light() {
     return ThemeData(

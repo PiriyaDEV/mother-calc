@@ -134,7 +134,7 @@ class BillCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   // Status pill
-                  BillStatusPill(isCompleted: bill.isCompleted),
+                  _BillStatusBadge(isCompleted: bill.isCompleted),
                 ],
               ),
             ] else ...[
@@ -142,7 +142,7 @@ class BillCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  BillStatusPill(isCompleted: bill.isCompleted),
+                  _BillStatusBadge(isCompleted: bill.isCompleted),
                 ],
               ),
             ],
@@ -153,10 +153,10 @@ class BillCard extends StatelessWidget {
   }
 }
 
-class BillStatusPill extends StatelessWidget {
+class _BillStatusBadge extends StatelessWidget {
   final bool isCompleted;
 
-  const BillStatusPill({super.key, required this.isCompleted});
+  const _BillStatusBadge({required this.isCompleted});
 
   @override
   Widget build(BuildContext context) {

@@ -6,6 +6,7 @@ import '../providers/bill_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import '../widgets/member_avatar.dart';
+import 'form_label.dart';
 
 Future<void> showItemFormSheet(
   BuildContext context, {
@@ -243,7 +244,7 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
             const SizedBox(height: 16),
 
             // ── Name field ──
-            _Label(label: 'ชื่อรายการ', isDark: isDark),
+            FormSectionLabel(label: 'ชื่อรายการ'),
             const SizedBox(height: 8),
             TextField(
               controller: _nameCtrl,
@@ -254,7 +255,7 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
             const SizedBox(height: 12),
 
             // ── Price field ──
-            _Label(label: 'ราคารวม (บาท)', isDark: isDark),
+            FormSectionLabel(label: 'ราคารวม (บาท)'),
             const SizedBox(height: 8),
             TextField(
               controller: _priceCtrl,
@@ -270,7 +271,7 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
 
             // ── Paid by selector ──
             if (widget.members.isNotEmpty) ...[
-              _Label(label: 'ใครจ่ายไปก่อน *', isDark: isDark),
+              FormSectionLabel(label: 'ใครจ่ายไปก่อน *'),
               const SizedBox(height: 8),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -343,7 +344,7 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
             Row(
               children: [
                 Expanded(
-                  child: _Label(label: 'วิธีหาร', isDark: isDark),
+                  child: FormSectionLabel(label: 'วิธีหาร'),
                 ),
                 _SplitToggle(
                   isUnequal: _isUnequalSplit,
@@ -359,7 +360,7 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _Label(label: 'เลือกสมาชิก', isDark: isDark),
+                FormSectionLabel(label: 'เลือกสมาชิก'),
                 if (widget.members.isNotEmpty)
                   Row(
                     children: [
@@ -674,23 +675,3 @@ class _SplitToggle extends StatelessWidget {
   }
 }
 
-// ── Label ──────────────────────────────────────────────────────
-class _Label extends StatelessWidget {
-  final String label;
-  final bool isDark;
-  const _Label({required this.label, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: GoogleFonts.notoSansThai(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: isDark
-            ? AppColors.textSecondaryDark
-            : AppColors.textSecondaryLight,
-      ),
-    );
-  }
-}

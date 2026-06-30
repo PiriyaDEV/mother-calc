@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import 'bill_status_pill.dart';
 import 'member_avatar.dart';
+import 'tag_chip.dart';
 
 class SharedBillCard extends StatelessWidget {
   final Bill bill;
@@ -205,20 +206,7 @@ class SharedBillCard extends StatelessWidget {
                             const Spacer(),
                             ...visibleTags.map((tag) => Padding(
                                   padding: const EdgeInsets.only(left: 6),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary.withValues(alpha: 0.08),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      '#$tag',
-                                      style: GoogleFonts.notoSansThai(
-                                          fontSize: 10,
-                                          color: AppColors.primary,
-                                          fontWeight: FontWeight.w500),
-                                    ),
-                                  ),
+                                  child: TagChip(tag: tag, fontSize: 10, borderRadius: 6),
                                 )),
                             if (extraTags > 0)
                               Padding(

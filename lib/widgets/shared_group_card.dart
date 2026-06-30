@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
 import 'member_avatar.dart';
+import 'tag_chip.dart';
 
 class SharedGroupCard extends StatelessWidget {
   final Group group;
@@ -220,16 +221,7 @@ class SharedGroupCard extends StatelessWidget {
                   // Tags
                   ...visibleTags.map((tag) => Padding(
                         padding: const EdgeInsets.only(left: 6),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text('#$tag',
-                              style: GoogleFonts.notoSansThai(
-                                  fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w500)),
-                        ),
+                        child: TagChip(tag: tag, fontSize: 11, borderRadius: 8),
                       )),
                   if (extraTags > 0)
                     Padding(

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
+import 'form_label.dart';
 
 // ── Constants (ตรงกับ Next.js EMOJI_PRESETS, DEFAULT_TAGS, currencies, rounding) ──
 
@@ -282,9 +283,8 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // ── Emoji + Name row ──────────────────────────
-                    _SectionLabel(
+                    FormSectionLabel(
                       label: isBill ? 'ชื่อบิล *' : 'ชื่อกลุ่ม *',
-                      isDark: isDark,
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -353,8 +353,7 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
                     const SizedBox(height: 16),
 
                     // ── Description ───────────────────────────────
-                    _SectionLabel(
-                        label: 'คำอธิบาย (ไม่บังคับ)', isDark: isDark),
+                    FormSectionLabel(label: 'คำอธิบาย (ไม่บังคับ)'),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _descCtrl,
@@ -367,7 +366,7 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
                     const SizedBox(height: 16),
 
                     // ── Tags ──────────────────────────────────────
-                    _SectionLabel(label: 'แท็ก', isDark: isDark),
+                    FormSectionLabel(label: 'แท็ก'),
                     const SizedBox(height: 8),
                     // Preset chips
                     Wrap(
@@ -586,7 +585,7 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
                       const SizedBox(height: 14),
 
                       // Currency grid (2-column, 8 items)
-                      _SectionLabel(label: 'สกุลเงิน', isDark: isDark),
+                      FormSectionLabel(label: 'สกุลเงิน'),
                       const SizedBox(height: 8),
                       GridView.count(
                         crossAxisCount: 2,
@@ -645,7 +644,7 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
                       const SizedBox(height: 14),
 
                       // Rounding grid (4-column)
-                      _SectionLabel(label: 'การปัดเศษ', isDark: isDark),
+                      FormSectionLabel(label: 'การปัดเศษ'),
                       const SizedBox(height: 8),
                       Row(
                         children: _kRoundingOptions.map((r) {
@@ -919,25 +918,3 @@ class _ToggleCard extends StatelessWidget {
   }
 }
 
-// ── Section Label ──────────────────────────────────────────────
-
-class _SectionLabel extends StatelessWidget {
-  final String label;
-  final bool isDark;
-
-  const _SectionLabel({required this.label, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: GoogleFonts.notoSansThai(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: isDark
-            ? AppColors.textSecondaryDark
-            : AppColors.textSecondaryLight,
-      ),
-    );
-  }
-}

@@ -5,6 +5,7 @@ import '../providers/bill_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import '../widgets/member_avatar.dart';
+import 'form_label.dart';
 
 // 10 member colors matching Next.js kMemberColors
 const kMemberColors = [
@@ -173,7 +174,7 @@ class _MemberFormSheetState extends State<_MemberFormSheet> {
             const SizedBox(height: 16),
 
             // Name field
-            _Label(label: 'ชื่อสมาชิก *', isDark: isDark),
+            FormSectionLabel(label: 'ชื่อสมาชิก *'),
             const SizedBox(height: 8),
             TextField(
               controller: _nameCtrl,
@@ -184,7 +185,7 @@ class _MemberFormSheetState extends State<_MemberFormSheet> {
             const SizedBox(height: 16),
 
             // Color picker
-            _Label(label: 'สีประจำตัว', isDark: isDark),
+            FormSectionLabel(label: 'สีประจำตัว'),
             const SizedBox(height: 10),
             Wrap(
               spacing: 10,
@@ -218,7 +219,7 @@ class _MemberFormSheetState extends State<_MemberFormSheet> {
             const SizedBox(height: 16),
 
             // PromptPay field
-            _Label(label: 'พร้อมเพย์ (ไม่บังคับ)', isDark: isDark),
+            FormSectionLabel(label: 'พร้อมเพย์ (ไม่บังคับ)'),
             const SizedBox(height: 8),
             TextField(
               controller: _promptpayCtrl,
@@ -294,22 +295,3 @@ class _MemberFormSheetState extends State<_MemberFormSheet> {
   }
 }
 
-class _Label extends StatelessWidget {
-  final String label;
-  final bool isDark;
-  const _Label({required this.label, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: GoogleFonts.notoSansThai(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: isDark
-            ? AppColors.textSecondaryDark
-            : AppColors.textSecondaryLight,
-      ),
-    );
-  }
-}
