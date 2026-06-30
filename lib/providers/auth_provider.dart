@@ -3,9 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
+import 'locale_provider.dart';
+import 'user_stats_provider.dart';
 
 class AuthProvider extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
+
+  // Optional references to sibling providers — set after construction.
+  LocaleProvider? _localeProvider;
+  UserStatsProvider? _statsProvider;
 
   User? _user;
   Profile? _profile;
@@ -23,6 +29,24 @@ class AuthProvider extends ChangeNotifier {
 
   AuthProvider() {
     _init();
+  }
+
+  /// Wire sibling providers so AuthProvider can push profile data into them.
+  void setSiblingProviders({
+    required LocaleProvider localeProvider,
+    required UserStatsProvider statsProvider,
+  }) {
+    _localeProvider = localeProvider;
+    _statsProvider = statsProvider;
+    // If profile already loaded, sync immediately.
+    if (_profile != null) {
+      _syncSiblings(_profile!);
+    }
+  }
+
+  void _syncSiblings(Profile profile) {
+    _localeProvider?.initFromProfile(profile.locale);
+    _statsProvider?.loadFromProfile(profile);
   }
 
   void _init() {
@@ -76,6 +100,7 @@ class AuthProvider extends ChangeNotifier {
       } else {
         await _ensureProfile();
       }
+      if (_profile != null) _syncSiblings(_profile!);
       notifyListeners();
     } on PostgrestException catch (e) {
       // Stale cached session — user no longer exists in DB (e.g. after DB reset).

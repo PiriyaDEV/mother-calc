@@ -72,6 +72,17 @@ class Profile {
   final String? promptpay;
   final bool onboardingCompleted;
   final DateTime? createdAt;
+  // ── Gamification stats ──────────────────────────────────────
+  final int billsCompleted;
+  final double totalSpent;
+  final int goldMedals;
+  final int silverMedals;
+  final int bronzeMedals;
+  final int totalPoints;
+  /// Map of achievementId → {unlocked: bool, unlockedAt: String?}
+  final Map<String, dynamic> achievements;
+  // ── i18n ────────────────────────────────────────────────────
+  final String locale;
 
   const Profile({
     required this.id,
@@ -81,9 +92,22 @@ class Profile {
     this.promptpay,
     this.onboardingCompleted = false,
     this.createdAt,
+    this.billsCompleted = 0,
+    this.totalSpent = 0,
+    this.goldMedals = 0,
+    this.silverMedals = 0,
+    this.bronzeMedals = 0,
+    this.totalPoints = 0,
+    this.achievements = const {},
+    this.locale = 'th',
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic> achievements = {};
+    final rawAch = json['achievements'];
+    if (rawAch is Map) {
+      achievements = Map<String, dynamic>.from(rawAch);
+    }
     return Profile(
       id: json['id'] as String,
       username: json['username'] as String?,
@@ -94,6 +118,14 @@ class Profile {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
           : null,
+      billsCompleted: (json['bills_completed'] as num?)?.toInt() ?? 0,
+      totalSpent: (json['total_spent'] as num?)?.toDouble() ?? 0,
+      goldMedals: (json['gold_medals'] as num?)?.toInt() ?? 0,
+      silverMedals: (json['silver_medals'] as num?)?.toInt() ?? 0,
+      bronzeMedals: (json['bronze_medals'] as num?)?.toInt() ?? 0,
+      totalPoints: (json['total_points'] as num?)?.toInt() ?? 0,
+      achievements: achievements,
+      locale: json['locale'] as String? ?? 'th',
     );
   }
 
@@ -105,6 +137,14 @@ class Profile {
         'promptpay': promptpay,
         'onboarding_completed': onboardingCompleted,
         'created_at': createdAt?.toIso8601String(),
+        'bills_completed': billsCompleted,
+        'total_spent': totalSpent,
+        'gold_medals': goldMedals,
+        'silver_medals': silverMedals,
+        'bronze_medals': bronzeMedals,
+        'total_points': totalPoints,
+        'achievements': achievements,
+        'locale': locale,
       };
 
   Profile copyWith({
@@ -113,6 +153,14 @@ class Profile {
     String? avatarUrl,
     String? promptpay,
     bool? onboardingCompleted,
+    int? billsCompleted,
+    double? totalSpent,
+    int? goldMedals,
+    int? silverMedals,
+    int? bronzeMedals,
+    int? totalPoints,
+    Map<String, dynamic>? achievements,
+    String? locale,
   }) {
     return Profile(
       id: id,
@@ -122,6 +170,14 @@ class Profile {
       promptpay: promptpay ?? this.promptpay,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       createdAt: createdAt,
+      billsCompleted: billsCompleted ?? this.billsCompleted,
+      totalSpent: totalSpent ?? this.totalSpent,
+      goldMedals: goldMedals ?? this.goldMedals,
+      silverMedals: silverMedals ?? this.silverMedals,
+      bronzeMedals: bronzeMedals ?? this.bronzeMedals,
+      totalPoints: totalPoints ?? this.totalPoints,
+      achievements: achievements ?? this.achievements,
+      locale: locale ?? this.locale,
     );
   }
 }

@@ -8,6 +8,7 @@ import '../models/models.dart';
 import '../providers/bill_provider.dart';
 import '../providers/friends_provider.dart';
 import '../providers/groups_provider.dart';
+import '../providers/user_stats_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import '../widgets/confirm_dialog.dart';
@@ -191,6 +192,64 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                     if (ok == true) {
                       await billProvider.completeBill(bill.id);
                       _tabController.animateTo(2); // switch to สรุป
+
+                      // ── Award gamification stats ──────────────────
+                      if (context.mounted) {
+                        final statsProvider = context.read<UserStatsProvider>();
+                        final currentUserId =
+                            Supabase.instance.client.auth.currentUser?.id;
+                        // Build memberAmounts map: memberName → total
+                        final updatedBill = billProvider.bill;
+                        if (updatedBill != null && currentUserId != null) {
+                          final updatedCalc = calculateBill(updatedBill.copyWith(
+                            members: billProvider.members,
+                            items: billProvider.items,
+                          ));
+                          final memberAmounts = {
+                            for (final s in updatedCalc.memberSummaries)
+                              s.member.name: s.total,
+                          };
+                          final myMember = billProvider.members.firstWhere(
+                            (m) => m.userId == currentUserId,
+                            orElse: () => billProvider.members.isNotEmpty
+                                ? billProvider.members.first
+                                : BillMember(
+                                    id: '',
+                                    billId: '',
+                                    name: '',
+                                    color: '#4366F4'),
+                          );
+                          final myAmount = updatedCalc.memberSummaries
+                              .firstWhere(
+                                (s) => s.member.id == myMember.id,
+                                orElse: () => MemberSummary(
+                                    member: myMember, total: 0, items: []),
+                              )
+                              .total;
+                          final newlyUnlocked =
+                              await statsProvider.recordBillCompleted(
+                            memberAmounts: memberAmounts,
+                            myAmount: myAmount,
+                          );
+                          // Show achievement toast if any unlocked
+                          if (context.mounted && newlyUnlocked.isNotEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '🏆 ปลดล็อก ${newlyUnlocked.length} achievement ใหม่!',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600),
+                                ),
+                                backgroundColor: const Color(0xFF4C1D95),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          }
+                        }
+                      }
                     }
                   },
                   child: Container(

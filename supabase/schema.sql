@@ -52,6 +52,16 @@ create table public.profiles (
   avatar_url           text,
   promptpay            text,
   onboarding_completed boolean not null default false,
+  -- ── Gamification stats ──────────────────────────────────────
+  bills_completed      integer not null default 0,
+  total_spent          numeric not null default 0,
+  gold_medals          integer not null default 0,
+  silver_medals        integer not null default 0,
+  bronze_medals        integer not null default 0,
+  total_points         integer not null default 0,
+  achievements         jsonb   not null default '{}',  -- map of achievement_id → {unlocked, unlockedAt}
+  -- ── i18n preference ─────────────────────────────────────────
+  locale               text    not null default 'th',  -- 'th' | 'en'
   created_at           timestamptz not null default now(),
   updated_at           timestamptz not null default now()
 );
