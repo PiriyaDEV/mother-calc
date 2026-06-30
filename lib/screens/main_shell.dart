@@ -63,7 +63,13 @@ class _MainShellState extends State<MainShell> {
     final friendCount = context.watch<FriendsProvider>().pendingCount;
 
     return Scaffold(
-      body: widget.child,
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+        ),
+        child: widget.child,
+      ),
       extendBody: true,
       bottomNavigationBar: _FloatingNavBar(
         currentIndex: _currentIndex,

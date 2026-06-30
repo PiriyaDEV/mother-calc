@@ -96,7 +96,7 @@ class _BillsScreenState extends State<BillsScreen>
     final completedBills = _bills.where((b) => b.isCompleted).toList();
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           children: [

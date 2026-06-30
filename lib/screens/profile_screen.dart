@@ -77,9 +77,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final profile = auth.profile;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
+        backgroundColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded),
           onPressed: () => context.pop(),
@@ -99,7 +99,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-      body: ListView(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+        ),
+        child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // Avatar
@@ -196,6 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
           ),
         ],
+        ),
       ),
     );
   }

@@ -244,7 +244,7 @@ class _MeScreenState extends State<MeScreen> {
     final isGoogleUser = providers != null && providers.contains('google');
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),

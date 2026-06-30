@@ -66,8 +66,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
-      body: SafeArea(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+        ),
+        child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
           child: Form(
@@ -208,6 +212,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

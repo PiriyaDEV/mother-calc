@@ -61,16 +61,21 @@ class _BillDetailScreenState extends State<BillDetailScreen>
 
     if (billProvider.loading) {
       return Scaffold(
-        backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
-        body: const Center(
-          child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+        backgroundColor: Colors.transparent,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+          ),
         ),
       );
     }
 
     if (bill == null) {
       return Scaffold(
-        backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_rounded),
@@ -98,8 +103,12 @@ class _BillDetailScreenState extends State<BillDetailScreen>
     final items = billProvider.items;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
-      body: NestedScrollView(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+        ),
+        child: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
             pinned: true,
@@ -336,6 +345,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
             ),
           ],
         ),
+      ),
       ),
     );
   }

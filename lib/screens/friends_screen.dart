@@ -141,7 +141,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
     final requests = provider.pendingReceived;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -48,7 +48,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
     final provider = context.watch<GroupsProvider>();
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

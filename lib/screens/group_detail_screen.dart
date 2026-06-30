@@ -61,16 +61,21 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
 
     if (gp.detailLoading) {
       return Scaffold(
-        backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
-        body: const Center(
-          child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+        backgroundColor: Colors.transparent,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+          ),
         ),
       );
     }
 
     if (group == null) {
       return Scaffold(
-        backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_rounded),
@@ -87,8 +92,12 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     final pendingMembers = group.members.where((m) => m.isPending).toList();
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
-      body: NestedScrollView(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+        ),
+        child: NestedScrollView(
         headerSliverBuilder: (context, _) => [
           SliverAppBar(
             pinned: true,
@@ -157,6 +166,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
           ),
         ],
         body: _buildTabBody(context, group, bills, acceptedMembers, pendingMembers, isDark, gp),
+      ),
       ),
     );
   }
