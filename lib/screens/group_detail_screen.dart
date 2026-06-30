@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
@@ -717,9 +716,7 @@ class _BillRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateStr = bill.updatedAt != null
-        ? DateFormat('d MMM yyyy', 'th').format(bill.updatedAt!)
-        : '';
+    final dateStr = formatDate(bill.updatedAt);
     final visibleTags = bill.tags.take(2).toList();
     final extraTags = bill.tags.length > 2 ? bill.tags.length - 2 : 0;
 
@@ -1393,10 +1390,7 @@ class _GroupAnalyticsTab extends StatelessWidget {
                     bill.items.fold<double>(0, (s, i) => s + i.price);
                 final pct =
                     totalAmount > 0 ? billTotal / totalAmount : 0.0;
-                final dateStr = bill.updatedAt != null
-                    ? DateFormat('d MMM yyyy', 'th')
-                        .format(bill.updatedAt!)
-                    : '';
+                final dateStr = formatDate(bill.updatedAt);
                 final pctStr =
                     '${(pct * 100).toStringAsFixed(1)}% ของทั้งหมด';
 
