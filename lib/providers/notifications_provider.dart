@@ -4,6 +4,7 @@ import '../models/models.dart';
 
 class NotificationsProvider extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
+  RealtimeChannel? _channel;
 
   List<AppNotification> _notifications = [];
   bool _loading = false;
@@ -38,6 +39,37 @@ class NotificationsProvider extends ChangeNotifier {
       _loading = false;
       notifyListeners();
     }
+
+    _subscribeRealtime();
+  }
+
+  void _subscribeRealtime() {
+    final user = _supabase.auth.currentUser;
+    if (user == null || _channel != null) return;
+
+    _channel = _supabase
+        .channel('notifications_${user.id}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'notifications',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: user.id,
+          ),
+          callback: (payload) {
+            try {
+              final notif =
+                  AppNotification.fromJson(payload.newRecord);
+              _notifications = [notif, ..._notifications];
+              notifyListeners();
+            } catch (e) {
+              debugPrint('Realtime notification parse error: $e');
+            }
+          },
+        )
+        .subscribe();
   }
 
   Future<void> markAsRead(String notificationId) async {
@@ -135,6 +167,10 @@ class NotificationsProvider extends ChangeNotifier {
   }
 
   void clear() {
+    if (_channel != null) {
+      _supabase.removeChannel(_channel!);
+      _channel = null;
+    }
     _notifications = [];
     _error = null;
     notifyListeners();

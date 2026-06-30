@@ -4,6 +4,7 @@ import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
+import '../services/push_notification_service.dart';
 import 'bills_list_provider.dart';
 import 'groups_provider.dart';
 import 'locale_provider.dart';
@@ -106,6 +107,7 @@ class AuthProvider extends ChangeNotifier {
       }
       if (_profile != null) _syncSiblings(_profile!);
       notifyListeners();
+      PushNotificationService.saveToken();
     } on PostgrestException catch (e) {
       // Stale cached session — user no longer exists in DB (e.g. after DB reset).
       // Sign out so the user lands on the login screen cleanly.
@@ -397,6 +399,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signOut() async {
     try { await LineSDK.instance.logout(); } catch (_) {}
     try { await GoogleSignIn().signOut(); } catch (_) {}
+    await PushNotificationService.clearToken();
     await _supabase.auth.signOut();
     _profile = null;
     _groupsProvider?.clear();

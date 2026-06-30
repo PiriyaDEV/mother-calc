@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../providers/locale_provider.dart';
+import '../providers/notifications_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/section_header.dart';
@@ -421,6 +422,7 @@ class _MeScreenState extends State<MeScreen>
   ) {
     final themeProvider = context.watch<ThemeProvider>();
     final locale = context.watch<LocaleProvider>();
+    final notifUnread = context.watch<NotificationsProvider>().unreadCount;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -711,13 +713,37 @@ class _MeScreenState extends State<MeScreen>
                 icon: Icons.notifications_outlined,
                 iconColor: const Color(0xFFFF5C5C),
                 label: 'การแจ้งเตือน',
-                trailing: Icon(
-                  Icons.chevron_right_rounded,
-                  color: isDark
-                      ? AppColors.textTertiaryDark
-                      : AppColors.textTertiaryLight,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (notifUnread > 0) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.red,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          notifUnread > 99 ? '99+' : '$notifUnread',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: isDark
+                          ? AppColors.textTertiaryDark
+                          : AppColors.textTertiaryLight,
+                    ),
+                  ],
                 ),
-                onTap: () {},
+                onTap: () => context.push('/notifications'),
               ),
             ],
           ),

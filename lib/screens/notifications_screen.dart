@@ -32,25 +32,30 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     await provider.markAsRead(notif.id);
 
-    if (action == 'accepted') {
-      final err = await provider.acceptGroupInvite(notif);
-      if (!mounted) return;
-      setState(() => _respondingId = null);
-      if (err != null) {
-        _showSnack(err, isError: true);
-      } else {
-        final groupId = notif.data['group_id'] as String?;
-        if (groupId != null) {
-          context.push('/groups/$groupId');
+    if (notif.type == 'group_invite') {
+      if (action == 'accepted') {
+        final err = await provider.acceptGroupInvite(notif);
+        if (!mounted) return;
+        setState(() => _respondingId = null);
+        if (err != null) {
+          _showSnack(err, isError: true);
+        } else {
+          final groupId = notif.data['group_id'] as String?;
+          if (groupId != null) context.push('/groups/$groupId');
         }
+      } else {
+        final err = await provider.declineGroupInvite(notif);
+        if (!mounted) return;
+        setState(() => _respondingId = null);
+        if (err != null) _showSnack(err, isError: true);
       }
-    } else {
-      final err = await provider.declineGroupInvite(notif);
+    } else if (notif.type == 'friend_request') {
       if (!mounted) return;
       setState(() => _respondingId = null);
-      if (err != null) {
-        _showSnack(err, isError: true);
-      }
+      context.push('/friends');
+    } else {
+      if (!mounted) return;
+      setState(() => _respondingId = null);
     }
   }
 
@@ -248,6 +253,8 @@ class _NotificationCard extends StatelessWidget {
     final data = notification.data;
     final name = (data['invited_by_display_name'] as String?)?.trim() ??
         (data['invited_by_username'] as String?)?.trim() ??
+        (data['display_name'] as String?)?.trim() ??
+        (data['username'] as String?)?.trim() ??
         '';
     return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
@@ -276,16 +283,79 @@ class _NotificationCard extends StatelessWidget {
     return '${dt.day} $month $buddhistYear $hour:$minute';
   }
 
+  Widget _buildBody(bool isDark) {
+    final data = notification.data;
+    final baseStyle = GoogleFonts.notoSansThai(
+      fontSize: 13,
+      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+    );
+
+    switch (notification.type) {
+      case 'group_invite':
+        final inviterName =
+            (data['invited_by_display_name'] as String?)?.trim() ??
+                '@${(data['invited_by_username'] as String?) ?? ''}';
+        final groupName = (data['group_name'] as String?) ?? '';
+        return RichText(
+          text: TextSpan(
+            style: baseStyle,
+            children: [
+              TextSpan(
+                  text: inviterName,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              const TextSpan(text: ' เชิญคุณเข้าร่วมกลุ่ม '),
+              TextSpan(
+                text: groupName,
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, color: AppColors.primary),
+              ),
+            ],
+          ),
+        );
+
+      case 'friend_request':
+        final username = (data['display_name'] as String?)?.trim() ??
+            (data['username'] as String?)?.trim() ??
+            'ผู้ใช้';
+        return RichText(
+          text: TextSpan(
+            style: baseStyle,
+            children: [
+              TextSpan(
+                  text: username,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              const TextSpan(text: ' ส่งคำขอเป็นเพื่อน'),
+            ],
+          ),
+        );
+
+      case 'friend_accepted':
+        final username = (data['display_name'] as String?)?.trim() ??
+            (data['username'] as String?)?.trim() ??
+            'ผู้ใช้';
+        return RichText(
+          text: TextSpan(
+            style: baseStyle,
+            children: [
+              TextSpan(
+                  text: username,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              const TextSpan(text: ' ยอมรับคำขอเป็นเพื่อนของคุณแล้ว'),
+            ],
+          ),
+        );
+
+      default:
+        return Text(notification.body, style: baseStyle);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isUnread = !notification.read;
-    final data = notification.data;
-    final inviterName =
-        (data['invited_by_display_name'] as String?)?.trim() ??
-            '@${(data['invited_by_username'] as String?) ?? ''}';
-    final groupName = (data['group_name'] as String?) ?? '';
-    final showActions =
-        isUnread && notification.type == 'group_invite';
+    final showActions = isUnread &&
+        (notification.type == 'group_invite' ||
+            notification.type == 'friend_request');
 
     return GestureDetector(
       onTap: onTap,
@@ -334,33 +404,7 @@ class _NotificationCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Rich text: ชื่อ bold + " เชิญคุณเข้าร่วมกลุ่ม " + group bold blue
-                      RichText(
-                        text: TextSpan(
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 13,
-                            color: isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.textPrimaryLight,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: inviterName,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            const TextSpan(
-                                text: ' เชิญคุณเข้าร่วมกลุ่ม '),
-                            TextSpan(
-                              text: groupName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      _buildBody(isDark),
                       const SizedBox(height: 4),
                       Text(
                         _formatDate(notification.createdAt),
@@ -391,59 +435,88 @@ class _NotificationCard extends StatelessWidget {
             // Action buttons
             if (showActions) ...[
               const SizedBox(height: AppSpacing.md),
-              Row(
-                children: [
-                  // ปฏิเสธ — border-only
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: isResponding ? null : onDecline,
-                      child: Container(
-                        height: 40,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: isDark ? AppColors.borderDark : const Color(0xFFD1D5DB),
+              if (notification.type == 'group_invite')
+                Row(
+                  children: [
+                    // ปฏิเสธ
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: isResponding ? null : onDecline,
+                        child: Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : const Color(0xFFD1D5DB),
+                            ),
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Center(
-                          child: Text(
-                            isResponding ? 'กำลังดำเนินการ...' : 'ปฏิเสธ',
-                            style: GoogleFonts.notoSansThai(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? AppColors.textSecondaryDark : const Color(0xFF4B5563),
+                          child: Center(
+                            child: Text(
+                              isResponding ? 'กำลังดำเนินการ...' : 'ปฏิเสธ',
+                              style: GoogleFonts.notoSansThai(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : const Color(0xFF4B5563),
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  // รับคำเชิญ — green filled
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: isResponding ? null : onAccept,
-                      child: Container(
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: isResponding ? const Color(0xFF9CA3AF) : AppColors.emerald,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Center(
-                          child: Text(
-                            isResponding ? 'กำลังดำเนินการ...' : 'รับคำเชิญ',
-                            style: GoogleFonts.notoSansThai(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                    const SizedBox(width: AppSpacing.sm),
+                    // รับคำเชิญ
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: isResponding ? null : onAccept,
+                        child: Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: isResponding
+                                ? const Color(0xFF9CA3AF)
+                                : AppColors.emerald,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(
+                            child: Text(
+                              isResponding ? 'กำลังดำเนินการ...' : 'รับคำเชิญ',
+                              style: GoogleFonts.notoSansThai(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
+                  ],
+                )
+              else if (notification.type == 'friend_request')
+                GestureDetector(
+                  onTap: isResponding ? null : onAccept,
+                  child: Container(
+                    width: double.infinity,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'ดูคำขอเป็นเพื่อน',
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
-                ],
-              ),
+                ),
             ],
           ],
         ),
