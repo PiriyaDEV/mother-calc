@@ -11,6 +11,7 @@ import '../providers/groups_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/create_entity_sheet.dart';
 import '../widgets/member_avatar.dart';
 import '../widgets/analytics_tab.dart';
 import '../widgets/summary_tab.dart';
@@ -268,8 +269,8 @@ class _BillDetailScreenState extends State<BillDetailScreen>
               // ⚙️ gear — only owner + draft
               if (isOwner && !isCompleted)
                 IconButton(
-                  icon: const Icon(Icons.settings_outlined),
-                  onPressed: () => _showSettingsSheet(context, bill, billProvider),
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () => _showEditBillSheet(context, bill, billProvider),
                 ),
               const SizedBox(width: 4),
             ],
@@ -351,342 +352,34 @@ class _BillDetailScreenState extends State<BillDetailScreen>
   }
 
 
-  void _showSettingsSheet(
-      BuildContext context, Bill bill, BillProvider billProvider) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Future<void> _showEditBillSheet(
+      BuildContext context, Bill bill, BillProvider billProvider) async {
     final settings = bill.settings;
-    bool isService = settings.isService;
-    bool isVat = settings.isVat;
-    double serviceCharge = settings.serviceCharge > 0 ? settings.serviceCharge : 10;
-    double vat = settings.vat > 0 ? settings.vat : 7;
-    double tip = settings.tip;
-    double discount = settings.discount;
-    String currency = settings.currency;
-
-    const currencies = ['THB', 'USD', 'EUR', 'JPY', 'SGD', 'GBP', 'CNY', 'KRW'];
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Container(
-          padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'ตั้งค่าบิล',
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // ── Service Charge toggle ──
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.surfaceDark : AppColors.neutral50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isService
-                          ? AppColors.primary.withOpacity(0.4)
-                          : (isDark ? AppColors.borderDark : AppColors.borderLight),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Service Charge',
-                                  style: GoogleFonts.notoSansThai(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: isDark
-                                        ? AppColors.textPrimaryDark
-                                        : AppColors.textPrimaryLight,
-                                  ),
-                                ),
-                                Text(
-                                  'ค่าบริการ ${serviceCharge.toStringAsFixed(0)}%',
-                                  style: GoogleFonts.notoSansThai(
-                                    fontSize: 12,
-                                    color: isDark
-                                        ? AppColors.textTertiaryDark
-                                        : AppColors.textTertiaryLight,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Switch(
-                            value: isService,
-                            onChanged: (v) => setModalState(() => isService = v),
-                            activeColor: AppColors.primary,
-                          ),
-                        ],
-                      ),
-                      if (isService) ...[
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Slider(
-                                value: serviceCharge.clamp(0, 20),
-                                min: 0,
-                                max: 20,
-                                divisions: 20,
-                                activeColor: AppColors.primary,
-                                onChanged: (v) =>
-                                    setModalState(() => serviceCharge = v),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 60,
-                              child: TextField(
-                                controller: TextEditingController(
-                                    text: serviceCharge.toStringAsFixed(0)),
-                                keyboardType: TextInputType.number,
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.notoSansThai(fontSize: 13),
-                                decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 6),
-                                  isDense: true,
-                                  suffixText: '%',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                onChanged: (v) => setModalState(
-                                    () => serviceCharge = double.tryParse(v) ?? serviceCharge),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                // ── VAT toggle ──
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.surfaceDark : AppColors.neutral50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isVat
-                          ? AppColors.primary.withOpacity(0.4)
-                          : (isDark ? AppColors.borderDark : AppColors.borderLight),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'VAT',
-                                  style: GoogleFonts.notoSansThai(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: isDark
-                                        ? AppColors.textPrimaryDark
-                                        : AppColors.textPrimaryLight,
-                                  ),
-                                ),
-                                Text(
-                                  'ภาษีมูลค่าเพิ่ม ${vat.toStringAsFixed(0)}%',
-                                  style: GoogleFonts.notoSansThai(
-                                    fontSize: 12,
-                                    color: isDark
-                                        ? AppColors.textTertiaryDark
-                                        : AppColors.textTertiaryLight,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Switch(
-                            value: isVat,
-                            onChanged: (v) => setModalState(() => isVat = v),
-                            activeColor: AppColors.primary,
-                          ),
-                        ],
-                      ),
-                      if (isVat) ...[
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Slider(
-                                value: vat.clamp(0, 20),
-                                min: 0,
-                                max: 20,
-                                divisions: 20,
-                                activeColor: AppColors.primary,
-                                onChanged: (v) =>
-                                    setModalState(() => vat = v),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 60,
-                              child: TextField(
-                                controller: TextEditingController(
-                                    text: vat.toStringAsFixed(0)),
-                                keyboardType: TextInputType.number,
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.notoSansThai(fontSize: 13),
-                                decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 6),
-                                  isDense: true,
-                                  suffixText: '%',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                onChanged: (v) => setModalState(
-                                    () => vat = double.tryParse(v) ?? vat),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                // ── Tip ──
-                _SettingsRow(
-                  label: 'ทิป (บาท)',
-                  value: tip,
-                  onChanged: (v) => setModalState(() => tip = v),
-                ),
-                const SizedBox(height: 10),
-
-                // ── Discount ──
-                _SettingsRow(
-                  label: 'ส่วนลด (บาท)',
-                  value: discount,
-                  onChanged: (v) => setModalState(() => discount = v),
-                ),
-                const SizedBox(height: 16),
-
-                // ── Currency grid ──
-                Text(
-                  'สกุลเงิน',
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: currencies.map((c) {
-                    final selected = currency == c;
-                    return GestureDetector(
-                      onTap: () => setModalState(() => currency = c),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: selected
-                              ? AppColors.primary
-                              : (isDark
-                                  ? AppColors.surfaceDark
-                                  : AppColors.neutral100),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: selected
-                                ? AppColors.primary
-                                : Colors.transparent,
-                          ),
-                        ),
-                        child: Text(
-                          c,
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: selected
-                                ? Colors.white
-                                : (isDark
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondaryLight),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 20),
-
-                ElevatedButton(
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    await billProvider.updateBillMeta(
-                      billId: bill.id,
-                      settings: BillSettings(
-                        serviceCharge: isService ? serviceCharge : 0,
-                        vat: isVat ? vat : 0,
-                        tip: tip,
-                        discount: discount,
-                        currency: currency,
-                        isService: isService,
-                        isVat: isVat,
-                      ),
-                    );
-                  },
-                  child: Text('บันทึก',
-                      style: GoogleFonts.notoSansThai(
-                          fontSize: 15, fontWeight: FontWeight.w600)),
-                ),
-              ],
-            ),
-          ),
-        ),
+    final result = await showCreateEntitySheet(
+      context,
+      type: 'bill',
+      mode: 'edit',
+      initialData: EntityFormResult(
+        name: bill.title,
+        emoji: bill.emoji,
+        description: '',
+        tags: List<String>.from(bill.tags),
+        settings: settings,
       ),
+      onDelete: () async {
+        await billProvider.deleteBill(bill.id);
+        if (context.mounted) context.pop();
+      },
     );
+    if (result != null) {
+      await billProvider.updateBillMeta(
+        billId: bill.id,
+        title: result.name,
+        emoji: result.emoji,
+        tags: result.tags,
+        settings: result.settings,
+      );
+    }
   }
 
 }
@@ -2767,48 +2460,6 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
         ),
       ),
       ),
-    );
-  }
-}
-
-class _SettingsRow extends StatelessWidget {
-  final String label;
-  final double value;
-  final ValueChanged<double> onChanged;
-
-  const _SettingsRow({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final ctrl = TextEditingController(
-        text: value == 0 ? '' : value.toString());
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: GoogleFonts.notoSansThai(fontSize: 14),
-          ),
-        ),
-        SizedBox(
-          width: 100,
-          child: TextField(
-            controller: ctrl,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            textAlign: TextAlign.right,
-            decoration: const InputDecoration(
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-            onChanged: (v) => onChanged(double.tryParse(v) ?? 0),
-          ),
-        ),
-      ],
     );
   }
 }

@@ -225,29 +225,21 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
         tags: group.tags,
       ),
       onDelete: () async {
-        // Will be handled after sheet closes
+        await gp.deleteGroup(group.id);
+        if (context.mounted) context.pop();
       },
     );
 
     if (!mounted) return;
 
     if (result != null) {
-      // Check if this was a delete action (result name == '__delete__')
       await gp.updateGroup(
         groupId: group.id,
         name: result.name,
         emoji: result.emoji,
+        description: result.description,
+        tags: result.tags,
       );
-      // Also update description/tags via supabase directly
-      try {
-        await Supabase.instance.client.from('groups').update({
-          'description': result.description,
-          'tags': result.tags,
-        }).eq('id', group.id);
-        if (mounted) {
-          await gp.loadGroupDetail(group.id);
-        }
-      } catch (_) {}
     }
   }
 

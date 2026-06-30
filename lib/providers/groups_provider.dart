@@ -100,11 +100,15 @@ class GroupsProvider extends ChangeNotifier {
     required String groupId,
     String? name,
     String? emoji,
+    String? description,
+    List<String>? tags,
   }) async {
     try {
       final updates = <String, dynamic>{
         if (name != null) 'name': name,
         if (emoji != null) 'emoji': emoji,
+        if (description != null) 'description': description,
+        if (tags != null) 'tags': tags,
       };
       await _supabase.from('groups').update(updates).eq('id', groupId);
       await loadGroups();
