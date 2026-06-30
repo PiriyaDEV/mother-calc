@@ -199,7 +199,7 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
                           children: [
                             Container(
                               height: 8,
-                              color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+                              color: isDark ? AppColors.borderDark : AppColors.neutral100,
                             ),
                             FractionallySizedBox(
                               widthFactor: pct.clamp(0.0, 1.0),
@@ -258,7 +258,7 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1F2937) : Colors.white,
+                  color: isDark ? AppColors.surfaceDark : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -291,7 +291,7 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
                             '${mt.itemCount} รายการ',
                             style: GoogleFonts.notoSansThai(
                               fontSize: 10,
-                              color: isDark ? AppColors.textTertiaryDark : const Color(0xFF9CA3AF),
+                              color: isDark ? AppColors.textTertiaryDark : AppColors.neutral400,
                             ),
                           ),
                         ],

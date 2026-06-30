@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../theme/app_theme.dart';
 
 class MemberAvatar extends StatelessWidget {
   final String name;
@@ -41,6 +42,8 @@ class MemberAvatar extends StatelessWidget {
           avatar = ClipOval(
             child: Image.memory(
               bytes,
+              width: size,
+              height: size,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => _buildInitials(fontSize),
             ),
@@ -49,16 +52,15 @@ class MemberAvatar extends StatelessWidget {
           avatar = _buildInitials(fontSize);
         }
       } else {
-        avatar = CachedNetworkImage(
-          imageUrl: avatarUrl!,
-          imageBuilder: (ctx, imageProvider) => DecoratedBox(
-            decoration: BoxDecoration(
-              image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
-            ),
-            child: const SizedBox.expand(),
+        avatar = ClipOval(
+          child: CachedNetworkImage(
+            imageUrl: avatarUrl!,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            placeholder: (ctx, url) => _buildInitials(fontSize),
+            errorWidget: (ctx, url, err) => _buildInitials(fontSize),
           ),
-          placeholder: (ctx, url) => _buildInitials(fontSize),
-          errorWidget: (ctx, url, err) => _buildInitials(fontSize),
         );
       }
     } else {
@@ -77,7 +79,7 @@ class MemberAvatar extends StatelessWidget {
             width: 2,
           ),
         ),
-        child: avatar,
+        child: Center(child: avatar),
       );
     }
 
@@ -149,7 +151,7 @@ class MemberAvatarStack extends StatelessWidget {
                 width: size,
                 height: size,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE5E7EB),
+                  color: AppColors.neutral100,
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2),
                 ),
@@ -159,7 +161,7 @@ class MemberAvatarStack extends StatelessWidget {
                     style: TextStyle(
                       fontSize: size * 0.3,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF6B7280),
+                      color: AppColors.neutral600,
                     ),
                   ),
                 ),

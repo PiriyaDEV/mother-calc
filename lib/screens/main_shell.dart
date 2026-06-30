@@ -114,7 +114,7 @@ class _FloatingNavBar extends StatelessWidget {
               height: 64,
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF1C2333).withValues(alpha: 0.92)
+                    ? AppColors.surfaceDark.withValues(alpha: 0.94)
                     : Colors.white.withValues(alpha: 0.92),
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(

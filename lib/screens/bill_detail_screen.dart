@@ -229,8 +229,8 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                         horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFF374151)
-                          : const Color(0xFFF3F4F6),
+                          ? AppColors.borderDark
+                          : AppColors.neutral100,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -287,12 +287,12 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                 decoration: BoxDecoration(
                   color: isDark
                       ? AppColors.emeraldDark.withValues(alpha: 0.25)
-                      : const Color(0xFFECFDF5),
+                      : AppColors.greenFaint,
                   border: Border(
                     bottom: BorderSide(
                         color: isDark
                             ? AppColors.emeraldDark
-                            : const Color(0xFFA7F3D0),
+                            : AppColors.emerald.withValues(alpha: 0.3),
                         width: 1),
                   ),
                 ),
@@ -300,14 +300,14 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                   children: [
                     Icon(Icons.lock_rounded,
                         size: 14,
-                        color: isDark ? AppColors.emerald : const Color(0xFF065F46)),
+                        color: isDark ? AppColors.emerald : AppColors.emeraldText),
                     const SizedBox(width: 8),
                     Text(
                       'บิลนี้ปิดแล้ว — ดูได้อย่างเดียว ไม่สามารถแก้ไขได้',
                       style: GoogleFonts.notoSansThai(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: isDark ? AppColors.emerald : const Color(0xFF065F46),
+                        color: isDark ? AppColors.emerald : AppColors.emeraldText,
                       ),
                     ),
                   ],
@@ -400,7 +400,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB),
+                    color: isDark ? AppColors.surfaceDark : AppColors.neutral50,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isService
@@ -493,7 +493,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB),
+                    color: isDark ? AppColors.surfaceDark : AppColors.neutral50,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isVat
@@ -624,8 +624,8 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                           color: selected
                               ? AppColors.primary
                               : (isDark
-                                  ? const Color(0xFF1F2937)
-                                  : const Color(0xFFF3F4F6)),
+                                  ? AppColors.surfaceDark
+                                  : AppColors.neutral100),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: selected
@@ -710,7 +710,7 @@ class _PillTabBar extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6),
+        color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -724,7 +724,7 @@ class _PillTabBar extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
                   color: isActive
-                      ? (isDark ? const Color(0xFF374151) : Colors.white)
+                      ? (isDark ? AppColors.borderDark : Colors.white)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: isActive
@@ -752,7 +752,7 @@ class _PillTabBar extends StatelessWidget {
                             ? AppColors.primary
                             : (isDark
                                 ? AppColors.textTertiaryDark
-                                : const Color(0xFF6B7280)),
+                                : AppColors.neutral600),
                       ),
                     ),
                     if (tab.count != null) ...[
@@ -764,8 +764,8 @@ class _PillTabBar extends StatelessWidget {
                           color: isActive
                               ? AppColors.primary.withValues(alpha: 0.1)
                               : (isDark
-                                  ? const Color(0xFF374151)
-                                  : const Color(0xFFE5E7EB)),
+                                  ? AppColors.borderDark
+                                  : AppColors.neutral100),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -777,7 +777,7 @@ class _PillTabBar extends StatelessWidget {
                                 ? AppColors.primary
                                 : (isDark
                                     ? AppColors.textTertiaryDark
-                                    : const Color(0xFF6B7280)),
+                                    : AppColors.neutral600),
                           ),
                         ),
                       ),
@@ -1439,8 +1439,8 @@ class _MemberTile extends StatelessWidget {
                   color: isPaid
                       ? AppColors.emerald
                       : (isDark
-                          ? const Color(0xFF374151)
-                          : const Color(0xFFF3F4F6)),
+                          ? AppColors.borderDark
+                          : AppColors.neutral100),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -1466,7 +1466,7 @@ class _MemberTile extends StatelessWidget {
 
     if (member.isExternal) {
       label = 'ภายนอก';
-      color = const Color(0xFF6B7280);
+      color = AppColors.neutral600;
     } else if (member.userId != null && member.userId == currentUserId) {
       label = 'ฉัน';
       color = AppColors.primary;
@@ -1735,8 +1735,8 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                       color: !_isUnequalSplit
                           ? AppColors.primary
                           : (isDark
-                              ? const Color(0xFF1F2937)
-                              : const Color(0xFFF3F4F6)),
+                              ? AppColors.surfaceDark
+                              : AppColors.neutral100),
                       borderRadius: const BorderRadius.horizontal(
                           left: Radius.circular(8)),
                     ),
@@ -1764,8 +1764,8 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                       color: _isUnequalSplit
                           ? AppColors.primary
                           : (isDark
-                              ? const Color(0xFF1F2937)
-                              : const Color(0xFFF3F4F6)),
+                              ? AppColors.surfaceDark
+                              : AppColors.neutral100),
                       borderRadius: const BorderRadius.horizontal(
                           right: Radius.circular(8)),
                     ),
@@ -1868,8 +1868,8 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                         color: selected
                             ? color.withOpacity(0.08)
                             : (isDark
-                                ? const Color(0xFF1F2937)
-                                : const Color(0xFFF9FAFB)),
+                                ? AppColors.surfaceDark
+                                : AppColors.neutral50),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: selected ? color : Colors.transparent,
@@ -2026,8 +2026,8 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                         color: _paidBy == null
                             ? AppColors.primary.withOpacity(0.15)
                             : (isDark
-                                ? const Color(0xFF1F2937)
-                                : const Color(0xFFF3F4F6)),
+                                ? AppColors.surfaceDark
+                                : AppColors.neutral100),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: _paidBy == null
@@ -2061,8 +2061,8 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                           color: selected
                               ? color.withOpacity(0.15)
                               : (isDark
-                                  ? const Color(0xFF1F2937)
-                                  : const Color(0xFFF3F4F6)),
+                                  ? AppColors.surfaceDark
+                                  : AppColors.neutral100),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: selected ? color : Colors.transparent,
@@ -2294,14 +2294,14 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF1F2937)
-                  : const Color(0xFFF3F4F6),
+                  ? AppColors.surfaceDark
+                  : AppColors.neutral100,
               borderRadius: BorderRadius.circular(12),
             ),
             child: TabBar(
               controller: _tabCtrl,
               indicator: BoxDecoration(
-                color: isDark ? const Color(0xFF374151) : Colors.white,
+                color: isDark ? AppColors.borderDark : Colors.white,
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
@@ -2316,7 +2316,7 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
               labelColor: AppColors.primary,
               unselectedLabelColor: isDark
                   ? AppColors.textTertiaryDark
-                  : const Color(0xFF6B7280),
+                  : AppColors.neutral600,
               labelStyle: GoogleFonts.notoSansThai(
                   fontSize: 13, fontWeight: FontWeight.w600),
               unselectedLabelStyle:
@@ -2506,8 +2506,8 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF1F2937)
-                  : const Color(0xFFF9FAFB),
+                  ? AppColors.surfaceDark
+                  : AppColors.neutral50,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isDark
@@ -2843,7 +2843,7 @@ class _StackedAvatars extends StatelessWidget {
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF9CA3AF),
+                  color: AppColors.neutral400,
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 1.5),
                 ),

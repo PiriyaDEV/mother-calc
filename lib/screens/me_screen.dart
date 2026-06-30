@@ -244,7 +244,7 @@ class _MeScreenState extends State<MeScreen> {
     final isGoogleUser = providers != null && providers.contains('google');
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : const Color(0xFFF4F6FB),
+      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -268,21 +268,21 @@ class _MeScreenState extends State<MeScreen> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.emeraldDark.withValues(alpha: 0.3) : const Color(0xFFF0FDF4),
-                  border: Border.all(color: isDark ? AppColors.emeraldDark : const Color(0xFFBBF7D0)),
+                  color: isDark ? AppColors.emeraldDark.withValues(alpha: 0.15) : AppColors.greenFaint,
+                  border: Border.all(color: isDark ? AppColors.emeraldDark.withValues(alpha: 0.4) : AppColors.emerald.withValues(alpha: 0.25)),
                   borderRadius: BorderRadius.circular(AppRadii.lg),
                 ),
                 child: Row(
                   children: [
                     Icon(Icons.check_circle_outline_rounded,
-                        size: 16, color: isDark ? AppColors.emerald : const Color(0xFF15803D)),
+                        size: 16, color: isDark ? AppColors.emerald : AppColors.emeraldText),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
                         _success!,
                         style: GoogleFonts.notoSansThai(
                           fontSize: 13,
-                          color: isDark ? AppColors.emerald : const Color(0xFF15803D),
+                          color: isDark ? AppColors.emerald : AppColors.emeraldText,
                         ),
                       ),
                     ),
@@ -297,27 +297,27 @@ class _MeScreenState extends State<MeScreen> {
                     horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.red.withValues(alpha: 0.15) : AppColors.redFaint,
-                  border: Border.all(color: isDark ? AppColors.red.withValues(alpha: 0.4) : const Color(0xFFFECACA)),
+                  border: Border.all(color: isDark ? AppColors.red.withValues(alpha: 0.4) : AppColors.red.withValues(alpha: 0.25)),
                   borderRadius: BorderRadius.circular(AppRadii.lg),
                 ),
                 child: Row(
                   children: [
                     Icon(Icons.error_outline_rounded,
-                        size: 16, color: isDark ? AppColors.red : const Color(0xFFDC2626)),
+                        size: 16, color: isDark ? AppColors.red : AppColors.red),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
                         _error!,
                         style: GoogleFonts.notoSansThai(
                           fontSize: 13,
-                          color: isDark ? AppColors.red : const Color(0xFFDC2626),
+                          color: isDark ? AppColors.red : AppColors.red,
                         ),
                       ),
                     ),
                     GestureDetector(
                       onTap: () => setState(() => _error = null),
                       child: Icon(Icons.close_rounded,
-                          size: 14, color: isDark ? AppColors.red : const Color(0xFFDC2626)),
+                          size: 14, color: isDark ? AppColors.red : AppColors.red),
                     ),
                   ],
                 ),
@@ -329,12 +329,8 @@ class _MeScreenState extends State<MeScreen> {
             Container(
               padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF4366F4), Color(0xFF6B8AF7)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
+                gradient: AppGradients.primaryButtonLight,
+                borderRadius: BorderRadius.circular(AppRadii.md),
                 boxShadow: AppColors.shadowFloat,
               ),
               child: Column(
@@ -367,7 +363,7 @@ class _MeScreenState extends State<MeScreen> {
                             child: Icon(Icons.camera_alt_outlined,
                                 size: 13,
                                 color: _uploadingAvatar
-                                    ? const Color(0xFF9CA3AF)
+                                    ? AppColors.neutral400
                                     : AppColors.primary),
                           ),
                         ),
@@ -647,8 +643,8 @@ class _MeScreenState extends State<MeScreen> {
                       onChanged: (_) => themeProvider.toggle(),
                       activeColor: AppColors.primary,
                       activeTrackColor: AppColors.primaryFaint,
-                      inactiveThumbColor: const Color(0xFF9CA3AF),
-                      inactiveTrackColor: const Color(0xFFE5E7EB),
+                      inactiveThumbColor: AppColors.neutral400,
+                      inactiveTrackColor: AppColors.neutral100,
                     ),
                   ],
                 ),
@@ -668,7 +664,7 @@ class _MeScreenState extends State<MeScreen> {
                   border: Border.all(
                     color: isDark
                         ? AppColors.red.withValues(alpha: 0.3)
-                        : const Color(0xFFFEE2E2),
+                        : AppColors.red.withValues(alpha: 0.20),
                   ),
                 ),
                 child: Row(
@@ -968,7 +964,7 @@ class _PasswordFieldState extends State<_PasswordField> {
         filled: true,
         fillColor: widget.isDark
             ? AppColors.borderDark
-            : const Color(0xFFF9FAFB),
+            : AppColors.neutral50,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: AppSpacing.md),
         border: OutlineInputBorder(
@@ -976,7 +972,7 @@ class _PasswordFieldState extends State<_PasswordField> {
           borderSide: BorderSide(
             color: widget.isDark
                 ? AppColors.borderDark
-                : const Color(0xFFE5E7EB),
+                : AppColors.neutral100,
           ),
         ),
         enabledBorder: OutlineInputBorder(
@@ -984,7 +980,7 @@ class _PasswordFieldState extends State<_PasswordField> {
           borderSide: BorderSide(
             color: widget.isDark
                 ? AppColors.borderDark
-                : const Color(0xFFE5E7EB),
+                : AppColors.neutral100,
           ),
         ),
         focusedBorder: OutlineInputBorder(

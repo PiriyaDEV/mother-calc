@@ -24,9 +24,7 @@ class BillCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : Colors.white,
           borderRadius: BorderRadius.circular(AppRadii.lg),
-          border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
-          ),
+          boxShadow: isDark ? null : AppColors.shadowCard,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,7 +183,7 @@ class _BillStatusBadge extends StatelessWidget {
             style: GoogleFonts.notoSansThai(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: isCompleted ? AppColors.emeraldDark : const Color(0xFF92400E),
+              color: isCompleted ? AppColors.emeraldText : AppColors.amberText,
             ),
           ),
         ],

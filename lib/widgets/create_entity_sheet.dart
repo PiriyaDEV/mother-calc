@@ -300,7 +300,7 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
                             decoration: BoxDecoration(
                               color: isDark
                                   ? AppColors.bgDark
-                                  : const Color(0xFFF3F4F6),
+                                  : AppColors.neutral100,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: _showEmojiPicker
@@ -383,8 +383,8 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
                               color: selected
                                   ? AppColors.primary.withValues(alpha: 0.12)
                                   : (isDark
-                                      ? const Color(0xFF1F2937)
-                                      : const Color(0xFFF3F4F6)),
+                                      ? AppColors.surfaceDark
+                                      : AppColors.neutral100),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
                                 color: selected
@@ -604,8 +604,8 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
                                 color: selected
                                     ? AppColors.primary
                                     : (isDark
-                                        ? const Color(0xFF1F2937)
-                                        : const Color(0xFFF3F4F6)),
+                                        ? AppColors.surfaceDark
+                                        : AppColors.neutral100),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Row(
@@ -663,8 +663,8 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
                                   color: selected
                                       ? AppColors.primary
                                       : (isDark
-                                          ? const Color(0xFF1F2937)
-                                          : const Color(0xFFF3F4F6)),
+                                          ? AppColors.surfaceDark
+                                          : AppColors.neutral100),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Center(
@@ -791,7 +791,7 @@ class _EmojiPickerGrid extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(maxHeight: 192),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.bgDark : const Color(0xFFF9FAFB),
+        color: isDark ? AppColors.bgDark : AppColors.neutral50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -811,8 +811,8 @@ class _EmojiPickerGrid extends StatelessWidget {
                 height: 36,
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF374151)
-                      : const Color(0xFFE5E7EB),
+                      ? AppColors.borderDark
+                      : AppColors.neutral100,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Center(
@@ -875,7 +875,7 @@ class _ToggleCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB),
+        color: isDark ? AppColors.surfaceDark : AppColors.neutral50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: enabled

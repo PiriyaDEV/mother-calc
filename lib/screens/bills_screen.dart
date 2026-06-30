@@ -144,8 +144,8 @@ class _BillsScreenState extends State<BillsScreen>
                 height: 40,
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF1F2937)
-                      : const Color(0xFFF3F4F6),
+                      ? AppColors.surfaceDark
+                      : AppColors.neutral100,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: TabBar(
@@ -348,7 +348,7 @@ class _SectionHeaderWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: item.isGroup
-                  ? const Color(0xFFF0F4FF)
+                  ? AppColors.accentIce
                   : (isDark ? AppColors.borderDark : AppColors.borderLight),
               borderRadius: BorderRadius.circular(AppRadii.xl),
               border: Border.all(
@@ -390,8 +390,8 @@ class _SectionHeaderWidget extends StatelessWidget {
                     color: item.isGroup
                         ? AppColors.primary.withValues(alpha: 0.12)
                         : (isDark
-                            ? const Color(0xFF374151)
-                            : const Color(0xFFE5E7EB)),
+                            ? AppColors.borderDark
+                            : AppColors.neutral100),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -403,7 +403,7 @@ class _SectionHeaderWidget extends StatelessWidget {
                           ? AppColors.primary
                           : (isDark
                               ? AppColors.textTertiaryDark
-                              : const Color(0xFF6B7280)),
+                              : AppColors.neutral600),
                     ),
                   ),
                 ),

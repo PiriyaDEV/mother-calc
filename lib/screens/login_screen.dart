@@ -84,14 +84,14 @@ class _LoginScreenState extends State<LoginScreen>
             decoration: BoxDecoration(
               gradient: isDark
                   ? const LinearGradient(
-                      colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFF0B132B), Color(0xFF101E3D), Color(0xFF16284F)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     )
                   : const LinearGradient(
-                      colors: [Color(0xFFEFF6FF), Color(0xFFF8FAFF), Color(0xFFFFFFFF)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFFE8F2FF), Color(0xFFCFE3FF), Color(0xFFFFFFFF)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
             ),
           ),
@@ -102,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen>
             right: -60,
             child: _Blob(
               size: 260,
-              color: AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.12),
+              color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.18 : 0.10),
             ),
           ),
           Positioned(
@@ -110,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen>
             left: -100,
             child: _Blob(
               size: 200,
-              color: const Color(0xFF6B8AFF).withValues(alpha: isDark ? 0.1 : 0.08),
+              color: AppColors.accentSky.withValues(alpha: isDark ? 0.12 : 0.08),
             ),
           ),
           Positioned(
@@ -118,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen>
             left: -40,
             child: _Blob(
               size: 220,
-              color: AppColors.primary.withValues(alpha: isDark ? 0.12 : 0.08),
+              color: AppColors.primaryDeepNavy.withValues(alpha: isDark ? 0.20 : 0.06),
             ),
           ),
           Positioned(
@@ -126,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen>
             right: -80,
             child: _Blob(
               size: 180,
-              color: const Color(0xFFA855F7).withValues(alpha: isDark ? 0.08 : 0.06),
+              color: AppColors.accentSky.withValues(alpha: isDark ? 0.10 : 0.06),
             ),
           ),
 
@@ -238,7 +238,7 @@ class _LoginScreenState extends State<LoginScreen>
                               : _signInWithGoogle,
                           isLoading: _googleLoading,
                           backgroundColor: isDark
-                              ? const Color(0xFF1F2937)
+                              ? AppColors.surfaceDark
                               : Colors.white,
                           icon: Image.asset(
                             'assets/images/google-logo.png',
@@ -252,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen>
                           border: Border.all(
                             color: isDark
                                 ? AppColors.borderDark
-                                : const Color(0xFFE5E7EB),
+                                : AppColors.neutral100,
                             width: 1.5,
                           ),
                         ),
@@ -335,13 +335,13 @@ class _FeaturePill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF1F2937)
-            : Colors.white.withValues(alpha: 0.8),
+            ? AppColors.surfaceDark
+            : Colors.white.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isDark
               ? AppColors.borderDark
-              : const Color(0xFFE5E7EB),
+              : AppColors.neutral100,
         ),
         boxShadow: isDark
             ? null

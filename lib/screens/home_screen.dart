@@ -186,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final firstName = displayName.split(' ').first;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : const Color(0xFFF4F6FB),
+      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
@@ -204,16 +204,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.all(AppSpacing.xxl),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF286BFE), Color(0xFF4366F4), Color(0xFF8B5CF6)],
+                        colors: [Color(0xFF2D5BFF), Color(0xFF1A3FCC), Color(0xFF0B1E3D)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        stops: [0.0, 0.5, 1.0],
+                        stops: [0.0, 0.55, 1.0],
                       ),
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(AppRadii.md),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF286BFE).withValues(alpha: 0.4),
-                          blurRadius: 28,
+                          color: const Color(0xFF2D5BFF).withValues(alpha: 0.35),
+                          blurRadius: 32,
                           offset: const Offset(0, 10),
                         ),
                       ],
@@ -336,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Icons.receipt_long_outlined,
                           label: 'บิล',
                           sublabel: 'จัดการบิล',
-                          gradientColors: const [Color(0xFF4366F4), Color(0xFF6B8AF7)],
+                          gradientColors: const [Color(0xFF2D5BFF), Color(0xFF5B82FF)],
                           onTap: () => context.go('/bills'),
                         ),
                       ),
@@ -346,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Icons.people_outline_rounded,
                           label: 'กลุ่ม',
                           sublabel: 'จัดการกลุ่ม',
-                          gradientColors: const [Color(0xFF10B981), Color(0xFF34D399)],
+                          gradientColors: const [Color(0xFF0B1E3D), Color(0xFF2D5BFF)],
                           onTap: () => context.go('/groups'),
                         ),
                       ),
@@ -356,7 +356,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Icons.person_add_outlined,
                           label: 'เพื่อน',
                           sublabel: 'จัดการ',
-                          gradientColors: const [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+                          gradientColors: const [Color(0xFF7FE0D6), Color(0xFF2D5BFF)],
                           onTap: () => context.go('/friends'),
                         ),
                       ),
@@ -379,7 +379,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Container(
                             width: 28, height: 28,
                             decoration: BoxDecoration(
-                              color: isDark ? AppColors.surfaceDark : const Color(0xFFF3F4F6),
+                              color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
                               borderRadius: BorderRadius.circular(AppRadii.sm),
                             ),
                             child: _ratesLoading
@@ -547,7 +547,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           label: 'เฉลี่ยต่อบิล',
                           value:
                               '${_formatBaht(_allBills.isEmpty ? 0 : _grandTotal / _allBills.length)} ฿',
-                          iconColor: const Color(0xFF286BFE),
+                          iconColor: AppColors.primaryBlue,
                           iconBg: AppColors.primaryFaint,
                           iconBgDark: AppColors.primary.withValues(alpha: 0.12),
                         ),
@@ -555,7 +555,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Icons.receipt_long_outlined,
                           label: 'บิลทั้งหมด',
                           value: '${_allBills.length} บิล',
-                          iconColor: const Color(0xFFA855F7),
+                          iconColor: AppColors.accentSky,
                           iconBg: AppColors.primary.withValues(alpha: 0.08),
                           iconBgDark: AppColors.primary.withValues(alpha: 0.12),
                         ),
@@ -563,7 +563,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Icons.local_fire_department_outlined,
                           label: 'รายการทั้งหมด',
                           value: '$_totalItems รายการ',
-                          iconColor: const Color(0xFFF97316),
+                          iconColor: AppColors.amber,
                           iconBg: AppColors.amberFaint,
                           iconBgDark: AppColors.amber.withValues(alpha: 0.12),
                         ),

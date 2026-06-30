@@ -71,7 +71,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final unread = provider.unreadCount;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : const Color(0xFFF4F6FB),
+      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
       body: SafeArea(
         child: Column(
           children: [

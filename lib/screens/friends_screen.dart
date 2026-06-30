@@ -173,7 +173,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                             fontSize: 12,
                             color: isDark
                                 ? AppColors.textTertiaryDark
-                                : const Color(0xFF9CA3AF),
+                                : AppColors.neutral400,
                           ),
                         ),
                       ],
@@ -189,7 +189,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF286BFE),
+                        color: AppColors.primaryBlue,
                         borderRadius: BorderRadius.circular(AppRadii.md),
                       ),
                       child: Row(
@@ -226,7 +226,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     border: Border.all(
                       color: isDark
                           ? AppColors.borderDark
-                          : const Color(0xFFF3F4F6),
+                          : AppColors.neutral100,
                     ),
                   ),
                   child: Column(
@@ -253,7 +253,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                               size: 18,
                               color: isDark
                                   ? AppColors.textTertiaryDark
-                                  : const Color(0xFF9CA3AF),
+                                  : AppColors.neutral400,
                             ),
                           ),
                         ],
@@ -274,15 +274,15 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                     hintText: '@username',
                                     hintStyle: GoogleFonts.notoSansThai(
                                       fontSize: 14,
-                                      color: const Color(0xFF9CA3AF),
+                                      color: AppColors.neutral400,
                                     ),
                                     contentPadding:
                                         const EdgeInsets.fromLTRB(
                                             36, 10, 12, 10),
                                     filled: true,
                                     fillColor: isDark
-                                        ? const Color(0xFF1F2937)
-                                        : const Color(0xFFF9FAFB),
+                                        ? AppColors.surfaceDark
+                                        : AppColors.neutral50,
                                     border: OutlineInputBorder(
                                       borderRadius:
                                           BorderRadius.circular(AppRadii.md),
@@ -340,8 +340,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                   horizontal: AppSpacing.lg, vertical: 10),
                               decoration: BoxDecoration(
                                 color: _addCtrl.text.trim().isEmpty
-                                    ? const Color(0xFF9CA3AF)
-                                    : const Color(0xFF286BFE),
+                                    ? AppColors.neutral400
+                                    : AppColors.primaryBlue,
                                 borderRadius: BorderRadius.circular(AppRadii.md),
                               ),
                               child: _addLoading
@@ -642,7 +642,7 @@ class _SectionHeader extends StatelessWidget {
           padding:
               const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
           decoration: BoxDecoration(
-            color: const Color(0xFF286BFE),
+            color: AppColors.primaryBlue,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -710,7 +710,7 @@ class _EmptyFriendsState extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.xl, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFF286BFE),
+                color: AppColors.primaryBlue,
                 borderRadius: BorderRadius.circular(AppRadii.md),
               ),
               child: Text(
@@ -770,7 +770,7 @@ class _RoundedAvatar extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: const Color(0xFF286BFE),
+        color: AppColors.primaryBlue,
         borderRadius: BorderRadius.circular(radius),
       ),
       child: Center(
@@ -887,7 +887,7 @@ class _FriendRow extends StatelessWidget {
               height: 28,
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF374151)
+                    ? AppColors.borderDark
                     : AppColors.borderLight,
                 borderRadius: BorderRadius.circular(AppRadii.sm),
               ),
@@ -896,7 +896,7 @@ class _FriendRow extends StatelessWidget {
                 size: 14,
                 color: isDark
                     ? AppColors.textTertiaryDark
-                    : const Color(0xFF6B7280),
+                    : AppColors.neutral600,
               ),
             ),
           ),

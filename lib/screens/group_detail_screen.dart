@@ -128,7 +128,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                             fontSize: 11,
                             color: isDark
                                 ? AppColors.textTertiaryDark
-                                : const Color(0xFF9CA3AF),
+                                : AppColors.neutral400,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -272,7 +272,7 @@ class _GroupTabBar extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6),
+        color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
         borderRadius: BorderRadius.circular(AppRadii.lg),
       ),
       child: Row(
@@ -286,7 +286,7 @@ class _GroupTabBar extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
                   color: isActive
-                      ? (isDark ? const Color(0xFF374151) : Colors.white)
+                      ? (isDark ? AppColors.borderDark : Colors.white)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(AppRadii.md),
                   boxShadow: isActive
@@ -313,7 +313,7 @@ class _GroupTabBar extends StatelessWidget {
                             ? AppColors.primary
                             : (isDark
                                 ? AppColors.textTertiaryDark
-                                : const Color(0xFF6B7280)),
+                                : AppColors.neutral600),
                       ),
                     ),
                     if (tab.count != null) ...[
@@ -325,8 +325,8 @@ class _GroupTabBar extends StatelessWidget {
                           color: isActive
                               ? AppColors.primary.withValues(alpha: 0.1)
                               : (isDark
-                                  ? const Color(0xFF374151)
-                                  : const Color(0xFFE5E7EB)),
+                                  ? AppColors.borderDark
+                                  : AppColors.neutral100),
                           borderRadius: BorderRadius.circular(AppRadii.sm),
                         ),
                         child: Text(
@@ -338,7 +338,7 @@ class _GroupTabBar extends StatelessWidget {
                                 ? AppColors.primary
                                 : (isDark
                                     ? AppColors.textTertiaryDark
-                                    : const Color(0xFF6B7280)),
+                                    : AppColors.neutral600),
                           ),
                         ),
                       ),
@@ -452,7 +452,7 @@ class _MembersTab extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFFB45309),
+                                color: AppColors.amberText,
                               ),
                             ),
                           ),
@@ -545,8 +545,8 @@ class _MembersTab extends StatelessWidget {
                         horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: isOwner
-                          ? const Color(0xFFFAF5FF)
-                          : const Color(0xFFF3F4F6),
+                          ? AppColors.accentIce
+                          : AppColors.neutral100,
                       borderRadius: BorderRadius.circular(AppRadii.xl),
                     ),
                     child: Text(
@@ -555,8 +555,8 @@ class _MembersTab extends StatelessWidget {
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: isOwner
-                            ? const Color(0xFFA855F7)
-                            : const Color(0xFF6B7280),
+                            ? AppColors.primaryBlue
+                            : AppColors.neutral600,
                       ),
                     ),
                   ),
