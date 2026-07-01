@@ -126,7 +126,7 @@ create table public.bills (
                                                       -- bill-level settings: VAT, service charge, rounding, currency
   tip              numeric not null default 0,        -- tip amount (absolute, not %)
   discount         numeric not null default 0,        -- discount amount (absolute)
-  status           text not null default 'draft' check (status in ('draft', 'completed')),
+  status           text not null default 'draft' check (status in ('draft', 'pending_payment', 'completed')),
                                                       -- 'draft' = editable | 'completed' = locked, payment tracking enabled
   paid_member_ids  jsonb not null default '[]',       -- [uuid] list of bill_member IDs who have paid (updated via toggleMemberPaid)
   created_at       timestamptz not null default now(),
@@ -154,6 +154,7 @@ create table public.bill_items (
   price       numeric not null default 0,
   quantity    numeric not null default 1,
   member_ids  jsonb not null default '[]',
+  custom_shares jsonb not null default '{}',
   paid_by     text,
   created_at  timestamptz not null default now()
 );

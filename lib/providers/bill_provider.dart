@@ -304,10 +304,9 @@ class BillProvider extends ChangeNotifier {
         'price': price,
         'member_ids': memberIds,
         if (paidBy != null) 'paid_by': paidBy,
+        if (customShares.isNotEmpty) 'custom_shares': customShares,
       }).select().single();
-      final item = BillItem.fromJson(data).copyWith(
-        customShares: customShares,
-      );
+      final item = BillItem.fromJson(data);
       _items = [..._items, item];
       notifyListeners();
     } catch (e) {
@@ -333,6 +332,8 @@ class BillProvider extends ChangeNotifier {
         if (memberIds != null) 'member_ids': memberIds,
         if (clearPaidBy) 'paid_by': null
         else if (paidBy != null) 'paid_by': paidBy,
+        if (clearCustomShares) 'custom_shares': <String, double>{}
+        else if (customShares != null) 'custom_shares': customShares,
       };
       await _supabase.from('bill_items').update(updates).eq('id', itemId);
       _items = _items.map((item) {

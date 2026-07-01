@@ -70,6 +70,17 @@ class AppColors {
   static const emeraldDark = Color(0xFF3DDB8C);
   static const emeraldText = Color(0xFF27A566);
 
+  // ── Emerald/blue scale (bill payment-status UI) — distinct shades
+  // from `emerald`/`primaryBlue` above, not aliases of them.
+  static const emerald50 = Color(0xFFECFDF5);
+  static const emerald100 = Color(0xFFD1FAE5);
+  static const emerald200 = Color(0xFFA7F3D0);
+  static const emerald500 = Color(0xFF10B981);
+  static const emerald600 = Color(0xFF059669);
+  static const emerald700 = Color(0xFF065F46);
+  static const blue400 = Color(0xFF4366f4);
+  static const blue500 = Color(0xFF6b8aff);
+
   // ── Semantic: error ───────────────────────────────────────────
   static const red = Color(0xFFFF5C5C);
   static const redDark = Color(0xFFFF7A7A);

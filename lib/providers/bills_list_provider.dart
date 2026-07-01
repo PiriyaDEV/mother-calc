@@ -32,12 +32,15 @@ class BillsListProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // No owner_id filter — the bills_select RLS policy already scopes
+      // this to bills the user owns OR belongs to via group membership,
+      // so filtering by owner_id here would just be more restrictive than
+      // what's actually allowed and hide the user's group bills.
       final data = await _supabase
           .from('bills')
           .select(
             '*, bill_members(*, profiles(id, username, display_name, avatar_url)), bill_items(*), groups!bills_group_id_fkey(id, name, emoji)',
           )
-          .eq('owner_id', user.id)
           .order('updated_at', ascending: false);
 
       _bills = (data as List).map((e) => Bill.fromJson(e as Map<String, dynamic>)).toList();

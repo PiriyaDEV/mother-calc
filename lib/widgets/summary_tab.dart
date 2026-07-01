@@ -64,7 +64,7 @@ Future<void> _pickSlipAndMarkPaid(
           ListTile(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             tileColor: isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB),
-            leading: const Icon(Icons.photo_library_outlined, color: _kBlue400),
+            leading: const Icon(Icons.photo_library_outlined, color: AppColors.blue400),
             title: Text('เลือกจากคลังรูป', style: GoogleFonts.notoSansThai(fontSize: 14)),
             onTap: () => Navigator.pop(ctx, ImageSource.gallery),
           ),
@@ -72,7 +72,7 @@ Future<void> _pickSlipAndMarkPaid(
           ListTile(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             tileColor: isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB),
-            leading: const Icon(Icons.camera_alt_outlined, color: _kBlue400),
+            leading: const Icon(Icons.camera_alt_outlined, color: AppColors.blue400),
             title: Text('ถ่ายภาพ', style: GoogleFonts.notoSansThai(fontSize: 14)),
             onTap: () => Navigator.pop(ctx, ImageSource.camera),
           ),
@@ -136,7 +136,7 @@ Future<void> _pickSlipAndMarkPaid(
           child: Text('ยกเลิก', style: GoogleFonts.notoSansThai()),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: _kEmerald500),
+          style: FilledButton.styleFrom(backgroundColor: AppColors.emerald500),
           onPressed: () => Navigator.pop(ctx, true),
           child: Text('ยืนยัน', style: GoogleFonts.notoSansThai(fontWeight: FontWeight.w600)),
         ),
@@ -149,16 +149,6 @@ Future<void> _pickSlipAndMarkPaid(
 
   await billProvider.toggleMemberPaid(bill.id, memberId, bill.paidMemberIds);
 }
-
-// ── Color constants ───────────────────────────────────────────
-const _kEmerald50 = Color(0xFFECFDF5);
-const _kEmerald100 = Color(0xFFD1FAE5);
-const _kEmerald200 = Color(0xFFA7F3D0);
-const _kEmerald500 = Color(0xFF10B981);
-const _kEmerald600 = Color(0xFF059669);
-const _kEmerald700 = Color(0xFF065F46);
-const _kBlue400 = Color(0xFF4366f4);
-const _kBlue500 = Color(0xFF6b8aff);
 
 class SummaryTab extends StatefulWidget {
   final Bill bill;
@@ -386,7 +376,7 @@ class _HeroCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [_kBlue400, _kBlue500],
+          colors: [AppColors.blue400, AppColors.blue500],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -594,7 +584,7 @@ class _BillBreakdownCard extends StatelessWidget {
                 style: GoogleFonts.notoSansThai(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: _kBlue400,
+                  color: AppColors.blue400,
                 ),
               ),
             ],
@@ -641,7 +631,7 @@ class _BreakdownRow extends StatelessWidget {
             style: GoogleFonts.notoSansThai(
               fontSize: 13,
               color: isDiscount
-                  ? _kEmerald600
+                  ? AppColors.emerald600
                   : (isDark
                       ? AppColors.textPrimaryDark
                       : AppColors.textPrimaryLight),
@@ -701,13 +691,13 @@ class _MemberSelector extends StatelessWidget {
               Color? borderColor;
 
               if (isSelected) {
-                bgColor = _kBlue400;
+                bgColor = AppColors.blue400;
                 textColor = Colors.white;
                 borderColor = null;
               } else if (isPaid) {
-                bgColor = _kEmerald50;
-                textColor = _kEmerald700;
-                borderColor = _kEmerald200;
+                bgColor = AppColors.emerald50;
+                textColor = AppColors.emerald700;
+                borderColor = AppColors.emerald200;
               } else {
                 bgColor = isDark
                     ? const Color(0xFF1F2937)
@@ -757,7 +747,7 @@ class _MemberSelector extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? Colors.white.withValues(alpha: 0.25)
-                                : _kBlue400.withValues(alpha: 0.15),
+                                : AppColors.blue400.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -765,7 +755,7 @@ class _MemberSelector extends StatelessWidget {
                             style: GoogleFonts.notoSansThai(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
-                              color: isSelected ? Colors.white : _kBlue400,
+                              color: isSelected ? Colors.white : AppColors.blue400,
                             ),
                           ),
                         ),
@@ -773,7 +763,7 @@ class _MemberSelector extends StatelessWidget {
                       if (isPaid && !isSelected) ...[
                         const SizedBox(width: 4),
                         const Icon(Icons.check_rounded,
-                            size: 14, color: _kEmerald600),
+                            size: 14, color: AppColors.emerald600),
                       ],
                     ],
                   ),
@@ -869,7 +859,7 @@ class _SelectedMemberCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: _kBlue400.withValues(alpha: 0.1),
+                                color: AppColors.blue400.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -877,7 +867,7 @@ class _SelectedMemberCard extends StatelessWidget {
                                 style: GoogleFonts.notoSansThai(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
-                                  color: _kBlue400,
+                                  color: AppColors.blue400,
                                 ),
                               ),
                             ),
@@ -998,7 +988,7 @@ class _SelectedMemberCard extends StatelessWidget {
                     style: GoogleFonts.notoSansThai(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: _kBlue400,
+                      color: AppColors.blue400,
                     ),
                   ),
                 ],
@@ -1061,14 +1051,14 @@ class _DebtSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(
                 horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: _kEmerald50,
+              color: AppColors.emerald50,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _kEmerald200),
+              border: Border.all(color: AppColors.emerald200),
             ),
             child: Row(
               children: [
                 const Icon(Icons.check_circle_rounded,
-                    color: _kEmerald600, size: 18),
+                    color: AppColors.emerald600, size: 18),
                 const SizedBox(width: 8),
                 Text(
                   isMe
@@ -1076,7 +1066,7 @@ class _DebtSection extends StatelessWidget {
                       : '${selectedMember.name} ไม่ต้องโอนให้ใคร',
                   style: GoogleFonts.notoSansThai(
                     fontSize: 13,
-                    color: _kEmerald700,
+                    color: AppColors.emerald700,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -1129,12 +1119,12 @@ class _DebtCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: isPaid
-            ? _kEmerald50
+            ? AppColors.emerald50
             : (isDark ? AppColors.surfaceDark : Colors.white),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isPaid
-              ? _kEmerald200
+              ? AppColors.emerald200
               : (isDark ? AppColors.borderDark : AppColors.borderLight),
         ),
       ),
@@ -1194,7 +1184,7 @@ class _DebtCard extends StatelessWidget {
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                         color: isPaid
-                            ? _kEmerald600
+                            ? AppColors.emerald600
                             : (isDark
                                 ? AppColors.textPrimaryDark
                                 : AppColors.textPrimaryLight),
@@ -1222,7 +1212,7 @@ class _DebtCard extends StatelessWidget {
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
                         color: isQrExpanded
-                            ? _kBlue400.withValues(alpha: 0.1)
+                            ? AppColors.blue400.withValues(alpha: 0.1)
                             : (isDark
                                 ? const Color(0xFF374151)
                                 : const Color(0xFFF3F4F6)),
@@ -1232,7 +1222,7 @@ class _DebtCard extends StatelessWidget {
                         Icons.qr_code_rounded,
                         size: 18,
                         color: isQrExpanded
-                            ? _kBlue400
+                            ? AppColors.blue400
                             : (isDark
                                 ? AppColors.textTertiaryDark
                                 : AppColors.textTertiaryLight),
@@ -1306,7 +1296,7 @@ class _DebtCard extends StatelessWidget {
                         ? Icons.check_circle_rounded
                         : Icons.radio_button_unchecked_rounded,
                     size: 16,
-                    color: isPaid ? _kEmerald500 : AppColors.textTertiaryLight,
+                    color: isPaid ? AppColors.emerald500 : AppColors.textTertiaryLight,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -1314,7 +1304,7 @@ class _DebtCard extends StatelessWidget {
                     style: GoogleFonts.notoSansThai(
                       fontSize: 13,
                       color: isPaid
-                          ? _kEmerald600
+                          ? AppColors.emerald600
                           : (isDark
                               ? AppColors.textSecondaryDark
                               : AppColors.textSecondaryLight),
@@ -1344,7 +1334,7 @@ class _DebtCard extends StatelessWidget {
                               ? (isDark
                                   ? const Color(0xFF374151)
                                   : const Color(0xFFF3F4F6))
-                              : _kEmerald500,
+                              : AppColors.emerald500,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
@@ -1533,7 +1523,7 @@ class _AllMembersSection extends StatelessWidget {
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: isPaid
-                              ? _kEmerald600
+                              ? AppColors.emerald600
                               : (isDark
                                   ? AppColors.textPrimaryDark
                                   : AppColors.textPrimaryLight),
@@ -1545,7 +1535,7 @@ class _AllMembersSection extends StatelessWidget {
                       if (isPaid) ...[
                         const SizedBox(width: 6),
                         const Icon(Icons.check_rounded,
-                            size: 14, color: _kEmerald500),
+                            size: 14, color: AppColors.emerald500),
                       ],
                     ],
                   ),
@@ -1571,14 +1561,14 @@ class _AllMembersSection extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: isPaid
-                      ? _kEmerald50
+                      ? AppColors.emerald50
                       : (isDark
                           ? const Color(0xFF1F2937)
                           : const Color(0xFFF9FAFB)),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isPaid
-                        ? _kEmerald100
+                        ? AppColors.emerald100
                         : (isDark
                             ? AppColors.borderDark
                             : AppColors.borderLight),
@@ -1617,14 +1607,14 @@ class _AllMembersSection extends StatelessWidget {
                                     const SizedBox(width: 4),
                                     _SmallBadge(
                                         label: 'คุณ',
-                                        color: _kBlue400,
+                                        color: AppColors.blue400,
                                         isDark: isDark),
                                   ],
                                   if (isPaid) ...[
                                     const SizedBox(width: 4),
                                     _SmallBadge(
                                         label: 'จ่ายแล้ว',
-                                        color: _kEmerald600,
+                                        color: AppColors.emerald600,
                                         isDark: isDark),
                                   ],
                                 ],
@@ -1648,7 +1638,7 @@ class _AllMembersSection extends StatelessWidget {
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: isPaid
-                                ? _kEmerald600
+                                ? AppColors.emerald600
                                 : (isDark
                                     ? AppColors.textPrimaryDark
                                     : AppColors.textPrimaryLight),
@@ -1714,7 +1704,7 @@ class _AllMembersSection extends StatelessWidget {
                                 horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
                               color: isPaid
-                                  ? _kEmerald500
+                                  ? AppColors.emerald500
                                   : (isDark
                                       ? const Color(0xFF374151)
                                       : const Color(0xFFF3F4F6)),

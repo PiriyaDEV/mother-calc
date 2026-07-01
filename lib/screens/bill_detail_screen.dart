@@ -740,7 +740,8 @@ class _ItemTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final assignedMembers = members
-        .where((m) => item.shares.containsKey(m.id) && item.shares[m.id]! > 0)
+        .where((m) =>
+            item.splitWeights.containsKey(m.id) && item.splitWeights[m.id]! > 0)
         .toList();
     final paidByMember = item.paidBy != null
         ? members.where((m) => m.id == item.paidBy).firstOrNull

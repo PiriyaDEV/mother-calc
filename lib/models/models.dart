@@ -232,9 +232,15 @@ class BillItem {
   /// True when this item uses unequal split amounts.
   bool get isUnequalSplit => customShares.isNotEmpty;
 
-  /// Shares map: memberId → fractional share (0..1) for equal split,
-  /// or memberId → absolute amount for unequal split.
-  Map<String, double> get shares {
+  /// Per-member split *weights* for this item — memberId → fractional
+  /// weight (0..1) for equal split, or memberId → absolute amount for
+  /// unequal split. These are NOT directly comparable dollar amounts:
+  /// always divide by the sum of all weights to get a member's actual
+  /// proportional share of [price] (see `simplifyDebts`/bill calculation
+  /// in bill_utils.dart) — the ratio is what matters, not the raw value.
+  /// Safe to use `.keys`/`.containsKey` directly when you only need "which
+  /// members are assigned to this item," regardless of split mode.
+  Map<String, double> get splitWeights {
     if (customShares.isNotEmpty) return customShares;
     if (memberIds.isEmpty) return {};
     final share = 1.0 / memberIds.length;

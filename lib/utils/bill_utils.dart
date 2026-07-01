@@ -79,12 +79,12 @@ BillCalculation calculateBill(Bill bill) {
   }
 
   for (final item in items) {
-    if (item.shares.isEmpty) continue;
+    if (item.splitWeights.isEmpty) continue;
     final totalWeight =
-        item.shares.values.fold<double>(0, (sum, w) => sum + w);
+        item.splitWeights.values.fold<double>(0, (sum, w) => sum + w);
     if (totalWeight <= 0) continue;
 
-    for (final entry in item.shares.entries) {
+    for (final entry in item.splitWeights.entries) {
       final memberId = entry.key;
       final weight = entry.value;
       final rawAmount = (weight / totalWeight) * item.price;

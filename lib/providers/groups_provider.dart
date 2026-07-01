@@ -61,21 +61,9 @@ class GroupsProvider extends ChangeNotifier {
     final user = _supabase.auth.currentUser;
     if (user == null) return null;
     try {
-      // Guard: ensure profile row exists before FK-constrained insert.
-      // The handle_new_user trigger can silently miss on LINE/OAuth sign-ups.
-      final meta = user.userMetadata ?? {};
-      final fallbackName = user.email?.split('@').first ??
-          'user_${user.id.substring(0, 8)}';
-      await _supabase.from('profiles').upsert({
-        'id': user.id,
-        'username': meta['username'] as String? ?? fallbackName,
-        'display_name': meta['display_name'] as String? ??
-            meta['full_name'] as String? ??
-            meta['name'] as String? ??
-            fallbackName,
-        'avatar_url': meta['avatar_url'] as String? ?? meta['picture'] as String?,
-      }, onConflict: 'id', ignoreDuplicates: true);
-
+      // No profile-row guard here — AuthProvider._ensureProfile() is the
+      // single source of truth for that, and always runs (via _loadProfile)
+      // on every sign-in before the user could reach this call.
       final data = await _supabase.from('groups').insert({
         'name': name,
         'emoji': emoji,
@@ -144,6 +132,15 @@ class GroupsProvider extends ChangeNotifier {
   }
 
   Future<void> loadGroupDetail(String groupId) async {
+    // Switching to a different group than what's currently loaded — clear
+    // the stale data immediately so the UI shows a loading state instead
+    // of briefly flashing the previous group's members/bills while the
+    // new group's data is still in flight.
+    if (_currentGroup?.id != groupId) {
+      _currentGroup = null;
+      _currentMembers = [];
+      _currentGroupBills = [];
+    }
     _detailLoading = true;
     _error = null;
     notifyListeners();
@@ -309,58 +306,6 @@ class GroupsProvider extends ChangeNotifier {
     }
   }
 
-  /// Compute simplified debts across all group bills
-  List<_DebtEdge> computeGroupSummary() {
-    final Map<String, double> balances = {};
-
-    for (final bill in _currentGroupBills) {
-      final subtotal = bill.items.fold(0.0, (s, i) => s + i.price);
-      if (subtotal == 0) continue;
-
-      for (final item in bill.items) {
-        if (item.memberIds.isEmpty) continue;
-        final perPerson = item.price / item.memberIds.length;
-        for (final memberId in item.memberIds) {
-          balances[memberId] = (balances[memberId] ?? 0) - perPerson;
-        }
-      }
-    }
-
-    // Simplify debts
-    final creditors = balances.entries
-        .where((e) => e.value > 0.01)
-        .map((e) => MapEntry(e.key, e.value))
-        .toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    final debtors = balances.entries
-        .where((e) => e.value < -0.01)
-        .map((e) => MapEntry(e.key, -e.value))
-        .toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    final List<_DebtEdge> edges = [];
-    int ci = 0, di = 0;
-    final cAmounts = creditors.map((e) => e.value).toList();
-    final dAmounts = debtors.map((e) => e.value).toList();
-
-    while (ci < creditors.length && di < debtors.length) {
-      final amount = cAmounts[ci] < dAmounts[di]
-          ? cAmounts[ci]
-          : dAmounts[di];
-      edges.add(_DebtEdge(
-        fromId: debtors[di].key,
-        toId: creditors[ci].key,
-        amount: amount,
-      ));
-      cAmounts[ci] -= amount;
-      dAmounts[di] -= amount;
-      if (cAmounts[ci] < 0.01) ci++;
-      if (dAmounts[di] < 0.01) di++;
-    }
-
-    return edges;
-  }
-
   void clear() {
     _groups = [];
     _currentGroup = null;
@@ -370,12 +315,4 @@ class GroupsProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
   }
-}
-
-class _DebtEdge {
-  final String fromId;
-  final String toId;
-  final double amount;
-  const _DebtEdge(
-      {required this.fromId, required this.toId, required this.amount});
 }

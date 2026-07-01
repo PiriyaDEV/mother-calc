@@ -14,40 +14,42 @@ import 'screens/notifications_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/profile_screen.dart';
 
+// Which stage of the auth/onboarding lifecycle the app is in — gates which
+// top-level route the user is allowed to be on. Not related to a bill's
+// own `status` ('draft' | 'pending_payment' | 'completed'): that's a
+// per-bill concern handled entirely within BillsListProvider and
+// BillDetailScreen's own UI, never a router-level redirect.
+enum _AuthRouteState { loading, unauthenticated, needsOnboarding, ready }
+
+_AuthRouteState _resolveAuthState(AuthProvider auth) {
+  if (auth.loading) return _AuthRouteState.loading;
+  if (!auth.isLoggedIn) return _AuthRouteState.unauthenticated;
+  if (auth.needsOnboarding) return _AuthRouteState.needsOnboarding;
+  return _AuthRouteState.ready;
+}
+
 class AppRouter {
   static GoRouter router(AuthProvider authProvider) {
     return GoRouter(
       initialLocation: '/splash',
       redirect: (context, state) {
-        final isLoading = authProvider.loading;
-        final isLoggedIn = authProvider.isLoggedIn;
-        final needsOnboarding = authProvider.needsOnboarding;
         final location = state.matchedLocation;
-
-        if (isLoading) {
-          return location == '/splash' ? null : '/splash';
-        }
-
         final isLoginRoute = location == '/login';
         final isSplashRoute = location == '/splash';
         final isOnboardingRoute = location == '/onboarding';
 
-        if (isSplashRoute) {
-          if (!isLoggedIn) return '/login';
-          return needsOnboarding ? '/onboarding' : '/home';
+        switch (_resolveAuthState(authProvider)) {
+          case _AuthRouteState.loading:
+            return isSplashRoute ? null : '/splash';
+          case _AuthRouteState.unauthenticated:
+            return isLoginRoute ? null : '/login';
+          case _AuthRouteState.needsOnboarding:
+            return isOnboardingRoute ? null : '/onboarding';
+          case _AuthRouteState.ready:
+            return (isLoginRoute || isSplashRoute || isOnboardingRoute)
+                ? '/home'
+                : null;
         }
-
-        if (!isLoggedIn && !isLoginRoute) return '/login';
-        if (isLoggedIn && isLoginRoute) {
-          return needsOnboarding ? '/onboarding' : '/home';
-        }
-        if (isLoggedIn && needsOnboarding && !isOnboardingRoute) {
-          return '/onboarding';
-        }
-        if (isLoggedIn && !needsOnboarding && isOnboardingRoute) {
-          return '/home';
-        }
-        return null;
       },
       refreshListenable: authProvider,
       routes: [

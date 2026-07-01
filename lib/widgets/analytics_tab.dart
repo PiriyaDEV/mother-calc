@@ -444,7 +444,7 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
           final rank = entry.key;
           final item = entry.value;
           final pct = maxItemPrice > 0 ? item.price / maxItemPrice : 0.0;
-          final sharedCount = item.shares.keys.length;
+          final sharedCount = item.splitWeights.keys.length;
 
           final barColors = [
             const Color(0xFF4366f4),

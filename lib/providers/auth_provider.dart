@@ -16,7 +16,10 @@ class AuthProvider extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
   // Shared instance — on web, `signIn()` triggers the GIS popup and the
   // result is delivered via `onCurrentUserChanged` (not a return value).
-  final _googleSignIn = GoogleSignIn();
+  // serverClientId (assigned in _init) is required on Android for
+  // GoogleSignInAuthentication.idToken to be populated at all — without
+  // it, signInWithIdToken has nothing to verify.
+  late final GoogleSignIn _googleSignIn;
 
   // Optional references to sibling providers — set after construction.
   LocaleProvider? _localeProvider;
@@ -81,6 +84,20 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void _init() {
+    // NOTE: String.fromEnvironment MUST be called with a literal string —
+    // not a variable — hence the repeated try/catch instead of a helper.
+    String googleWebClientId;
+    try {
+      googleWebClientId = dotenv.env['GOOGLE_WEB_CLIENT_ID']?.isNotEmpty == true
+          ? dotenv.env['GOOGLE_WEB_CLIENT_ID']!
+          : const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+    } catch (_) {
+      googleWebClientId = const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+    }
+    _googleSignIn = GoogleSignIn(
+      serverClientId: googleWebClientId.isNotEmpty ? googleWebClientId : null,
+    );
+
     _user = _supabase.auth.currentUser;
 
     _supabase.auth.onAuthStateChange.listen((data) async {
@@ -114,27 +131,18 @@ class AuthProvider extends ChangeNotifier {
       return;
     }
 
-    // Cached session path — wait for profile before marking initialized.
+    // Cached session path — `Supabase.initialize()` is awaited before
+    // runApp(), so any persisted session is already restored by the time
+    // we get here; `_user` above reflects it accurately without needing
+    // to guess with a delay and re-check.
     if (_user != null) {
       _loadProfile().then((_) {
         _initialized = true;
         notifyListeners();
       });
     } else {
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (!_initialized) {
-          _user = _supabase.auth.currentUser;
-          if (_user != null) {
-            _loadProfile().then((_) {
-              _initialized = true;
-              notifyListeners();
-            });
-          } else {
-            _initialized = true;
-            notifyListeners();
-          }
-        }
-      });
+      _initialized = true;
+      notifyListeners();
     }
   }
 
@@ -294,57 +302,66 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Shared by both the native SDK flow (mobile) and the `onCurrentUserChanged`
-  /// listener (web): creates or signs in to a deterministic Supabase account
-  /// for this Google user, then upserts their public profile row.
+  /// listener (web): exchanges Google's ID token for a Supabase session via
+  /// `signInWithIdToken`, which Supabase verifies server-side against
+  /// Google's public keys. No fake email/password — unlike the old pattern
+  /// here (and the LINE flow, which still uses it), the real Google-issued
+  /// identity proof means an attacker can't just guess a deterministic
+  /// password derived from a googleId to sign in as someone else.
+  ///
+  /// Requires the Google provider to be enabled in the Supabase dashboard
+  /// with this app's Google Client ID(s) added to its authorized list.
   Future<String?> _handleGoogleAccount(GoogleSignInAccount googleUser) async {
     try {
-      final googleId = googleUser.id;
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      if (idToken == null) {
+        return 'Google sign-in failed: missing ID token';
+      }
+
+      final authResponse = await _supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: googleAuth.accessToken,
+      );
+
+      final user = authResponse.user;
+      if (user == null) return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+
       final displayName = googleUser.displayName ?? 'Google User';
       final avatarUrl = googleUser.photoUrl;
 
-      final fakeEmail = 'google_$googleId@kidtang.app';
-      final fakePassword = 'GOOGLE_${googleId}_KIDTANG';
+      // signInWithIdToken creates the auth user but never touches our
+      // public `profiles` table — do that ourselves. A brand new account
+      // has no profile row yet; existing users keep whatever
+      // username/display_name they set during onboarding and only get
+      // avatar_url refreshed in case their Google picture changed.
+      final existing = await _supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle();
 
-      AuthResponse? authResponse;
-      try {
-        authResponse = await _supabase.auth.signInWithPassword(
-          email: fakeEmail,
-          password: fakePassword,
-        );
-      } on AuthException catch (e) {
-        if (e.statusCode == '400' ||
-            e.message.toLowerCase().contains('invalid')) {
-          authResponse = await _supabase.auth.signUp(
-            email: fakeEmail,
-            password: fakePassword,
-            data: {
-              'display_name': displayName,
-              'avatar_url': avatarUrl,
-              'google_user_id': googleId,
-              'provider': 'google',
-            },
-          );
-        } else {
-          rethrow;
-        }
-      }
-
-      if (authResponse.user != null) {
-        final uid = authResponse.user!.id;
+      if (existing == null) {
         final sanitized = displayName
             .trim()
             .replaceAll(RegExp(r'\s+'), '_')
             .replaceAll(RegExp(r'[^\w฀-๿]'), '');
         final usernameBase = sanitized.isNotEmpty
             ? sanitized
-            : 'google_${googleId.substring(0, 8)}';
+            : 'google_${googleUser.id.substring(0, 8)}';
 
         await _supabase.from('profiles').upsert({
-          'id': uid,
+          'id': user.id,
           'username': usernameBase,
           'display_name': displayName,
           'avatar_url': avatarUrl,
         }, onConflict: 'id');
+      } else {
+        await _supabase
+            .from('profiles')
+            .update({'avatar_url': avatarUrl})
+            .eq('id', user.id);
       }
 
       return null;
@@ -429,7 +446,14 @@ class AuthProvider extends ChangeNotifier {
         displayName: profile.displayName,
         avatarUrl: profile.pictureUrl,
       );
-      if (error != null) _lineWebCallbackError = error;
+      if (error != null) {
+        // signIn/signUp above didn't produce a session, so
+        // onAuthStateChange won't fire to mark us initialized — do it here
+        // instead of guessing with a delay.
+        _lineWebCallbackError = error;
+        _initialized = true;
+        notifyListeners();
+      }
       // On success, the signIn/signUp call above triggers onAuthStateChange,
       // which finishes initialization — nothing more to do here.
     } catch (e) {
@@ -438,16 +462,10 @@ class AuthProvider extends ChangeNotifier {
       if (e is Exception) {
         debugPrint('LINE web callback exception message: ${e.toString()}');
       }
+      // completeLogin/_finishLineSignIn threw before any session was
+      // created, so onAuthStateChange never fires — mark initialized
+      // immediately instead of leaving the app stuck on the splash screen.
       _lineWebCallbackError = 'เข้าสู่ระบบด้วย LINE ไม่สำเร็จ: ${e.toString()}';
-    }
-
-    // Safety net in case onAuthStateChange never fires (e.g. the error path
-    // above, or an unexpected Supabase hiccup) — don't leave the app stuck
-    // on the splash screen.
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (!_initialized) {
-      _user = _supabase.auth.currentUser;
-      if (_user != null) await _loadProfile();
       _initialized = true;
       notifyListeners();
     }
@@ -469,11 +487,20 @@ class AuthProvider extends ChangeNotifier {
 
     // Try signing in first; if account doesn't exist, sign up.
     AuthResponse? authResponse;
+    bool isNewUser = false;
     try {
       authResponse = await _supabase.auth.signInWithPassword(
         email: fakeEmail,
         password: fakePassword,
       );
+      // Existing user — do NOT overwrite username/display_name they may have
+      // customised. Only update avatar_url in case their LINE pic changed.
+      if (authResponse.user != null) {
+        await _supabase
+            .from('profiles')
+            .update({'avatar_url': avatarUrl})
+            .eq('id', authResponse.user!.id);
+      }
     } on AuthException catch (e) {
       // Account not found → sign up
       if (e.statusCode == '400' ||
@@ -488,13 +515,15 @@ class AuthProvider extends ChangeNotifier {
             'provider': 'line',
           },
         );
+        isNewUser = true;
       } else {
         rethrow;
       }
     }
 
-    // Upsert the public profile row with LINE's display name & avatar
-    if (authResponse.user != null) {
+    // Only create the profile row for brand-new accounts — existing users
+    // keep whatever username/display_name they set during onboarding.
+    if (isNewUser && authResponse.user != null) {
       final uid = authResponse.user!.id;
 
       // Use LINE's display name as the username base (sanitized),
@@ -585,13 +614,21 @@ class AuthProvider extends ChangeNotifier {
       };
       await _supabase.from('profiles').upsert(updates);
 
-      // Sync new display name into all bill_members rows linked to this user
+      // Best-effort sync of the new display name into bill_members — kept
+      // as a client-side fallback alongside the profiles_sync_names DB
+      // trigger (see supabase/migrations). Wrapped separately so a
+      // failure here can't block the profile update above from
+      // completing/showing in the UI, and isn't silently swallowed either.
       if (displayName != null) {
-        await _supabase
-            .from('bill_members')
-            .update({'name': displayName})
-            .eq('user_id', _user!.id)
-            .eq('is_external', false);
+        try {
+          await _supabase
+              .from('bill_members')
+              .update({'name': displayName})
+              .eq('user_id', _user!.id)
+              .eq('is_external', false);
+        } catch (e) {
+          debugPrint('Failed to sync display name to bill_members: $e');
+        }
       }
 
       _profile = _profile!.copyWith(
