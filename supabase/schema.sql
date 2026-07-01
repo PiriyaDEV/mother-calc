@@ -178,6 +178,7 @@ create table public.line_login_handoffs (
   session    jsonb not null,
   created_at timestamptz not null default now()
 );
+alter table public.line_login_handoffs enable row level security;
 
 -- Remote feature flags — toggle without releasing a new app version
 -- (e.g. ads_enabled). Anyone can read; only service_role can write.
@@ -438,6 +439,15 @@ create policy "bill_items_delete" on public.bill_items
   );
 
 -- ============================================================
+-- Policies — line_login_handoffs
+-- pairing_id is a 256-bit random token — it IS the authorization.
+-- Reads go through get_line_login_handoff() RPC (security definer)
+-- so clients can never enumerate the table.
+-- ============================================================
+create policy "line_login_handoffs_insert" on public.line_login_handoffs
+  for insert with check (pairing_id ~ '^[A-Za-z0-9_-]{16,64}$');
+
+-- ============================================================
 -- Policies — app_config
 -- ============================================================
 create policy "app_config_select" on public.app_config
@@ -611,4 +621,11 @@ begin
   return v_session;
 end;
 $$;
+
+-- Allow anon + authenticated to call the RPC and to insert handoff rows.
+-- The Safari tab that completes LINE login may not yet have a Supabase
+-- session (it signs in during _completeLineWebLogin), so anon access is
+-- required for the insert.
+grant execute on function public.get_line_login_handoff(text) to anon, authenticated;
+grant insert on public.line_login_handoffs to anon, authenticated;
 
