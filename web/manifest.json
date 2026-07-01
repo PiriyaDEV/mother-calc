@@ -1,12 +1,17 @@
 {
+    "id": "/",
     "name": "Kidtang! - มาจ่ายเงินกัน",
     "short_name": "Kidtang!",
+    "description": "แอปหารบิล คิดเงิน แบ่งค่าใช้จ่าย รองรับ VAT และ Service Charge",
     "start_url": "/",
+    "scope": "/",
     "display": "standalone",
+    "display_override": ["standalone", "minimal-ui", "browser"],
     "background_color": "#ffffff",
     "theme_color": "#4366f4",
-    "description": "แอปหารบิล คิดเงิน แบ่งค่าใช้จ่าย รองรับ VAT และ Service Charge",
-    "orientation": "portrait",
+    "orientation": "portrait-primary",
+    "lang": "th",
+    "dir": "ltr",
     "prefer_related_applications": false,
     "categories": ["finance", "utilities"],
     "icons": [
@@ -33,6 +38,30 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "สร้างบิลใหม่",
+            "short_name": "บิลใหม่",
+            "description": "เปิดหน้าสร้างบิลหารค่าใช้จ่าย",
+            "url": "/bills",
+            "icons": [
+                {
+                    "src": "icons/Icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "หน้าหลัก Kidtang!"
         }
     ]
 }
