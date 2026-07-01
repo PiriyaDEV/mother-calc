@@ -1,5 +1,5 @@
 -- ============================================================
--- Kidtang — Supabase Schema v6
+-- Kidtang — Supabase Schema v7
 -- Safe to run on an existing DB — drops everything first,
 -- then recreates from scratch.
 -- ============================================================
@@ -25,6 +25,7 @@ drop function if exists public.is_group_member(uuid)          cascade;
 drop function if exists public.is_group_owner(uuid)           cascade;
 drop function if exists public.sync_bill_member_names()       cascade;
 drop function if exists public.trigger_push_on_notification() cascade;
+drop function if exists public.get_line_login_handoff(text)   cascade;
 -- Tables (child -> parent order)
 drop table if exists public.bill_items          cascade;
 drop table if exists public.bill_members        cascade;
@@ -35,6 +36,7 @@ drop table if exists public.friends             cascade;
 drop table if exists public.group_members       cascade;
 drop table if exists public.groups              cascade;
 drop table if exists public.app_config          cascade;
+drop table if exists public.line_login_handoffs cascade;
 drop table if exists public.profiles            cascade;
 
 -- ============================================================
@@ -163,6 +165,18 @@ create table public.bill_items (
   custom_shares jsonb not null default '{}',
   paid_by     text,
   created_at  timestamptz not null default now()
+);
+
+-- LINE web login iOS PWA handoff — the PWA saves a loginId in its own
+-- localStorage before redirecting to LINE.  When LINE's callback lands in
+-- a plain Safari tab, the completed session is stored here keyed by
+-- loginId.  The PWA polls get_line_login_handoff() until it appears.
+-- iOS shares neither localStorage nor cookies between a standalone PWA
+-- and Safari (confirmed iOS 17+), so the DB is the only shared channel.
+create table public.line_login_handoffs (
+  pairing_id text primary key,
+  session    jsonb not null,
+  created_at timestamptz not null default now()
 );
 
 -- Remote feature flags — toggle without releasing a new app version
@@ -571,4 +585,30 @@ $$;
 create trigger push_on_notification_insert
   after insert on public.notifications
   for each row execute procedure public.trigger_push_on_notification();
+
+-- ============================================================
+-- LINE login handoff RPC
+-- ============================================================
+
+-- Returns the session JSON for the given pairing_id and deletes the row
+-- so it can only be consumed once.  No RLS needed — the function is
+-- security definer and the pairing_id is a 256-bit random token that
+-- only the originating PWA instance knows.
+create function public.get_line_login_handoff(p_pairing_id text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_session jsonb;
+begin
+  select session into v_session
+  from public.line_login_handoffs
+  where pairing_id = p_pairing_id
+    and created_at > now() - interval '10 minutes';
+
+  if v_session is not null then
+    delete from public.line_login_handoffs where pairing_id = p_pairing_id;
+  end if;
+
+  return v_session;
+end;
+$$;
 

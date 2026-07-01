@@ -1,11 +1,10 @@
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 
-/// Cookie name used to hand a Supabase session from a plain Safari tab
-/// (where LINE's OAuth redirect lands) back to the installed home-screen
-/// PWA instance (which shares the same origin's cookies but NOT its
-/// localStorage/IndexedDB).
-const _kSessionCookieName = 'sb_pwa_session';
+/// localStorage key used to persist the loginId across the LINE OAuth
+/// redirect round-trip.  The PWA writes this before navigating to LINE
+/// and reads it back when polling for the completed session.
+const _kLoginIdKey = 'line_login_id';
 
 /// Browser-backed implementation.
 class LineWebPlatform {
@@ -56,55 +55,37 @@ class LineWebPlatform {
     }
   }
 
-  // ── Cookie-based PWA↔Safari session handoff ──────────────────────────────
+  // ── localStorage-based loginId for PWA polling handoff ───────────────────
   //
-  // iOS keeps localStorage/IndexedDB partitioned between a standalone PWA
-  // and plain Safari even when they share the same origin.  Cookies are the
-  // only storage that crosses that boundary, so we use a short-lived cookie
-  // to carry the Supabase session JSON from the Safari tab (where LINE's
-  // OAuth redirect always lands) back to the PWA instance.
+  // The PWA generates a random loginId before redirecting to LINE and saves
+  // it in its own localStorage.  When LINE's callback lands in a plain Safari
+  // tab, the backend stores the completed session keyed by loginId.  The PWA
+  // (still open in the background, or relaunched cold) reads the loginId from
+  // its own localStorage and polls the backend until the session appears.
+  // No cross-context storage sharing is needed — each context only reads its
+  // own localStorage.
 
-  /// Writes [sessionJson] into a same-origin cookie that the PWA can read
-  /// when it resumes.  The cookie expires in 5 minutes — just long enough
-  /// for the user to switch back to the app; after that it's useless anyway
-  /// because the PWA will have already consumed it.
-  static void writePwaSessionCookie(String sessionJson) {
+  /// Saves [loginId] to localStorage so it survives the LINE redirect.
+  static void saveLoginId(String loginId) {
     try {
-      // URI-encode so commas/semicolons inside the JSON don't break the
-      // cookie header.
-      final encoded = Uri.encodeComponent(sessionJson);
-      // Max-Age=300 → 5 minutes.  SameSite=Lax is the safe default for
-      // same-origin navigations; Secure is set automatically by the browser
-      // when the page is served over HTTPS.
-      html.document.cookie =
-          '$_kSessionCookieName=$encoded; Path=/; SameSite=Lax; Max-Age=300';
+      html.window.localStorage[_kLoginIdKey] = loginId;
     } catch (_) {}
   }
 
-  /// Returns the session JSON previously written by [writePwaSessionCookie],
-  /// or null if the cookie is absent or expired.
-  static String? readPwaSessionCookie() {
+  /// Returns the loginId saved by [saveLoginId], or null if absent.
+  static String? readLoginId() {
     try {
-      final cookies = html.document.cookie ?? '';
-      for (final part in cookies.split(';')) {
-        final kv = part.trim().split('=');
-        if (kv.length >= 2 && kv[0].trim() == _kSessionCookieName) {
-          // Re-join in case the value itself contained '=' (base64 padding).
-          final raw = kv.sublist(1).join('=').trim();
-          return Uri.decodeComponent(raw);
-        }
-      }
-      return null;
+      final v = html.window.localStorage[_kLoginIdKey];
+      return (v != null && v.isNotEmpty) ? v : null;
     } catch (_) {
       return null;
     }
   }
 
-  /// Deletes the handoff cookie so it can't be replayed.
-  static void clearPwaSessionCookie() {
+  /// Removes the loginId from localStorage (call after session is recovered).
+  static void clearLoginId() {
     try {
-      html.document.cookie =
-          '$_kSessionCookieName=; Path=/; SameSite=Lax; Max-Age=0';
+      html.window.localStorage.remove(_kLoginIdKey);
     } catch (_) {}
   }
 }

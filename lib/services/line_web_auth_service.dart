@@ -11,10 +11,17 @@ class LineWebProfile {
   final String displayName;
   final String? pictureUrl;
 
+  /// The loginId generated in [LineWebAuthService.startLogin] and echoed
+  /// back via `state` — used by AuthProvider to store the completed session
+  /// in the DB keyed by this id, so the originating PWA instance can poll
+  /// for it (see _maybeStartHandoffPolling in AuthProvider).
+  final String loginId;
+
   LineWebProfile({
     required this.userId,
     required this.displayName,
     this.pictureUrl,
+    required this.loginId,
   });
 }
 
@@ -42,15 +49,23 @@ class LineWebAuthService {
 
     final verifier = _randomToken();
     final challenge = _codeChallenge(verifier);
+    // loginId is saved to this PWA's own localStorage before navigating
+    // away.  When LINE's callback lands in a plain Safari tab, the backend
+    // stores the completed session keyed by loginId.  The PWA reads its
+    // own localStorage on resume/cold-start and polls the backend until
+    // the session appears — no cross-context storage sharing needed.
+    final loginId = _randomToken();
+    LineWebPlatform.saveLoginId(loginId);
 
     final url = Uri.parse(_authorizeUrl).replace(queryParameters: {
       'response_type': 'code',
       'client_id': channelId,
       'redirect_uri': origin,
-      // verifier is packed into `state` — LINE echoes it back verbatim on
-      // redirect so completing login never depends on browser storage
-      // surviving the round trip.
-      'state': verifier,
+      // verifier and loginId are packed into `state` — LINE echoes it back
+      // verbatim on redirect so completing login never depends on browser
+      // storage surviving the round trip.  `.` is safe as a delimiter since
+      // both tokens are base64url (alphabet excludes `.`).
+      'state': '$verifier.$loginId',
       'scope': 'profile openid',
       'code_challenge': challenge,
       'code_challenge_method': 'S256',
@@ -70,7 +85,9 @@ class LineWebAuthService {
     // Clear immediately so a page refresh can't replay the same code.
     LineWebPlatform.clearCallbackParamsFromUrl();
 
-    final verifier = params['state']!;
+    final stateParts = params['state']!.split('.');
+    final verifier = stateParts[0];
+    final loginId = stateParts.length > 1 ? stateParts[1] : '';
 
     final tokenResponse = await http.post(
       Uri.parse(_tokenUrl),
@@ -102,6 +119,7 @@ class LineWebAuthService {
       userId: profile['userId'] as String,
       displayName: profile['displayName'] as String? ?? 'LINE User',
       pictureUrl: profile['pictureUrl'] as String?,
+      loginId: loginId,
     );
   }
 

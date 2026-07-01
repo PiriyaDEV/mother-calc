@@ -1,11 +1,13 @@
--- Migration: drop line_login_handoffs table and get_line_login_handoff RPC
+-- This migration was originally written to DROP line_login_handoffs when
+-- a cookie-based handoff approach was attempted.  That approach failed on
+-- iOS 17+ (cookies are also partitioned between standalone PWA and Safari).
 --
--- The DB-polling handoff approach (pairing_id → line_login_handoffs table)
--- has been replaced by a same-origin cookie written by the Safari tab and
--- read by the PWA on resume/cold-start. Cookies are shared between a
--- standalone home-screen PWA and Safari for the same origin on iOS,
--- unlike localStorage/IndexedDB which are partitioned between the two.
--- No DB table or RPC is needed any more.
-
-drop function if exists public.get_line_login_handoff(text) cascade;
-drop table  if exists public.line_login_handoffs cascade;
+-- We are reverting to the DB-polling approach (line_login_handoffs table +
+-- get_line_login_handoff RPC) which is the only reliable cross-context
+-- channel on iOS.  This migration is now a no-op — the table and function
+-- were already created by 20260701000000_add_line_login_handoff.sql and
+-- should NOT be dropped.
+--
+-- If you ran the original DROP version of this migration on your DB, run
+-- 20260701000002_restore_line_login_handoffs.sql to recreate the objects.
+select 1; -- no-op

@@ -7,8 +7,8 @@ class LineWebPlatform {
   static void redirect(String url) {}
   static String get currentOrigin => '';
 
-  // Cookie-based PWA↔Safari session handoff — no-ops on non-web.
-  static void writePwaSessionCookie(String sessionJson) {}
-  static String? readPwaSessionCookie() => null;
-  static void clearPwaSessionCookie() {}
+  // localStorage loginId handoff — no-ops on non-web.
+  static void saveLoginId(String loginId) {}
+  static String? readLoginId() => null;
+  static void clearLoginId() {}
 }
