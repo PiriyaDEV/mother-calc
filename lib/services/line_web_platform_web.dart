@@ -1,8 +1,11 @@
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 
-/// Browser-backed implementation. sessionStorage survives the full-page
-/// redirect to LINE and back (same tab, same origin) but not a new tab.
+/// Browser-backed implementation. Uses localStorage (not sessionStorage)
+/// because on mobile, LINE's authorize page hands off to the native LINE
+/// app when installed, which reopens the redirect_uri in a *new* browser
+/// tab/instance rather than the one that started the flow — sessionStorage
+/// wouldn't survive that, localStorage (scoped to origin, not tab) does.
 class LineWebPlatform {
   static bool get hasPendingCallback {
     try {
@@ -36,15 +39,15 @@ class LineWebPlatform {
 
   static void saveVerifier(String state, String verifier) {
     try {
-      html.window.sessionStorage['line_pkce_$state'] = verifier;
+      html.window.localStorage['line_pkce_$state'] = verifier;
     } catch (_) {}
   }
 
   static String? consumeVerifier(String state) {
     try {
       final key = 'line_pkce_$state';
-      final value = html.window.sessionStorage[key];
-      html.window.sessionStorage.remove(key);
+      final value = html.window.localStorage[key];
+      html.window.localStorage.remove(key);
       return value;
     } catch (_) {
       return null;
