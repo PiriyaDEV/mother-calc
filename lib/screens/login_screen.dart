@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/google_web_button.dart';
+import '../services/ios_install_prompt.dart';
 import '../theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen>
   bool _lineLoading = false;
   bool _googleLoading = false;
   String? _error;
+  bool _showIosInstallBanner = false;
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
@@ -28,6 +30,14 @@ class _LoginScreenState extends State<LoginScreen>
     // Surfaces an error left behind by a LINE web login redirect, if any —
     // that flow tears down the whole app, so it can't return one directly.
     _error = context.read<AuthProvider>().consumeLineWebCallbackError();
+
+    // Show iOS install banner if running in Safari on iOS and not already installed
+    if (isIosNotStandalone) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _showIosInstallBanner = true);
+      });
+    }
+
     _animCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
@@ -244,7 +254,16 @@ class _LoginScreenState extends State<LoginScreen>
                           SizedBox(
                             width: double.infinity,
                             height: 56,
-                            child: Center(child: renderGoogleSignInButton()),
+                            child: ClipRect(
+                              child: OverflowBox(
+                                maxWidth: double.infinity,
+                                alignment: Alignment.center,
+                                child: Transform.scale(
+                                  scaleX: 2.6,
+                                  child: renderGoogleSignInButton(),
+                                ),
+                              ),
+                            ),
                           )
                         else
                           _SocialButton(
@@ -290,6 +309,75 @@ class _LoginScreenState extends State<LoginScreen>
                               style: GoogleFonts.notoSansThai(
                                   fontSize: 13, color: AppColors.red),
                               textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+
+                        // iOS Add to Home Screen banner
+                        if (_showIosInstallBanner) ...[
+                          const SizedBox(height: 20),
+                          GestureDetector(
+                            onTap: () => setState(() => _showIosInstallBanner = false),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? AppColors.surfaceDark
+                                    : Colors.white.withValues(alpha: 0.9),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isDark ? AppColors.borderDark : AppColors.neutral100,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.06),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  const Text('📲', style: TextStyle(fontSize: 22)),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'บันทึกไปที่หน้าจอหลัก',
+                                          style: GoogleFonts.notoSansThai(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: isDark
+                                                ? AppColors.textPrimaryDark
+                                                : AppColors.textPrimaryLight,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'กด Share (□↑) แล้วเลือก "Add to Home Screen"',
+                                          style: GoogleFonts.notoSansThai(
+                                            fontSize: 11,
+                                            color: isDark
+                                                ? AppColors.textSecondaryDark
+                                                : AppColors.textSecondaryLight,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    Icons.close,
+                                    size: 16,
+                                    color: isDark
+                                        ? AppColors.textTertiaryDark
+                                        : AppColors.textTertiaryLight,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
