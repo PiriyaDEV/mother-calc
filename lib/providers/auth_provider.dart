@@ -107,8 +107,22 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     } catch (_) {
       googleWebClientId = const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
     }
+    // On web, google_sign_in_web (GIS) reads `clientId` to initialize the
+    // Google Identity Services library — `serverClientId` is ignored on web
+    // and only used on Android to request a server-side auth code/idToken.
+    // Without `clientId` on web, GIS never gets the client ID and returns
+    // idToken == null.
+    //
+    // On Android, `serverClientId` is required for idToken to be populated
+    // in GoogleSignInAuthentication. We set both so the same GoogleSignIn
+    // instance works correctly on all platforms.
     _googleSignIn = GoogleSignIn(
-      serverClientId: googleWebClientId.isNotEmpty ? googleWebClientId : null,
+      clientId: kIsWeb && googleWebClientId.isNotEmpty
+          ? googleWebClientId
+          : null,
+      serverClientId: !kIsWeb && googleWebClientId.isNotEmpty
+          ? googleWebClientId
+          : null,
       // Only request scopes that don't require the People API.
       // email + openid are sufficient to get an idToken for Supabase.
       // Omitting 'profile' prevents google_sign_in_web from calling
