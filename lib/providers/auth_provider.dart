@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -153,6 +155,21 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       _loadProfile().then((_) {
         _initialized = true;
         notifyListeners();
+      });
+    } else if (kIsWeb) {
+      // Covers the common case in practice: the PWA was killed (not just
+      // suspended) while its LINE login redirect round-tripped through a
+      // separate Safari tab, so this is a fresh launch rather than a
+      // didChangeAppLifecycleState resume — check for a handed-off session
+      // before giving up and showing the login screen.
+      _recoverSessionFromOtherTab().then((recovered) {
+        // On success, recoverSession() inside _recoverSessionFromOtherTab
+        // triggers onAuthStateChange, which loads the profile and marks us
+        // initialized — nothing more to do here.
+        if (!recovered) {
+          _initialized = true;
+          notifyListeners();
+        }
       });
     } else {
       _initialized = true;
@@ -471,11 +488,19 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
         // Logged in, but this landed in a plain Safari tab, not the
         // installed home-screen PWA — iOS never hands an external OAuth
         // redirect back to a standalone PWA instance, it always opens
-        // Safari. The session is already persisted to shared origin
-        // storage, so the PWA instance can pick it up on its own once the
+        // Safari. localStorage/cookies are NOT shared between Safari and a
+        // standalone PWA for the same origin on iOS, so stash the session
+        // in Cache Storage instead (the one storage medium iOS does share
+        // between them) for the PWA instance to pick up on its own once the
         // user switches back to it (see _recoverSessionFromOtherTab); this
         // tab just needs to tell them to do that instead of rendering the
         // normal app UI here.
+        final session = _supabase.auth.currentSession;
+        if (session != null) {
+          await LineWebAuthService.stashSessionForHandoff(
+            jsonEncode(session.toJson()),
+          );
+        }
         _lineWebLoginNeedsReturnToApp = true;
         notifyListeners();
       }
@@ -498,42 +523,32 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// When the app (this specific browser tab/PWA instance) comes back to
   /// the foreground, check whether a LINE login completed elsewhere — e.g.
-  /// the standalone PWA was suspended in the background while its login
-  /// redirect round-tripped through a separate Safari tab (see
-  /// _completeLineWebLogin). If so, pick up the session it already wrote to
-  /// shared origin storage instead of leaving this instance logged out.
+  /// the standalone PWA was merely suspended (not killed) in the background
+  /// while its login redirect round-tripped through a separate Safari tab
+  /// (see _completeLineWebLogin). If so, pick up the session stashed there.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (kIsWeb && state == AppLifecycleState.resumed && _user == null) {
+      // On success, recoverSession() inside _recoverSessionFromOtherTab
+      // triggers onAuthStateChange, which updates _user/_profile and
+      // notifies listeners — nothing more to do here.
       _recoverSessionFromOtherTab();
     }
   }
 
-  Future<void> _recoverSessionFromOtherTab() async {
+  /// Reads a session stashed by [_completeLineWebLogin] via Cache Storage —
+  /// the only storage medium iOS shares between a plain Safari tab and an
+  /// installed home-screen PWA for the same origin (localStorage/cookies are
+  /// not shared, which is why this doesn't just read from local storage).
+  Future<bool> _recoverSessionFromOtherTab() async {
     try {
-      String supabaseUrl;
-      try {
-        supabaseUrl = dotenv.env['SUPABASE_URL']?.isNotEmpty == true
-            ? dotenv.env['SUPABASE_URL']!
-            : const String.fromEnvironment('SUPABASE_URL');
-      } catch (_) {
-        supabaseUrl = const String.fromEnvironment('SUPABASE_URL');
-      }
-      if (supabaseUrl.isEmpty) return;
-
-      final storage = SharedPreferencesLocalStorage(
-        persistSessionKey:
-            'sb-${Uri.parse(supabaseUrl).host.split('.').first}-auth-token',
-      );
-      await storage.initialize();
-      final persisted = await storage.accessToken();
-      if (persisted == null) return;
-
-      // Triggers onAuthStateChange, which updates _user/_profile and
-      // notifies listeners — nothing more to do here on success.
-      await _supabase.auth.recoverSession(persisted);
+      final sessionJson = await LineWebAuthService.readAndClearHandoffSession();
+      if (sessionJson == null) return false;
+      await _supabase.auth.recoverSession(sessionJson);
+      return true;
     } catch (e) {
       debugPrint('Session recovery on resume failed: $e');
+      return false;
     }
   }
 

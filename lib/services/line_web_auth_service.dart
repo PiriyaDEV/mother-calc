@@ -67,6 +67,14 @@ class LineWebAuthService {
 
   static bool get hasPendingCallback => LineWebPlatform.hasPendingCallback;
 
+  /// See [LineWebPlatform.stashSessionForHandoff].
+  static Future<void> stashSessionForHandoff(String sessionJson) =>
+      LineWebPlatform.stashSessionForHandoff(sessionJson);
+
+  /// See [LineWebPlatform.readAndClearHandoffSession].
+  static Future<String?> readAndClearHandoffSession() =>
+      LineWebPlatform.readAndClearHandoffSession();
+
   /// Completes the flow after LINE redirects back with ?code&state.
   /// Throws on any failure (missing callback params, LINE API error).
   static Future<LineWebProfile> completeLogin(String channelId) async {

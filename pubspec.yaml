@@ -66,6 +66,10 @@ dependencies:
   # Ads
   google_mobile_ads: ^5.1.0
 
+  # Direct dep (normally transitive via supabase_flutter) — needed on web
+  # for Cache Storage bindings used by the LINE login iOS PWA handoff.
+  web: ^1.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
