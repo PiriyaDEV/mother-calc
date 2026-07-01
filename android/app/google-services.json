@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "971449413886",
+    "project_id": "kidtang-97499",
+    "storage_bucket": "kidtang-97499.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:971449413886:android:c43b880df4459bbb1ab5af",
+        "android_client_info": {
+          "package_name": "com.kidtang.kidtang_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBHXo9Ar3Iiz7KxGDtmCB7gmqY65pwd4U4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

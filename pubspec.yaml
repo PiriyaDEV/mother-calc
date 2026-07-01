@@ -44,6 +44,9 @@ dependencies:
 
   # Google Sign-In SDK (native, same pattern as LINE)
   google_sign_in: ^6.2.1
+  # Direct dep (normally transitive) — needed on web for renderButton(),
+  # since GIS deprecated the plain popup flow that GoogleSignIn().signIn() uses.
+  google_sign_in_web: ^0.12.4
 
   intl: ^0.19.0
   uuid: ^4.4.0

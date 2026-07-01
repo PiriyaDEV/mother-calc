@@ -14,6 +14,10 @@ import 'locale_provider.dart';
 
 class AuthProvider extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
+  // Shared instance — on web its `onCurrentUserChanged` stream is how the
+  // rendered GIS button (see google_web_button_web.dart) reports sign-in,
+  // since that button isn't driven by our own `signIn()` call.
+  final _googleSignIn = GoogleSignIn();
 
   // Optional references to sibling providers — set after construction.
   LocaleProvider? _localeProvider;
@@ -24,6 +28,7 @@ class AuthProvider extends ChangeNotifier {
   Profile? _profile;
   bool _initialized = false;
   String? _lineWebCallbackError;
+  String? _googleWebCallbackError;
 
   User? get user => _user;
   Profile? get profile => _profile;
@@ -41,6 +46,15 @@ class AuthProvider extends ChangeNotifier {
   String? consumeLineWebCallbackError() {
     final error = _lineWebCallbackError;
     _lineWebCallbackError = null;
+    return error;
+  }
+
+  /// Reads and clears any error from a web Google sign-in — like the LINE
+  /// web flow above, the rendered GIS button drives sign-in outside of an
+  /// awaited call, so `signInWithGoogle()` has no return value to carry it.
+  String? consumeGoogleWebCallbackError() {
+    final error = _googleWebCallbackError;
+    _googleWebCallbackError = null;
     return error;
   }
 
@@ -80,6 +94,19 @@ class AuthProvider extends ChangeNotifier {
       _initialized = true;
       notifyListeners();
     });
+
+    // Web Google sign-in is button-driven (see google_web_button_web.dart),
+    // not an awaited call — pick up the result here instead.
+    if (kIsWeb) {
+      _googleSignIn.onCurrentUserChanged.listen((account) async {
+        if (account == null) return;
+        final error = await _handleGoogleAccount(account);
+        if (error != null) {
+          _googleWebCallbackError = error;
+          notifyListeners();
+        }
+      });
+    }
 
     // LINE web login redirects the whole page away and back — pick up the
     // ?code&state it lands with here instead of the normal cached-session path.
@@ -242,11 +269,28 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Signs in with Google using the native SDK (same pattern as LINE).
+  /// Web doesn't use this — see the `onCurrentUserChanged` listener in
+  /// [_init] instead, since GIS's rendered button drives sign-in there.
   Future<String?> signInWithGoogle() async {
     try {
-      final googleUser = await GoogleSignIn().signIn();
+      final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null; // user cancelled
+      return await _handleGoogleAccount(googleUser);
+    } on PlatformException catch (e) {
+      debugPrint('Google SDK error: ${e.code} — ${e.message}');
+      if (e.code == 'sign_in_canceled') return null;
+      return e.message ?? 'Google login failed';
+    } catch (e) {
+      debugPrint('signInWithGoogle error: $e');
+      return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+    }
+  }
 
+  /// Shared by both the native SDK flow (mobile) and the `onCurrentUserChanged`
+  /// listener (web): creates or signs in to a deterministic Supabase account
+  /// for this Google user, then upserts their public profile row.
+  Future<String?> _handleGoogleAccount(GoogleSignInAccount googleUser) async {
+    try {
       final googleId = googleUser.id;
       final displayName = googleUser.displayName ?? 'Google User';
       final avatarUrl = googleUser.photoUrl;
@@ -297,14 +341,10 @@ class AuthProvider extends ChangeNotifier {
       }
 
       return null;
-    } on PlatformException catch (e) {
-      debugPrint('Google SDK error: ${e.code} — ${e.message}');
-      if (e.code == 'sign_in_canceled') return null;
-      return e.message ?? 'Google login failed';
     } on AuthException catch (e) {
       return e.message;
     } catch (e) {
-      debugPrint('signInWithGoogle error: $e');
+      debugPrint('Google account handling error: $e');
       return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
     }
   }
@@ -476,7 +516,7 @@ class AuthProvider extends ChangeNotifier {
       await LineSDK.instance.logout();
     } catch (_) {}
     try {
-      await GoogleSignIn().signOut();
+      await _googleSignIn.signOut();
     } catch (_) {}
     await PushNotificationService.clearToken();
     await _supabase.auth.signOut();

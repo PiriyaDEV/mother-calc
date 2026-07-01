@@ -1086,7 +1086,7 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(AppRadii.md),
@@ -1105,8 +1105,8 @@ class _StatCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: BorderRadius.circular(AppRadii.sm),

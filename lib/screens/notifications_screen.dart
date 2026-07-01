@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/notifications_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/banner_ad_widget.dart';
 import '../widgets/empty_state.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -176,6 +177,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ],
               ),
             ),
+
+            // ── Ad Banner ────────────────────────────────────────
+            const BannerAdWidget(),
 
             // ── Body ─────────────────────────────────────────
             Expanded(

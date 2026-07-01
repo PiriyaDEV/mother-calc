@@ -68,12 +68,20 @@ class PushNotificationService {
     );
   }
 
+  // VAPID key for Web Push — generate at:
+  // Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Generate key pair
+  // Then paste the key string below (replace the placeholder).
+  static const _webVapidKey =
+      'BMkDOxFQpluh7XyW0R-JricicWt7_yWIEntd3WT_6YX336u5P5wILZD0FHEoagqZoXLknmMJGUs1ijhaItUnZY4';
+
   // Call after successful login to register this device
   static Future<void> saveToken() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
     try {
-      final token = await _messaging.getToken();
+      final token = kIsWeb
+          ? await _messaging.getToken(vapidKey: _webVapidKey)
+          : await _messaging.getToken();
       if (token == null) return;
       await _saveToSupabase(user.id, token);
 

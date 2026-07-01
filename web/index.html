@@ -38,8 +38,26 @@
 
   <!-- Required by supabase_flutter's passkeys dependency on web -->
   <script src="https://github.com/corbado/flutter-passkeys/releases/download/2.4.0/bundle.js"></script>
+
+  <!-- Google AdSense — replace ca-pub-XXXXXXXXXXXXXXXXX with your real publisher ID from adsense.google.com -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4413976443870791"
+     crossorigin="anonymous"></script>
+  <!-- Helper so Flutter's HtmlElementView can push ad units -->
+  <script>
+    window.adsbygoogle_push = function() {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    };
+  </script>
 </head>
 <body>
+  <!-- Register Firebase Messaging Service Worker for Web Push Notifications -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/firebase-messaging-sw.js");
+      });
+    }
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

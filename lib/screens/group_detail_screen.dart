@@ -10,6 +10,7 @@ import '../providers/friends_provider.dart';
 import '../providers/groups_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
+import '../widgets/banner_ad_widget.dart';
 import '../widgets/shared_bill_card.dart';
 import '../widgets/create_entity_sheet.dart';
 import '../widgets/member_avatar.dart';
@@ -114,6 +115,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
       ),
       child: Scaffold(
       backgroundColor: Colors.transparent,
+      bottomNavigationBar: const BannerAdWidget(),
       body: NestedScrollView(
         headerSliverBuilder: (context, _) => [
           SliverAppBar(

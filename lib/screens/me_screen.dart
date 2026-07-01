@@ -14,6 +14,7 @@ import '../providers/locale_provider.dart';
 import '../providers/notifications_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/banner_ad_widget.dart';
 import '../widgets/section_header.dart';
 
 // ── Helpers ────────────────────────────────────────────────────
@@ -247,10 +248,10 @@ class _MeScreenState extends State<MeScreen>
   // ── Language Picker ────────────────────────────────────────
   void _showLanguagePicker() {
     final locale = context.read<LocaleProvider>();
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _LanguageSheet(
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (ctx) => _LanguageDialog(
         currentLocale: locale.locale,
         onSelect: (lang) {
           locale.setLocale(lang);
@@ -275,6 +276,7 @@ class _MeScreenState extends State<MeScreen>
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      bottomNavigationBar: const BannerAdWidget(),
       body: SafeArea(
         child: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) => [
@@ -975,66 +977,61 @@ class _SettingsTile extends StatelessWidget {
   }
 }
 
-// ── Language Sheet ─────────────────────────────────────────────
-class _LanguageSheet extends StatelessWidget {
+// ── Language Dialog ────────────────────────────────────────────
+class _LanguageDialog extends StatelessWidget {
   final String currentLocale;
   final ValueChanged<String> onSelect;
 
-  const _LanguageSheet(
+  const _LanguageDialog(
       {required this.currentLocale, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppRadii.lg)),
-      ),
-      padding: EdgeInsets.fromLTRB(20, 12, 20, 32 + MediaQuery.viewPaddingOf(context).bottom),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-              borderRadius: BorderRadius.circular(2),
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 360),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'เลือกภาษา / Select Language',
+              style: GoogleFonts.notoSansThai(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'เลือกภาษา / Select Language',
-            style: GoogleFonts.notoSansThai(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: isDark
-                  ? AppColors.textPrimaryDark
-                  : AppColors.textPrimaryLight,
+            const SizedBox(height: 16),
+            _LangOption(
+              flag: '🇹🇭',
+              name: 'ภาษาไทย',
+              subtitle: 'Thai',
+              selected: currentLocale == 'th',
+              isDark: isDark,
+              onTap: () => onSelect('th'),
             ),
-          ),
-          const SizedBox(height: 16),
-          _LangOption(
-            flag: '🇹🇭',
-            name: 'ภาษาไทย',
-            subtitle: 'Thai',
-            selected: currentLocale == 'th',
-            isDark: isDark,
-            onTap: () => onSelect('th'),
-          ),
-          const SizedBox(height: 8),
-          _LangOption(
-            flag: '🇬🇧',
-            name: 'English',
-            subtitle: 'อังกฤษ',
-            selected: currentLocale == 'en',
-            isDark: isDark,
-            onTap: () => onSelect('en'),
-          ),
-        ],
+            const SizedBox(height: 8),
+            _LangOption(
+              flag: '🇬🇧',
+              name: 'English',
+              subtitle: 'อังกฤษ',
+              selected: currentLocale == 'en',
+              isDark: isDark,
+              onTap: () => onSelect('en'),
+            ),
+          ],
+        ),
       ),
     );
   }

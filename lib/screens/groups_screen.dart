@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/groups_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/banner_ad_widget.dart';
 import '../widgets/create_entity_sheet.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/shared_group_card.dart';
@@ -115,6 +116,9 @@ class _GroupsScreenState extends State<GroupsScreen> {
                 ],
               ),
             ),
+
+            // ── Ad Banner ────────────────────────────────────────
+            const BannerAdWidget(),
 
             // ── Content ──────────────────────────────────────────
             Expanded(

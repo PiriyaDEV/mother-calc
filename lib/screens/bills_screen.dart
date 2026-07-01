@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../providers/bills_list_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/banner_ad_widget.dart';
 import '../widgets/create_entity_sheet.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/shared_bill_card.dart';
@@ -196,6 +197,9 @@ class _BillsScreenState extends State<BillsScreen>
                 ),
               ),
             ),
+
+            // ── Ad Banner ────────────────────────────────────────
+            const BannerAdWidget(),
 
             // ── Content ──────────────────────────────────────────
             Expanded(

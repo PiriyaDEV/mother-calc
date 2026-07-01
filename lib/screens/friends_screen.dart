@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../providers/friends_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/banner_ad_widget.dart';
 
 class FriendsScreen extends StatefulWidget {
   const FriendsScreen({super.key});
@@ -414,6 +415,9 @@ class _FriendsScreenState extends State<FriendsScreen> {
                   ),
                 ),
               ),
+
+            // ── Ad Banner ────────────────────────────────────────
+            const BannerAdWidget(),
 
             // ── Body ─────────────────────────────────────────
             Expanded(

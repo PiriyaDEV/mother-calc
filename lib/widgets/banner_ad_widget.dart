@@ -7,20 +7,40 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../services/app_config_service.dart';
 
-class BannerAdWidget extends StatefulWidget {
+// Conditional import: AdSenseBannerWeb on web, stub on mobile
+import 'adsense_banner_stub.dart'
+    if (dart.library.html) 'adsense_banner_web.dart';
+
+class BannerAdWidget extends StatelessWidget {
   const BannerAdWidget({super.key});
 
   @override
-  State<BannerAdWidget> createState() => _BannerAdWidgetState();
+  Widget build(BuildContext context) {
+    if (!AppConfigService.adsEnabled) return const SizedBox.shrink();
+
+    // Web: use Google AdSense
+    if (kIsWeb) return const AdSenseBannerWeb();
+
+    // Mobile: use Google AdMob
+    return const _MobileAdMobBanner();
+  }
 }
 
-class _BannerAdWidgetState extends State<BannerAdWidget> {
+// ── Mobile AdMob banner (Android / iOS only) ──────────────────────────────────
+
+class _MobileAdMobBanner extends StatefulWidget {
+  const _MobileAdMobBanner();
+
+  @override
+  State<_MobileAdMobBanner> createState() => _MobileAdMobBannerState();
+}
+
+class _MobileAdMobBannerState extends State<_MobileAdMobBanner> {
   BannerAd? _ad;
   bool _loaded = false;
 
   static String _adUnitId() {
     if (kDebugMode) {
-      // Google-provided test IDs — safe to use during development
       return Platform.isAndroid
           ? 'ca-app-pub-3940256099942544/6300978111'
           : 'ca-app-pub-3940256099942544/2934735716';
@@ -33,9 +53,6 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   @override
   void initState() {
     super.initState();
-    // AdMob has no web implementation — dart:io Platform is also unsupported on web.
-    if (kIsWeb) return;
-    if (!AppConfigService.adsEnabled) return;
     final unitId = _adUnitId();
     if (unitId.isEmpty) return;
 
@@ -63,9 +80,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (!AppConfigService.adsEnabled || !_loaded || _ad == null) {
-      return const SizedBox.shrink();
-    }
+    if (!_loaded || _ad == null) return const SizedBox.shrink();
     return SizedBox(
       height: _ad!.size.height.toDouble(),
       width: double.infinity,

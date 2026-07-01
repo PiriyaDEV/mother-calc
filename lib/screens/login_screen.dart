@@ -1,8 +1,10 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../services/google_web_button.dart';
 import '../theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -36,10 +38,21 @@ class _LoginScreenState extends State<LoginScreen>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut));
     _animCtrl.forward();
+
+    // On web, Google sign-in is driven by the rendered GIS button, not an
+    // awaited call — AuthProvider notifies via notifyListeners() instead of
+    // a return value, so pick up any error from there when it fires.
+    if (kIsWeb) context.read<AuthProvider>().addListener(_onAuthChanged);
+  }
+
+  void _onAuthChanged() {
+    final error = context.read<AuthProvider>().consumeGoogleWebCallbackError();
+    if (error != null && mounted) setState(() => _error = error);
   }
 
   @override
   void dispose() {
+    if (kIsWeb) context.read<AuthProvider>().removeListener(_onAuthChanged);
     _animCtrl.dispose();
     super.dispose();
   }
@@ -224,31 +237,40 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         const SizedBox(height: 14),
 
-                        // Google button
-                        _SocialButton(
-                          onTap: _lineLoading || _googleLoading
-                              ? null
-                              : _signInWithGoogle,
-                          isLoading: _googleLoading,
-                          backgroundColor: isDark
-                              ? AppColors.surfaceDark
-                              : Colors.white,
-                          icon: Image.asset(
-                            'assets/images/google-logo.png',
-                            width: 22,
-                            height: 22,
+                        // Google button — web uses GIS's own rendered button
+                        // (see google_web_button_web.dart for why), mobile
+                        // keeps the app-styled button driving the native SDK.
+                        if (kIsWeb)
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: Center(child: renderGoogleSignInButton()),
+                          )
+                        else
+                          _SocialButton(
+                            onTap: _lineLoading || _googleLoading
+                                ? null
+                                : _signInWithGoogle,
+                            isLoading: _googleLoading,
+                            backgroundColor: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
+                            icon: Image.asset(
+                              'assets/images/google-logo.png',
+                              width: 22,
+                              height: 22,
+                            ),
+                            label: 'เข้าสู่ระบบด้วย Google',
+                            labelColor: isDark
+                                ? Colors.white
+                                : const Color(0xFF111827),
+                            border: Border.all(
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.neutral100,
+                              width: 1.5,
+                            ),
                           ),
-                          label: 'เข้าสู่ระบบด้วย Google',
-                          labelColor: isDark
-                              ? Colors.white
-                              : const Color(0xFF111827),
-                          border: Border.all(
-                            color: isDark
-                                ? AppColors.borderDark
-                                : AppColors.neutral100,
-                            width: 1.5,
-                          ),
-                        ),
 
                         // Error
                         if (_error != null) ...[
