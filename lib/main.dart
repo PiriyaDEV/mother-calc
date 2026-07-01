@@ -28,26 +28,32 @@ import 'router.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load .env file if present (local dev).
-  // On CI/CD (e.g. Netlify web builds) the file won't exist — silently skip.
-  // Secrets are injected via --dart-define at build time in that case.
-  try {
-    await dotenv.load(fileName: '.env');
-  } catch (_) {
-    // File not found — no-op.
+  // On web, .env is never loaded — secrets are baked in via --dart-define at
+  // build time (Netlify) or passed via --dart-define in run.sh (local web dev).
+  // Loading .env as a Flutter asset on web would expose secrets publicly at
+  // /assets/.env, so we skip it entirely for kIsWeb.
+  //
+  // On mobile/desktop, load .env from the filesystem for local development.
+  // On CI/CD the file won't exist — silently skip.
+  if (!kIsWeb) {
+    try {
+      await dotenv.load(fileName: '.env');
+    } catch (_) {
+      // File not found — no-op.
+    }
   }
 
-  // Helper: prefer dotenv value, fall back to --dart-define compile-time constant.
-  String env(String key) =>
-      dotenv.env[key]?.isNotEmpty == true
-          ? dotenv.env[key]!
-          : String.fromEnvironment(key);
+  // Helper: prefer dotenv value (mobile/desktop only), fall back to
+  // --dart-define compile-time constant (always used on web).
+  // NOTE: String.fromEnvironment MUST be called with a literal string — not a variable.
+  String env(String key, String compiledValue) =>
+      (!kIsWeb && dotenv.env[key]?.isNotEmpty == true) ? dotenv.env[key]! : compiledValue;
 
   // Initialize Thai locale data for DateFormat
   await initializeDateFormatting('th', null);
 
-  final supabaseUrl = env('SUPABASE_URL');
-  final supabaseKey = env('SUPABASE_ANON_KEY');
+  final supabaseUrl = env('SUPABASE_URL', const String.fromEnvironment('SUPABASE_URL'));
+  final supabaseKey = env('SUPABASE_ANON_KEY', const String.fromEnvironment('SUPABASE_ANON_KEY'));
   if (supabaseUrl.isEmpty || supabaseKey.isEmpty) {
     debugPrint('[Supabase] Missing SUPABASE_URL or SUPABASE_ANON_KEY — check env vars');
     // Show error app instead of crashing
@@ -88,7 +94,9 @@ void main() async {
 
   // Initialize LINE SDK (mobile only — no web implementation)
   if (!kIsWeb) {
-    await LineSDK.instance.setup(env('LINE_CHANNEL_ID'));
+    await LineSDK.instance.setup(
+      env('LINE_CHANNEL_ID', const String.fromEnvironment('LINE_CHANNEL_ID')),
+    );
   }
 
   SystemChrome.setSystemUIOverlayStyle(

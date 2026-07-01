@@ -40,9 +40,21 @@ if $WEB; then
   echo "▶ Injecting env vars into web/index.html..."
   bash scripts/inject_web_env.sh
 
+  # Build --dart-define flags from .env so web gets the same secrets as mobile.
+  # On web, flutter_dotenv is skipped (would expose .env publicly at /assets/.env),
+  # so we must pass all vars at compile time via --dart-define.
+  DART_DEFINES=""
+  if [[ -f ".env" ]]; then
+    while IFS='=' read -r key value; do
+      # Skip blank lines and comments
+      [[ -z "$key" || "$key" == \#* ]] && continue
+      DART_DEFINES="$DART_DEFINES --dart-define=$key=$value"
+    done < <(grep -v '^#' .env | grep -v '^$')
+  fi
+
   echo "▶ Running on Chrome (web) at http://localhost:8765 ..."
   echo "   (fixed port so the LINE Login callback URL stays valid across runs)"
-  flutter run -d chrome --web-port=8765
+  flutter run -d chrome --web-port=8765 $DART_DEFINES
   RUN_EXIT=$?
 
   echo "▶ Restoring web/index.html placeholders..."
