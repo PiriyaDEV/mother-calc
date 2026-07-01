@@ -185,7 +185,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.lock_rounded,
+                              const Icon(Icons.lock_rounded,
                                   size: 11, color: AppColors.emerald),
                               const SizedBox(width: 3),
                               Text(
@@ -641,10 +641,10 @@ class _ItemsTab extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: AppColors.primary.withOpacity(0.2)),
+                    color: AppColors.primary.withValues(alpha: 0.2)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -781,7 +781,7 @@ class _ItemTile extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.amber.withOpacity(0.15),
+                      color: AppColors.amber.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -1031,10 +1031,10 @@ class _MembersTab extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: AppColors.primary.withOpacity(0.2)),
+                    color: AppColors.primary.withValues(alpha: 0.2)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1687,7 +1687,7 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                           horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
                         color: selected
-                            ? color.withOpacity(0.08)
+                            ? color.withValues(alpha: 0.08)
                             : (isDark
                                 ? AppColors.surfaceDark
                                 : AppColors.neutral50),
@@ -1788,8 +1788,8 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: _unequalValid
-                      ? AppColors.emerald.withOpacity(0.08)
-                      : AppColors.red.withOpacity(0.08),
+                      ? AppColors.emerald.withValues(alpha: 0.08)
+                      : AppColors.red.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -1845,7 +1845,7 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: _paidBy == null
-                            ? AppColors.primary.withOpacity(0.15)
+                            ? AppColors.primary.withValues(alpha: 0.15)
                             : (isDark
                                 ? AppColors.surfaceDark
                                 : AppColors.neutral100),
@@ -1880,7 +1880,7 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: selected
-                              ? color.withOpacity(0.15)
+                              ? color.withValues(alpha: 0.15)
                               : (isDark
                                   ? AppColors.surfaceDark
                                   : AppColors.neutral100),

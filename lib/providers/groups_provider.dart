@@ -70,7 +70,7 @@ class GroupsProvider extends ChangeNotifier {
         'owner_id': user.id,
       }).select().single();
 
-      final group = Group.fromJson(data as Map<String, dynamic>);
+      final group = Group.fromJson(data);
 
       // Add owner as member (accepted immediately)
       await _supabase.from('group_members').insert({
@@ -155,7 +155,7 @@ class GroupsProvider extends ChangeNotifier {
           .eq('id', groupId)
           .single();
 
-      _currentGroup = Group.fromJson(groupData as Map<String, dynamic>);
+      _currentGroup = Group.fromJson(groupData);
       _currentMembers = _currentGroup!.members;
 
       // Load group bills
@@ -283,7 +283,7 @@ class GroupsProvider extends ChangeNotifier {
         'paid_member_ids': [],
       }).select('*, bill_members(*), bill_items(*)').single();
 
-      final bill = Bill.fromJson(data as Map<String, dynamic>);
+      final bill = Bill.fromJson(data);
       _currentGroupBills = [bill, ..._currentGroupBills];
       notifyListeners();
       return bill;

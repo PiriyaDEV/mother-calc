@@ -41,7 +41,7 @@ Color colorFromHex(String hex) {
 }
 
 String hexFromColor(Color color) {
-  return '#${color.value.toRadixString(16).substring(2).toUpperCase()}';
+  return '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
 }
 
 // ── Bill calculation ──────────────────────────────────────────

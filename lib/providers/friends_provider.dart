@@ -90,7 +90,7 @@ class FriendsProvider extends ChangeNotifier {
           .eq('username', username)
           .maybeSingle();
       if (data == null) return null;
-      return Profile.fromJson(data as Map<String, dynamic>);
+      return Profile.fromJson(data);
     } catch (e) {
       debugPrint('Error searching profile: $e');
       return null;

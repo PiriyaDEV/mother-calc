@@ -356,7 +356,7 @@ class _MeScreenState extends State<MeScreen>
                             child: Container(
                               width: 26,
                               height: 26,
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 color: Colors.white,
                                 shape: BoxShape.circle,
                                 boxShadow: AppColors.shadowSubtle,
@@ -430,7 +430,7 @@ class _MeScreenState extends State<MeScreen>
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       children: [
         // ── Section: บัญชี ─────────────────────────────────
-        SectionHeaderWidget(label: 'บัญชี'),
+        const SectionHeaderWidget(label: 'บัญชี'),
         const SizedBox(height: 10),
 
         Container(
@@ -524,7 +524,7 @@ class _MeScreenState extends State<MeScreen>
 
         // ── Section: ความปลอดภัย ──────────────────────────
         if (!isGoogleUser) ...[
-          SectionHeaderWidget(label: 'ความปลอดภัย'),
+          const SectionHeaderWidget(label: 'ความปลอดภัย'),
           const SizedBox(height: 10),
           Container(
             decoration: BoxDecoration(
@@ -638,7 +638,7 @@ class _MeScreenState extends State<MeScreen>
         ],
 
         // ── Section: การตั้งค่า ────────────────────────────
-        SectionHeaderWidget(label: 'การตั้งค่า'),
+        const SectionHeaderWidget(label: 'การตั้งค่า'),
         const SizedBox(height: 10),
 
         Container(

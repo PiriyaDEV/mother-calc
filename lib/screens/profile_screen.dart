@@ -139,7 +139,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: AppSpacing.xxl),
 
           // Form fields
-          _FormLabel(label: 'ชื่อที่แสดง'),
+          const _FormLabel(label: 'ชื่อที่แสดง'),
           const SizedBox(height: 6),
           TextField(
             controller: _displayNameCtrl,
@@ -147,7 +147,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          _FormLabel(label: 'ชื่อผู้ใช้'),
+          const _FormLabel(label: 'ชื่อผู้ใช้'),
           const SizedBox(height: 6),
           TextField(
             controller: _usernameCtrl,
@@ -155,7 +155,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          _FormLabel(label: 'เบอร์ PromptPay'),
+          const _FormLabel(label: 'เบอร์ PromptPay'),
           const SizedBox(height: 6),
           TextField(
             controller: _promptpayCtrl,
@@ -164,7 +164,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          _FormLabel(label: 'อีเมล'),
+          const _FormLabel(label: 'อีเมล'),
           const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 14),

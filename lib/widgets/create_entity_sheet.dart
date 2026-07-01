@@ -354,7 +354,7 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
                     const SizedBox(height: 16),
 
                     // ── Description ───────────────────────────────
-                    FormSectionLabel(label: 'คำอธิบาย (ไม่บังคับ)'),
+                    const FormSectionLabel(label: 'คำอธิบาย (ไม่บังคับ)'),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _descCtrl,
@@ -367,7 +367,7 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
                     const SizedBox(height: 16),
 
                     // ── Tags ──────────────────────────────────────
-                    FormSectionLabel(label: 'แท็ก'),
+                    const FormSectionLabel(label: 'แท็ก'),
                     const SizedBox(height: 8),
                     // Preset chips
                     Wrap(
@@ -586,7 +586,7 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
                       const SizedBox(height: 14),
 
                       // Currency grid (2-column, 8 items)
-                      FormSectionLabel(label: 'สกุลเงิน'),
+                      const FormSectionLabel(label: 'สกุลเงิน'),
                       const SizedBox(height: 8),
                       GridView.count(
                         crossAxisCount: 2,
@@ -645,7 +645,7 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
                       const SizedBox(height: 14),
 
                       // Rounding grid (4-column)
-                      FormSectionLabel(label: 'การปัดเศษ'),
+                      const FormSectionLabel(label: 'การปัดเศษ'),
                       const SizedBox(height: 8),
                       Row(
                         children: _kRoundingOptions.map((r) {

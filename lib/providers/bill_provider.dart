@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart';
 import '../models/models.dart';
 
 class BillProvider extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
-  final _uuid = const Uuid();
 
   Bill? _bill;
   List<BillMember> _members = [];

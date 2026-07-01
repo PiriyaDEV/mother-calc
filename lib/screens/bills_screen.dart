@@ -61,7 +61,7 @@ class _BillsScreenState extends State<BillsScreen>
           'paid_member_ids': [],
         }).select('*, bill_members(*), bill_items(*)').single();
 
-        final bill = Bill.fromJson(data as Map<String, dynamic>);
+        final bill = Bill.fromJson(data);
         if (mounted) {
           context.read<BillsListProvider>().addBill(bill);
           await context.push('/bills/${bill.id}');
