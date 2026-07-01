@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -156,22 +157,15 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
         _initialized = true;
         notifyListeners();
       });
-    } else if (kIsWeb) {
+    } else {
       // Covers the common case in practice: the PWA was killed (not just
       // suspended) while its LINE login redirect round-tripped through a
       // separate Safari tab, so this is a fresh launch rather than a
-      // didChangeAppLifecycleState resume — check for a handed-off session
-      // before giving up and showing the login screen.
-      _recoverSessionFromOtherTab().then((recovered) {
-        // On success, recoverSession() inside _recoverSessionFromOtherTab
-        // triggers onAuthStateChange, which loads the profile and marks us
-        // initialized — nothing more to do here.
-        if (!recovered) {
-          _initialized = true;
-          notifyListeners();
-        }
-      });
-    } else {
+      // didChangeAppLifecycleState resume — start polling for a handed-off
+      // session in the background instead of only checking once. Doesn't
+      // block showing the login screen; if a session turns up,
+      // onAuthStateChange picks it up and takes the user past it.
+      if (kIsWeb) _maybeStartHandoffPolling();
       _initialized = true;
       notifyListeners();
     }
@@ -488,21 +482,29 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
         // Logged in, but this landed in a plain Safari tab, not the
         // installed home-screen PWA — iOS never hands an external OAuth
         // redirect back to a standalone PWA instance, it always opens
-        // Safari. localStorage/cookies are NOT shared between Safari and a
-        // standalone PWA for the same origin on iOS, so stash the session
-        // in Cache Storage instead (the one storage medium iOS does share
-        // between them) for the PWA instance to pick up on its own once the
-        // user switches back to it (see _recoverSessionFromOtherTab); this
-        // tab just needs to tell them to do that instead of rendering the
-        // normal app UI here.
+        // Safari, and shares neither localStorage nor Cache Storage
+        // between the two for the same origin (confirmed the hard way —
+        // both were tried here first). So hand the session off through the
+        // server instead: insert it keyed by pairingId, which the PWA
+        // instance polls for with get_line_login_handoff() (see
+        // _maybeStartHandoffPolling). This tab just needs to tell the user
+        // to switch back instead of rendering the normal app UI here.
         final session = _supabase.auth.currentSession;
         if (session != null) {
-          await LineWebAuthService.stashSessionForHandoff(
-            jsonEncode(session.toJson()),
-          );
+          try {
+            await _supabase.from('line_login_handoffs').insert({
+              'pairing_id': profile.pairingId,
+              'session': session.toJson(),
+            });
+          } catch (e) {
+            debugPrint('Failed to create LINE login handoff: $e');
+          }
         }
         _lineWebLoginNeedsReturnToApp = true;
         notifyListeners();
+      } else {
+        // Landed back in the PWA itself after all — no handoff needed.
+        LineWebAuthService.clearPendingPairingId();
       }
       // On success, the signIn/signUp call above triggers onAuthStateChange,
       // which finishes initialization — nothing more to do here.
@@ -522,39 +524,70 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   /// When the app (this specific browser tab/PWA instance) comes back to
-  /// the foreground, check whether a LINE login completed elsewhere — e.g.
-  /// the standalone PWA was merely suspended (not killed) in the background
-  /// while its login redirect round-tripped through a separate Safari tab
-  /// (see _completeLineWebLogin). If so, pick up the session stashed there.
+  /// the foreground, check whether a LINE login completed elsewhere and
+  /// restart polling if a poll from an earlier resume/launch already timed
+  /// out (see _maybeStartHandoffPolling).
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (kIsWeb && state == AppLifecycleState.resumed && _user == null) {
-      // On success, recoverSession() inside _recoverSessionFromOtherTab
-      // triggers onAuthStateChange, which updates _user/_profile and
-      // notifies listeners — nothing more to do here.
-      _recoverSessionFromOtherTab();
+      _maybeStartHandoffPolling();
     }
   }
 
-  /// Reads a session stashed by [_completeLineWebLogin] via Cache Storage —
-  /// the only storage medium iOS shares between a plain Safari tab and an
-  /// installed home-screen PWA for the same origin (localStorage/cookies are
-  /// not shared, which is why this doesn't just read from local storage).
-  Future<bool> _recoverSessionFromOtherTab() async {
-    try {
-      final sessionJson = await LineWebAuthService.readAndClearHandoffSession();
-      if (sessionJson == null) return false;
-      await _supabase.auth.recoverSession(sessionJson);
-      return true;
-    } catch (e) {
-      debugPrint('Session recovery on resume failed: $e');
-      return false;
+  Timer? _handoffPollTimer;
+
+  /// Polls get_line_login_handoff() for a session stashed by
+  /// _completeLineWebLogin — the server-mediated handoff channel used
+  /// because iOS shares neither localStorage nor Cache Storage between a
+  /// plain Safari tab and an installed home-screen PWA for the same
+  /// origin. No-ops if there's no pending pairing id (the common case —
+  /// most logins complete directly, without ever needing a handoff).
+  void _maybeStartHandoffPolling() {
+    if (_user != null || _handoffPollTimer != null) return;
+    final pairingId = LineWebAuthService.readPendingPairingId();
+    if (pairingId == null) return;
+
+    var attempts = 0;
+    const maxAttempts = 40; // ~2 minutes at 3s each.
+    Future<void> tick() async {
+      attempts++;
+      if (_user != null) {
+        _handoffPollTimer?.cancel();
+        _handoffPollTimer = null;
+        return;
+      }
+      if (attempts > maxAttempts) {
+        _handoffPollTimer?.cancel();
+        _handoffPollTimer = null;
+        LineWebAuthService.clearPendingPairingId();
+        return;
+      }
+      try {
+        final sessionJson = await _supabase.rpc(
+          'get_line_login_handoff',
+          params: {'p_pairing_id': pairingId},
+        );
+        if (sessionJson != null) {
+          _handoffPollTimer?.cancel();
+          _handoffPollTimer = null;
+          LineWebAuthService.clearPendingPairingId();
+          // Triggers onAuthStateChange, which updates _user/_profile and
+          // notifies listeners — nothing more to do here on success.
+          await _supabase.auth.recoverSession(jsonEncode(sessionJson));
+        }
+      } catch (e) {
+        debugPrint('LINE login handoff poll failed: $e');
+      }
     }
+
+    tick(); // Check immediately rather than waiting out the first interval.
+    _handoffPollTimer = Timer.periodic(const Duration(seconds: 3), (_) => tick());
   }
 
   @override
   void dispose() {
     if (kIsWeb) WidgetsBinding.instance.removeObserver(this);
+    _handoffPollTimer?.cancel();
     super.dispose();
   }
 

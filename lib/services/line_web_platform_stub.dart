@@ -6,6 +6,7 @@ class LineWebPlatform {
   static void clearCallbackParamsFromUrl() {}
   static void redirect(String url) {}
   static String get currentOrigin => '';
-  static Future<void> stashSessionForHandoff(String sessionJson) async {}
-  static Future<String?> readAndClearHandoffSession() async => null;
+  static void savePendingPairingId(String pairingId) {}
+  static String? readPendingPairingId() => null;
+  static void clearPendingPairingId() {}
 }

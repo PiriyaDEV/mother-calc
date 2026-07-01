@@ -25,18 +25,20 @@ drop function if exists public.is_group_member(uuid)          cascade;
 drop function if exists public.is_group_owner(uuid)           cascade;
 drop function if exists public.sync_bill_member_names()       cascade;
 drop function if exists public.trigger_push_on_notification() cascade;
+drop function if exists public.get_line_login_handoff(text)   cascade;
 
 -- Tables (child -> parent order)
-drop table if exists public.bill_items    cascade;
-drop table if exists public.bill_members  cascade;
-drop table if exists public.bills         cascade;
-drop table if exists public.trips         cascade;
-drop table if exists public.notifications cascade;
-drop table if exists public.friends       cascade;
-drop table if exists public.group_members cascade;
-drop table if exists public.groups        cascade;
-drop table if exists public.app_config    cascade;
-drop table if exists public.profiles      cascade;
+drop table if exists public.bill_items          cascade;
+drop table if exists public.bill_members        cascade;
+drop table if exists public.bills               cascade;
+drop table if exists public.trips               cascade;
+drop table if exists public.notifications       cascade;
+drop table if exists public.friends             cascade;
+drop table if exists public.group_members       cascade;
+drop table if exists public.groups              cascade;
+drop table if exists public.app_config          cascade;
+drop table if exists public.line_login_handoffs cascade;
+drop table if exists public.profiles            cascade;
 
 -- ============================================================
 -- Extensions
@@ -177,6 +179,17 @@ insert into public.app_config (key, value)
 values ('ads_enabled', 'false')
 on conflict (key) do nothing;
 
+-- LINE web login iOS PWA handoff — see FIX notes in
+-- supabase/migrations/20260701000000_add_line_login_handoff.sql for why
+-- this exists (iOS shares neither localStorage nor Cache Storage between
+-- a plain Safari tab and an installed home-screen PWA for the same
+-- origin, so the completed session is handed off through here instead).
+create table public.line_login_handoffs (
+  pairing_id text primary key,
+  session    jsonb not null,
+  created_at timestamptz not null default now()
+);
+
 -- ============================================================
 -- Indexes
 -- ============================================================
@@ -208,6 +221,7 @@ alter table public.bills         enable row level security;
 alter table public.bill_members  enable row level security;
 alter table public.bill_items    enable row level security;
 alter table public.app_config    enable row level security;
+alter table public.line_login_handoffs enable row level security;
 
 -- ============================================================
 -- Security Definer Helper Functions
@@ -433,6 +447,21 @@ create policy "app_config_select" on public.app_config
 -- other roles — service_role bypasses RLS entirely).
 
 -- ============================================================
+-- Policies — line_login_handoffs
+-- ============================================================
+-- pairing_id is a 256-bit random token generated client-side and never
+-- guessable — it IS the authorization here, same trust model as the OAuth
+-- `state`/PKCE verifier already used elsewhere in this flow. Anyone who
+-- knows it can create a handoff row; that's fine, it's write-only and
+-- doesn't expose anything (a bogus pairing_id just never gets polled).
+create policy "line_login_handoffs_insert" on public.line_login_handoffs
+  for insert with check (pairing_id ~ '^[A-Za-z0-9_-]{16,64}$');
+-- No select/delete policy — deliberately. Reads must go through the
+-- get_line_login_handoff() RPC below (security definer), so a client can
+-- only ever fetch the one row whose pairing_id it already knows, and can
+-- never enumerate the table to steal someone else's in-flight session.
+
+-- ============================================================
 -- Functions & Triggers
 -- ============================================================
 
@@ -572,3 +601,27 @@ $$;
 create trigger push_on_notification_insert
   after insert on public.notifications
   for each row execute procedure public.trigger_push_on_notification();
+
+-- Reads for line_login_handoffs must go through this RPC (security
+-- definer) instead of a direct table select — see the policy comment
+-- above for why. Also does opportunistic cleanup of stale rows.
+create function public.get_line_login_handoff(p_pairing_id text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_session jsonb;
+begin
+  delete from public.line_login_handoffs where created_at < now() - interval '10 minutes';
+
+  select session into v_session
+  from public.line_login_handoffs
+  where pairing_id = p_pairing_id;
+
+  if v_session is not null then
+    delete from public.line_login_handoffs where pairing_id = p_pairing_id;
+  end if;
+
+  return v_session;
+end;
+$$;
+
+grant execute on function public.get_line_login_handoff(text) to anon, authenticated;
