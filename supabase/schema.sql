@@ -9,18 +9,22 @@
 -- ============================================================
 
 -- Triggers
-drop trigger if exists on_auth_user_created    on auth.users;
-drop trigger if exists profiles_updated_at     on public.profiles;
-drop trigger if exists groups_updated_at       on public.groups;
-drop trigger if exists trips_updated_at        on public.trips;
-drop trigger if exists bills_updated_at        on public.bills;
+drop trigger if exists on_auth_user_created       on auth.users;
+drop trigger if exists profiles_updated_at        on public.profiles;
+drop trigger if exists groups_updated_at          on public.groups;
+drop trigger if exists trips_updated_at           on public.trips;
+drop trigger if exists bills_updated_at           on public.bills;
+drop trigger if exists profiles_sync_names        on public.profiles;
+drop trigger if exists push_on_notification_insert on public.notifications;
 
 -- Functions
-drop function if exists public.handle_new_user()       cascade;
-drop function if exists public.handle_updated_at()     cascade;
-drop function if exists public.can_access_bill(uuid)   cascade;
-drop function if exists public.is_group_member(uuid)   cascade;
-drop function if exists public.is_group_owner(uuid)    cascade;
+drop function if exists public.handle_new_user()             cascade;
+drop function if exists public.handle_updated_at()            cascade;
+drop function if exists public.can_access_bill(uuid)          cascade;
+drop function if exists public.is_group_member(uuid)          cascade;
+drop function if exists public.is_group_owner(uuid)           cascade;
+drop function if exists public.sync_bill_member_names()       cascade;
+drop function if exists public.trigger_push_on_notification() cascade;
 
 -- Tables (child -> parent order)
 drop table if exists public.bill_items    cascade;
@@ -31,12 +35,14 @@ drop table if exists public.notifications cascade;
 drop table if exists public.friends       cascade;
 drop table if exists public.group_members cascade;
 drop table if exists public.groups        cascade;
+drop table if exists public.app_config    cascade;
 drop table if exists public.profiles      cascade;
 
 -- ============================================================
 -- Extensions
 -- ============================================================
 create extension if not exists "uuid-ossp";
+create extension if not exists "pg_net"; -- HTTP calls from Postgres (push notification trigger)
 
 -- ============================================================
 -- Tables
@@ -52,6 +58,7 @@ create table public.profiles (
   avatar_url           text,
   promptpay            text,
   onboarding_completed boolean not null default false,
+  fcm_token            text,                          -- Firebase push notification token
   -- ── i18n preference ─────────────────────────────────────────
   locale               text    not null default 'th',  -- 'th' | 'en'
   created_at           timestamptz not null default now(),
@@ -159,6 +166,17 @@ create table public.bill_items (
   created_at  timestamptz not null default now()
 );
 
+-- Remote feature flags — toggle without releasing a new app version
+-- (e.g. ads_enabled). Anyone can read; only service_role can write.
+create table public.app_config (
+  key        text primary key,
+  value      text not null,
+  updated_at timestamptz not null default now()
+);
+insert into public.app_config (key, value)
+values ('ads_enabled', 'false')
+on conflict (key) do nothing;
+
 -- ============================================================
 -- Indexes
 -- ============================================================
@@ -189,6 +207,7 @@ alter table public.trips         enable row level security;
 alter table public.bills         enable row level security;
 alter table public.bill_members  enable row level security;
 alter table public.bill_items    enable row level security;
+alter table public.app_config    enable row level security;
 
 -- ============================================================
 -- Security Definer Helper Functions
@@ -406,6 +425,14 @@ create policy "bill_items_delete" on public.bill_items
   );
 
 -- ============================================================
+-- Policies — app_config
+-- ============================================================
+create policy "app_config_select" on public.app_config
+  for select using (true);
+-- Writes are service_role-only (no insert/update/delete policy for
+-- other roles — service_role bypasses RLS entirely).
+
+-- ============================================================
 -- Functions & Triggers
 -- ============================================================
 
@@ -458,3 +485,90 @@ $$;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- Keep bill_members.name in sync with profiles.display_name so a display
+-- name change shows up everywhere a user appears as a bill member,
+-- atomically with the profile update itself (see docs/FIXES.md FIX-13).
+create function public.sync_bill_member_names()
+returns trigger language plpgsql as $$
+begin
+  if new.display_name is distinct from old.display_name then
+    update public.bill_members
+    set name = new.display_name
+    where user_id = new.id and is_external = false;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger profiles_sync_names
+  after update of display_name on public.profiles
+  for each row execute procedure public.sync_bill_member_names();
+
+-- Fires after every INSERT into notifications and calls the send-push
+-- Edge Function (fire-and-forget via pg_net). Requires two DB-level
+-- settings this script can't set for you (they're secrets) — run once
+-- per project, replacing the placeholders:
+--   alter database postgres set app.supabase_url = 'https://YOUR_PROJECT_REF.supabase.co';
+--   alter database postgres set app.service_role_key = 'YOUR_SERVICE_ROLE_KEY';
+-- See supabase/migrations/20240701000000_add_fcm_token_and_push_trigger.sql.
+create function public.trigger_push_on_notification()
+returns trigger language plpgsql security definer as $$
+declare
+  v_title text;
+  v_body  text;
+begin
+  case new.type
+    when 'group_invite' then
+      v_title := 'คำเชิญกลุ่ม 👥';
+      v_body  := coalesce(
+        (new.data->>'invited_by_display_name'),
+        '@' || coalesce(new.data->>'invited_by_username', 'ผู้ใช้')
+      ) || ' เชิญคุณเข้าร่วมกลุ่ม ' ||
+        coalesce(new.data->>'group_name', '');
+    when 'friend_request' then
+      v_title := 'คำขอเป็นเพื่อน 🤝';
+      v_body  := coalesce(
+        new.data->>'display_name',
+        '@' || coalesce(new.data->>'username', 'ผู้ใช้')
+      ) || ' ส่งคำขอเป็นเพื่อน';
+    when 'friend_accepted' then
+      v_title := 'ยอมรับคำขอเป็นเพื่อน ✅';
+      v_body  := coalesce(
+        new.data->>'display_name',
+        '@' || coalesce(new.data->>'username', 'ผู้ใช้')
+      ) || ' ยอมรับคำขอเป็นเพื่อนของคุณแล้ว';
+    when 'bill_paid' then
+      v_title := 'มีคนจ่ายบิล 💸';
+      v_body  := coalesce(new.data->>'payer_name', 'สมาชิก') ||
+        ' จ่ายเงินในบิล ' || coalesce(new.data->>'bill_name', '') || ' แล้ว';
+    when 'bill_completed' then
+      v_title := 'บิลจ่ายครบแล้ว 🎉';
+      v_body  := 'สมาชิกทุกคนจ่ายเงินครบในบิล ' ||
+        coalesce(new.data->>'bill_name', '') || ' แล้ว';
+    else
+      v_title := 'การแจ้งเตือนใหม่';
+      v_body  := coalesce(new.data->>'message', '');
+  end case;
+
+  perform net.http_post(
+    url     := current_setting('app.supabase_url') || '/functions/v1/send-push',
+    headers := jsonb_build_object(
+                 'Content-Type', 'application/json',
+                 'Authorization', 'Bearer ' || current_setting('app.service_role_key')
+               ),
+    body    := jsonb_build_object(
+                 'userId', new.user_id,
+                 'title',  v_title,
+                 'body',   v_body,
+                 'data',   jsonb_build_object('type', new.type)
+               )::text
+  );
+
+  return new;
+end;
+$$;
+
+create trigger push_on_notification_insert
+  after insert on public.notifications
+  for each row execute procedure public.trigger_push_on_notification();
