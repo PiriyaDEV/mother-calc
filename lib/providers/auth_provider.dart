@@ -361,13 +361,18 @@ class AuthProvider extends ChangeNotifier {
   Future<String?> signInWithLine() async {
     if (kIsWeb) {
       try {
-        LineWebAuthService.startLogin(
-            dotenv.env['LINE_CHANNEL_ID']?.isNotEmpty == true
-                ? dotenv.env['LINE_CHANNEL_ID']!
-                : const String.fromEnvironment('LINE_CHANNEL_ID'));
-      } catch (e) {
+        final channelId = dotenv.env['LINE_CHANNEL_ID']?.isNotEmpty == true
+            ? dotenv.env['LINE_CHANNEL_ID']!
+            : const String.fromEnvironment('LINE_CHANNEL_ID');
+        debugPrint('LINE web login: channelId=$channelId');
+        if (channelId.isEmpty) {
+          return 'LINE_CHANNEL_ID is not configured';
+        }
+        LineWebAuthService.startLogin(channelId);
+      } catch (e, st) {
         debugPrint('LINE web login error: $e');
-        return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+        debugPrint('LINE web login stacktrace: $st');
+        return 'LINE login error: ${e.toString()}';
       }
       return null;
     }

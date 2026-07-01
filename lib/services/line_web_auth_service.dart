@@ -33,6 +33,13 @@ class LineWebAuthService {
   /// call never returns — the browser navigates away and the app reloads
   /// fresh when LINE redirects back to [LineWebPlatform.currentOrigin].
   static void startLogin(String channelId) {
+    final origin = LineWebPlatform.currentOrigin;
+    if (origin.isEmpty) {
+      throw StateError(
+          'LineWebPlatform.currentOrigin is empty — dart:html may not be available. '
+          'Check that the web platform implementation is being used.');
+    }
+
     final verifier = _randomToken();
     final challenge = _codeChallenge(verifier);
     final state = _randomToken();
@@ -41,7 +48,7 @@ class LineWebAuthService {
     final url = Uri.parse(_authorizeUrl).replace(queryParameters: {
       'response_type': 'code',
       'client_id': channelId,
-      'redirect_uri': LineWebPlatform.currentOrigin,
+      'redirect_uri': origin,
       'state': state,
       'scope': 'profile openid',
       'code_challenge': challenge,

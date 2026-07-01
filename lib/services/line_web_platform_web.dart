@@ -1,42 +1,67 @@
+// ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 
 /// Browser-backed implementation. sessionStorage survives the full-page
 /// redirect to LINE and back (same tab, same origin) but not a new tab.
 class LineWebPlatform {
   static bool get hasPendingCallback {
-    final params = Uri.base.queryParameters;
-    return params.containsKey('code') && params.containsKey('state');
+    try {
+      final params = Uri.base.queryParameters;
+      return params.containsKey('code') && params.containsKey('state');
+    } catch (_) {
+      return false;
+    }
   }
 
   static Map<String, String>? readCallbackParams() {
-    final params = Uri.base.queryParameters;
-    final code = params['code'];
-    final state = params['state'];
-    if (code == null || state == null) return null;
-    return {'code': code, 'state': state};
+    try {
+      final params = Uri.base.queryParameters;
+      final code = params['code'];
+      final state = params['state'];
+      if (code == null || state == null) return null;
+      return {'code': code, 'state': state};
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Strips ?code&state from the address bar so a page refresh doesn't
   /// try to redeem the same (now-consumed) authorization code again.
   static void clearCallbackParamsFromUrl() {
-    final cleanUrl = Uri.base.replace(queryParameters: {}).toString();
-    html.window.history.replaceState(null, '', cleanUrl);
+    try {
+      final cleanUrl = Uri.base.replace(queryParameters: {}).toString();
+      html.window.history.replaceState(null, '', cleanUrl);
+    } catch (_) {}
   }
 
   static void saveVerifier(String state, String verifier) {
-    html.window.sessionStorage['line_pkce_$state'] = verifier;
+    try {
+      html.window.sessionStorage['line_pkce_$state'] = verifier;
+    } catch (_) {}
   }
 
   static String? consumeVerifier(String state) {
-    final key = 'line_pkce_$state';
-    final value = html.window.sessionStorage[key];
-    html.window.sessionStorage.remove(key);
-    return value;
+    try {
+      final key = 'line_pkce_$state';
+      final value = html.window.sessionStorage[key];
+      html.window.sessionStorage.remove(key);
+      return value;
+    } catch (_) {
+      return null;
+    }
   }
 
   static void redirect(String url) {
-    html.window.location.href = url;
+    try {
+      html.window.location.href = url;
+    } catch (_) {}
   }
 
-  static String get currentOrigin => html.window.location.origin;
+  static String get currentOrigin {
+    try {
+      return html.window.location.origin;
+    } catch (_) {
+      return '';
+    }
+  }
 }
