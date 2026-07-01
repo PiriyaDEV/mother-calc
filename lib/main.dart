@@ -179,6 +179,14 @@ class _KidtangAppState extends State<KidtangApp> {
       darkTheme: AppTheme.dark(),
       themeMode: themeProvider.isDark ? ThemeMode.dark : ThemeMode.light,
       routerConfig: _router,
+      builder: (context, child) {
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 768),
+            child: child!,
+          ),
+        );
+      },
     );
   }
 }

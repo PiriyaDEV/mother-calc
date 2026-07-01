@@ -24,12 +24,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    final profile = context.read<AuthProvider>().profile;
-    if (profile != null) {
-      _displayNameCtrl.text = profile.displayName ?? '';
-      _usernameCtrl.text = profile.username ?? '';
-      _promptpayCtrl.text = profile.promptpay ?? '';
-    }
   }
 
   @override
@@ -148,7 +142,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                _label(isDark, 'เบอร์พร้อมเพย์ (ไม่บังคับ)'),
+                _label(isDark, 'เบอร์พร้อมเพย์'),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _promptpayCtrl,
@@ -161,6 +155,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         : AppColors.textPrimaryLight,
                   ),
                   decoration: _inputDecoration(isDark, 'เช่น 0812345678'),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'กรุณาใส่เบอร์พร้อมเพย์' : null,
                 ),
 
                 if (_error != null) ...[
