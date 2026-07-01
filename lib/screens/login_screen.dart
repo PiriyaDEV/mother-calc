@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../services/google_web_button.dart';
 import '../services/ios_install_prompt.dart';
 import '../theme/app_theme.dart';
 
@@ -49,9 +48,9 @@ class _LoginScreenState extends State<LoginScreen>
     ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut));
     _animCtrl.forward();
 
-    // On web, Google sign-in is driven by the rendered GIS button, not an
-    // awaited call — AuthProvider notifies via notifyListeners() instead of
-    // a return value, so pick up any error from there when it fires.
+    // On web, errors from Google sign-in come back via AuthProvider's
+    // notifyListeners() (the GIS popup result lands on onCurrentUserChanged,
+    // not a return value) — listen here to surface them.
     if (kIsWeb) context.read<AuthProvider>().addListener(_onAuthChanged);
   }
 
@@ -342,54 +341,35 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         const SizedBox(height: 14),
 
-                        // Google button — web uses GIS's own rendered button
-                        // (see google_web_button_web.dart for why), mobile
-                        // keeps the app-styled button driving the native SDK.
-                        // GIS supports a `minimumWidth` config (capped at
-                        // 400px) that lays the button out at that exact
-                        // width — sized to the row instead of stretched via
-                        // Transform.scale, which distorted the logo/text.
-                        // ClipRect is required, not cosmetic: the rendered
-                        // button is a real DOM platform view, and without a
-                        // clip its hit-testable area can extend past this
-                        // SizedBox and swallow taps meant for widgets below.
-                        if (kIsWeb)
-                          SizedBox(
-                            width: double.infinity,
-                            height: 56,
-                            child: ClipRect(
-                              child: Center(
-                                child: renderGoogleSignInButton(
-                                  minimumWidth: math.min(size.width - 56, 400),
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          _SocialButton(
-                            onTap: _lineLoading || _googleLoading
-                                ? null
-                                : _signInWithGoogle,
-                            isLoading: _googleLoading,
-                            backgroundColor: isDark
-                                ? AppColors.surfaceDark
-                                : Colors.white,
-                            icon: Image.asset(
-                              'assets/images/google-logo.png',
-                              width: 22,
-                              height: 22,
-                            ),
-                            label: 'เข้าสู่ระบบด้วย Google',
-                            labelColor: isDark
-                                ? Colors.white
-                                : const Color(0xFF111827),
-                            border: Border.all(
-                              color: isDark
-                                  ? AppColors.borderDark
-                                  : AppColors.neutral100,
-                              width: 1.5,
-                            ),
+                        // Google button — uses our own styled button on all
+                        // platforms. On web, tapping calls signInWithGoogle()
+                        // which triggers the GIS popup; the result is picked
+                        // up via the onCurrentUserChanged listener in
+                        // AuthProvider (same as before).
+                        _SocialButton(
+                          onTap: _lineLoading || _googleLoading
+                              ? null
+                              : _signInWithGoogle,
+                          isLoading: _googleLoading,
+                          backgroundColor: isDark
+                              ? AppColors.surfaceDark
+                              : Colors.white,
+                          icon: Image.asset(
+                            'assets/images/google-logo.png',
+                            width: 22,
+                            height: 22,
                           ),
+                          label: 'เข้าสู่ระบบด้วย Google',
+                          labelColor: isDark
+                              ? Colors.white
+                              : const Color(0xFF111827),
+                          border: Border.all(
+                            color: isDark
+                                ? AppColors.borderDark
+                                : AppColors.neutral100,
+                            width: 1.5,
+                          ),
+                        ),
 
                         // Error
                         if (_error != null) ...[

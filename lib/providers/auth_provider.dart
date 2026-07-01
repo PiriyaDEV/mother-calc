@@ -14,9 +14,8 @@ import 'locale_provider.dart';
 
 class AuthProvider extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
-  // Shared instance — on web its `onCurrentUserChanged` stream is how the
-  // rendered GIS button (see google_web_button_web.dart) reports sign-in,
-  // since that button isn't driven by our own `signIn()` call.
+  // Shared instance — on web, `signIn()` triggers the GIS popup and the
+  // result is delivered via `onCurrentUserChanged` (not a return value).
   final _googleSignIn = GoogleSignIn();
 
   // Optional references to sibling providers — set after construction.
@@ -95,8 +94,8 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
     });
 
-    // Web Google sign-in is button-driven (see google_web_button_web.dart),
-    // not an awaited call — pick up the result here instead.
+    // Web Google sign-in triggers a GIS popup via _googleSignIn.signIn() —
+    // the result lands here on onCurrentUserChanged, not as a return value.
     if (kIsWeb) {
       _googleSignIn.onCurrentUserChanged.listen((account) async {
         if (account == null) return;
@@ -268,13 +267,21 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Signs in with Google using the native SDK (same pattern as LINE).
-  /// Web doesn't use this — see the `onCurrentUserChanged` listener in
-  /// [_init] instead, since GIS's rendered button drives sign-in there.
+  /// Signs in with Google.
+  ///
+  /// On mobile: calls the native SDK directly and awaits the result.
+  /// On web: calls `_googleSignIn.signIn()` to trigger the GIS popup;
+  /// the actual sign-in result is picked up by the `onCurrentUserChanged`
+  /// listener in [_init] — this method returns null immediately after
+  /// the popup is dismissed (success or cancel).
   Future<String?> signInWithGoogle() async {
     try {
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null; // user cancelled
+      // On web the onCurrentUserChanged listener handles the account —
+      // calling _handleGoogleAccount here too would double-process it,
+      // so skip the explicit handling on web.
+      if (kIsWeb) return null;
       return await _handleGoogleAccount(googleUser);
     } on PlatformException catch (e) {
       debugPrint('Google SDK error: ${e.code} — ${e.message}');

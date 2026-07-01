@@ -211,18 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'สวัสดี, $firstName 👋',
-                                style: GoogleFonts.anuphan(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: isDark
-                                      ? AppColors.neutral600Dark
-                                      : AppColors.neutral600,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'ยินดีต้อนรับกลับมา',
+                                'สวัสดี, $firstName 👋 !',
                                 style: GoogleFonts.anuphan(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w700,

@@ -53,6 +53,12 @@ class LineWebAuthService {
       'scope': 'profile openid',
       'code_challenge': challenge,
       'code_challenge_method': 'S256',
+      // Without these, LINE's "Auto Login" silently hands off to the LINE
+      // app and straight back when the user is already logged into it (the
+      // common case, since it's their messaging app) — no confirm screen at
+      // all. Force the real login/consent screen every time instead.
+      'disable_auto_login': 'true',
+      'disable_ios_auto_login': 'true',
     });
     LineWebPlatform.redirect(url.toString());
   }
