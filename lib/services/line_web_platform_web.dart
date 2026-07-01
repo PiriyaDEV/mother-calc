@@ -1,6 +1,12 @@
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 
+/// Cookie name used to hand a Supabase session from a plain Safari tab
+/// (where LINE's OAuth redirect lands) back to the installed home-screen
+/// PWA instance (which shares the same origin's cookies but NOT its
+/// localStorage/IndexedDB).
+const _kSessionCookieName = 'sb_pwa_session';
+
 /// Browser-backed implementation.
 class LineWebPlatform {
   static bool get hasPendingCallback {
@@ -50,38 +56,55 @@ class LineWebPlatform {
     }
   }
 
-  // ── LINE web login iOS PWA handoff ──────────────────────────────
-  // iOS gives a LINE web login's OAuth redirect to a plain Safari tab
-  // instead of handing it back to the installed home-screen PWA, and
-  // shares neither localStorage nor Cache Storage reliably between the two
-  // contexts for the same origin — so the completed session can't be
-  // handed off through browser storage at all (see AuthProvider, which
-  // hands it off through the server instead via a pairing_id).
+  // ── Cookie-based PWA↔Safari session handoff ──────────────────────────────
   //
-  // This pairing_id, however, only ever needs to be read back by *this
-  // same* browsing context after being relaunched — that's ordinary
-  // same-origin localStorage persistence across a process kill, which iOS
-  // does support; it's only sharing storage *between two different
-  // contexts* (Safari tab vs. standalone PWA) that iOS doesn't support.
-  static const _pairingIdKey = 'kidtang_line_pairing_id';
+  // iOS keeps localStorage/IndexedDB partitioned between a standalone PWA
+  // and plain Safari even when they share the same origin.  Cookies are the
+  // only storage that crosses that boundary, so we use a short-lived cookie
+  // to carry the Supabase session JSON from the Safari tab (where LINE's
+  // OAuth redirect always lands) back to the PWA instance.
 
-  static void savePendingPairingId(String pairingId) {
+  /// Writes [sessionJson] into a same-origin cookie that the PWA can read
+  /// when it resumes.  The cookie expires in 5 minutes — just long enough
+  /// for the user to switch back to the app; after that it's useless anyway
+  /// because the PWA will have already consumed it.
+  static void writePwaSessionCookie(String sessionJson) {
     try {
-      html.window.localStorage[_pairingIdKey] = pairingId;
+      // URI-encode so commas/semicolons inside the JSON don't break the
+      // cookie header.
+      final encoded = Uri.encodeComponent(sessionJson);
+      // Max-Age=300 → 5 minutes.  SameSite=Lax is the safe default for
+      // same-origin navigations; Secure is set automatically by the browser
+      // when the page is served over HTTPS.
+      html.document.cookie =
+          '$_kSessionCookieName=$encoded; Path=/; SameSite=Lax; Max-Age=300';
     } catch (_) {}
   }
 
-  static String? readPendingPairingId() {
+  /// Returns the session JSON previously written by [writePwaSessionCookie],
+  /// or null if the cookie is absent or expired.
+  static String? readPwaSessionCookie() {
     try {
-      return html.window.localStorage[_pairingIdKey];
+      final cookies = html.document.cookie ?? '';
+      for (final part in cookies.split(';')) {
+        final kv = part.trim().split('=');
+        if (kv.length >= 2 && kv[0].trim() == _kSessionCookieName) {
+          // Re-join in case the value itself contained '=' (base64 padding).
+          final raw = kv.sublist(1).join('=').trim();
+          return Uri.decodeComponent(raw);
+        }
+      }
+      return null;
     } catch (_) {
       return null;
     }
   }
 
-  static void clearPendingPairingId() {
+  /// Deletes the handoff cookie so it can't be replayed.
+  static void clearPwaSessionCookie() {
     try {
-      html.window.localStorage.remove(_pairingIdKey);
+      html.document.cookie =
+          '$_kSessionCookieName=; Path=/; SameSite=Lax; Max-Age=0';
     } catch (_) {}
   }
 }

@@ -11,18 +11,10 @@ class LineWebProfile {
   final String displayName;
   final String? pictureUrl;
 
-  /// The pairing id generated in [LineWebAuthService.startLogin] and echoed
-  /// back via `state` — used by AuthProvider to hand this session off to
-  /// the originating browsing context (see get_line_login_handoff()) when
-  /// this callback landed in a different one (e.g. iOS routed it to a
-  /// plain Safari tab instead of back to the installed home-screen PWA).
-  final String pairingId;
-
   LineWebProfile({
     required this.userId,
     required this.displayName,
     this.pictureUrl,
-    required this.pairingId,
   });
 }
 
@@ -50,30 +42,15 @@ class LineWebAuthService {
 
     final verifier = _randomToken();
     final challenge = _codeChallenge(verifier);
-    // Generated unconditionally — we don't know until the callback lands
-    // whether iOS routed it back to this same PWA instance or to a plain
-    // Safari tab, so a pairing id is always available in case it's needed
-    // to hand the session off (see AuthProvider._completeLineWebLogin).
-    // Saved to *this* browsing context's own storage now, before
-    // navigating away — read back later by the same context after being
-    // relaunched, which is ordinary same-origin persistence, not a
-    // cross-context storage share (iOS doesn't support that part).
-    final pairingId = _randomToken();
-    LineWebPlatform.savePendingPairingId(pairingId);
 
     final url = Uri.parse(_authorizeUrl).replace(queryParameters: {
       'response_type': 'code',
       'client_id': channelId,
       'redirect_uri': origin,
-      // verifier + pairingId are packed into `state` — LINE echoes it back
-      // verbatim on redirect, so completing login never depends on browser
-      // storage surviving the round trip. That matters here: LINE hands
-      // off to its native app for login, then returns via a fresh browser
-      // tab/context — on iOS, when launched from an installed home-screen
-      // PWA, that's plain Safari, a completely different storage partition
-      // from the standalone PWA instance. `.` is safe as a delimiter since
-      // both tokens are base64url (alphabet excludes `.`).
-      'state': '$verifier.$pairingId',
+      // verifier is packed into `state` — LINE echoes it back verbatim on
+      // redirect so completing login never depends on browser storage
+      // surviving the round trip.
+      'state': verifier,
       'scope': 'profile openid',
       'code_challenge': challenge,
       'code_challenge_method': 'S256',
@@ -82,12 +59,6 @@ class LineWebAuthService {
   }
 
   static bool get hasPendingCallback => LineWebPlatform.hasPendingCallback;
-
-  /// See [LineWebPlatform.readPendingPairingId].
-  static String? readPendingPairingId() => LineWebPlatform.readPendingPairingId();
-
-  /// See [LineWebPlatform.clearPendingPairingId].
-  static void clearPendingPairingId() => LineWebPlatform.clearPendingPairingId();
 
   /// Completes the flow after LINE redirects back with ?code&state.
   /// Throws on any failure (missing callback params, LINE API error).
@@ -99,9 +70,7 @@ class LineWebAuthService {
     // Clear immediately so a page refresh can't replay the same code.
     LineWebPlatform.clearCallbackParamsFromUrl();
 
-    final stateParts = params['state']!.split('.');
-    final verifier = stateParts[0];
-    final pairingId = stateParts.length > 1 ? stateParts[1] : '';
+    final verifier = params['state']!;
 
     final tokenResponse = await http.post(
       Uri.parse(_tokenUrl),
@@ -133,7 +102,6 @@ class LineWebAuthService {
       userId: profile['userId'] as String,
       displayName: profile['displayName'] as String? ?? 'LINE User',
       pictureUrl: profile['pictureUrl'] as String?,
-      pairingId: pairingId,
     );
   }
 

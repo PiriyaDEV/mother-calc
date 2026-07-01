@@ -6,7 +6,9 @@ class LineWebPlatform {
   static void clearCallbackParamsFromUrl() {}
   static void redirect(String url) {}
   static String get currentOrigin => '';
-  static void savePendingPairingId(String pairingId) {}
-  static String? readPendingPairingId() => null;
-  static void clearPendingPairingId() {}
+
+  // Cookie-based PWA↔Safari session handoff — no-ops on non-web.
+  static void writePwaSessionCookie(String sessionJson) {}
+  static String? readPwaSessionCookie() => null;
+  static void clearPwaSessionCookie() {}
 }

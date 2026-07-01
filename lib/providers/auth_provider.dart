@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -11,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../services/ios_install_prompt.dart';
 import '../services/line_web_auth_service.dart';
+import '../services/line_web_platform.dart';
 import '../services/push_notification_service.dart';
 import 'bills_list_provider.dart';
 import 'groups_provider.dart';
@@ -482,30 +482,23 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
         // Logged in, but this landed in a plain Safari tab, not the
         // installed home-screen PWA — iOS never hands an external OAuth
         // redirect back to a standalone PWA instance, it always opens
-        // Safari, and shares neither localStorage nor Cache Storage
-        // between the two for the same origin (confirmed the hard way —
-        // both were tried here first). So hand the session off through the
-        // server instead: insert it keyed by pairingId, which the PWA
-        // instance polls for with get_line_login_handoff() (see
-        // _maybeStartHandoffPolling). This tab just needs to tell the user
-        // to switch back instead of rendering the normal app UI here.
+        // Safari. localStorage/IndexedDB are partitioned between the two
+        // contexts, but cookies are shared for the same origin. Write the
+        // session into a short-lived cookie so the PWA can pick it up when
+        // the user switches back (see _recoverSessionFromCookie).
         final session = _supabase.auth.currentSession;
         if (session != null) {
           try {
-            await _supabase.from('line_login_handoffs').insert({
-              'pairing_id': profile.pairingId,
-              'session': session.toJson(),
-            });
+            LineWebPlatform.writePwaSessionCookie(jsonEncode(session.toJson()));
           } catch (e) {
-            debugPrint('Failed to create LINE login handoff: $e');
+            debugPrint('Failed to write PWA session cookie: $e');
           }
         }
         _lineWebLoginNeedsReturnToApp = true;
         notifyListeners();
-      } else {
-        // Landed back in the PWA itself after all — no handoff needed.
-        LineWebAuthService.clearPendingPairingId();
       }
+      // On success, the signIn/signUp call above triggers onAuthStateChange,
+      // which finishes initialization — nothing more to do here.
       // On success, the signIn/signUp call above triggers onAuthStateChange,
       // which finishes initialization — nothing more to do here.
     } catch (e) {
@@ -534,60 +527,31 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Timer? _handoffPollTimer;
-
-  /// Polls get_line_login_handoff() for a session stashed by
-  /// _completeLineWebLogin — the server-mediated handoff channel used
-  /// because iOS shares neither localStorage nor Cache Storage between a
-  /// plain Safari tab and an installed home-screen PWA for the same
-  /// origin. No-ops if there's no pending pairing id (the common case —
-  /// most logins complete directly, without ever needing a handoff).
-  void _maybeStartHandoffPolling() {
-    if (_user != null || _handoffPollTimer != null) return;
-    final pairingId = LineWebAuthService.readPendingPairingId();
-    if (pairingId == null) return;
-
-    var attempts = 0;
-    const maxAttempts = 40; // ~2 minutes at 3s each.
-    Future<void> tick() async {
-      attempts++;
-      if (_user != null) {
-        _handoffPollTimer?.cancel();
-        _handoffPollTimer = null;
-        return;
-      }
-      if (attempts > maxAttempts) {
-        _handoffPollTimer?.cancel();
-        _handoffPollTimer = null;
-        LineWebAuthService.clearPendingPairingId();
-        return;
-      }
-      try {
-        final sessionJson = await _supabase.rpc(
-          'get_line_login_handoff',
-          params: {'p_pairing_id': pairingId},
-        );
-        if (sessionJson != null) {
-          _handoffPollTimer?.cancel();
-          _handoffPollTimer = null;
-          LineWebAuthService.clearPendingPairingId();
-          // Triggers onAuthStateChange, which updates _user/_profile and
-          // notifies listeners — nothing more to do here on success.
-          await _supabase.auth.recoverSession(jsonEncode(sessionJson));
-        }
-      } catch (e) {
-        debugPrint('LINE login handoff poll failed: $e');
-      }
+  /// Checks for a Supabase session written into a same-origin cookie by a
+  /// LINE login that completed in a plain Safari tab (see
+  /// [_completeLineWebLogin]).  iOS shares cookies between standalone PWA
+  /// and Safari for the same origin, unlike localStorage/IndexedDB.
+  ///
+  /// Called on cold start (from [_init]) and on every foreground resume
+  /// (from [didChangeAppLifecycleState]) so the PWA picks up the session
+  /// whether it was killed or merely suspended while the user was in Safari.
+  Future<void> _maybeStartHandoffPolling() async {
+    if (_user != null) return;
+    try {
+      final sessionJson = LineWebPlatform.readPwaSessionCookie();
+      if (sessionJson == null) return;
+      // Consume immediately so it can't be replayed.
+      LineWebPlatform.clearPwaSessionCookie();
+      // recoverSession triggers onAuthStateChange → _loadProfile → notifyListeners.
+      await _supabase.auth.recoverSession(sessionJson);
+    } catch (e) {
+      debugPrint('LINE PWA session cookie recovery failed: $e');
     }
-
-    tick(); // Check immediately rather than waiting out the first interval.
-    _handoffPollTimer = Timer.periodic(const Duration(seconds: 3), (_) => tick());
   }
 
   @override
   void dispose() {
     if (kIsWeb) WidgetsBinding.instance.removeObserver(this);
-    _handoffPollTimer?.cancel();
     super.dispose();
   }
 
