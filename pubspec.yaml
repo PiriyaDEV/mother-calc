@@ -81,9 +81,9 @@ flutter:
 # Generates native splash screens (Android/iOS/web) from this config —
 # run `dart run flutter_native_splash:create` after changing it.
 flutter_native_splash:
-  color: "#286BFD"
+  color: "#DDEAFF"
   image: assets/images/logo.png
   android_12:
-    color: "#286BFD"
+    color: "#DDEAFF"
     image: assets/images/logo.png
   web: true
