@@ -46,9 +46,18 @@ void main() async {
   // Initialize Thai locale data for DateFormat
   await initializeDateFormatting('th', null);
 
+  final supabaseUrl = env('SUPABASE_URL');
+  final supabaseKey = env('SUPABASE_ANON_KEY');
+  if (supabaseUrl.isEmpty || supabaseKey.isEmpty) {
+    debugPrint('[Supabase] Missing SUPABASE_URL or SUPABASE_ANON_KEY — check env vars');
+    // Show error app instead of crashing
+    runApp(const _MissingConfigApp());
+    return;
+  }
+
   await Supabase.initialize(
-    url: env('SUPABASE_URL'),
-    anonKey: env('SUPABASE_ANON_KEY'),
+    url: supabaseUrl,
+    anonKey: supabaseKey,
     authOptions: const FlutterAuthClientOptions(
       authFlowType: AuthFlowType.implicit,
     ),
@@ -103,6 +112,29 @@ void main() async {
       child: const KidtangApp(),
     ),
   );
+}
+
+class _MissingConfigApp extends StatelessWidget {
+  const _MissingConfigApp();
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(32),
+            child: Text(
+              'Configuration error: SUPABASE_URL or SUPABASE_ANON_KEY is missing.\n\n'
+              'Please set the required environment variables.',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class KidtangApp extends StatefulWidget {
