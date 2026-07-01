@@ -361,9 +361,14 @@ class AuthProvider extends ChangeNotifier {
   Future<String?> signInWithLine() async {
     if (kIsWeb) {
       try {
-        final channelId = dotenv.env['LINE_CHANNEL_ID']?.isNotEmpty == true
-            ? dotenv.env['LINE_CHANNEL_ID']!
-            : const String.fromEnvironment('LINE_CHANNEL_ID');
+        String channelId;
+        try {
+          channelId = dotenv.env['LINE_CHANNEL_ID']?.isNotEmpty == true
+              ? dotenv.env['LINE_CHANNEL_ID']!
+              : const String.fromEnvironment('LINE_CHANNEL_ID');
+        } catch (_) {
+          channelId = const String.fromEnvironment('LINE_CHANNEL_ID');
+        }
         debugPrint('LINE web login: channelId=$channelId');
         if (channelId.isEmpty) {
           return 'LINE_CHANNEL_ID is not configured';
@@ -403,9 +408,14 @@ class AuthProvider extends ChangeNotifier {
   /// URL (i.e. we just got redirected back from LINE's login screen).
   Future<void> _completeLineWebLogin() async {
     try {
-      final channelId = dotenv.env['LINE_CHANNEL_ID']?.isNotEmpty == true
-          ? dotenv.env['LINE_CHANNEL_ID']!
-          : const String.fromEnvironment('LINE_CHANNEL_ID');
+      String channelId;
+      try {
+        channelId = dotenv.env['LINE_CHANNEL_ID']?.isNotEmpty == true
+            ? dotenv.env['LINE_CHANNEL_ID']!
+            : const String.fromEnvironment('LINE_CHANNEL_ID');
+      } catch (_) {
+        channelId = const String.fromEnvironment('LINE_CHANNEL_ID');
+      }
       final profile = await LineWebAuthService.completeLogin(channelId);
       final error = await _finishLineSignIn(
         lineUserId: profile.userId,
