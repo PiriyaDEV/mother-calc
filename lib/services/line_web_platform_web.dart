@@ -57,9 +57,12 @@ class LineWebPlatform {
     } catch (_) {}
   }
 
+  /// Use Uri.base (pure Dart) instead of html.window.location.origin
+  /// to avoid SecurityError in certain browser contexts.
   static String get currentOrigin {
     try {
-      return html.window.location.origin;
+      final base = Uri.base;
+      return '${base.scheme}://${base.host}${base.hasPort && base.port != 80 && base.port != 443 ? ':${base.port}' : ''}';
     } catch (_) {
       return '';
     }
