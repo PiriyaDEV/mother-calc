@@ -37,10 +37,18 @@ if $WEB; then
     echo "   (skipping clean — run with 'web --clean' if you changed deps or hit a build error)"
   fi
 
+  echo "▶ Injecting env vars into web/index.html..."
+  bash scripts/inject_web_env.sh
+
   echo "▶ Running on Chrome (web) at http://localhost:8765 ..."
   echo "   (fixed port so the LINE Login callback URL stays valid across runs)"
   flutter run -d chrome --web-port=8765
-  exit $?
+  RUN_EXIT=$?
+
+  echo "▶ Restoring web/index.html placeholders..."
+  bash scripts/inject_web_env.sh restore
+
+  exit $RUN_EXIT
 fi
 
 if $CLEAN; then
