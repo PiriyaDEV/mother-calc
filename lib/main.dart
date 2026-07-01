@@ -46,8 +46,7 @@ void main() async {
   // Helper: prefer dotenv value (mobile/desktop only), fall back to
   // --dart-define compile-time constant (always used on web).
   // NOTE: String.fromEnvironment MUST be called with a literal string — not a variable.
-  String env(String key, String compiledValue) =>
-      (!kIsWeb && dotenv.env[key]?.isNotEmpty == true) ? dotenv.env[key]! : compiledValue;
+  String env(String key, String compiledValue) => (!kIsWeb && dotenv.env[key]?.isNotEmpty == true) ? dotenv.env[key]! : compiledValue;
 
   // Initialize Thai locale data for DateFormat
   await initializeDateFormatting('th', null);
@@ -173,7 +172,7 @@ class _KidtangAppState extends State<KidtangApp> {
     final themeProvider = context.watch<ThemeProvider>();
 
     return MaterialApp.router(
-      title: 'Kidtang',
+      title: 'Kidtang! - มาจ่ายเงินกัน',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
