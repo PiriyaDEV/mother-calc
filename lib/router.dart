@@ -147,24 +147,27 @@ class _SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgLight,
+      backgroundColor: AppColors.primaryBlue,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset('assets/images/logo.png', width: 88, height: 88),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Image.asset('assets/images/logo.png', width: 88, height: 88),
+            ),
             const SizedBox(height: 20),
             Text(
               'Kidtang',
               style: GoogleFonts.notoSansThai(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimaryLight,
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 32),
             const CircularProgressIndicator(
-              color: AppColors.primary,
+              color: Colors.white,
               strokeWidth: 2.5,
             ),
           ],
