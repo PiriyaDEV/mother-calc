@@ -361,7 +361,10 @@ class AuthProvider extends ChangeNotifier {
   Future<String?> signInWithLine() async {
     if (kIsWeb) {
       try {
-        LineWebAuthService.startLogin(dotenv.env['LINE_CHANNEL_ID']!);
+        LineWebAuthService.startLogin(
+            dotenv.env['LINE_CHANNEL_ID']?.isNotEmpty == true
+                ? dotenv.env['LINE_CHANNEL_ID']!
+                : const String.fromEnvironment('LINE_CHANNEL_ID'));
       } catch (e) {
         debugPrint('LINE web login error: $e');
         return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
@@ -395,7 +398,9 @@ class AuthProvider extends ChangeNotifier {
   /// URL (i.e. we just got redirected back from LINE's login screen).
   Future<void> _completeLineWebLogin() async {
     try {
-      final channelId = dotenv.env['LINE_CHANNEL_ID']!;
+      final channelId = dotenv.env['LINE_CHANNEL_ID']?.isNotEmpty == true
+          ? dotenv.env['LINE_CHANNEL_ID']!
+          : const String.fromEnvironment('LINE_CHANNEL_ID');
       final profile = await LineWebAuthService.completeLogin(channelId);
       final error = await _finishLineSignIn(
         lineUserId: profile.userId,

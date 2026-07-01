@@ -1,5 +1,6 @@
 [build]
   publish = "build/web"
+  command = "git clone https://github.com/flutter/flutter.git --depth 1 -b stable $HOME/flutter && export PATH=\"$PATH:$HOME/flutter/bin\" && flutter pub get && flutter build web --release --base-href / --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY --dart-define=LINE_CHANNEL_ID=$LINE_CHANNEL_ID --dart-define=LINE_CHANNEL_SECRET=$LINE_CHANNEL_SECRET --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID --dart-define=FCM_WEB_VAPID_KEY=$FCM_WEB_VAPID_KEY --dart-define=ADSENSE_PUBLISHER_ID=$ADSENSE_PUBLISHER_ID --dart-define=ADSENSE_SLOT_ID=$ADSENSE_SLOT_ID --dart-define=ADMOB_BANNER_ANDROID=$ADMOB_BANNER_ANDROID --dart-define=ADMOB_BANNER_IOS=$ADMOB_BANNER_IOS"
 
 [[redirects]]
   from = "/*"

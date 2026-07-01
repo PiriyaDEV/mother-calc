@@ -30,8 +30,12 @@ class _AdSenseBannerWebState extends State<AdSenseBannerWeb> {
     _counter++;
     _viewType = 'adsense-banner-$_counter';
 
-    final publisherId = dotenv.env['ADSENSE_PUBLISHER_ID'] ?? '';
-    final adSlot = dotenv.env['ADSENSE_SLOT_ID'] ?? '';
+    final publisherId = dotenv.env['ADSENSE_PUBLISHER_ID']?.isNotEmpty == true
+        ? dotenv.env['ADSENSE_PUBLISHER_ID']!
+        : const String.fromEnvironment('ADSENSE_PUBLISHER_ID');
+    final adSlot = dotenv.env['ADSENSE_SLOT_ID']?.isNotEmpty == true
+        ? dotenv.env['ADSENSE_SLOT_ID']!
+        : const String.fromEnvironment('ADSENSE_SLOT_ID');
 
     ui_web.platformViewRegistry.registerViewFactory(_viewType, (int viewId) {
       final container = html.DivElement()

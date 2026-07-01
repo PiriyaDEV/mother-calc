@@ -28,15 +28,27 @@ import 'router.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load .env file
-  await dotenv.load(fileName: '.env');
+  // Load .env file if present (local dev).
+  // On CI/CD (e.g. Netlify web builds) the file won't exist — silently skip.
+  // Secrets are injected via --dart-define at build time in that case.
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (_) {
+    // File not found — no-op.
+  }
+
+  // Helper: prefer dotenv value, fall back to --dart-define compile-time constant.
+  String env(String key) =>
+      dotenv.env[key]?.isNotEmpty == true
+          ? dotenv.env[key]!
+          : String.fromEnvironment(key);
 
   // Initialize Thai locale data for DateFormat
   await initializeDateFormatting('th', null);
 
   await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    url: env('SUPABASE_URL'),
+    anonKey: env('SUPABASE_ANON_KEY'),
     authOptions: const FlutterAuthClientOptions(
       authFlowType: AuthFlowType.implicit,
     ),
@@ -67,7 +79,7 @@ void main() async {
 
   // Initialize LINE SDK (mobile only — no web implementation)
   if (!kIsWeb) {
-    await LineSDK.instance.setup(dotenv.env['LINE_CHANNEL_ID']!);
+    await LineSDK.instance.setup(env('LINE_CHANNEL_ID'));
   }
 
   SystemChrome.setSystemUIOverlayStyle(

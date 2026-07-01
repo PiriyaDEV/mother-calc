@@ -46,8 +46,12 @@ class _MobileAdMobBannerState extends State<_MobileAdMobBanner> {
           : 'ca-app-pub-3940256099942544/2934735716';
     }
     return Platform.isAndroid
-        ? dotenv.env['ADMOB_BANNER_ANDROID'] ?? ''
-        : dotenv.env['ADMOB_BANNER_IOS'] ?? '';
+        ? (dotenv.env['ADMOB_BANNER_ANDROID']?.isNotEmpty == true
+            ? dotenv.env['ADMOB_BANNER_ANDROID']!
+            : const String.fromEnvironment('ADMOB_BANNER_ANDROID'))
+        : (dotenv.env['ADMOB_BANNER_IOS']?.isNotEmpty == true
+            ? dotenv.env['ADMOB_BANNER_IOS']!
+            : const String.fromEnvironment('ADMOB_BANNER_IOS'));
   }
 
   @override
