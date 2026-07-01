@@ -514,8 +514,17 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
         }
       }
 
-      if (!isStandalone) {
-        // This tab is plain Safari — show "switch back to the app" UI.
+      // On iOS (both plain Safari and PWA), LINE's OAuth redirect always
+      // opens a new Safari tab — the PWA instance is suspended in the
+      // background and polls for the session via the DB handoff.
+      // Show the "switch back to the app" screen so the user knows to
+      // return to the PWA (or, if they opened from Safari, they're already
+      // logged in in this tab and can just continue).
+      //
+      // On desktop (macOS/Windows), the redirect comes back to the same
+      // browser tab that initiated the login — no handoff needed, the
+      // session is already active and the app navigates to the main screen.
+      if (isIos) {
         _lineWebLoginNeedsReturnToApp = true;
         notifyListeners();
       }

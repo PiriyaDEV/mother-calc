@@ -17,6 +17,20 @@ bool get isIosNotStandalone {
   }
 }
 
+/// True when running on an iOS device (iPhone/iPad/iPod) in any browser
+/// context — both plain Safari and the installed home-screen PWA.
+/// Used to decide whether to show the "switch back to app" screen after
+/// a LINE login redirect (iOS always opens Safari for OAuth redirects,
+/// regardless of whether the user started from the PWA or Safari itself).
+bool get isIos {
+  try {
+    final ua = _navigatorUserAgent.toDart;
+    return ua.contains('iPhone') || ua.contains('iPad') || ua.contains('iPod');
+  } catch (_) {
+    return false;
+  }
+}
+
 /// True when running as an installed home-screen web app (iOS Safari's
 /// `navigator.standalone`). Used to detect the case where a LINE login
 /// redirect landed in a plain Safari tab instead of the installed PWA —
