@@ -1,11 +1,7 @@
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 
-/// Browser-backed implementation. Uses localStorage (not sessionStorage)
-/// because on mobile, LINE's authorize page hands off to the native LINE
-/// app when installed, which reopens the redirect_uri in a *new* browser
-/// tab/instance rather than the one that started the flow — sessionStorage
-/// wouldn't survive that, localStorage (scoped to origin, not tab) does.
+/// Browser-backed implementation.
 class LineWebPlatform {
   static bool get hasPendingCallback {
     try {
@@ -35,23 +31,6 @@ class LineWebPlatform {
       final cleanUrl = Uri.base.replace(queryParameters: {}).toString();
       html.window.history.replaceState(null, '', cleanUrl);
     } catch (_) {}
-  }
-
-  static void saveVerifier(String state, String verifier) {
-    try {
-      html.window.localStorage['line_pkce_$state'] = verifier;
-    } catch (_) {}
-  }
-
-  static String? consumeVerifier(String state) {
-    try {
-      final key = 'line_pkce_$state';
-      final value = html.window.localStorage[key];
-      html.window.localStorage.remove(key);
-      return value;
-    } catch (_) {
-      return null;
-    }
   }
 
   static void redirect(String url) {

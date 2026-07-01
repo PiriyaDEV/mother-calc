@@ -42,23 +42,25 @@ class LineWebAuthService {
 
     final verifier = _randomToken();
     final challenge = _codeChallenge(verifier);
-    final state = _randomToken();
-    LineWebPlatform.saveVerifier(state, verifier);
 
     final url = Uri.parse(_authorizeUrl).replace(queryParameters: {
       'response_type': 'code',
       'client_id': channelId,
       'redirect_uri': origin,
-      'state': state,
+      // The verifier IS the state — LINE echoes `state` back verbatim on
+      // redirect, so completing login never depends on browser storage
+      // surviving the round trip. That matters on mobile: LINE hands off
+      // to its native app for login, then returns via a fresh browser
+      // tab/context — sometimes a *different storage partition entirely*
+      // (e.g. when the site is launched from an installed home-screen PWA,
+      // iOS returns to plain Safari, which doesn't share local/session
+      // storage with the standalone PWA instance). Any client-side lookup
+      // by a separately-stored key breaks there; a value carried in the
+      // URL itself does not.
+      'state': verifier,
       'scope': 'profile openid',
       'code_challenge': challenge,
       'code_challenge_method': 'S256',
-      // Without these, LINE's "Auto Login" silently hands off to the LINE
-      // app and straight back when the user is already logged into it (the
-      // common case, since it's their messaging app) — no confirm screen at
-      // all. Force the real login/consent screen every time instead.
-      'disable_auto_login': 'true',
-      'disable_ios_auto_login': 'true',
     });
     LineWebPlatform.redirect(url.toString());
   }
@@ -66,7 +68,7 @@ class LineWebAuthService {
   static bool get hasPendingCallback => LineWebPlatform.hasPendingCallback;
 
   /// Completes the flow after LINE redirects back with ?code&state.
-  /// Throws on any failure (missing/expired session, LINE API error).
+  /// Throws on any failure (missing callback params, LINE API error).
   static Future<LineWebProfile> completeLogin(String channelId) async {
     final params = LineWebPlatform.readCallbackParams();
     if (params == null) {
@@ -75,10 +77,7 @@ class LineWebAuthService {
     // Clear immediately so a page refresh can't replay the same code.
     LineWebPlatform.clearCallbackParamsFromUrl();
 
-    final verifier = LineWebPlatform.consumeVerifier(params['state']!);
-    if (verifier == null) {
-      throw StateError('Missing or expired LINE login session');
-    }
+    final verifier = params['state']!;
 
     final tokenResponse = await http.post(
       Uri.parse(_tokenUrl),
