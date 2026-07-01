@@ -134,14 +134,6 @@
     });
   </script>
 
-  <!-- Register Firebase Messaging Service Worker for Web Push Notifications -->
-  <script>
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", function () {
-        navigator.serviceWorker.register("/firebase-messaging-sw.js");
-      });
-    }
-  </script>
   <script src="flutter_bootstrap.js" async=""></script>
 
 

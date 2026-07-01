@@ -64,9 +64,9 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     return error;
   }
 
-  /// Reads and clears any error from a web Google sign-in — like the LINE
-  /// web flow above, the rendered GIS button drives sign-in outside of an
-  /// awaited call, so `signInWithGoogle()` has no return value to carry it.
+  /// Reads and clears any error from a web Google sign-in.
+  /// Kept for compatibility — no longer used by the Supabase OAuth web path
+  /// (which redirects the page), but still used if GIS path fires on mobile.
   String? consumeGoogleWebCallbackError() {
     final error = _googleWebCallbackError;
     _googleWebCallbackError = null;
@@ -318,19 +318,31 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Signs in with Google.
   ///
-  /// On mobile: calls the native SDK directly and awaits the result.
-  /// On web: calls `_googleSignIn.signIn()` to trigger the GIS popup;
-  /// the actual sign-in result is picked up by the `onCurrentUserChanged`
-  /// listener in [_init] — this method returns null immediately after
-  /// the popup is dismissed (success or cancel).
+  /// On mobile: calls the native Google Sign-In SDK and awaits the result.
+  /// On web: uses Supabase OAuth redirect (signInWithOAuth) instead of the
+  /// GIS SDK — `_googleSignIn.signIn()` on web uses the deprecated OAuth2
+  /// implicit/token flow which **never returns an idToken** (GIS SDK v0.12+
+  /// only returns idToken via `renderButton`/`signInSilently` credential
+  /// flow, not via `signIn()`). Supabase OAuth handles the full PKCE flow
+  /// and returns a session directly without needing an idToken at all.
   Future<String?> signInWithGoogle() async {
+    if (kIsWeb) {
+      try {
+        await _supabase.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: '${Uri.base.origin}/',
+          scopes: 'email openid profile',
+        );
+        // signInWithOAuth redirects the page — this line is never reached.
+        return null;
+      } catch (e) {
+        debugPrint('Google web OAuth error: $e');
+        return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+      }
+    }
     try {
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null; // user cancelled
-      // On web the onCurrentUserChanged listener handles the account —
-      // calling _handleGoogleAccount here too would double-process it,
-      // so skip the explicit handling on web.
-      if (kIsWeb) return null;
       return await _handleGoogleAccount(googleUser);
     } on PlatformException catch (e) {
       debugPrint('Google SDK error: ${e.code} — ${e.message}');
@@ -540,9 +552,18 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       // session is already active and the app navigates to the main screen.
       if (isIos) {
         _lineWebLoginNeedsReturnToApp = true;
+        _initialized = true;
         notifyListeners();
+      } else {
+        // Desktop: onAuthStateChange may have already fired (and set
+        // _initialized = true) inside _finishLineSignIn → signInWithPassword.
+        // If it hasn't yet, mark initialized now so the router can redirect
+        // to /home instead of staying on /splash.
+        if (!_initialized) {
+          _initialized = true;
+          notifyListeners();
+        }
       }
-      // onAuthStateChange fires from _finishLineSignIn → marks initialized.
     } catch (e) {
       debugPrint('LINE web callback error: $e');
       _lineWebCallbackError = 'เข้าสู่ระบบด้วย LINE ไม่สำเร็จ: ${e.toString()}';
