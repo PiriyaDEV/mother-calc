@@ -95,6 +95,101 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+  // iOS Safari doesn't let a web app trigger "Add to Home Screen" itself —
+  // this walks the user through the manual Share-sheet steps instead.
+  void _showIosInstallInstructions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.borderDark : AppColors.neutral100,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Text(
+                'บันทึก Kidtang ไปที่หน้าจอหลัก',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'เพื่อเปิดแอปได้เร็วขึ้นในครั้งถัดไป เหมือนแอปทั่วไป',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 13,
+                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                ),
+              ),
+              const SizedBox(height: 24),
+              _InstallStep(
+                number: 1,
+                icon: Icons.ios_share,
+                text: 'แตะปุ่ม Share ที่แถบด้านล่างของ Safari',
+                isDark: isDark,
+              ),
+              const SizedBox(height: 16),
+              _InstallStep(
+                number: 2,
+                icon: Icons.add_box_outlined,
+                text: 'เลื่อนลงแล้วเลือก "เพิ่มไปที่หน้าจอโฮม" (Add to Home Screen)',
+                isDark: isDark,
+              ),
+              const SizedBox(height: 16),
+              _InstallStep(
+                number: 3,
+                icon: Icons.check_circle_outline,
+                text: 'แตะ "เพิ่ม" (Add) ที่มุมขวาบน',
+                isDark: isDark,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(sheetContext),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    backgroundColor: AppColors.primaryBlue.withValues(alpha: isDark ? 0.16 : 0.08),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'เข้าใจแล้ว',
+                    style: GoogleFonts.notoSansThai(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryBlue,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -250,18 +345,17 @@ class _LoginScreenState extends State<LoginScreen>
                         // Google button — web uses GIS's own rendered button
                         // (see google_web_button_web.dart for why), mobile
                         // keeps the app-styled button driving the native SDK.
+                        // GIS supports a `minimumWidth` config (capped at
+                        // 400px) that lays the button out at that exact
+                        // width — sized to the row instead of stretched via
+                        // Transform.scale, which distorted the logo/text.
                         if (kIsWeb)
                           SizedBox(
                             width: double.infinity,
                             height: 56,
-                            child: ClipRect(
-                              child: OverflowBox(
-                                maxWidth: double.infinity,
-                                alignment: Alignment.center,
-                                child: Transform.scale(
-                                  scaleX: 2.6,
-                                  child: renderGoogleSignInButton(),
-                                ),
+                            child: Center(
+                              child: renderGoogleSignInButton(
+                                minimumWidth: math.min(size.width - 56, 400),
                               ),
                             ),
                           )
@@ -316,67 +410,85 @@ class _LoginScreenState extends State<LoginScreen>
                         // iOS Add to Home Screen banner
                         if (_showIosInstallBanner) ...[
                           const SizedBox(height: 20),
-                          GestureDetector(
-                            onTap: () => setState(() => _showIosInstallBanner = false),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? AppColors.surfaceDark
-                                    : Colors.white.withValues(alpha: 0.9),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: isDark ? AppColors.borderDark : AppColors.neutral100,
+                          Material(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(16),
+                            child: InkWell(
+                              onTap: _showIosInstallInstructions,
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.16 : 0.08),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: AppColors.primaryBlue.withValues(alpha: 0.18),
+                                  ),
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.06),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  const Text('📲', style: TextStyle(fontSize: 22)),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'บันทึกไปที่หน้าจอหลัก',
-                                          style: GoogleFonts.notoSansThai(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: isDark
-                                                ? AppColors.textPrimaryDark
-                                                : AppColors.textPrimaryLight,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'กด Share (□↑) แล้วเลือก "Add to Home Screen"',
-                                          style: GoogleFonts.notoSansThai(
-                                            fontSize: 11,
-                                            color: isDark
-                                                ? AppColors.textSecondaryDark
-                                                : AppColors.textSecondaryLight,
-                                          ),
-                                        ),
-                                      ],
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 34,
+                                      height: 34,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryBlue,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(
+                                        Icons.ios_share,
+                                        size: 17,
+                                        color: Colors.white,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    Icons.close,
-                                    size: 16,
-                                    color: isDark
-                                        ? AppColors.textTertiaryDark
-                                        : AppColors.textTertiaryLight,
-                                  ),
-                                ],
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'บันทึกไปที่หน้าจอหลัก',
+                                            style: GoogleFonts.notoSansThai(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: isDark
+                                                  ? AppColors.textPrimaryDark
+                                                  : AppColors.textPrimaryLight,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'แตะเพื่อดูวิธี Add to Home Screen',
+                                            style: GoogleFonts.notoSansThai(
+                                              fontSize: 11,
+                                              color: isDark
+                                                  ? AppColors.textSecondaryDark
+                                                  : AppColors.textSecondaryLight,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.chevron_right,
+                                      size: 20,
+                                      color: AppColors.primaryBlue,
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => setState(() => _showIosInstallBanner = false),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(4),
+                                        child: Icon(
+                                          Icons.close,
+                                          size: 16,
+                                          color: isDark
+                                              ? AppColors.textTertiaryDark
+                                              : AppColors.textTertiaryLight,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -403,6 +515,62 @@ class _LoginScreenState extends State<LoginScreen>
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── iOS install step ──────────────────────────────────────────
+class _InstallStep extends StatelessWidget {
+  final int number;
+  final IconData icon;
+  final String text;
+  final bool isDark;
+
+  const _InstallStep({
+    required this.number,
+    required this.icon,
+    required this.text,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.18 : 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            '$number',
+            style: GoogleFonts.notoSansThai(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primaryBlue,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              text,
+              style: GoogleFonts.notoSansThai(
+                fontSize: 14,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Icon(icon, size: 20, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+      ],
     );
   }
 }

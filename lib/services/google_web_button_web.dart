@@ -8,14 +8,16 @@ import 'package:google_sign_in_web/web_only.dart' as gsi_web;
 /// supported way to trigger sign-in on web. Completion is picked up via
 /// `GoogleSignIn().onCurrentUserChanged`, not an awaited return value — see
 /// the `kIsWeb` branch in `AuthProvider._init()`.
-Widget renderGoogleSignInButton() {
+Widget renderGoogleSignInButton({double minimumWidth = 320}) {
   return gsi_web.renderButton(
     configuration: gsi_web.GSIButtonConfiguration(
       theme: gsi_web.GSIButtonTheme.outline,
       size: gsi_web.GSIButtonSize.large,
       text: gsi_web.GSIButtonText.signinWith,
       shape: gsi_web.GSIButtonShape.pill,
-      minimumWidth: 320,
+      // GIS caps this at 400px — it lays out its own button at this exact
+      // width, so no distorting Transform.scale is needed to fill the row.
+      minimumWidth: minimumWidth,
     ),
   );
 }

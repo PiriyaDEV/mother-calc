@@ -147,7 +147,7 @@ class _SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryBlue,
+      backgroundColor: AppColors.bgLight,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -162,12 +162,12 @@ class _SplashScreen extends StatelessWidget {
               style: GoogleFonts.notoSansThai(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
               ),
             ),
             const SizedBox(height: 32),
             const CircularProgressIndicator(
-              color: Colors.white,
+              color: AppColors.primary,
               strokeWidth: 2.5,
             ),
           ],

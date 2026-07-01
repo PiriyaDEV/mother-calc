@@ -70,9 +70,20 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  flutter_native_splash: ^2.4.3
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/
     - assets/i18n/
+
+# Generates native splash screens (Android/iOS/web) from this config —
+# run `dart run flutter_native_splash:create` after changing it.
+flutter_native_splash:
+  color: "#F5F8FC"
+  image: assets/images/logo.png
+  android_12:
+    color: "#F5F8FC"
+    image: assets/images/logo.png
+  web: true

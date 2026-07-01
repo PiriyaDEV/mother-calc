@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
+<!DOCTYPE html><html><head>
   <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
@@ -17,14 +15,6 @@
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background-color: #2D5BFF;
-      height: 100%;
-    }
-  </style>
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="แอปหารบิล คิดเงิน แบ่งค่าใช้จ่าย รองรับ VAT และ Service Charge">
   <meta name="theme-color" content="#4366f4">
@@ -36,7 +26,7 @@
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/png" href="favicon.png">
 
   <!-- Google Sign-In (web): client ID is injected by the build/deploy pipeline -->
   <!-- Set GOOGLE_WEB_CLIENT_ID env var; for local dev add it to .env -->
@@ -51,16 +41,93 @@
   <!-- Google AdSense — publisher ID is injected by the build/deploy pipeline -->
   <!-- Set ADSENSE_PUBLISHER_ID env var; for local dev add it to .env -->
   <meta name="google-adsense-account" content="ca-pub-4413976443870791">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ADSENSE_PUBLISHER_ID_PLACEHOLDER"
-     crossorigin="anonymous"></script>
+  <script async="" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ADSENSE_PUBLISHER_ID_PLACEHOLDER" crossorigin="anonymous"></script>
   <!-- Helper so Flutter's HtmlElementView can push ad units -->
   <script>
     window.adsbygoogle_push = function() {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     };
   </script>
+  <style id="splash-screen-style">
+    html {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      min-height: 100%;
+      background-color: #F5F8FC;
+          background-size: 100% 100%;
+    }
+
+    .center {
+      margin: 0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      -ms-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+    }
+
+    .contain {
+      display:block;
+      width:100%; height:100%;
+      object-fit: contain;
+    }
+
+    .stretch {
+      display:block;
+      width:100%; height:100%;
+    }
+
+    .cover {
+      display:block;
+      width:100%; height:100%;
+      object-fit: cover;
+    }
+
+    .bottom {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      -ms-transform: translate(-50%, 0);
+      transform: translate(-50%, 0);
+    }
+
+    .bottomLeft {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+    }
+
+    .bottomRight {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+    }
+  </style>
+  <script id="splash-screen-script">
+    function removeSplashFromWeb() {
+      document.getElementById("splash")?.remove();
+      document.getElementById("splash-branding")?.remove();
+      document.body.style.background = "transparent";
+    }
+  </script>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
 </head>
 <body>
+  <picture id="splash">
+      <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
+      <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
+      <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
+  </picture>
+  <!-- Splash (image above) stays up until Flutter paints its first frame. -->
+  <script>
+    window.addEventListener("flutter-first-frame", function () {
+      removeSplashFromWeb();
+    });
+  </script>
+
   <!-- Register Firebase Messaging Service Worker for Web Push Notifications -->
   <script>
     if ("serviceWorker" in navigator) {
@@ -69,6 +136,7 @@
       });
     }
   </script>
-  <script src="flutter_bootstrap.js" async></script>
-</body>
-</html>
+  <script src="flutter_bootstrap.js" async=""></script>
+
+
+</body></html>
