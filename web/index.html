@@ -30,8 +30,9 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <!-- Google Sign-In (web): must match GOOGLE_WEB_CLIENT_ID in .env -->
-  <meta name="google-signin-client_id" content="850213788469-2u930kgcnog5og6j94b91boog99flg0s.apps.googleusercontent.com">
+  <!-- Google Sign-In (web): client ID is injected by the build/deploy pipeline -->
+  <!-- Set GOOGLE_WEB_CLIENT_ID env var; for local dev add it to .env -->
+  <meta name="google-signin-client_id" content="GOOGLE_WEB_CLIENT_ID_PLACEHOLDER">
 
   <title>Kidtang! - มาจ่ายเงินกัน</title>
   <link rel="manifest" href="manifest.json">
@@ -39,8 +40,9 @@
   <!-- Required by supabase_flutter's passkeys dependency on web -->
   <script src="https://github.com/corbado/flutter-passkeys/releases/download/2.4.0/bundle.js"></script>
 
-  <!-- Google AdSense — replace ca-pub-XXXXXXXXXXXXXXXXX with your real publisher ID from adsense.google.com -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4413976443870791"
+  <!-- Google AdSense — publisher ID is injected by the build/deploy pipeline -->
+  <!-- Set ADSENSE_PUBLISHER_ID env var; for local dev add it to .env -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ADSENSE_PUBLISHER_ID_PLACEHOLDER"
      crossorigin="anonymous"></script>
   <!-- Helper so Flutter's HtmlElementView can push ad units -->
   <script>

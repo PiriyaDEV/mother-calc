@@ -68,11 +68,11 @@ class PushNotificationService {
     );
   }
 
-  // VAPID key for Web Push — generate at:
-  // Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Generate key pair
-  // Then paste the key string below (replace the placeholder).
+  // VAPID key for Web Push — injected at build time via:
+  //   --dart-define=FCM_WEB_VAPID_KEY=<your-key>
+  // or set FCM_WEB_VAPID_KEY in your .env file for local dev.
   static const _webVapidKey =
-      'BMkDOxFQpluh7XyW0R-JricicWt7_yWIEntd3WT_6YX336u5P5wILZD0FHEoagqZoXLknmMJGUs1ijhaItUnZY4';
+      String.fromEnvironment('FCM_WEB_VAPID_KEY');
 
   // Call after successful login to register this device
   static Future<void> saveToken() async {
