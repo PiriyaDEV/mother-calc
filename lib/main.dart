@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -41,9 +42,9 @@ void main() async {
     ),
   );
 
-  // Initialize AdMob SDK + fetch remote ads toggle from Supabase
+  // Initialize AdMob SDK (mobile only — no web implementation) + fetch remote ads toggle
   try {
-    await MobileAds.instance.initialize();
+    if (!kIsWeb) await MobileAds.instance.initialize();
     await AppConfigService.load();
   } catch (e) {
     debugPrint('[AdMob] Init error: $e');
@@ -64,8 +65,10 @@ void main() async {
     debugPrint('[Firebase] Not configured yet: $e');
   }
 
-  // Initialize LINE SDK
-  await LineSDK.instance.setup(dotenv.env['LINE_CHANNEL_ID']!);
+  // Initialize LINE SDK (mobile only — no web implementation)
+  if (!kIsWeb) {
+    await LineSDK.instance.setup(dotenv.env['LINE_CHANNEL_ID']!);
+  }
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

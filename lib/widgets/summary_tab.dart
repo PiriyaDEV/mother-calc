@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -106,12 +107,20 @@ Future<void> _pickSlipAndMarkPaid(
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.file(
-              File(image.path),
-              height: 220,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+            child: kIsWeb
+                // dart:io File isn't supported on web — image.path is a blob URL there.
+                ? Image.network(
+                    image.path,
+                    height: 220,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  )
+                : Image.file(
+                    File(image.path),
+                    height: 220,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
           ),
           const SizedBox(height: 12),
           Text(

@@ -23,6 +23,9 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void initState() {
     super.initState();
+    // Surfaces an error left behind by a LINE web login redirect, if any —
+    // that flow tears down the whole app, so it can't return one directly.
+    _error = context.read<AuthProvider>().consumeLineWebCallbackError();
     _animCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),

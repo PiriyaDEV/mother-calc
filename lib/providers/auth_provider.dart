@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
+import '../services/line_web_auth_service.dart';
 import '../services/push_notification_service.dart';
 import 'bills_list_provider.dart';
 import 'groups_provider.dart';
@@ -20,6 +23,7 @@ class AuthProvider extends ChangeNotifier {
   User? _user;
   Profile? _profile;
   bool _initialized = false;
+  String? _lineWebCallbackError;
 
   User? get user => _user;
   Profile? get profile => _profile;
@@ -30,6 +34,15 @@ class AuthProvider extends ChangeNotifier {
       _initialized &&
       _profile != null &&
       !_profile!.onboardingCompleted;
+
+  /// Reads and clears any error left over from a LINE web login redirect
+  /// (the redirect tears down the whole app, so there's no Future to
+  /// return the error through — the login screen polls this on mount).
+  String? consumeLineWebCallbackError() {
+    final error = _lineWebCallbackError;
+    _lineWebCallbackError = null;
+    return error;
+  }
 
   AuthProvider() {
     _init();
@@ -67,6 +80,13 @@ class AuthProvider extends ChangeNotifier {
       _initialized = true;
       notifyListeners();
     });
+
+    // LINE web login redirects the whole page away and back — pick up the
+    // ?code&state it lands with here instead of the normal cached-session path.
+    if (kIsWeb && LineWebAuthService.hasPendingCallback) {
+      _completeLineWebLogin();
+      return;
+    }
 
     // Cached session path — wait for profile before marking initialized.
     if (_user != null) {
@@ -138,12 +158,11 @@ class AuthProvider extends ChangeNotifier {
           usernameFromEmail ??
           'user_${_user!.id.substring(0, 8)}';
 
-      final preferredUsername = username ??
-          usernameFromEmail ??
-          'user_${_user!.id.substring(0, 8)}';
+      final preferredUsername =
+          username ?? usernameFromEmail ?? 'user_${_user!.id.substring(0, 8)}';
 
-      final avatarUrl = _user!.userMetadata?['avatar_url'] as String?
-          ?? _user!.userMetadata?['picture'] as String?;
+      final avatarUrl = _user!.userMetadata?['avatar_url'] as String? ??
+          _user!.userMetadata?['picture'] as String?;
 
       // Try preferred username first; if unique constraint fires, fall back to
       // username_<id prefix> which is always unique.
@@ -228,11 +247,11 @@ class AuthProvider extends ChangeNotifier {
       final googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) return null; // user cancelled
 
-      final googleId    = googleUser.id;
+      final googleId = googleUser.id;
       final displayName = googleUser.displayName ?? 'Google User';
-      final avatarUrl   = googleUser.photoUrl;
+      final avatarUrl = googleUser.photoUrl;
 
-      final fakeEmail    = 'google_$googleId@kidtang.app';
+      final fakeEmail = 'google_$googleId@kidtang.app';
       final fakePassword = 'GOOGLE_${googleId}_KIDTANG';
 
       AuthResponse? authResponse;
@@ -242,7 +261,8 @@ class AuthProvider extends ChangeNotifier {
           password: fakePassword,
         );
       } on AuthException catch (e) {
-        if (e.statusCode == '400' || e.message.toLowerCase().contains('invalid')) {
+        if (e.statusCode == '400' ||
+            e.message.toLowerCase().contains('invalid')) {
           authResponse = await _supabase.auth.signUp(
             email: fakeEmail,
             password: fakePassword,
@@ -289,77 +309,36 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ── LINE Login (official LINE SDK for Flutter) ────────────────
-  // Uses flutter_line_sdk which wraps LINE's native iOS/Android SDKs.
-  // No deep-link callback, no manual token exchange — the SDK handles it all.
+  // ── LINE Login ──────────────────────────────────────────────────
+  // Mobile: flutter_line_sdk wraps LINE's native iOS/Android SDKs — no
+  //   deep-link callback, no manual token exchange, the SDK handles it all.
+  // Web: flutter_line_sdk has no web implementation, so LineWebAuthService
+  //   drives LINE's OAuth2 + PKCE flow directly (see _completeLineWebLogin).
 
-  /// Signs in with LINE using the official LINE SDK for Flutter.
-  /// Gets the LINE profile, then creates/updates the Supabase profile row.
+  /// Signs in with LINE. On web this redirects the whole page to LINE's
+  /// login screen and never returns normally — [_completeLineWebLogin]
+  /// picks up the result after LINE redirects back.
   Future<String?> signInWithLine() async {
+    if (kIsWeb) {
+      try {
+        LineWebAuthService.startLogin(dotenv.env['LINE_CHANNEL_ID']!);
+      } catch (e) {
+        debugPrint('LINE web login error: $e');
+        return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+      }
+      return null;
+    }
     try {
       // Login via LINE SDK — opens LINE app or web login
       final result = await LineSDK.instance.login(
         scopes: ['profile', 'openid'],
       );
 
-      final lineUserId   = result.userProfile?.userId ?? '';
-      final displayName  = result.userProfile?.displayName ?? 'LINE User';
-      final avatarUrl    = result.userProfile?.pictureUrl?.toString();
-
-      // We use a deterministic email + password derived from the LINE userId
-      // to create/sign in to a Supabase account. This avoids needing a custom
-      // OIDC provider on Supabase entirely.
-      final fakeEmail    = 'line_$lineUserId@kidtang.app';
-      final fakePassword = 'LINE_${lineUserId}_KIDTANG';
-
-      // Try signing in first; if account doesn't exist, sign up.
-      AuthResponse? authResponse;
-      try {
-        authResponse = await _supabase.auth.signInWithPassword(
-          email: fakeEmail,
-          password: fakePassword,
-        );
-      } on AuthException catch (e) {
-        // Account not found → sign up
-        if (e.statusCode == '400' || e.message.toLowerCase().contains('invalid')) {
-          authResponse = await _supabase.auth.signUp(
-            email: fakeEmail,
-            password: fakePassword,
-            data: {
-              'display_name': displayName,
-              'avatar_url': avatarUrl,
-              'line_user_id': lineUserId,
-              'provider': 'line',
-            },
-          );
-        } else {
-          rethrow;
-        }
-      }
-
-      // Upsert the public profile row with LINE's display name & avatar
-      if (authResponse.user != null) {
-        final uid = authResponse.user!.id;
-
-        // Use LINE's display name as the username base (sanitized),
-        // e.g. "สมชาย ใจดี" → "สมชาย_ใจดี". Fall back to line_<uid> if empty.
-        final sanitized = displayName
-            .trim()
-            .replaceAll(RegExp(r'\s+'), '_')
-            .replaceAll(RegExp(r'[^\w\u0E00-\u0E7F]'), '');
-        final usernameBase = sanitized.isNotEmpty
-            ? sanitized
-            : 'line_${lineUserId.substring(0, 8)}';
-
-        await _supabase.from('profiles').upsert({
-          'id': uid,
-          'username': usernameBase,
-          'display_name': displayName,
-          'avatar_url': avatarUrl,
-        }, onConflict: 'id');
-      }
-
-      return null;
+      return await _finishLineSignIn(
+        lineUserId: result.userProfile?.userId ?? '',
+        displayName: result.userProfile?.displayName ?? 'LINE User',
+        avatarUrl: result.userProfile?.pictureUrl?.toString(),
+      );
     } on PlatformException catch (e) {
       debugPrint('LINE SDK error: ${e.code} — ${e.message}');
       if (e.code == '3003') return null; // user cancelled — not an error
@@ -370,6 +349,102 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('signInWithLine error: $e');
       return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
     }
+  }
+
+  /// Called from [_init] when the app loads with LINE's ?code&state on the
+  /// URL (i.e. we just got redirected back from LINE's login screen).
+  Future<void> _completeLineWebLogin() async {
+    try {
+      final channelId = dotenv.env['LINE_CHANNEL_ID']!;
+      final profile = await LineWebAuthService.completeLogin(channelId);
+      final error = await _finishLineSignIn(
+        lineUserId: profile.userId,
+        displayName: profile.displayName,
+        avatarUrl: profile.pictureUrl,
+      );
+      if (error != null) _lineWebCallbackError = error;
+      // On success, the signIn/signUp call above triggers onAuthStateChange,
+      // which finishes initialization — nothing more to do here.
+    } catch (e) {
+      debugPrint('LINE web callback error: $e');
+      _lineWebCallbackError = 'เข้าสู่ระบบด้วย LINE ไม่สำเร็จ กรุณาลองใหม่';
+    }
+
+    // Safety net in case onAuthStateChange never fires (e.g. the error path
+    // above, or an unexpected Supabase hiccup) — don't leave the app stuck
+    // on the splash screen.
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!_initialized) {
+      _user = _supabase.auth.currentUser;
+      if (_user != null) await _loadProfile();
+      _initialized = true;
+      notifyListeners();
+    }
+  }
+
+  /// Shared by both the native LINE SDK flow and the web OAuth flow: creates
+  /// or signs in to a deterministic Supabase account for this LINE user, then
+  /// upserts their public profile row with LINE's display name & avatar.
+  Future<String?> _finishLineSignIn({
+    required String lineUserId,
+    required String displayName,
+    String? avatarUrl,
+  }) async {
+    // We use a deterministic email + password derived from the LINE userId
+    // to create/sign in to a Supabase account. This avoids needing a custom
+    // OIDC provider on Supabase entirely.
+    final fakeEmail = 'line_$lineUserId@kidtang.app';
+    final fakePassword = 'LINE_${lineUserId}_KIDTANG';
+
+    // Try signing in first; if account doesn't exist, sign up.
+    AuthResponse? authResponse;
+    try {
+      authResponse = await _supabase.auth.signInWithPassword(
+        email: fakeEmail,
+        password: fakePassword,
+      );
+    } on AuthException catch (e) {
+      // Account not found → sign up
+      if (e.statusCode == '400' ||
+          e.message.toLowerCase().contains('invalid')) {
+        authResponse = await _supabase.auth.signUp(
+          email: fakeEmail,
+          password: fakePassword,
+          data: {
+            'display_name': displayName,
+            'avatar_url': avatarUrl,
+            'line_user_id': lineUserId,
+            'provider': 'line',
+          },
+        );
+      } else {
+        rethrow;
+      }
+    }
+
+    // Upsert the public profile row with LINE's display name & avatar
+    if (authResponse.user != null) {
+      final uid = authResponse.user!.id;
+
+      // Use LINE's display name as the username base (sanitized),
+      // e.g. "สมชาย ใจดี" → "สมชาย_ใจดี". Fall back to line_<uid> if empty.
+      final sanitized = displayName
+          .trim()
+          .replaceAll(RegExp(r'\s+'), '_')
+          .replaceAll(RegExp(r'[^\w\u0E00-\u0E7F]'), '');
+      final usernameBase = sanitized.isNotEmpty
+          ? sanitized
+          : 'line_${lineUserId.substring(0, 8)}';
+
+      await _supabase.from('profiles').upsert({
+        'id': uid,
+        'username': usernameBase,
+        'display_name': displayName,
+        'avatar_url': avatarUrl,
+      }, onConflict: 'id');
+    }
+
+    return null;
   }
 
   Future<String?> completeOnboarding({
@@ -397,8 +472,12 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    try { await LineSDK.instance.logout(); } catch (_) {}
-    try { await GoogleSignIn().signOut(); } catch (_) {}
+    try {
+      await LineSDK.instance.logout();
+    } catch (_) {}
+    try {
+      await GoogleSignIn().signOut();
+    } catch (_) {}
     await PushNotificationService.clearToken();
     await _supabase.auth.signOut();
     _profile = null;

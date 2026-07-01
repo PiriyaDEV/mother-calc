@@ -32,6 +32,9 @@ dependencies:
   
   # HTTP
   http: ^1.2.1
+
+  # LINE Login (web) — PKCE OAuth2 code_challenge hashing
+  crypto: ^3.0.3
   
   # Image picker
   image_picker: ^1.1.2

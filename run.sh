@@ -1,21 +1,47 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────
-#  run.sh — Kill & run Kidtang on iPhone
-#  Usage: ./run.sh          (fast — uses build cache)
-#         ./run.sh --clean  (full clean rebuild)
+#  run.sh — Kill & run Kidtang on iPhone or Chrome (web)
+#  Usage: ./run.sh              (iPhone, fast — uses build cache)
+#         ./run.sh --clean      (iPhone, full clean rebuild)
+#         ./run.sh web          (Chrome, fast)
+#         ./run.sh web --clean  (Chrome, full clean rebuild)
 # ─────────────────────────────────────────────────────────
 
 DEVICE_ID="00008120-0010786C01EB401E"
 CLEAN=false
+WEB=false
 
 for arg in "$@"; do
   [[ "$arg" == "--clean" ]] && CLEAN=true
+  [[ "$arg" == "web" ]] && WEB=true
 done
 
-echo "▶ [1/7] Killing Xcode & flutter processes..."
+echo "▶ Killing Xcode & flutter processes..."
 pkill -x Xcode 2>/dev/null
 pkill -f "flutter run" 2>/dev/null
 sleep 2
+
+if $WEB; then
+  # `flutter run -d chrome` spawns a dart dev-server process that can outlive
+  # the flutter CLI itself (e.g. if killed ungracefully) and keep the port busy.
+  echo "▶ Freeing port 8765 (in case a previous run's dev server is still up)..."
+  lsof -ti tcp:8765 | xargs kill -9 2>/dev/null
+  sleep 1
+
+  if $CLEAN; then
+    echo "▶ Cleaning Flutter build cache..."
+    flutter clean
+    echo "▶ Fetching Flutter packages..."
+    flutter pub get
+  else
+    echo "   (skipping clean — run with 'web --clean' if you changed deps or hit a build error)"
+  fi
+
+  echo "▶ Running on Chrome (web) at http://localhost:8765 ..."
+  echo "   (fixed port so the LINE Login callback URL stays valid across runs)"
+  flutter run -d chrome --web-port=8765
+  exit $?
+fi
 
 if $CLEAN; then
   echo ""

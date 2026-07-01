@@ -33,6 +33,8 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   @override
   void initState() {
     super.initState();
+    // AdMob has no web implementation — dart:io Platform is also unsupported on web.
+    if (kIsWeb) return;
     if (!AppConfigService.adsEnabled) return;
     final unitId = _adUnitId();
     if (unitId.isEmpty) return;

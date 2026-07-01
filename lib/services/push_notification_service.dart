@@ -1,4 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -21,29 +22,33 @@ class PushNotificationService {
     // Register background handler
     FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
 
-    // Android notification channel (required for Android 8+)
-    const androidChannel = AndroidNotificationChannel(
-      _channelId,
-      _channelName,
-      description: 'การแจ้งเตือนจาก Kidtang',
-      importance: Importance.high,
-    );
-    await _localNotifications
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(androidChannel);
+    // flutter_local_notifications has no web implementation — FCM's own
+    // foreground/background handling covers web instead.
+    if (!kIsWeb) {
+      // Android notification channel (required for Android 8+)
+      const androidChannel = AndroidNotificationChannel(
+        _channelId,
+        _channelName,
+        description: 'การแจ้งเตือนจาก Kidtang',
+        importance: Importance.high,
+      );
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(androidChannel);
 
-    // Local notifications init
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false,
-    );
-    await _localNotifications.initialize(
-      const InitializationSettings(android: androidSettings, iOS: iosSettings),
-    );
+      // Local notifications init
+      const androidSettings =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+      const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
+      );
+      await _localNotifications.initialize(
+        const InitializationSettings(android: androidSettings, iOS: iosSettings),
+      );
+    }
 
     // Request permission (iOS prompts user; Android 13+ also needs this)
     await _messaging.requestPermission(
@@ -109,6 +114,9 @@ class PushNotificationService {
   static Future<void> _handleForegroundMessage(RemoteMessage message) async {
     final notification = message.notification;
     if (notification == null) return;
+    // flutter_local_notifications has no web implementation — browsers show
+    // FCM foreground messages via their own notification API instead.
+    if (kIsWeb) return;
 
     const androidDetails = AndroidNotificationDetails(
       _channelId,
