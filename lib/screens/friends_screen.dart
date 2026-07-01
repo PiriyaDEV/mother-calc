@@ -6,6 +6,7 @@ import '../models/models.dart';
 import '../providers/friends_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/banner_ad_widget.dart';
+import '../widgets/confirm_dialog.dart';
 
 class FriendsScreen extends StatefulWidget {
   const FriendsScreen({super.key});
@@ -103,33 +104,16 @@ class _FriendsScreenState extends State<FriendsScreen> {
     final myId = Supabase.instance.client.auth.currentUser?.id ?? '';
     final profile = friend.otherProfile(myId);
     final name = profile?.displayName ?? profile?.username ?? 'เพื่อน';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('ลบเพื่อน',
-            style: GoogleFonts.notoSansThai(fontWeight: FontWeight.bold)),
-        content: Text('ต้องการลบ $name ออกจากรายชื่อเพื่อนหรือไม่?',
-            style: GoogleFonts.notoSansThai()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('ยกเลิก', style: GoogleFonts.notoSansThai()),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('ลบ',
-                style: GoogleFonts.notoSansThai(
-                    color: AppColors.red, fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'ลบเพื่อน?',
+      description: 'ต้องการลบ $name ออกจากรายชื่อเพื่อนหรือไม่?',
+      confirmLabel: 'ลบ',
+      danger: true,
     );
 
-    if (confirm == true && mounted) {
+    if (confirmed && mounted) {
       await context.read<FriendsProvider>().removeFriend(friend.id);
     }
   }

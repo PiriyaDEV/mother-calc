@@ -690,7 +690,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               padding: const EdgeInsets.only(bottom: 10),
                               child: SharedBillCard(
                                 bill: bill,
-                                onTap: () => context.push('/bills/${bill.id}'),
+                                onTap: () async {
+                                  await context.push('/bills/${bill.id}');
+                                  if (mounted) _loadData();
+                                },
                               ),
                             );
                           },

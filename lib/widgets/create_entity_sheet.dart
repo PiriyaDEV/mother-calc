@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
+import 'confirm_dialog.dart';
 import 'form_label.dart';
 
 // ── Constants (ตรงกับ Next.js EMOJI_PRESETS, DEFAULT_TAGS, currencies, rounding) ──
@@ -735,8 +736,18 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
                         onPressed: _loading
                             ? null
                             : () async {
-                                setState(() => _loading = true);
                                 final nav = Navigator.of(context);
+                                final confirmed = await showConfirmDialog(
+                                  context,
+                                  title: isBill ? 'ลบบิลนี้?' : 'ลบกลุ่มนี้?',
+                                  description: isBill
+                                      ? 'บิลและข้อมูลทั้งหมดจะถูกลบถาวร ไม่สามารถกู้คืนได้'
+                                      : 'กลุ่มและข้อมูลทั้งหมดจะถูกลบถาวร ไม่สามารถกู้คืนได้',
+                                  confirmLabel: 'ลบ',
+                                  danger: true,
+                                );
+                                if (!confirmed || !mounted) return;
+                                setState(() => _loading = true);
                                 await widget.onDelete!();
                                 if (mounted) {
                                   setState(() => _loading = false);

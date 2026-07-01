@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../providers/bill_provider.dart';
+import '../providers/bills_list_provider.dart';
 import '../providers/friends_provider.dart';
 import '../providers/groups_provider.dart';
 import '../theme/app_theme.dart';
@@ -676,7 +677,10 @@ class _BillsTab extends StatelessWidget {
                   bill: bill,
                   onTap: () async {
                     await context.push('/bills/${bill.id}');
-                    if (context.mounted) gp.loadGroupDetail(group.id);
+                    if (context.mounted) {
+                      gp.loadGroupDetail(group.id);
+                      context.read<BillsListProvider>().loadBills(force: true);
+                    }
                   },
                 ),
               )),
@@ -699,7 +703,14 @@ class _BillsTab extends StatelessWidget {
       tags: result.tags,
     );
     if (newBill != null && context.mounted) {
-      context.push('/bills/${newBill.id}');
+      // Sync bills list screen so the new bill appears there too
+      context.read<BillsListProvider>().addBill(newBill);
+      await context.push('/bills/${newBill.id}');
+      // After returning from bill detail, refresh both providers
+      if (context.mounted) {
+        gp.loadGroupDetail(group.id);
+        context.read<BillsListProvider>().loadBills(force: true);
+      }
     }
   }
 }

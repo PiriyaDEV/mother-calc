@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../providers/bill_provider.dart';
+import '../providers/bills_list_provider.dart';
 import '../providers/friends_provider.dart';
 import '../providers/groups_provider.dart';
 import '../theme/app_theme.dart';
@@ -35,6 +36,8 @@ class _BillDetailScreenState extends State<BillDetailScreen>
     _tabController = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final bp = context.read<BillProvider>();
+      // Listen for bill changes and sync BillsListProvider
+      bp.addListener(_syncBillsListProvider);
       await bp.loadBill(widget.billId);
       // Auto-add current user as first member if bill is new (no members yet)
       if (bp.members.isEmpty && bp.bill != null && bp.bill!.isDraft) {
@@ -52,8 +55,19 @@ class _BillDetailScreenState extends State<BillDetailScreen>
     });
   }
 
+  void _syncBillsListProvider() {
+    if (!mounted) return;
+    final bp = context.read<BillProvider>();
+    final bill = bp.bill;
+    if (bill != null) {
+      context.read<BillsListProvider>().updateBill(bill);
+    }
+  }
+
   @override
   void dispose() {
+    // Remove the sync listener to avoid memory leaks
+    context.read<BillProvider>().removeListener(_syncBillsListProvider);
     _tabController.dispose();
     super.dispose();
   }
@@ -461,6 +475,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
   Future<void> _showEditBillSheet(
       BuildContext context, Bill bill, BillProvider billProvider) async {
     final settings = bill.settings;
+    final billsListProvider = context.read<BillsListProvider>();
     final result = await showCreateEntitySheet(
       context,
       type: 'bill',
@@ -474,10 +489,12 @@ class _BillDetailScreenState extends State<BillDetailScreen>
       ),
       onDelete: () async {
         await billProvider.deleteBill(bill.id);
+        // Sync bills list screen
+        billsListProvider.removeBill(bill.id);
         if (context.mounted) context.pop();
       },
     );
-    if (result != null) {
+    if (result != null && mounted) {
       await billProvider.updateBillMeta(
         billId: bill.id,
         title: result.name,
@@ -485,6 +502,10 @@ class _BillDetailScreenState extends State<BillDetailScreen>
         tags: result.tags,
         settings: result.settings,
       );
+      // Sync bills list screen with updated bill
+      if (billProvider.bill != null) {
+        billsListProvider.updateBill(billProvider.bill!);
+      }
     }
   }
 
@@ -1419,6 +1440,15 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
 
   Future<void> _delete() async {
     if (widget.editItem == null) return;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'ลบรายการนี้?',
+      description: 'รายการ "${widget.editItem!.name}" จะถูกลบถาวร',
+      confirmLabel: 'ลบ',
+      danger: true,
+    );
+    if (!confirmed) return;
+    setState(() => _loading = true);
     await widget.billProvider.deleteItem(widget.editItem!.id);
     if (mounted) Navigator.pop(context);
   }

@@ -6,6 +6,7 @@ import '../providers/bill_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import '../widgets/member_avatar.dart';
+import 'confirm_dialog.dart';
 import 'form_label.dart';
 
 Future<void> showItemFormSheet(
@@ -172,6 +173,14 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
 
   Future<void> _delete() async {
     if (widget.editItem == null) return;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'ลบรายการนี้?',
+      description: 'รายการ "${widget.editItem!.name}" จะถูกลบถาวร',
+      confirmLabel: 'ลบ',
+      danger: true,
+    );
+    if (!confirmed) return;
     setState(() => _loading = true);
     await widget.billProvider.deleteItem(widget.editItem!.id);
     if (mounted) Navigator.pop(context);

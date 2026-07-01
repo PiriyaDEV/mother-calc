@@ -6,8 +6,13 @@ import 'dart:ui_web' as ui_web;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-/// Renders a Google AdSense banner on Flutter Web using HtmlElementView.
-/// Each instance gets a unique view-type so multiple banners can coexist.
+/// Renders a Google AdSense banner on Flutter Web.
+///
+/// Flutter Web wraps HtmlElementView inside a <flt-platform-view> which is
+/// placed directly in the DOM (not inside a shadow root) when using the
+/// CanvasKit renderer with --web-renderer=canvaskit, or as a regular element
+/// with the HTML renderer. Either way the <ins> element ends up in the real
+/// DOM where adsbygoogle.js can find it.
 class AdSenseBannerWeb extends StatefulWidget {
   const AdSenseBannerWeb({super.key});
 
@@ -32,7 +37,9 @@ class _AdSenseBannerWebState extends State<AdSenseBannerWeb> {
       final container = html.DivElement()
         ..style.width = '100%'
         ..style.height = '90px'
-        ..style.overflow = 'hidden';
+        ..style.display = 'block'
+        ..style.overflow = 'visible'
+        ..style.backgroundColor = 'transparent';
 
       final ins = html.Element.tag('ins')
         ..className = 'adsbygoogle'
@@ -41,18 +48,20 @@ class _AdSenseBannerWebState extends State<AdSenseBannerWeb> {
         ..style.height = '90px'
         ..setAttribute('data-ad-client', publisherId)
         ..setAttribute('data-ad-slot', adSlot)
-        ..setAttribute('data-ad-format', 'horizontal')
+        ..setAttribute('data-ad-format', 'auto')
         ..setAttribute('data-full-width-responsive', 'true');
 
       container.append(ins);
 
-      // Push the ad unit after the element is attached to the DOM
-      Future.delayed(const Duration(milliseconds: 300), () {
+      // Push the ad after the element is in the DOM.
+      // We use eval so the call runs in the top-level window scope where
+      // adsbygoogle lives, regardless of any shadow-DOM boundary.
+      Future.delayed(const Duration(milliseconds: 800), () {
         try {
-          final adsbygoogle = js.context['adsbygoogle'];
-          if (adsbygoogle != null) {
-            (adsbygoogle as js.JsArray).callMethod('push', [js.JsObject.jsify({})]);
-          }
+          js.context.callMethod(
+            'eval',
+            ['(window.adsbygoogle = window.adsbygoogle || []).push({})'],
+          );
         } catch (_) {}
       });
 

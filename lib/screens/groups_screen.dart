@@ -38,7 +38,8 @@ class _GroupsScreenState extends State<GroupsScreen> {
         emoji: result.emoji,
       );
       if (group != null && mounted) {
-        context.push('/groups/${group.id}');
+        await context.push('/groups/${group.id}');
+        if (mounted) provider.loadGroups();
       }
     }
   }
@@ -151,8 +152,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
                                 final group = provider.groups[index];
                                 return SharedGroupCard(
                                   group: group,
-                                  onTap: () =>
-                                      context.push('/groups/${group.id}'),
+                                  onTap: () async {
+                                    await context.push('/groups/${group.id}');
+                                    if (mounted) provider.loadGroups();
+                                  },
                                 );
                               },
                             ),
