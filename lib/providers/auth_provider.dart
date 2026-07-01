@@ -6,13 +6,14 @@ import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
+import '../services/ios_install_prompt.dart';
 import '../services/line_web_auth_service.dart';
 import '../services/push_notification_service.dart';
 import 'bills_list_provider.dart';
 import 'groups_provider.dart';
 import 'locale_provider.dart';
 
-class AuthProvider extends ChangeNotifier {
+class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
   final _supabase = Supabase.instance.client;
   // Shared instance — on web, `signIn()` triggers the GIS popup and the
   // result is delivered via `onCurrentUserChanged` (not a return value).
@@ -31,6 +32,7 @@ class AuthProvider extends ChangeNotifier {
   bool _initialized = false;
   String? _lineWebCallbackError;
   String? _googleWebCallbackError;
+  bool _lineWebLoginNeedsReturnToApp = false;
 
   User? get user => _user;
   Profile? get profile => _profile;
@@ -41,6 +43,13 @@ class AuthProvider extends ChangeNotifier {
       _initialized &&
       _profile != null &&
       !_profile!.onboardingCompleted;
+
+  /// True once a LINE web login just completed successfully in a plain
+  /// browser tab instead of the installed home-screen PWA (see
+  /// [_completeLineWebLogin]). The login screen/root widget should show a
+  /// "switch back to the app" screen instead of the normal app UI — iOS
+  /// gives no way to hand this tab's session back to the PWA instance.
+  bool get lineWebLoginNeedsReturnToApp => _lineWebLoginNeedsReturnToApp;
 
   /// Reads and clears any error left over from a LINE web login redirect
   /// (the redirect tears down the whole app, so there's no Future to
@@ -97,6 +106,11 @@ class AuthProvider extends ChangeNotifier {
     _googleSignIn = GoogleSignIn(
       serverClientId: googleWebClientId.isNotEmpty ? googleWebClientId : null,
     );
+
+    // Lets didChangeAppLifecycleState pick up a session that was written to
+    // shared origin storage by a LINE login completed in a different
+    // browser tab (see _recoverSessionFromOtherTab).
+    if (kIsWeb) WidgetsBinding.instance.addObserver(this);
 
     _user = _supabase.auth.currentUser;
 
@@ -453,6 +467,17 @@ class AuthProvider extends ChangeNotifier {
         _lineWebCallbackError = error;
         _initialized = true;
         notifyListeners();
+      } else if (!isStandalone) {
+        // Logged in, but this landed in a plain Safari tab, not the
+        // installed home-screen PWA — iOS never hands an external OAuth
+        // redirect back to a standalone PWA instance, it always opens
+        // Safari. The session is already persisted to shared origin
+        // storage, so the PWA instance can pick it up on its own once the
+        // user switches back to it (see _recoverSessionFromOtherTab); this
+        // tab just needs to tell them to do that instead of rendering the
+        // normal app UI here.
+        _lineWebLoginNeedsReturnToApp = true;
+        notifyListeners();
       }
       // On success, the signIn/signUp call above triggers onAuthStateChange,
       // which finishes initialization — nothing more to do here.
@@ -469,6 +494,53 @@ class AuthProvider extends ChangeNotifier {
       _initialized = true;
       notifyListeners();
     }
+  }
+
+  /// When the app (this specific browser tab/PWA instance) comes back to
+  /// the foreground, check whether a LINE login completed elsewhere — e.g.
+  /// the standalone PWA was suspended in the background while its login
+  /// redirect round-tripped through a separate Safari tab (see
+  /// _completeLineWebLogin). If so, pick up the session it already wrote to
+  /// shared origin storage instead of leaving this instance logged out.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (kIsWeb && state == AppLifecycleState.resumed && _user == null) {
+      _recoverSessionFromOtherTab();
+    }
+  }
+
+  Future<void> _recoverSessionFromOtherTab() async {
+    try {
+      String supabaseUrl;
+      try {
+        supabaseUrl = dotenv.env['SUPABASE_URL']?.isNotEmpty == true
+            ? dotenv.env['SUPABASE_URL']!
+            : const String.fromEnvironment('SUPABASE_URL');
+      } catch (_) {
+        supabaseUrl = const String.fromEnvironment('SUPABASE_URL');
+      }
+      if (supabaseUrl.isEmpty) return;
+
+      final storage = SharedPreferencesLocalStorage(
+        persistSessionKey:
+            'sb-${Uri.parse(supabaseUrl).host.split('.').first}-auth-token',
+      );
+      await storage.initialize();
+      final persisted = await storage.accessToken();
+      if (persisted == null) return;
+
+      // Triggers onAuthStateChange, which updates _user/_profile and
+      // notifies listeners — nothing more to do here on success.
+      await _supabase.auth.recoverSession(persisted);
+    } catch (e) {
+      debugPrint('Session recovery on resume failed: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    if (kIsWeb) WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   /// Shared by both the native LINE SDK flow and the web OAuth flow: creates

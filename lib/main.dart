@@ -13,6 +13,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
+import 'screens/line_web_return_screen.dart';
 import 'services/app_config_service.dart';
 import 'services/push_notification_service.dart';
 import 'providers/theme_provider.dart';
@@ -170,6 +171,7 @@ class _KidtangAppState extends State<KidtangApp> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
+    final authProvider = context.watch<AuthProvider>();
 
     return MaterialApp.router(
       title: 'Kidtang! - มาจ่ายเงินกัน',
@@ -182,7 +184,13 @@ class _KidtangAppState extends State<KidtangApp> {
         return Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 768),
-            child: child!,
+            // A LINE web login that lands in a plain Safari tab (instead of
+            // the installed PWA) finishes here — override the router's
+            // child entirely and tell the user to switch back to the app
+            // rather than showing the normal app UI in this throwaway tab.
+            child: authProvider.lineWebLoginNeedsReturnToApp
+                ? const LineWebReturnScreen()
+                : child!,
           ),
         );
       },
