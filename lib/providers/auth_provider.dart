@@ -109,6 +109,12 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
     _googleSignIn = GoogleSignIn(
       serverClientId: googleWebClientId.isNotEmpty ? googleWebClientId : null,
+      // Only request scopes that don't require the People API.
+      // email + openid are sufficient to get an idToken for Supabase.
+      // Omitting 'profile' prevents google_sign_in_web from calling
+      // the People API (people.googleapis.com) which is disabled in
+      // this project and causes a 403 error.
+      scopes: ['email', 'openid'],
     );
 
     // Lets didChangeAppLifecycleState restart polling when the PWA resumes
@@ -349,8 +355,18 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       final user = authResponse.user;
       if (user == null) return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
 
-      final displayName = googleUser.displayName ?? 'Google User';
-      final avatarUrl = googleUser.photoUrl;
+      // When scopes=['email','openid'], googleUser.displayName/photoUrl may be
+      // null because the profile scope was not requested (to avoid the People
+      // API 403). Fall back to user_metadata populated by Supabase from the
+      // idToken claims (name, picture are standard OIDC claims).
+      final displayName = googleUser.displayName
+          ?? user.userMetadata?['full_name'] as String?
+          ?? user.userMetadata?['name'] as String?
+          ?? user.email?.split('@').first
+          ?? 'Google User';
+      final avatarUrl = googleUser.photoUrl
+          ?? user.userMetadata?['avatar_url'] as String?
+          ?? user.userMetadata?['picture'] as String?;
 
       // signInWithIdToken creates the auth user but never touches our
       // public `profiles` table — do that ourselves. A brand new account
@@ -370,7 +386,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
             .replaceAll(RegExp(r'[^\w฀-๿]'), '');
         final usernameBase = sanitized.isNotEmpty
             ? sanitized
-            : 'google_${googleUser.id.substring(0, 8)}';
+            : 'google_${user.id.substring(0, 8)}';
 
         await _supabase.from('profiles').upsert({
           'id': user.id,
@@ -379,10 +395,12 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
           'avatar_url': avatarUrl,
         }, onConflict: 'id');
       } else {
-        await _supabase
-            .from('profiles')
-            .update({'avatar_url': avatarUrl})
-            .eq('id', user.id);
+        if (avatarUrl != null) {
+          await _supabase
+              .from('profiles')
+              .update({'avatar_url': avatarUrl})
+              .eq('id', user.id);
+        }
       }
 
       return null;
