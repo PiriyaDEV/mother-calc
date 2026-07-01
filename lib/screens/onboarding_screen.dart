@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -149,14 +150,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _submit(),
+                  maxLength: 10,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   style: GoogleFonts.notoSansThai(
                     color: isDark
                         ? AppColors.textPrimaryDark
                         : AppColors.textPrimaryLight,
                   ),
                   decoration: _inputDecoration(isDark, 'เช่น 0812345678'),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'กรุณาใส่เบอร์พร้อมเพย์' : null,
+                  validator: (v) {
+                    final digits = v?.trim() ?? '';
+                    if (digits.isEmpty) return 'กรุณาใส่เบอร์พร้อมเพย์';
+                    if (digits.length != 10) return 'เบอร์พร้อมเพย์ต้องมี 10 หลัก';
+                    return null;
+                  },
                 ),
 
                 if (_error != null) ...[

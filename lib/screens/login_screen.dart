@@ -349,13 +349,19 @@ class _LoginScreenState extends State<LoginScreen>
                         // 400px) that lays the button out at that exact
                         // width — sized to the row instead of stretched via
                         // Transform.scale, which distorted the logo/text.
+                        // ClipRect is required, not cosmetic: the rendered
+                        // button is a real DOM platform view, and without a
+                        // clip its hit-testable area can extend past this
+                        // SizedBox and swallow taps meant for widgets below.
                         if (kIsWeb)
                           SizedBox(
                             width: double.infinity,
                             height: 56,
-                            child: Center(
-                              child: renderGoogleSignInButton(
-                                minimumWidth: math.min(size.width - 56, 400),
+                            child: ClipRect(
+                              child: Center(
+                                child: renderGoogleSignInButton(
+                                  minimumWidth: math.min(size.width - 56, 400),
+                                ),
                               ),
                             ),
                           )

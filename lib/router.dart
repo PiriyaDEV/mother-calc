@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_shell.dart';
@@ -14,7 +13,6 @@ import 'screens/group_detail_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/profile_screen.dart';
-import 'theme/app_theme.dart';
 
 class AppRouter {
   static GoRouter router(AuthProvider authProvider) {
@@ -140,37 +138,22 @@ class AppRouter {
   }
 }
 
-/// Simple branded splash screen shown while auth state is being restored.
+/// Shown while auth state is being restored — kept pixel-identical to the
+/// native/web splash (flutter_native_splash config in pubspec.yaml: same
+/// bg color, same plain centered logo, no text/spinner) so the handoff
+/// from that splash to this route is invisible instead of a visible flash.
 class _SplashScreen extends StatelessWidget {
   const _SplashScreen();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bgLight,
+    return const Scaffold(
+      backgroundColor: Color(0xFF286BFD),
       body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Image.asset('assets/images/logo.png', width: 88, height: 88),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Kidtang',
-              style: GoogleFonts.notoSansThai(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimaryLight,
-              ),
-            ),
-            const SizedBox(height: 32),
-            const CircularProgressIndicator(
-              color: AppColors.primary,
-              strokeWidth: 2.5,
-            ),
-          ],
+        child: Image(
+          image: AssetImage('assets/images/logo.png'),
+          width: 128,
+          height: 128,
         ),
       ),
     );
