@@ -1,0 +1,44 @@
+headers = []
+
+[functions]
+
+[functions."*"]
+
+[[plugins]]
+origin = "ui"
+package = "@netlify/plugin-nextjs"
+pinned_version = "5"
+
+[plugins.inputs]
+
+[build]
+publish = "/Users/piriya/Desktop/Github/kidtang/build/web"
+publishOrigin = "ui"
+commandOrigin = "ui"
+command = "flutter build web --release --base-href /"
+
+[build.environment]
+
+[build.processing]
+
+[build.processing.css]
+
+[build.processing.html]
+
+[build.processing.images]
+
+[build.processing.js]
+
+[build.services]
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]
