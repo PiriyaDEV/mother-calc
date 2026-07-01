@@ -412,7 +412,11 @@ class AuthProvider extends ChangeNotifier {
       // which finishes initialization — nothing more to do here.
     } catch (e) {
       debugPrint('LINE web callback error: $e');
-      _lineWebCallbackError = 'เข้าสู่ระบบด้วย LINE ไม่สำเร็จ กรุณาลองใหม่';
+      debugPrint('LINE web callback error type: ${e.runtimeType}');
+      if (e is Exception) {
+        debugPrint('LINE web callback exception message: ${e.toString()}');
+      }
+      _lineWebCallbackError = 'เข้าสู่ระบบด้วย LINE ไม่สำเร็จ: ${e.toString()}';
     }
 
     // Safety net in case onAuthStateChange never fires (e.g. the error path
