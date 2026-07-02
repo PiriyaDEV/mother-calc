@@ -17,11 +17,10 @@ import 'screens/line_web_return_screen.dart';
 import 'services/app_config_service.dart';
 import 'services/push_notification_service.dart';
 import 'providers/theme_provider.dart';
-import 'providers/bill_provider.dart';
-import 'providers/bills_list_provider.dart';
-import 'providers/friends_provider.dart';
+import 'stores/bills_store.dart';
+import 'stores/friends_store.dart';
+import 'stores/groups_store.dart';
 import 'providers/notifications_provider.dart';
-import 'providers/groups_provider.dart';
 import 'providers/locale_provider.dart';
 import 'theme/app_theme.dart';
 import 'router.dart';
@@ -110,11 +109,10 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => BillProvider()),
-        ChangeNotifierProvider(create: (_) => BillsListProvider()),
-        ChangeNotifierProvider(create: (_) => FriendsProvider()),
+        ChangeNotifierProvider(create: (_) => BillsStore()),
+        ChangeNotifierProvider(create: (_) => FriendsStore()),
         ChangeNotifierProvider(create: (_) => NotificationsProvider()),
-        ChangeNotifierProvider(create: (_) => GroupsProvider()),
+        ChangeNotifierProvider(create: (_) => GroupsStore()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ],
       child: const KidtangApp(),
@@ -162,8 +160,8 @@ class _KidtangAppState extends State<KidtangApp> {
     // Wire sibling providers so profile data flows into locale + stats.
     authProvider.setSiblingProviders(
       localeProvider: context.read<LocaleProvider>(),
-      groupsProvider: context.read<GroupsProvider>(),
-      billsListProvider: context.read<BillsListProvider>(),
+      groupsStore: context.read<GroupsStore>(),
+      billsStore: context.read<BillsStore>(),
     );
     _router = AppRouter.router(authProvider);
   }

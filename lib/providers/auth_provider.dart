@@ -13,8 +13,8 @@ import '../services/ios_install_prompt.dart';
 import '../services/line_web_auth_service.dart';
 import '../services/line_web_platform.dart';
 import '../services/push_notification_service.dart';
-import 'bills_list_provider.dart';
-import 'groups_provider.dart';
+import '../stores/bills_store.dart';
+import '../stores/groups_store.dart';
 import 'locale_provider.dart';
 
 class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
@@ -28,8 +28,8 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   // Optional references to sibling providers — set after construction.
   LocaleProvider? _localeProvider;
-  GroupsProvider? _groupsProvider;
-  BillsListProvider? _billsListProvider;
+  GroupsStore? _groupsStore;
+  BillsStore? _billsStore;
 
   User? _user;
   Profile? _profile;
@@ -80,12 +80,12 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// Wire sibling providers so AuthProvider can push profile data into them.
   void setSiblingProviders({
     required LocaleProvider localeProvider,
-    required GroupsProvider groupsProvider,
-    required BillsListProvider billsListProvider,
+    required GroupsStore groupsStore,
+    required BillsStore billsStore,
   }) {
     _localeProvider = localeProvider;
-    _groupsProvider = groupsProvider;
-    _billsListProvider = billsListProvider;
+    _groupsStore = groupsStore;
+    _billsStore = billsStore;
     // If profile already loaded, sync immediately.
     if (_profile != null) {
       _syncSiblings(_profile!);
@@ -751,8 +751,8 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     await PushNotificationService.clearToken();
     await _supabase.auth.signOut();
     _profile = null;
-    _groupsProvider?.clear();
-    _billsListProvider?.clear();
+    _groupsStore?.clear();
+    _billsStore?.clear();
     notifyListeners();
   }
 

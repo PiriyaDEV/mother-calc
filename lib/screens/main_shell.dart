@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/notifications_provider.dart';
-import '../providers/friends_provider.dart';
-import '../providers/groups_provider.dart';
+import '../stores/friends_store.dart';
+import '../stores/groups_store.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class MainShell extends StatefulWidget {
@@ -30,8 +30,8 @@ class _MainShellState extends State<MainShell> {
     final auth = context.read<AuthProvider>();
     if (auth.profile != null) {
       context.read<NotificationsProvider>().loadNotifications();
-      context.read<FriendsProvider>().loadFriends();
-      context.read<GroupsProvider>().loadGroups();
+      context.read<FriendsStore>().loadFriends();
+      context.read<GroupsStore>().loadGroups();
     }
   }
 
@@ -46,7 +46,7 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final notifCount = context.watch<NotificationsProvider>().unreadCount;
-    final friendCount = context.watch<FriendsProvider>().pendingCount;
+    final friendCount = context.watch<FriendsStore>().pendingCount;
 
     return Scaffold(
       backgroundColor: Colors.transparent,

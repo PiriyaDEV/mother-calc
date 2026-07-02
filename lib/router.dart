@@ -17,7 +17,7 @@ import 'screens/profile_screen.dart';
 // Which stage of the auth/onboarding lifecycle the app is in — gates which
 // top-level route the user is allowed to be on. Not related to a bill's
 // own `status` ('draft' | 'pending_payment' | 'completed'): that's a
-// per-bill concern handled entirely within BillsListProvider and
+// per-bill concern handled entirely within BillsStore and
 // BillDetailScreen's own UI, never a router-level redirect.
 enum _AuthRouteState { loading, unauthenticated, needsOnboarding, ready }
 

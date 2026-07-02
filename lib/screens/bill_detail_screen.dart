@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -5,10 +7,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
-import '../providers/bill_provider.dart';
-import '../providers/bills_list_provider.dart';
-import '../providers/friends_provider.dart';
-import '../providers/groups_provider.dart';
+import '../stores/bills_store.dart';
+import '../stores/friends_store.dart';
+import '../stores/groups_store.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import '../widgets/confirm_dialog.dart';
@@ -29,45 +30,37 @@ class BillDetailScreen extends StatefulWidget {
 class _BillDetailScreenState extends State<BillDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final bp = context.read<BillProvider>();
-      // Listen for bill changes and sync BillsListProvider
-      bp.addListener(_syncBillsListProvider);
-      await bp.loadBill(widget.billId);
-      // Auto-add current user as first member if bill is new (no members yet)
-      if (bp.members.isEmpty && bp.bill != null && bp.bill!.isDraft) {
-        await bp.autoAddCurrentUser();
-      }
-      // Load group detail if this bill belongs to a group (ensures member picker works)
-      if (!mounted) return;
-      final groupId = bp.bill?.groupId;
-      if (groupId != null) {
-        final gp = context.read<GroupsProvider>();
-        if (gp.currentGroup?.id != groupId) {
-          await gp.loadGroupDetail(groupId);
+      final bp = context.read<BillsStore>();
+      try {
+        final bill = await bp.ensureLoaded(widget.billId);
+        // Auto-add current user as first member if bill is new (no members yet)
+        if (bill != null && bill.members.isEmpty && bill.isDraft) {
+          await bp.autoAddCurrentUser(widget.billId);
         }
+        // Load group detail if this bill belongs to a group (ensures member picker works)
+        if (!mounted) return;
+        final groupId = bp.getById(widget.billId)?.groupId;
+        if (groupId != null) {
+          final gp = context.read<GroupsStore>();
+          if (gp.getById(groupId) == null) {
+            await gp.loadGroupDetail(groupId);
+          }
+        }
+      } finally {
+        if (mounted) setState(() => _loading = false);
       }
     });
   }
 
-  void _syncBillsListProvider() {
-    if (!mounted) return;
-    final bp = context.read<BillProvider>();
-    final bill = bp.bill;
-    if (bill != null) {
-      context.read<BillsListProvider>().updateBill(bill);
-    }
-  }
-
   @override
   void dispose() {
-    // Remove the sync listener to avoid memory leaks
-    context.read<BillProvider>().removeListener(_syncBillsListProvider);
     _tabController.dispose();
     super.dispose();
   }
@@ -75,10 +68,10 @@ class _BillDetailScreenState extends State<BillDetailScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final billProvider = context.watch<BillProvider>();
-    final bill = billProvider.bill;
+    final billProvider = context.watch<BillsStore>();
+    final bill = billProvider.getById(widget.billId);
 
-    if (billProvider.loading) {
+    if (_loading) {
       return Container(
         decoration: BoxDecoration(
           gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
@@ -115,18 +108,15 @@ class _BillDetailScreenState extends State<BillDetailScreen>
       );
     }
 
-    final calc = calculateBill(bill.copyWith(
-      members: billProvider.members,
-      items: billProvider.items,
-    ));
+    final calc = calculateBill(bill);
 
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
     final isOwner = bill.ownerId == currentUserId;
     final isCompleted = bill.isCompleted;
     final isPendingPayment = bill.isPendingPayment;
     final isDraft = bill.isDraft;
-    final members = billProvider.members;
-    final items = billProvider.items;
+    final members = bill.members;
+    final items = bill.items;
 
     return Container(
       decoration: BoxDecoration(
@@ -445,18 +435,18 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                 children: [
                   _MembersTab(
                       bill: bill,
-                      billProvider: billProvider,
+                      billsStore: billProvider,
                       calc: calc,
                       readOnly: !isDraft),
                   _ItemsTab(
                       bill: bill,
-                      billProvider: billProvider,
+                      billsStore: billProvider,
                       calc: calc,
                       readOnly: !isDraft),
                   SummaryTab(
-                      bill: bill, billProvider: billProvider, calc: calc),
+                      bill: bill, billsStore: billProvider, calc: calc),
                   AnalyticsTab(
-                      bill: bill, billProvider: billProvider, calc: calc),
+                      bill: bill, billsStore: billProvider, calc: calc),
                 ],
               ),
             ),
@@ -473,9 +463,8 @@ class _BillDetailScreenState extends State<BillDetailScreen>
 
 
   Future<void> _showEditBillSheet(
-      BuildContext context, Bill bill, BillProvider billProvider) async {
+      BuildContext context, Bill bill, BillsStore billProvider) async {
     final settings = bill.settings;
-    final billsListProvider = context.read<BillsListProvider>();
     final result = await showCreateEntitySheet(
       context,
       type: 'bill',
@@ -489,23 +478,17 @@ class _BillDetailScreenState extends State<BillDetailScreen>
       ),
       onDelete: () async {
         await billProvider.deleteBill(bill.id);
-        // Sync bills list screen
-        billsListProvider.removeBill(bill.id);
         if (context.mounted) context.pop();
       },
     );
     if (result != null && mounted) {
       await billProvider.updateBillMeta(
-        billId: bill.id,
+        bill.id,
         title: result.name,
         emoji: result.emoji,
         tags: result.tags,
         settings: result.settings,
       );
-      // Sync bills list screen with updated bill
-      if (billProvider.bill != null) {
-        billsListProvider.updateBill(billProvider.bill!);
-      }
     }
   }
 
@@ -614,13 +597,13 @@ class _CountTab extends StatelessWidget {
 // ── Items Tab ─────────────────────────────────────────────────
 class _ItemsTab extends StatelessWidget {
   final Bill bill;
-  final BillProvider billProvider;
+  final BillsStore billsStore;
   final BillCalculation calc;
   final bool readOnly;
 
   const _ItemsTab({
     required this.bill,
-    required this.billProvider,
+    required this.billsStore,
     required this.calc,
     this.readOnly = false,
   });
@@ -628,8 +611,8 @@ class _ItemsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final items = billProvider.items;
-    final members = billProvider.members;
+    final items = bill.items;
+    final members = bill.members;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -637,7 +620,7 @@ class _ItemsTab extends StatelessWidget {
         // Add item button
         if (!readOnly)
           GestureDetector(
-            onTap: () => _showAddItemSheet(context, bill, billProvider),
+            onTap: () => _showAddItemSheet(context, bill, billsStore),
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -692,7 +675,7 @@ class _ItemsTab extends StatelessWidget {
                 item: item,
                 members: members,
                 bill: bill,
-                billProvider: billProvider,
+                billsStore: billsStore,
                 readOnly: readOnly,
               )),
         ],
@@ -707,15 +690,15 @@ class _ItemsTab extends StatelessWidget {
   }
 
   void _showAddItemSheet(
-      BuildContext context, Bill bill, BillProvider billProvider) {
+      BuildContext context, Bill bill, BillsStore billsStore) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _ItemFormSheet(
         bill: bill,
-        billProvider: billProvider,
-        members: billProvider.members,
+        billsStore: billsStore,
+        members: bill.members,
       ),
     );
   }
@@ -725,14 +708,14 @@ class _ItemTile extends StatelessWidget {
   final BillItem item;
   final List<BillMember> members;
   final Bill bill;
-  final BillProvider billProvider;
+  final BillsStore billsStore;
   final bool readOnly;
 
   const _ItemTile({
     required this.item,
     required this.members,
     required this.bill,
-    required this.billProvider,
+    required this.billsStore,
     this.readOnly = false,
   });
 
@@ -872,7 +855,7 @@ class _ItemTile extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (ctx) => _ItemFormSheet(
         bill: bill,
-        billProvider: billProvider,
+        billsStore: billsStore,
         members: members,
         editItem: item,
       ),
@@ -1001,13 +984,13 @@ class _SummaryRow extends StatelessWidget {
 // ── Members Tab ───────────────────────────────────────────────
 class _MembersTab extends StatelessWidget {
   final Bill bill;
-  final BillProvider billProvider;
+  final BillsStore billsStore;
   final BillCalculation calc;
   final bool readOnly;
 
   const _MembersTab({
     required this.bill,
-    required this.billProvider,
+    required this.billsStore,
     required this.calc,
     this.readOnly = false,
   });
@@ -1015,9 +998,9 @@ class _MembersTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final members = billProvider.members;
+    final members = bill.members;
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
-    final friendsProvider = context.read<FriendsProvider>();
+    final friendsProvider = context.read<FriendsStore>();
     final friendUserIds = friendsProvider.friends
         .map((f) => f.otherProfile(currentUserId ?? '')?.id)
         .whereType<String>()
@@ -1027,7 +1010,7 @@ class _MembersTab extends StatelessWidget {
       children: [
         if (!readOnly)
           GestureDetector(
-            onTap: () => _showAddMemberSheet(context, bill, billProvider),
+            onTap: () => _showAddMemberSheet(context, bill, billsStore),
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -1091,7 +1074,7 @@ class _MembersTab extends StatelessWidget {
               summary: summary,
               isPaid: isPaid,
               bill: bill,
-              billProvider: billProvider,
+              billsStore: billsStore,
               currency: bill.settings.currency,
               readOnly: readOnly,
               currentUserId: currentUserId,
@@ -1104,7 +1087,7 @@ class _MembersTab extends StatelessWidget {
   }
 
   void _showAddMemberSheet(
-      BuildContext context, Bill bill, BillProvider billProvider) {
+      BuildContext context, Bill bill, BillsStore billsStore) {
 showModalBottomSheet(
 context: context,
       isScrollControlled: true,
@@ -1112,7 +1095,7 @@ context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _MemberFormSheet(
         bill: bill,
-        billProvider: billProvider,
+        billsStore: billsStore,
       ),
     );
   }
@@ -1124,7 +1107,7 @@ class _MemberTile extends StatelessWidget {
   final MemberSummary summary;
   final bool isPaid;
   final Bill bill;
-  final BillProvider billProvider;
+  final BillsStore billsStore;
   final String currency;
   final bool readOnly;
   final String? currentUserId;
@@ -1135,7 +1118,7 @@ class _MemberTile extends StatelessWidget {
     required this.summary,
     required this.isPaid,
     required this.bill,
-    required this.billProvider,
+    required this.billsStore,
     required this.currency,
     this.readOnly = false,
     this.currentUserId,
@@ -1157,7 +1140,7 @@ class _MemberTile extends StatelessWidget {
                 backgroundColor: Colors.transparent,
                 builder: (ctx) => _MemberFormSheet(
                   bill: bill,
-                  billProvider: billProvider,
+                  billsStore: billsStore,
                   editMember: member,
                 ),
               ),
@@ -1241,8 +1224,7 @@ class _MemberTile extends StatelessWidget {
             // Paid toggle
             GestureDetector(
               onTap: () async {
-                await billProvider.toggleMemberPaid(
-                    bill.id, member.id, bill.paidMemberIds);
+                await billsStore.toggleMemberPaid(bill.id, member.id);
               },
               child: Container(
                 width: 28,
@@ -1313,13 +1295,13 @@ class _MemberTile extends StatelessWidget {
 // ── Item Form Sheet ───────────────────────────────────────────
 class _ItemFormSheet extends StatefulWidget {
   final Bill bill;
-  final BillProvider billProvider;
+  final BillsStore billsStore;
   final List<BillMember> members;
   final BillItem? editItem;
 
   const _ItemFormSheet({
     required this.bill,
-    required this.billProvider,
+    required this.billsStore,
     required this.members,
     this.editItem,
   });
@@ -1336,6 +1318,18 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
   String? _paidBy;
   bool _isUnequalSplit = false;
   bool _loading = false;
+  Timer? _amountDebounce;
+
+  // Amount fields feed several derived previews (per-member share, unequal
+  // split total/validity, save button state) spread across this sheet —
+  // debounce the rebuild instead of calling setState on every keystroke so
+  // typing doesn't re-lay-out the whole member list each character.
+  void _onAmountChanged() {
+    _amountDebounce?.cancel();
+    _amountDebounce = Timer(const Duration(milliseconds: 120), () {
+      if (mounted) setState(() {});
+    });
+  }
 
   @override
   void initState() {
@@ -1371,6 +1365,7 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
 
   @override
   void dispose() {
+    _amountDebounce?.cancel();
     _nameCtrl.dispose();
     _priceCtrl.dispose();
     for (final c in _unequalCtrls.values) {
@@ -1415,7 +1410,8 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
     setState(() => _loading = true);
     try {
       if (widget.editItem != null) {
-        await widget.billProvider.editItem(
+        await widget.billsStore.editItem(
+          widget.bill.id,
           widget.editItem!.id,
           name: name,
           price: price,
@@ -1425,7 +1421,8 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
           clearCustomShares: !_isUnequalSplit,
         );
       } else {
-        await widget.billProvider.addItem(
+        await widget.billsStore.addItem(
+          widget.bill.id,
           name: name,
           price: price,
           memberIds: _isUnequalSplit ? [] : selectedIds,
@@ -1450,7 +1447,7 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
     );
     if (!confirmed) return;
     setState(() => _loading = true);
-    await widget.billProvider.deleteItem(widget.editItem!.id);
+    await widget.billsStore.deleteItem(widget.bill.id, widget.editItem!.id);
     if (mounted) Navigator.pop(context);
   }
 
@@ -1527,7 +1524,7 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))
               ],
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => _onAmountChanged(),
             ),
             const SizedBox(height: 16),
 
@@ -1757,7 +1754,7 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                                   FilteringTextInputFormatter.allow(
                                       RegExp(r'^\d+\.?\d{0,2}'))
                                 ],
-                                onChanged: (_) => setState(() {}),
+                                onChanged: (_) => _onAmountChanged(),
                               ),
                             ),
                           ],
@@ -1943,12 +1940,12 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
 // ── Member Form Sheet ─────────────────────────────────────────
 class _MemberFormSheet extends StatefulWidget {
   final Bill bill;
-  final BillProvider billProvider;
+  final BillsStore billsStore;
   final BillMember? editMember;
 
   const _MemberFormSheet({
     required this.bill,
-    required this.billProvider,
+    required this.billsStore,
     this.editMember,
   });
 
@@ -1977,7 +1974,7 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
     _selectedColor = widget.editMember != null
         ? colorFromHex(widget.editMember!.color)
         : AppColors.memberColors[
-            widget.billProvider.members.length %
+            widget.bill.members.length %
                 AppColors.memberColors.length];
   }
 
@@ -1995,7 +1992,8 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
     setState(() => _loading = true);
     try {
       if (widget.editMember != null) {
-        await widget.billProvider.editMember(
+        await widget.billsStore.editMember(
+          widget.bill.id,
           widget.editMember!.id,
           name: name,
           color: hexFromColor(_selectedColor),
@@ -2004,7 +2002,8 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
               : _promptpayCtrl.text.trim(),
         );
       } else {
-        await widget.billProvider.addMember(
+        await widget.billsStore.addMember(
+          widget.bill.id,
           name: name,
           color: hexFromColor(_selectedColor),
           promptpay: _promptpayCtrl.text.trim().isEmpty
@@ -2021,11 +2020,12 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
   Future<void> _addFriend(Profile profile) async {
     final name = profile.displayName ?? profile.username ?? 'เพื่อน';
     final colorIdx =
-        widget.billProvider.members.length % AppColors.memberColors.length;
+        widget.bill.members.length % AppColors.memberColors.length;
     final color = hexFromColor(AppColors.memberColors[colorIdx]);
     setState(() => _loading = true);
     try {
-      await widget.billProvider.addMemberFromGroupMember(
+      await widget.billsStore.addMemberFromGroupMember(
+        widget.bill.id,
         userId: profile.id,
         name: name,
         color: color,
@@ -2040,11 +2040,12 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
   Future<void> _addFromGroupMember(GroupMember gm) async {
     final name = gm.name;
     final colorIdx =
-        widget.billProvider.members.length % AppColors.memberColors.length;
+        widget.bill.members.length % AppColors.memberColors.length;
     final color = hexFromColor(AppColors.memberColors[colorIdx]);
     setState(() => _loading = true);
     try {
-      await widget.billProvider.addMemberFromGroupMember(
+      await widget.billsStore.addMemberFromGroupMember(
+        widget.bill.id,
         userId: gm.userId,
         name: name,
         color: color,
@@ -2065,11 +2066,11 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
       return _buildEditForm(context, isDark);
     }
 
-    final alreadyAddedUserIds = widget.billProvider.members
+    final alreadyAddedUserIds = widget.bill.members
         .where((m) => m.userId != null)
         .map((m) => m.userId!)
         .toSet();
-    final alreadyAddedExternalNames = widget.billProvider.members
+    final alreadyAddedExternalNames = widget.bill.members
         .where((m) => m.userId == null)
         .map((m) => m.name)
         .toSet();
@@ -2077,8 +2078,8 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
     // ── Group bill: only show group members, no tabs ──
     final groupId = widget.bill.groupId;
     if (groupId != null) {
-      final gp = context.read<GroupsProvider>();
-      final groupMembers = gp.currentGroup?.members.where((m) => m.isAccepted).toList() ?? [];
+      final gp = context.read<GroupsStore>();
+      final groupMembers = gp.getById(groupId)?.members.where((m) => m.isAccepted).toList() ?? [];
       final availableGroupMembers = groupMembers.where((m) {
         if (m.userId != null) return !alreadyAddedUserIds.contains(m.userId);
         return !alreadyAddedExternalNames.contains(m.name);
@@ -2124,7 +2125,7 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
 
     // ── Standalone bill: 2 tabs (เพื่อน + สร้างเอง) ──
     final currentUserId = Supabase.instance.client.auth.currentUser?.id ?? '';
-    final friendsProvider = context.read<FriendsProvider>();
+    final friendsProvider = context.read<FriendsStore>();
     final availableFriends = friendsProvider.friends
         .where((f) {
           final p = f.otherProfile(currentUserId);

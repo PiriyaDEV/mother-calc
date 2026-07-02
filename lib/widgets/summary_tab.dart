@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
-import '../providers/bill_provider.dart';
+import '../stores/bills_store.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import 'member_avatar.dart';
@@ -15,7 +15,7 @@ import 'member_avatar.dart';
 // ── Slip upload + confirm helper ──────────────────────────────
 Future<void> _pickSlipAndMarkPaid(
   BuildContext context, {
-  required BillProvider billProvider,
+  required BillsStore billsStore,
   required Bill bill,
   required String memberId,
 }) async {
@@ -147,18 +147,18 @@ Future<void> _pickSlipAndMarkPaid(
   if (confirmed != true) return;
   if (!context.mounted) return;
 
-  await billProvider.toggleMemberPaid(bill.id, memberId, bill.paidMemberIds);
+  await billsStore.toggleMemberPaid(bill.id, memberId);
 }
 
 class SummaryTab extends StatefulWidget {
   final Bill bill;
-  final BillProvider billProvider;
+  final BillsStore billsStore;
   final BillCalculation calc;
 
   const SummaryTab({
     super.key,
     required this.bill,
-    required this.billProvider,
+    required this.billsStore,
     required this.calc,
   });
 
@@ -177,7 +177,7 @@ class _SummaryTabState extends State<SummaryTab> {
     // Default select current user's member, or first member
     final currentUserId =
         Supabase.instance.client.auth.currentUser?.id;
-    final members = widget.billProvider.members;
+    final members = widget.bill.members;
     if (members.isNotEmpty) {
       final myMember = members.firstWhere(
         (m) => m.userId == currentUserId,
@@ -225,7 +225,7 @@ class _SummaryTabState extends State<SummaryTab> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bill = widget.bill;
     final calc = widget.calc;
-    final members = widget.billProvider.members;
+    final members = widget.bill.members;
     final currentUserId =
         Supabase.instance.client.auth.currentUser?.id;
     final isCompleted = bill.isCompleted;
@@ -319,7 +319,7 @@ class _SummaryTabState extends State<SummaryTab> {
           selectedMember: selectedMember,
           currentUserId: currentUserId,
           bill: bill,
-          billProvider: widget.billProvider,
+          billsStore: widget.billsStore,
           currency: bill.settings.currency,
           isDark: isDark,
           expandedQrMemberId: _expandedQrMemberId,
@@ -333,7 +333,7 @@ class _SummaryTabState extends State<SummaryTab> {
         _AllMembersSection(
           calc: calc,
           bill: bill,
-          billProvider: widget.billProvider,
+          billsStore: widget.billsStore,
           allDebts: allDebts,
           members: members,
           currentUserId: currentUserId,
@@ -1007,7 +1007,7 @@ class _DebtSection extends StatelessWidget {
   final BillMember selectedMember;
   final String? currentUserId;
   final Bill bill;
-  final BillProvider billProvider;
+  final BillsStore billsStore;
   final String currency;
   final bool isDark;
   final String? expandedQrMemberId;
@@ -1018,7 +1018,7 @@ class _DebtSection extends StatelessWidget {
     required this.selectedMember,
     required this.currentUserId,
     required this.bill,
-    required this.billProvider,
+    required this.billsStore,
     required this.currency,
     required this.isDark,
     required this.expandedQrMemberId,
@@ -1077,7 +1077,7 @@ class _DebtSection extends StatelessWidget {
           ...debts.map((debt) => _DebtCard(
                 debt: debt,
                 bill: bill,
-                billProvider: billProvider,
+                billsStore: billsStore,
                 currency: currency,
                 isDark: isDark,
                 isQrExpanded: expandedQrMemberId == debt.to.id,
@@ -1091,7 +1091,7 @@ class _DebtSection extends StatelessWidget {
 class _DebtCard extends StatelessWidget {
   final DebtTransaction debt;
   final Bill bill;
-  final BillProvider billProvider;
+  final BillsStore billsStore;
   final String currency;
   final bool isDark;
   final bool isQrExpanded;
@@ -1100,7 +1100,7 @@ class _DebtCard extends StatelessWidget {
   const _DebtCard({
     required this.debt,
     required this.bill,
-    required this.billProvider,
+    required this.billsStore,
     required this.currency,
     required this.isDark,
     required this.isQrExpanded,
@@ -1317,13 +1317,13 @@ class _DebtCard extends StatelessWidget {
                         if (!isPaid && hasPromptPay) {
                           await _pickSlipAndMarkPaid(
                             ctx,
-                            billProvider: billProvider,
+                            billsStore: billsStore,
                             bill: bill,
                             memberId: debt.from.id,
                           );
                         } else {
-                          await billProvider.toggleMemberPaid(
-                              bill.id, debt.from.id, bill.paidMemberIds);
+                          await billsStore.toggleMemberPaid(
+                              bill.id, debt.from.id);
                         }
                       },
                       child: Container(
@@ -1388,7 +1388,7 @@ class _DebtCard extends StatelessWidget {
 class _AllMembersSection extends StatelessWidget {
   final BillCalculation calc;
   final Bill bill;
-  final BillProvider billProvider;
+  final BillsStore billsStore;
   final List<DebtTransaction> allDebts;
   final List<BillMember> members;
   final String? currentUserId;
@@ -1399,7 +1399,7 @@ class _AllMembersSection extends StatelessWidget {
   const _AllMembersSection({
     required this.calc,
     required this.bill,
-    required this.billProvider,
+    required this.billsStore,
     required this.allDebts,
     required this.members,
     required this.currentUserId,
@@ -1690,13 +1690,13 @@ class _AllMembersSection extends StatelessWidget {
                             if (!isPaid && requiresSlip) {
                               await _pickSlipAndMarkPaid(
                                 ctx,
-                                billProvider: billProvider,
+                                billsStore: billsStore,
                                 bill: bill,
                                 memberId: member.id,
                               );
                             } else {
-                              await billProvider.toggleMemberPaid(
-                                  bill.id, member.id, bill.paidMemberIds);
+                              await billsStore.toggleMemberPaid(
+                                  bill.id, member.id);
                             }
                           },
                           child: Container(

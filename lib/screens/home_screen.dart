@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
+import '../stores/bills_store.dart';
+import '../stores/groups_store.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import '../widgets/banner_ad_widget.dart';
@@ -21,11 +23,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _supabase = Supabase.instance.client;
-
-  List<Group> _groups = [];
-  List<Bill> _personalBills = [];
-  Map<String, List<Bill>> _groupBills = {};
-  bool _dataLoading = true;
 
   List<_RateData> _rates = [];
   bool _ratesLoading = true;
@@ -51,51 +48,14 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadRates();
   }
 
-  Future<void> _loadData() async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return;
-    setState(() => _dataLoading = true);
-    try {
-      final groupsData = await _supabase
-          .from('group_members')
-          .select('group:groups(*)')
-          .eq('user_id', user.id);
-      final groups = (groupsData as List)
-          .map((e) => Group.fromJson(e['group'] as Map<String, dynamic>))
-          .toList();
-
-      final billsData = await _supabase
-          .from('bills')
-          .select('*, bill_members(*, profiles(id, username, display_name, avatar_url)), bill_items(*)')
-          .eq('owner_id', user.id)
-          .isFilter('group_id', null)
-          .order('updated_at', ascending: false);
-      final personalBills =
-          (billsData as List).map((e) => Bill.fromJson(e)).toList();
-
-      final Map<String, List<Bill>> groupBills = {};
-      for (final g in groups) {
-        final gBillsData = await _supabase
-            .from('bills')
-            .select('*, bill_members(*, profiles(id, username, display_name, avatar_url)), bill_items(*)')
-            .eq('group_id', g.id)
-            .order('updated_at', ascending: false);
-        groupBills[g.id] =
-            (gBillsData as List).map((e) => Bill.fromJson(e)).toList();
-      }
-
-      if (mounted) {
-        setState(() {
-          _groups = groups;
-          _personalBills = personalBills;
-          _groupBills = groupBills;
-          _dataLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading home data: $e');
-      if (mounted) setState(() => _dataLoading = false);
-    }
+  Future<void> _loadData({bool force = false}) async {
+    // Both queries are RLS-scoped to the current user and already cached
+    // by their stores — this is a single round trip each, no more N+1
+    // per-group fetch loop.
+    await Future.wait([
+      context.read<BillsStore>().loadAll(force: force),
+      context.read<GroupsStore>().loadGroups(force: force),
+    ]);
   }
 
   Future<void> _loadRates() async {
@@ -138,10 +98,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  List<Bill> get _allBills => [
-        ..._personalBills,
-        ..._groupBills.values.expand((b) => b),
-      ];
+  List<Bill> get _allBills => context.watch<BillsStore>().all;
+  List<Group> get _groups => context.watch<GroupsStore>().groups;
+  bool get _dataLoading {
+    final bills = context.watch<BillsStore>();
+    final groups = context.watch<GroupsStore>();
+    return (bills.loading && !bills.hasLoaded) ||
+        (groups.loading && !groups.hasLoaded);
+  }
 
   double get _grandTotal =>
       _allBills.fold(0, (s, b) => s + _billTotal(b));
@@ -193,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: RefreshIndicator(
             onRefresh: () async {
-              await _loadData();
+              await _loadData(force: true);
               await _loadRates();
             },
             color: AppColors.primary,
@@ -679,10 +643,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               padding: const EdgeInsets.only(bottom: 10),
                               child: SharedBillCard(
                                 bill: bill,
-                                onTap: () async {
-                                  await context.push('/bills/${bill.id}');
-                                  if (mounted) _loadData();
-                                },
+                                onTap: () => context.push('/bills/${bill.id}'),
                               ),
                             );
                           },

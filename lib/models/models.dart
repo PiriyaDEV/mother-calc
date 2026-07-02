@@ -530,6 +530,25 @@ class Group {
       members: members,
     );
   }
+
+  Group copyWith({
+    String? name,
+    String? emoji,
+    String? description,
+    List<String>? tags,
+    List<GroupMember>? members,
+  }) {
+    return Group(
+      id: id,
+      name: name ?? this.name,
+      emoji: emoji ?? this.emoji,
+      description: description ?? this.description,
+      tags: tags ?? this.tags,
+      ownerId: ownerId,
+      createdAt: createdAt,
+      members: members ?? this.members,
+    );
+  }
 }
 
 // GroupMember — role: 'owner'|'member', status: 'pending'|'accepted'|'declined'
@@ -610,6 +629,17 @@ class Friend {
   Profile? otherProfile(String myId) {
     if (requesterId == myId) return addresseeProfile;
     return requesterProfile;
+  }
+
+  Friend copyWith({String? status}) {
+    return Friend(
+      id: id,
+      requesterId: requesterId,
+      addresseeId: addresseeId,
+      status: status ?? this.status,
+      requesterProfile: requesterProfile,
+      addresseeProfile: addresseeProfile,
+    );
   }
 
   factory Friend.fromJson(Map<String, dynamic> json) {

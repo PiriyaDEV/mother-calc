@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -799,16 +800,37 @@ class _MeScreenState extends State<MeScreen>
 
     Widget inner;
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      inner = ClipOval(
-        child: Image.network(
-          avatarUrl,
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) =>
-              _buildInitialAvatar(initial, size),
-        ),
-      );
+      if (avatarUrl.startsWith('data:')) {
+        // base64 data URI (freshly picked photo, not yet a real URL) —
+        // CachedNetworkImage can't handle these.
+        try {
+          final bytes = base64Decode(avatarUrl.split(',').last);
+          inner = ClipOval(
+            child: Image.memory(
+              bytes,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) =>
+                  _buildInitialAvatar(initial, size),
+            ),
+          );
+        } catch (_) {
+          inner = _buildInitialAvatar(initial, size);
+        }
+      } else {
+        inner = ClipOval(
+          child: CachedNetworkImage(
+            imageUrl: avatarUrl,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            placeholder: (ctx, url) => _buildInitialAvatar(initial, size),
+            errorWidget: (ctx, url, err) =>
+                _buildInitialAvatar(initial, size),
+          ),
+        );
+      }
     } else {
       inner = _buildInitialAvatar(initial, size);
     }

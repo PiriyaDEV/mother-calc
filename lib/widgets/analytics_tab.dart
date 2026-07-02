@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/models.dart';
-import '../providers/bill_provider.dart';
+import '../stores/bills_store.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import 'member_avatar.dart';
@@ -16,13 +16,13 @@ const _kEmerald500 = Color(0xFF10B981);
 
 class AnalyticsTab extends StatefulWidget {
   final Bill bill;
-  final BillProvider billProvider;
+  final BillsStore billsStore;
   final BillCalculation calc;
 
   const AnalyticsTab({
     super.key,
     required this.bill,
-    required this.billProvider,
+    required this.billsStore,
     required this.calc,
   });
 
@@ -36,8 +36,8 @@ class _AnalyticsTabState extends State<AnalyticsTab> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final members = widget.billProvider.members;
-    final items = widget.billProvider.items;
+    final members = widget.bill.members;
+    final items = widget.bill.items;
 
     if (items.isEmpty || members.isEmpty) {
       return Center(

@@ -1,9 +1,12 @@
+import 'dart:convert';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
-import '../providers/friends_provider.dart';
+import '../stores/friends_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../widgets/confirm_dialog.dart';
@@ -27,7 +30,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<FriendsProvider>().loadFriends();
+      context.read<FriendsStore>().loadFriends();
     });
   }
 
@@ -45,7 +48,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
       _addError = '';
       _addSuccess = '';
     });
-    final provider = context.read<FriendsProvider>();
+    final provider = context.read<FriendsStore>();
     final profile = await provider.searchByUsername(username);
     if (!mounted) return;
     if (profile == null) {
@@ -70,7 +73,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
   Future<void> _handleAccept(Friend friend) async {
     setState(() => _respondingId = friend.id);
-    final provider = context.read<FriendsProvider>();
+    final provider = context.read<FriendsStore>();
     final err = await provider.acceptFriendRequest(friend.id);
     if (!mounted) return;
     setState(() => _respondingId = null);
@@ -86,7 +89,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
   Future<void> _handleDecline(Friend friend) async {
     setState(() => _respondingId = friend.id);
-    final provider = context.read<FriendsProvider>();
+    final provider = context.read<FriendsStore>();
     final err = await provider.declineFriendRequest(friend.id);
     if (!mounted) return;
     setState(() => _respondingId = null);
@@ -114,14 +117,14 @@ class _FriendsScreenState extends State<FriendsScreen> {
     );
 
     if (confirmed && mounted) {
-      await context.read<FriendsProvider>().removeFriend(friend.id);
+      await context.read<FriendsStore>().removeFriend(friend.id);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final provider = context.watch<FriendsProvider>();
+    final provider = context.watch<FriendsStore>();
     final friends = provider.friends;
     final requests = provider.pendingReceived;
 
@@ -739,14 +742,33 @@ class _RoundedAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (avatarUrl != null && avatarUrl!.isNotEmpty) {
+      if (avatarUrl!.startsWith('data:')) {
+        // base64 data URI — CachedNetworkImage can't handle these.
+        try {
+          final bytes = base64Decode(avatarUrl!.split(',').last);
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(radius),
+            child: Image.memory(
+              bytes,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _buildInitials(),
+            ),
+          );
+        } catch (_) {
+          return _buildInitials();
+        }
+      }
       return ClipRRect(
         borderRadius: BorderRadius.circular(radius),
-        child: Image.network(
-          avatarUrl!,
+        child: CachedNetworkImage(
+          imageUrl: avatarUrl!,
           width: size,
           height: size,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _buildInitials(),
+          placeholder: (ctx, url) => _buildInitials(),
+          errorWidget: (ctx, url, err) => _buildInitials(),
         ),
       );
     }

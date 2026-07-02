@@ -5,10 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
-import '../providers/bill_provider.dart';
-import '../providers/bills_list_provider.dart';
-import '../providers/friends_provider.dart';
-import '../providers/groups_provider.dart';
+import '../stores/bills_store.dart';
+import '../stores/friends_store.dart';
+import '../stores/groups_store.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import '../widgets/banner_ad_widget.dart';
@@ -16,22 +15,6 @@ import '../widgets/shared_bill_card.dart';
 import '../widgets/create_entity_sheet.dart';
 import '../widgets/member_avatar.dart';
 import '../widgets/summary_tab.dart';
-
-// ── Lightweight BillProvider wrapper for SummaryTab ───────────
-class _BillProviderWrapper extends BillProvider {
-  final List<BillMember> _m;
-  final List<BillItem> _i;
-
-  _BillProviderWrapper({required List<BillMember> members, required List<BillItem> items})
-      : _m = members,
-        _i = items;
-
-  @override
-  List<BillMember> get members => _m;
-
-  @override
-  List<BillItem> get items => _i;
-}
 
 // ─────────────────────────────────────────────────────────────
 class GroupDetailScreen extends StatefulWidget {
@@ -56,7 +39,8 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
       initialIndex: 1, // default = bills (ตรงกับ Next.js)
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<GroupsProvider>().loadGroupDetail(widget.groupId);
+      context.read<GroupsStore>().loadGroupDetail(widget.groupId);
+      context.read<BillsStore>().loadForGroup(widget.groupId);
     });
   }
 
@@ -69,11 +53,11 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final gp = context.watch<GroupsProvider>();
-    final group = gp.currentGroup;
-    final bills = gp.currentGroupBills;
+    final gp = context.watch<GroupsStore>();
+    final group = gp.getById(widget.groupId);
+    final bills = context.watch<BillsStore>().forGroup(widget.groupId);
 
-    if (gp.detailLoading) {
+    if (gp.isDetailLoading(widget.groupId)) {
       return Container(
         decoration: BoxDecoration(
           gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
@@ -217,7 +201,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
   // ── Edit Group Sheet ─────────────────────────────────────────
   Future<void> _showEditGroup(
-      BuildContext context, Group group, GroupsProvider gp) async {
+      BuildContext context, Group group, GroupsStore gp) async {
     final result = await showCreateEntitySheet(
       context,
       type: 'group',
@@ -572,7 +556,7 @@ class _BillsTab extends StatelessWidget {
   final Group group;
   final List<Bill> bills;
   final bool isDark;
-  final GroupsProvider gp;
+  final GroupsStore gp;
 
   const _BillsTab({
     required this.group,
@@ -675,13 +659,7 @@ class _BillsTab extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: SharedBillCard(
                   bill: bill,
-                  onTap: () async {
-                    await context.push('/bills/${bill.id}');
-                    if (context.mounted) {
-                      gp.loadGroupDetail(group.id);
-                      context.read<BillsListProvider>().loadBills(force: true);
-                    }
-                  },
+                  onTap: () => context.push('/bills/${bill.id}'),
                 ),
               )),
       ],
@@ -690,27 +668,21 @@ class _BillsTab extends StatelessWidget {
 
 
   Future<void> _createBill(BuildContext context) async {
+    final billsStore = context.read<BillsStore>();
     final result = await showCreateEntitySheet(
       context,
       type: 'bill',
       mode: 'create',
     );
     if (result == null) return;
-    final newBill = await gp.createGroupBill(
+    final newBill = await billsStore.createBill(
       groupId: group.id,
       title: result.name,
       emoji: result.emoji,
       tags: result.tags,
     );
     if (newBill != null && context.mounted) {
-      // Sync bills list screen so the new bill appears there too
-      context.read<BillsListProvider>().addBill(newBill);
       await context.push('/bills/${newBill.id}');
-      // After returning from bill detail, refresh both providers
-      if (context.mounted) {
-        gp.loadGroupDetail(group.id);
-        context.read<BillsListProvider>().loadBills(force: true);
-      }
     }
   }
 }
@@ -899,28 +871,18 @@ class _GroupSummaryTab extends StatelessWidget {
                         ? AppColors.borderDark
                         : AppColors.borderLight,
                   ),
-                  ChangeNotifierProvider<BillProvider>(
-                    create: (_) => _BillProviderWrapper(
-                      members: bill.members,
-                      items: bill.items,
-                    ),
-                    child: Builder(
-                      builder: (ctx) {
-                        final bp = ctx.watch<BillProvider>();
-                        final calc = calculateBill(bill.copyWith(
-                          members: bp.members,
-                          items: bp.items,
-                        ));
-                        return SizedBox(
-                          height: 500,
-                          child: SummaryTab(
-                            bill: bill,
-                            billProvider: bp,
-                            calc: calc,
-                          ),
-                        );
-                      },
-                    ),
+                  Builder(
+                    builder: (ctx) {
+                      final calc = calculateBill(bill);
+                      return SizedBox(
+                        height: 500,
+                        child: SummaryTab(
+                          bill: bill,
+                          billsStore: ctx.read<BillsStore>(),
+                          calc: calc,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ],
@@ -1542,7 +1504,7 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet>
     final username = profile.username;
     if (username == null) return;
     setState(() => _invitingFriend = true);
-    final gp = context.read<GroupsProvider>();
+    final gp = context.read<GroupsStore>();
     await gp.inviteMember(widget.group.id, username);
     if (mounted) setState(() => _invitingFriend = false);
   }
@@ -1555,7 +1517,7 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet>
       _externalError = null;
       _externalSuccess = null;
     });
-    final gp = context.read<GroupsProvider>();
+    final gp = context.read<GroupsStore>();
     final err = await gp.addExternalMember(widget.group.id, name);
     if (!mounted) return;
     setState(() {
@@ -1579,7 +1541,7 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet>
         .where((m) => m.userId != null)
         .map((m) => m.userId!)
         .toSet();
-    final friendsProvider = context.read<FriendsProvider>();
+    final friendsProvider = context.read<FriendsStore>();
     final availableFriends = friendsProvider.friends
         .where((f) {
           final p = f.otherProfile(currentUserId);

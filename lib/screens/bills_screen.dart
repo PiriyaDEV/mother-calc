@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
-import '../providers/bills_list_provider.dart';
+import '../stores/bills_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../widgets/create_entity_sheet.dart';
@@ -20,7 +19,6 @@ class BillsScreen extends StatefulWidget {
 
 class _BillsScreenState extends State<BillsScreen>
     with SingleTickerProviderStateMixin {
-  final _supabase = Supabase.instance.client;
   late TabController _tabController;
 
   @override
@@ -28,7 +26,7 @@ class _BillsScreenState extends State<BillsScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<BillsListProvider>().loadBills();
+      context.read<BillsStore>().loadAll();
     });
   }
 
@@ -39,9 +37,7 @@ class _BillsScreenState extends State<BillsScreen>
   }
 
   Future<void> _createBill() async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return;
-
+    final billsStore = context.read<BillsStore>();
     final result = await showCreateEntitySheet(
       context,
       type: 'bill',
@@ -49,26 +45,14 @@ class _BillsScreenState extends State<BillsScreen>
     );
 
     if (result != null && mounted) {
-      try {
-        final settings = result.settings ?? const BillSettings();
-        final data = await _supabase.from('bills').insert({
-          'title': result.name,
-          'emoji': result.emoji,
-          'owner_id': user.id,
-          'status': 'draft',
-          'settings': settings.toJson(),
-          'tags': result.tags,
-          'paid_member_ids': [],
-        }).select('*, bill_members(*), bill_items(*)').single();
-
-        final bill = Bill.fromJson(data);
-        if (mounted) {
-          context.read<BillsListProvider>().addBill(bill);
-          await context.push('/bills/${bill.id}');
-          if (mounted) context.read<BillsListProvider>().loadBills(force: true);
-        }
-      } catch (e) {
-        debugPrint('Error creating bill: $e');
+      final bill = await billsStore.createBill(
+        title: result.name,
+        emoji: result.emoji,
+        tags: result.tags,
+        settings: result.settings ?? const BillSettings(),
+      );
+      if (bill != null && mounted) {
+        await context.push('/bills/${bill.id}');
       }
     }
   }
@@ -76,11 +60,12 @@ class _BillsScreenState extends State<BillsScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final provider = context.watch<BillsListProvider>();
-    final activeBills = provider.activeBills;
-    final pendingPaymentBills = provider.pendingPaymentBills;
-    final completedBills = provider.completedBills;
-    final allBills = provider.bills;
+    final activeBills = context.select<BillsStore, List<Bill>>((s) => s.activeBills);
+    final pendingPaymentBills = context.select<BillsStore, List<Bill>>((s) => s.pendingPaymentBills);
+    final completedBills = context.select<BillsStore, List<Bill>>((s) => s.completedBills);
+    final allBillsCount = context.select<BillsStore, int>((s) => s.all.length);
+    final loading = context.select<BillsStore, bool>((s) => s.loading);
+    final hasLoaded = context.select<BillsStore, bool>((s) => s.hasLoaded);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -107,10 +92,10 @@ class _BillsScreenState extends State<BillsScreen>
                             height: 1.1,
                           ),
                         ),
-                        if (allBills.isNotEmpty) ...[
+                        if (allBillsCount > 0) ...[
                           const SizedBox(height: 2),
                           Text(
-                            '${allBills.length} บิลทั้งหมด',
+                            '$allBillsCount บิลทั้งหมด',
                             style: GoogleFonts.notoSansThai(
                               fontSize: 13,
                               color: isDark
@@ -203,7 +188,7 @@ class _BillsScreenState extends State<BillsScreen>
 
             // ── Content ──────────────────────────────────────────
             Expanded(
-              child: provider.loading && !provider.hasLoaded
+              child: loading && !hasLoaded
                   ? const Center(
                       child: CircularProgressIndicator(
                         color: AppColors.primary,
@@ -220,21 +205,21 @@ class _BillsScreenState extends State<BillsScreen>
                           emptySubtext: 'กดปุ่ม + เพื่อสร้างบิลแรกของคุณ',
                           emptyCtaLabel: 'สร้างบิล',
                           onEmptyCta: _createBill,
-                          onRefresh: () => context.read<BillsListProvider>().loadBills(force: true),
+                          onRefresh: () => context.read<BillsStore>().loadAll(force: true),
                         ),
                         _BillList(
                           bills: pendingPaymentBills,
                           emptyEmoji: '⏳',
                           emptyText: 'ยังไม่มีบิลที่รอจ่าย',
                           emptySubtext: 'บิลที่ปิดแล้วและรอชำระเงินจะปรากฏที่นี่',
-                          onRefresh: () => context.read<BillsListProvider>().loadBills(force: true),
+                          onRefresh: () => context.read<BillsStore>().loadAll(force: true),
                         ),
                         _BillList(
                           bills: completedBills,
                           emptyEmoji: '✅',
                           emptyText: 'ยังไม่มีบิลที่เสร็จ',
                           emptySubtext: 'บิลที่ชำระครบแล้วจะปรากฏที่นี่',
-                          onRefresh: () => context.read<BillsListProvider>().loadBills(force: true),
+                          onRefresh: () => context.read<BillsStore>().loadAll(force: true),
                         ),
                       ],
                     ),
@@ -329,12 +314,7 @@ class _BillList extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 10),
             child: SharedBillCard(
               bill: bill,
-              onTap: () async {
-                await context.push('/bills/${bill.id}');
-                if (context.mounted) {
-                  context.read<BillsListProvider>().loadBills(force: true);
-                }
-              },
+              onTap: () => context.push('/bills/${bill.id}'),
             ),
           );
         },

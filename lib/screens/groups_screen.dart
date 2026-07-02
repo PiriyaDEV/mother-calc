@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../providers/groups_provider.dart';
+import '../stores/groups_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../widgets/create_entity_sheet.dart';
@@ -21,7 +21,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<GroupsProvider>().loadGroups();
+      context.read<GroupsStore>().loadGroups();
     });
   }
 
@@ -32,14 +32,13 @@ class _GroupsScreenState extends State<GroupsScreen> {
       mode: 'create',
     );
     if (result != null && mounted) {
-      final provider = context.read<GroupsProvider>();
+      final provider = context.read<GroupsStore>();
       final group = await provider.createGroup(
         name: result.name,
         emoji: result.emoji,
       );
       if (group != null && mounted) {
         await context.push('/groups/${group.id}');
-        if (mounted) provider.loadGroups();
       }
     }
   }
@@ -47,7 +46,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final provider = context.watch<GroupsProvider>();
+    final provider = context.watch<GroupsStore>();
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -152,10 +151,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                                 final group = provider.groups[index];
                                 return SharedGroupCard(
                                   group: group,
-                                  onTap: () async {
-                                    await context.push('/groups/${group.id}');
-                                    if (mounted) provider.loadGroups();
-                                  },
+                                  onTap: () => context.push('/groups/${group.id}'),
                                 );
                               },
                             ),
