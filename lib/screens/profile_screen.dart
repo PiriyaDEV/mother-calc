@@ -73,8 +73,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final auth = context.watch<AuthProvider>();
-    final profile = auth.profile;
+    // context.select — only rebuilds when the profile object itself changes.
+    final profile = context.select<AuthProvider, dynamic>((a) => a.profile);
+    final auth = context.read<AuthProvider>();
 
     return Container(
       decoration: BoxDecoration(

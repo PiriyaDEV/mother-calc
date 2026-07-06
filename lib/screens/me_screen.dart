@@ -265,10 +265,12 @@ class _MeScreenState extends State<MeScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final auth = context.watch<AuthProvider>();
-    final themeProvider = context.watch<ThemeProvider>();
-    final locale = context.watch<LocaleProvider>();
-    final profile = auth.profile;
+    // context.select — each selector only triggers a rebuild when its specific
+    // slice of state changes, not on every notifyListeners() from any provider.
+    final profile = context.select<AuthProvider, dynamic>((a) => a.profile);
+    final auth = context.read<AuthProvider>();
+    final themeProvider = context.read<ThemeProvider>();
+    final locale = context.read<LocaleProvider>();
 
     // Detect Google user
     final providers = auth.user?.appMetadata['providers'] as List?;
@@ -423,9 +425,12 @@ class _MeScreenState extends State<MeScreen>
     AuthProvider auth,
     bool isGoogleUser,
   ) {
-    final themeProvider = context.watch<ThemeProvider>();
-    final locale = context.watch<LocaleProvider>();
-    final notifUnread = context.watch<NotificationsProvider>().unreadCount;
+    // These are passed down from build() which already uses context.select/read.
+    // Using context.watch here would cause the whole ListView to rebuild on any
+    // provider change — use context.select for the badge count and read for the rest.
+    final themeProvider = context.read<ThemeProvider>();
+    final locale = context.read<LocaleProvider>();
+    final notifUnread = context.select<NotificationsProvider, int>((p) => p.unreadCount);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),

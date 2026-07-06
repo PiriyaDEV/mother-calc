@@ -1,8 +1,12 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
@@ -1081,7 +1085,7 @@ class _DebtSection extends StatelessWidget {
   }
 }
 
-class _DebtCard extends StatelessWidget {
+class _DebtCard extends StatefulWidget {
   final DebtTransaction debt;
   final Bill bill;
   final BillsStore billsStore;
@@ -1101,7 +1105,72 @@ class _DebtCard extends StatelessWidget {
   });
 
   @override
+  State<_DebtCard> createState() => _DebtCardState();
+}
+
+class _DebtCardState extends State<_DebtCard> {
+  final GlobalKey _qrKey = GlobalKey();
+  bool _savingQr = false;
+
+  Future<void> _saveQrToGallery() async {
+    if (_savingQr) return;
+    setState(() => _savingQr = true);
+    try {
+      final boundary = _qrKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return;
+      final bytes = byteData.buffer.asUint8List();
+      final result = await ImageGallerySaverPlus.saveImage(
+        Uint8List.fromList(bytes),
+        quality: 100,
+        name: 'kidtang_qr_${widget.debt.to.name}_${DateTime.now().millisecondsSinceEpoch}',
+      );
+      if (!mounted) return;
+      final success = result['isSuccess'] == true ||
+          result['filePath'] != null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success ? 'บันทึก QR Code แล้ว 🎉' : 'บันทึกไม่สำเร็จ',
+            style: const TextStyle(fontFamily: 'NotoSansThai'),
+          ),
+          backgroundColor:
+              success ? AppColors.emerald500 : AppColors.red,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('บันทึกไม่สำเร็จ'),
+          backgroundColor: AppColors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _savingQr = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final debt = widget.debt;
+    final bill = widget.bill;
+    final billsStore = widget.billsStore;
+    final currency = widget.currency;
+    final isDark = widget.isDark;
+    final isQrExpanded = widget.isQrExpanded;
+    final onToggleQr = widget.onToggleQr;
     final isPaid = bill.paidMemberIds.contains(debt.from.id);
     final fromColor = colorFromHex(debt.from.color);
     final toColor = colorFromHex(debt.to.color);
@@ -1236,53 +1305,133 @@ class _DebtCard extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
+                  // ── Capturable QR card (RepaintBoundary) ──
+                  RepaintBoundary(
+                    key: _qrKey,
+                    child: Container(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Image.network(
-                      'https://promptpay.io/${debt.to.promptpay}/${debt.amount.toStringAsFixed(2)}.png',
-                      width: 180,
-                      height: 180,
-                      fit: BoxFit.contain,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return const SizedBox(
-                          width: 180,
-                          height: 180,
-                          child: Center(child: CircularProgressIndicator()),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) => const SizedBox(
-                        width: 180,
-                        height: 180,
-                        child: Center(
-                          child: Icon(Icons.qr_code_rounded, size: 48, color: Colors.grey),
-                        ),
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // QR code
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: const Color(0xFFE5E7EB)),
+                            ),
+                            child: QrImageView(
+                              data:
+                                  'promptpay:${debt.to.promptpay}:${debt.amount.toStringAsFixed(2)}',
+                              version: QrVersions.auto,
+                              size: 180,
+                              backgroundColor: Colors.white,
+                              eyeStyle: const QrEyeStyle(
+                                eyeShape: QrEyeShape.square,
+                                color: Colors.black,
+                              ),
+                              dataModuleStyle: const QrDataModuleStyle(
+                                dataModuleShape: QrDataModuleShape.square,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'สแกนโอนให้ ${debt.to.name}',
+                            style: GoogleFonts.notoSansThai(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF111827),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            debt.to.promptpay!,
+                            style: GoogleFonts.notoSansThai(
+                              fontSize: 12,
+                              color: const Color(0xFF6B7280),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          // ── Branded footer ──────────────────
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0F4FF),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Image.asset(
+                                  'assets/images/logo.png',
+                                  width: 22,
+                                  height: 22,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Kidtang',
+                                  style: GoogleFonts.notoSansThai(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'สแกนโอนให้ ${debt.to.name}',
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 13,
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
+                  const SizedBox(height: 12),
+                  // ── Save button (mobile only) ──────────────
+                  if (!kIsWeb)
+                    GestureDetector(
+                      onTap: _saveQrToGallery,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: _savingQr
+                              ? AppColors.neutral400
+                              : AppColors.primary,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_savingQr)
+                              const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white),
+                              )
+                            else
+                              const Icon(Icons.download_rounded,
+                                  size: 16, color: Colors.white),
+                            const SizedBox(width: 6),
+                            Text(
+                              _savingQr
+                                  ? 'กำลังบันทึก...'
+                                  : 'บันทึกรูป QR Code',
+                              style: GoogleFonts.notoSansThai(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                  Text(
-                    debt.to.promptpay!,
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 12,
-                      color: isDark
-                          ? AppColors.textTertiaryDark
-                          : AppColors.textTertiaryLight,
-                    ),
-                  ),
                 ],
               ),
             ),

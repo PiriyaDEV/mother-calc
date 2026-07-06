@@ -45,8 +45,10 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final notifCount = context.watch<NotificationsProvider>().unreadCount;
-    final friendCount = context.watch<FriendsStore>().pendingCount;
+    // context.select — only rebuilds the nav bar when the badge counts change,
+    // not on every notification list or friends list mutation.
+    final notifCount = context.select<NotificationsProvider, int>((p) => p.unreadCount);
+    final friendCount = context.select<FriendsStore, int>((s) => s.pendingCount);
 
     return Scaffold(
       backgroundColor: Colors.transparent,

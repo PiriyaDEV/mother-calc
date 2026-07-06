@@ -13,6 +13,7 @@ import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../widgets/shared_bill_card.dart';
+import '../widgets/skeleton_loader.dart';
 
 double _billTotal(Bill b) => b.items.fold(0.0, (s, i) => s + i.price);
 
@@ -386,15 +387,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // unrelated GroupsStore/AuthProvider notify.
                 if (dataLoading)
                   const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
-                          strokeWidth: 2,
-                        ),
-                      ),
-                    ),
+                    child: HomeScreenSkeleton(),
                   )
                 else ...[
                   // Stats cards

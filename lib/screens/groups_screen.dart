@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/shared_group_card.dart';
+import '../widgets/skeleton_loader.dart';
 
 class GroupsScreen extends StatefulWidget {
   const GroupsScreen({super.key});
@@ -31,7 +32,11 @@ class _GroupsScreenState extends State<GroupsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final provider = context.watch<GroupsStore>();
+    final provider = context.read<GroupsStore>();
+    // context.select — only rebuilds when the groups list changes.
+    // We still read from provider.groups below; the select just registers
+    // the dependency so this build() re-runs when the list mutates.
+    context.select<GroupsStore, int>((s) => s.groups.length);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -108,12 +113,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
             // ── Content ──────────────────────────────────────────
             Expanded(
               child: provider.loading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                        strokeWidth: 2,
-                      ),
-                    )
+                  ? const GroupsListSkeleton()
                   : RefreshIndicator(
                       onRefresh: () => provider.loadGroups(),
                       color: AppColors.primary,

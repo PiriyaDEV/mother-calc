@@ -73,5 +73,10 @@
 		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<!-- Photo library permission for saving QR code images -->
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>Kidtang ต้องการบันทึก QR Code ลงในคลังรูปภาพของคุณ</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Kidtang ต้องการเข้าถึงคลังรูปภาพเพื่อบันทึก QR Code</string>
 	</dict>
 </plist>

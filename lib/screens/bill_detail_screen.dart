@@ -83,8 +83,12 @@ class _BillDetailScreenState extends State<BillDetailScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final billProvider = context.watch<BillsStore>();
-    final bill = billProvider.getById(widget.billId);
+    // context.select<> instead of context.watch<> — only rebuilds this screen
+    // when the specific bill identified by billId changes, not on every
+    // notifyListeners() from BillsStore (e.g. other bills loading).
+    final bill = context.select<BillsStore, Bill?>((s) => s.getById(widget.billId));
+    // Still need the store reference for passing to child widgets/sheets.
+    final billsStore = context.read<BillsStore>();
 
     if (_loading) {
       return Container(
@@ -223,7 +227,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                       confirmLabel: 'ปิดบิล',
                     );
                     if (ok == true) {
-                      await billProvider.setPendingPayment(bill.id);
+                      await billsStore.setPendingPayment(bill.id);
                       _tabController.animateTo(2); // switch to สรุป
                     }
                   },
@@ -263,7 +267,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                       confirmLabel: 'เปิดใหม่',
                     );
                     if (ok == true) {
-                      await billProvider.reopenBill(bill.id);
+                      await billsStore.reopenBill(bill.id);
                     }
                   },
                   child: Container(
@@ -307,7 +311,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                       confirmLabel: 'เสร็จแล้ว',
                     );
                     if (ok == true) {
-                      await billProvider.completeBill(bill.id);
+                      await billsStore.completeBill(bill.id);
                     }
                   },
                   child: Container(
@@ -346,7 +350,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                       confirmLabel: 'เปิดใหม่',
                     );
                     if (ok == true) {
-                      await billProvider.reopenBill(bill.id);
+                      await billsStore.reopenBill(bill.id);
                     }
                   },
                   child: Container(
@@ -384,7 +388,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
               if (isOwner && isDraft)
                 IconButton(
                   icon: const Icon(Icons.edit_outlined),
-                  onPressed: () => _showEditBillSheet(context, bill, billProvider),
+                  onPressed: () => _showEditBillSheet(context, bill, billsStore),
                 ),
               const SizedBox(width: 4),
             ],
@@ -450,18 +454,18 @@ class _BillDetailScreenState extends State<BillDetailScreen>
                 children: [
                   _MembersTab(
                       bill: bill,
-                      billsStore: billProvider,
+                      billsStore: billsStore,
                       calc: calc,
                       readOnly: !isDraft),
                   _ItemsTab(
                       bill: bill,
-                      billsStore: billProvider,
+                      billsStore: billsStore,
                       calc: calc,
                       readOnly: !isDraft),
                   SummaryTab(
-                      bill: bill, billsStore: billProvider, calc: calc),
+                      bill: bill, billsStore: billsStore, calc: calc),
                   AnalyticsTab(
-                      bill: bill, billsStore: billProvider, calc: calc),
+                      bill: bill, billsStore: billsStore, calc: calc),
                 ],
               ),
             ),
@@ -478,7 +482,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
 
 
   void _showEditBillSheet(
-      BuildContext context, Bill bill, BillsStore billProvider) {
+      BuildContext context, Bill bill, BillsStore billsStore) {
     context.push('/bills/${bill.id}/edit');
   }
 

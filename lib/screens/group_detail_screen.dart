@@ -52,8 +52,9 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final gp = context.watch<GroupsStore>();
-    final group = gp.getById(widget.groupId);
+    // context.select — only rebuilds when THIS group's data changes.
+    final group = context.select<GroupsStore, Group?>((s) => s.getById(widget.groupId));
+    final gp = context.read<GroupsStore>();
     // Use context.select so only mutations to THIS group's bills trigger a
     // rebuild of this 1800-line screen (combined with Issue 3 caching,
     // forGroup() now returns a stable list identity unless the group changed).

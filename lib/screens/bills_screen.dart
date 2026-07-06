@@ -7,6 +7,7 @@ import '../stores/bills_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/skeleton_loader.dart';
 import '../widgets/shared_bill_card.dart';
 
 class BillsScreen extends StatefulWidget {
@@ -171,12 +172,7 @@ class _BillsScreenState extends State<BillsScreen>
             // ── Content ──────────────────────────────────────────
             Expanded(
               child: loading && !hasLoaded
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                        strokeWidth: 2,
-                      ),
-                    )
+                  ? const BillsListSkeleton()
                   : TabBarView(
                       controller: _tabController,
                       children: [

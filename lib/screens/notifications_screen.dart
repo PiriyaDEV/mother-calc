@@ -73,8 +73,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final provider = context.watch<NotificationsProvider>();
-    final unread = provider.unreadCount;
+    // context.select — only rebuilds when unreadCount changes, not on every
+    // notification list mutation (e.g. individual read-state toggles).
+    final unread = context.select<NotificationsProvider, int>((p) => p.unreadCount);
+    final provider = context.read<NotificationsProvider>();
 
     return Container(
       decoration: BoxDecoration(

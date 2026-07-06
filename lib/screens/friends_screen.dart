@@ -10,6 +10,7 @@ import '../stores/friends_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/skeleton_loader.dart';
 
 class FriendsScreen extends StatefulWidget {
   const FriendsScreen({super.key});
@@ -124,9 +125,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final provider = context.watch<FriendsStore>();
-    final friends = provider.friends;
-    final requests = provider.pendingReceived;
+    // context.select — rebuilds only when friends list or pending requests change.
+    final friends = context.select<FriendsStore, List>((s) => s.friends);
+    final requests = context.select<FriendsStore, List>((s) => s.pendingReceived);
+    final provider = context.read<FriendsStore>();
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -411,9 +413,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
             // ── Body ─────────────────────────────────────────
             Expanded(
               child: provider.loading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                          color: AppColors.primary, strokeWidth: 2))
+                  ? const FriendsListSkeleton()
                   : RefreshIndicator(
                       onRefresh: () => provider.loadFriends(),
                       color: AppColors.primary,

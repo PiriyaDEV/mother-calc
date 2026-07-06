@@ -38,6 +38,10 @@ dependencies:
   
   # Image picker
   image_picker: ^1.1.2
+
+  # Save image to gallery
+  image_gallery_saver_plus: ^3.0.3
+  path_provider: ^2.1.4
   
   # LINE Login SDK (official Flutter SDK by LINE)
   flutter_line_sdk: ^2.6.2
