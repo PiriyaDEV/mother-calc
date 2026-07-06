@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../stores/groups_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/banner_ad_widget.dart';
-import '../widgets/create_entity_sheet.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/shared_group_card.dart';
 
@@ -25,22 +24,8 @@ class _GroupsScreenState extends State<GroupsScreen> {
     });
   }
 
-  Future<void> _showCreateGroupSheet() async {
-    final result = await showCreateEntitySheet(
-      context,
-      type: 'group',
-      mode: 'create',
-    );
-    if (result != null && mounted) {
-      final provider = context.read<GroupsStore>();
-      final group = await provider.createGroup(
-        name: result.name,
-        emoji: result.emoji,
-      );
-      if (group != null && mounted) {
-        await context.push('/groups/${group.id}');
-      }
-    }
+  void _showCreateGroupSheet() {
+    context.push('/groups/create');
   }
 
   @override

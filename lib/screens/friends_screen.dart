@@ -296,16 +296,18 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                           color: Color(0xFF286BFE)),
                                     ),
                                   ),
-                                  onChanged: (v) {
-                                    // strip @ prefix automatically
-                                    if (v.startsWith('@')) {
-                                      _addCtrl.value = TextEditingValue(
-                                        text: v.substring(1),
-                                        selection: TextSelection.collapsed(
-                                            offset: v.length - 1),
-                                      );
-                                    }
-                                  },
+                                   onChanged: (v) {
+                                     // strip @ prefix automatically
+                                     if (v.startsWith('@')) {
+                                       _addCtrl.value = TextEditingValue(
+                                         text: v.substring(1),
+                                         selection: TextSelection.collapsed(
+                                             offset: v.length - 1),
+                                       );
+                                     }
+                                     // Rebuild so send button color/enabled state updates
+                                     setState(() {});
+                                   },
                                   onSubmitted: (_) => _handleSendRequest(),
                                 ),
                                 const Padding(

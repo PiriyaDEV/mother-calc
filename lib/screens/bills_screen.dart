@@ -6,7 +6,6 @@ import '../models/models.dart';
 import '../stores/bills_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/banner_ad_widget.dart';
-import '../widgets/create_entity_sheet.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/shared_bill_card.dart';
 
@@ -36,25 +35,8 @@ class _BillsScreenState extends State<BillsScreen>
     super.dispose();
   }
 
-  Future<void> _createBill() async {
-    final billsStore = context.read<BillsStore>();
-    final result = await showCreateEntitySheet(
-      context,
-      type: 'bill',
-      mode: 'create',
-    );
-
-    if (result != null && mounted) {
-      final bill = await billsStore.createBill(
-        title: result.name,
-        emoji: result.emoji,
-        tags: result.tags,
-        settings: result.settings ?? const BillSettings(),
-      );
-      if (bill != null && mounted) {
-        await context.push('/bills/${bill.id}');
-      }
-    }
+  void _createBill() {
+    context.push('/bills/create');
   }
 
   @override

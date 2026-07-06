@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
@@ -14,6 +16,9 @@ import '../repositories/bills_repository.dart';
 /// the background, roll back on failure) so every screen watching this
 /// store reflects the change instantly. Creates await the insert first —
 /// there's no existing local copy to update ahead of time.
+///
+/// Realtime subscriptions keep the store in sync when other users make
+/// changes (e.g. a friend creates a bill that includes the current user).
 class BillsStore extends ChangeNotifier {
   final _repo = BillsRepository();
   final _supabase = Supabase.instance.client;
@@ -22,6 +27,15 @@ class BillsStore extends ChangeNotifier {
   bool _loading = false;
   bool _hasLoaded = false;
   String? _error;
+
+  // Realtime channels
+  RealtimeChannel? _billsChannel;
+  RealtimeChannel? _membersChannel;
+  RealtimeChannel? _itemsChannel;
+
+  // Debounce timers to avoid hammering DB on rapid changes
+  Timer? _reloadAllDebounce;
+  final Map<String, Timer> _reloadBillDebounce = {};
 
   bool get loading => _loading;
   bool get hasLoaded => _hasLoaded;
@@ -481,6 +495,124 @@ class BillsStore extends ChangeNotifier {
     _byId = {};
     _hasLoaded = false;
     _error = null;
+    _unsubscribeRealtime();
     notifyListeners();
+  }
+
+  // ── Realtime ──────────────────────────────────────────────
+
+  /// Subscribe to Supabase Realtime so changes made by other users
+  /// (e.g. a friend adding the current user to a bill) are reflected
+  /// without requiring a manual refresh.
+  void subscribeRealtime() {
+    _unsubscribeRealtime();
+
+    // bills table — INSERT means a new bill we might be a member of;
+    // UPDATE/DELETE means a bill we already have was changed.
+    _billsChannel = _supabase
+        .channel('bills_store_bills')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'bills',
+          callback: (_) => _scheduleReloadAll(),
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'bills',
+          callback: (payload) {
+            final id = payload.newRecord['id'] as String?;
+            if (id != null) _scheduleReloadBill(id);
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.delete,
+          schema: 'public',
+          table: 'bills',
+          callback: (payload) {
+            final id = payload.oldRecord['id'] as String?;
+            if (id != null) {
+              _byId.remove(id);
+              notifyListeners();
+            }
+          },
+        )
+        .subscribe();
+
+    // bill_members — any change means the parent bill needs re-fetching
+    _membersChannel = _supabase
+        .channel('bills_store_members')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'bill_members',
+          callback: (payload) {
+            final billId = (payload.newRecord['bill_id'] ??
+                payload.oldRecord['bill_id']) as String?;
+            if (billId != null) _scheduleReloadBill(billId);
+          },
+        )
+        .subscribe();
+
+    // bill_items — same as members
+    _itemsChannel = _supabase
+        .channel('bills_store_items')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'bill_items',
+          callback: (payload) {
+            final billId = (payload.newRecord['bill_id'] ??
+                payload.oldRecord['bill_id']) as String?;
+            if (billId != null) _scheduleReloadBill(billId);
+          },
+        )
+        .subscribe();
+  }
+
+  void _unsubscribeRealtime() {
+    _billsChannel?.unsubscribe();
+    _membersChannel?.unsubscribe();
+    _itemsChannel?.unsubscribe();
+    _billsChannel = null;
+    _membersChannel = null;
+    _itemsChannel = null;
+    _reloadAllDebounce?.cancel();
+    for (final t in _reloadBillDebounce.values) {
+      t.cancel();
+    }
+    _reloadBillDebounce.clear();
+  }
+
+  /// Debounced full reload — used when a new bill INSERT arrives (we don't
+  /// know the id yet so we can't do a targeted fetch).
+  void _scheduleReloadAll() {
+    _reloadAllDebounce?.cancel();
+    _reloadAllDebounce = Timer(const Duration(milliseconds: 800), () {
+      loadAll(force: true);
+    });
+  }
+
+  /// Debounced single-bill reload — used for UPDATE/DELETE on bills and
+  /// any change on bill_members / bill_items.
+  void _scheduleReloadBill(String billId) {
+    _reloadBillDebounce[billId]?.cancel();
+    _reloadBillDebounce[billId] =
+        Timer(const Duration(milliseconds: 400), () async {
+      _reloadBillDebounce.remove(billId);
+      try {
+        final bill = await _repo.fetchById(billId);
+        _byId[billId] = bill;
+        notifyListeners();
+      } catch (e) {
+        // Bill may have been deleted or is no longer accessible — remove it
+        if (_byId.containsKey(billId)) {
+          _byId.remove(billId);
+          notifyListeners();
+        }
+        debugPrint('BillsStore._scheduleReloadBill($billId): $e');
+      }
+    });
   }
 }

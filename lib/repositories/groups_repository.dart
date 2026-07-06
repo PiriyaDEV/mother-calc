@@ -35,11 +35,13 @@ class GroupsRepository {
     required String name,
     String? emoji,
     required String ownerId,
+    List<String> tags = const [],
   }) async {
     final data = await _supabase.from('groups').insert({
       'name': name,
       'emoji': emoji,
       'owner_id': ownerId,
+      if (tags.isNotEmpty) 'tags': tags,
     }).select().single();
     return Group.fromJson(data);
   }

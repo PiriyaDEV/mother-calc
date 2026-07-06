@@ -13,7 +13,6 @@ import '../stores/groups_store.dart';
 import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import '../widgets/confirm_dialog.dart';
-import '../widgets/create_entity_sheet.dart';
 import '../widgets/member_avatar.dart';
 import '../widgets/analytics_tab.dart';
 import '../widgets/banner_ad_widget.dart';
@@ -462,34 +461,9 @@ class _BillDetailScreenState extends State<BillDetailScreen>
   }
 
 
-  Future<void> _showEditBillSheet(
-      BuildContext context, Bill bill, BillsStore billProvider) async {
-    final settings = bill.settings;
-    final result = await showCreateEntitySheet(
-      context,
-      type: 'bill',
-      mode: 'edit',
-      initialData: EntityFormResult(
-        name: bill.title,
-        emoji: bill.emoji,
-        description: '',
-        tags: List<String>.from(bill.tags),
-        settings: settings,
-      ),
-      onDelete: () async {
-        await billProvider.deleteBill(bill.id);
-        if (context.mounted) context.pop();
-      },
-    );
-    if (result != null && mounted) {
-      await billProvider.updateBillMeta(
-        bill.id,
-        title: result.name,
-        emoji: result.emoji,
-        tags: result.tags,
-        settings: result.settings,
-      );
-    }
+  void _showEditBillSheet(
+      BuildContext context, Bill bill, BillsStore billProvider) {
+    context.push('/bills/${bill.id}/edit');
   }
 
 }
@@ -1835,43 +1809,11 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  GestureDetector(
-                    onTap: () => setState(() => _paidBy = null),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: _paidBy == null
-                            ? AppColors.primary.withValues(alpha: 0.15)
-                            : (isDark
-                                ? AppColors.surfaceDark
-                                : AppColors.neutral100),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: _paidBy == null
-                              ? AppColors.primary
-                              : Colors.transparent,
-                        ),
-                      ),
-                      child: Text(
-                        'ไม่ระบุ',
-                        style: GoogleFonts.notoSansThai(
-                          fontSize: 13,
-                          color: _paidBy == null
-                              ? AppColors.primary
-                              : (isDark
-                                  ? AppColors.textSecondaryDark
-                                  : AppColors.textSecondaryLight),
-                        ),
-                      ),
-                    ),
-                  ),
                   ...widget.members.map((m) {
                     final selected = _paidBy == m.id;
                     final color = colorFromHex(m.color);
                     return GestureDetector(
-                      onTap: () =>
-                          setState(() => _paidBy = selected ? null : m.id),
+                      onTap: () => setState(() => _paidBy = m.id),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),

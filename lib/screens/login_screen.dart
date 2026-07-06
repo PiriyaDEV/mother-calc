@@ -320,26 +320,26 @@ class _LoginScreenState extends State<LoginScreen>
                         const SizedBox(height: 52),
 
                         // LINE button
-                        _SocialButton(
-                          onTap: _lineLoading || _googleLoading
-                              ? null
-                              : _signInWithLine,
-                          isLoading: _lineLoading,
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF06C755), Color(0xFF00A843)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          icon: Image.asset(
-                            'assets/images/line-logo.png',
-                            width: 22,
-                            height: 22,
-                          ),
-                          label: 'เข้าสู่ระบบด้วย LINE',
-                          labelColor: Colors.white,
-                          shadowColor: const Color(0xFF06C755),
-                        ),
-                        const SizedBox(height: 14),
+                        // _SocialButton(
+                        //   onTap: _lineLoading || _googleLoading
+                        //       ? null
+                        //       : _signInWithLine,
+                        //   isLoading: _lineLoading,
+                        //   gradient: const LinearGradient(
+                        //     colors: [Color(0xFF06C755), Color(0xFF00A843)],
+                        //     begin: Alignment.topLeft,
+                        //     end: Alignment.bottomRight,
+                        //   ),
+                        //   icon: Image.asset(
+                        //     'assets/images/line-logo.png',
+                        //     width: 22,
+                        //     height: 22,
+                        //   ),
+                        //   label: 'เข้าสู่ระบบด้วย LINE',
+                        //   labelColor: Colors.white,
+                        //   shadowColor: const Color(0xFF06C755),
+                        // ),
+                        // const SizedBox(height: 14),
 
                         // Google button — uses our own styled button on all
                         // platforms. On web, tapping calls signInWithGoogle()

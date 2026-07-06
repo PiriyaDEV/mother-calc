@@ -1,0 +1,771 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../models/models.dart';
+import '../stores/bills_store.dart';
+import '../theme/app_theme.dart';
+import '../widgets/confirm_dialog.dart';
+import '../widgets/form_label.dart';
+
+// ── Constants ──────────────────────────────────────────────────
+
+const _kEmojiPresets = [
+  '🍜', '🍕', '🍺', '🎉', '✈️', '🏖️', '🎂', '🛒',
+  '🏠', '💊', '🎮', '🎵', '🚗', '⚽', '📚', '💼',
+  '🌮', '🍣', '🥗', '🍔', '🍦', '☕', '🍷', '🎁',
+  '🏋️', '🎬', '🛫', '🏕️', '🎯', '💰',
+];
+
+const _kDefaultTags = [
+  'อาหาร', 'เที่ยว', 'ปาร์ตี้', 'ช้อปปิ้ง', 'ที่พัก',
+  'เดินทาง', 'บันเทิง', 'สุขภาพ', 'การศึกษา', 'อื่นๆ',
+];
+
+const _kCurrencies = [
+  {'code': 'THB', 'flag': '🇹🇭', 'symbol': '฿',  'label': 'บาท'},
+  {'code': 'USD', 'flag': '🇺🇸', 'symbol': '\$', 'label': 'USD'},
+  {'code': 'EUR', 'flag': '🇪🇺', 'symbol': '€',  'label': 'EUR'},
+  {'code': 'JPY', 'flag': '🇯🇵', 'symbol': '¥',  'label': 'JPY'},
+  {'code': 'SGD', 'flag': '🇸🇬', 'symbol': 'S\$','label': 'SGD'},
+  {'code': 'GBP', 'flag': '🇬🇧', 'symbol': '£',  'label': 'GBP'},
+  {'code': 'CNY', 'flag': '🇨🇳', 'symbol': '¥',  'label': 'CNY'},
+  {'code': 'KRW', 'flag': '🇰🇷', 'symbol': '₩',  'label': 'KRW'},
+];
+
+const _kRoundingOptions = [
+  {'value': 'none',    'label': 'ไม่ปัด'},
+  {'value': 'nearest', 'label': 'ใกล้สุด'},
+  {'value': 'up',      'label': 'ขึ้น'},
+  {'value': 'down',    'label': 'ลง'},
+];
+
+// ── Screen ─────────────────────────────────────────────────────
+
+/// Full-page create/edit bill screen.
+/// Route params (via GoRouter extra):
+///   - mode: 'create' | 'edit'
+///   - billId: required when mode='edit'
+///   - groupId: optional, pre-links bill to a group
+class CreateBillScreen extends StatefulWidget {
+  final String mode;
+  final String? billId;
+  final String? groupId;
+
+  const CreateBillScreen({
+    super.key,
+    this.mode = 'create',
+    this.billId,
+    this.groupId,
+  });
+
+  @override
+  State<CreateBillScreen> createState() => _CreateBillScreenState();
+}
+
+class _CreateBillScreenState extends State<CreateBillScreen> {
+  late TextEditingController _nameCtrl;
+  late TextEditingController _descCtrl;
+  late TextEditingController _tagCtrl;
+  late TextEditingController _vatCtrl;
+  late TextEditingController _serviceCtrl;
+
+  String? _emoji;
+  late List<String> _tags;
+
+  bool _isVat = false;
+  double _vat = 7;
+  bool _isService = false;
+  double _serviceCharge = 10;
+  String _currency = 'THB';
+  String _roundingMode = 'none';
+
+  bool _loading = false;
+  bool _showEmojiPicker = false;
+
+  bool get _isEdit => widget.mode == 'edit';
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController();
+    _descCtrl = TextEditingController();
+    _tagCtrl = TextEditingController();
+    _tags = [];
+    _vatCtrl = TextEditingController(text: '7');
+    _serviceCtrl = TextEditingController(text: '10');
+
+    if (_isEdit && widget.billId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final bill = context.read<BillsStore>().getById(widget.billId!);
+        if (bill != null) {
+          setState(() {
+            _nameCtrl.text = bill.title;
+            _emoji = bill.emoji;
+            _tags = List<String>.from(bill.tags);
+            final s = bill.settings;
+            _isVat = s.isVat;
+            _vat = s.isVat ? s.vat : 7;
+            _isService = s.isService;
+            _serviceCharge = s.isService ? s.serviceCharge : 10;
+            _currency = s.currency;
+            _vatCtrl.text = _vat.toStringAsFixed(0);
+            _serviceCtrl.text = _serviceCharge.toStringAsFixed(0);
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _descCtrl.dispose();
+    _tagCtrl.dispose();
+    _vatCtrl.dispose();
+    _serviceCtrl.dispose();
+    super.dispose();
+  }
+
+  void _toggleTag(String tag) {
+    setState(() {
+      if (_tags.contains(tag)) {
+        _tags.remove(tag);
+      } else {
+        _tags.add(tag);
+      }
+    });
+  }
+
+  void _addCustomTag() {
+    final t = _tagCtrl.text.trim().replaceAll('#', '');
+    if (t.isEmpty || _tags.contains(t)) return;
+    setState(() => _tags.add(t));
+    _tagCtrl.clear();
+  }
+
+  Future<void> _submit() async {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) return;
+    setState(() => _loading = true);
+
+    final vatVal = double.tryParse(_vatCtrl.text) ?? _vat;
+    final svcVal = double.tryParse(_serviceCtrl.text) ?? _serviceCharge;
+    final settings = BillSettings(
+      isVat: _isVat,
+      vat: _isVat ? vatVal : 0,
+      isService: _isService,
+      serviceCharge: _isService ? svcVal : 0,
+      currency: _currency,
+    );
+
+    final billsStore = context.read<BillsStore>();
+
+    try {
+      if (_isEdit && widget.billId != null) {
+        await billsStore.updateBillMeta(
+          widget.billId!,
+          title: name,
+          emoji: _emoji,
+          tags: _tags,
+          settings: settings,
+        );
+        if (mounted) context.pop();
+      } else {
+        final bill = await billsStore.createBill(
+          title: name,
+          emoji: _emoji,
+          tags: _tags,
+          groupId: widget.groupId,
+          settings: settings,
+        );
+        if (bill != null && mounted) {
+          // Replace this page with the bill detail
+          context.pushReplacement('/bills/${bill.id}');
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _deleteBill() async {
+    if (widget.billId == null) return;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'ลบบิลนี้?',
+      description: 'บิลและข้อมูลทั้งหมดจะถูกลบถาวร ไม่สามารถกู้คืนได้',
+      confirmLabel: 'ลบ',
+      danger: true,
+    );
+    if (!confirmed || !mounted) return;
+    setState(() => _loading = true);
+    try {
+      await context.read<BillsStore>().deleteBill(widget.billId!);
+      if (mounted) {
+        // Pop back to bills list
+        while (context.canPop()) {
+          context.pop();
+        }
+        context.go('/bills');
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleText = _isEdit ? 'แก้ไขบิล' : 'สร้างบิลใหม่';
+    final submitLabel = _isEdit ? 'บันทึกบิล' : 'สร้างบิล';
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: isDark
+              ? AppColors.bgDark.withValues(alpha: 0.95)
+              : Colors.white.withValues(alpha: 0.95),
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_rounded),
+            onPressed: () => context.pop(),
+          ),
+          title: Text(
+            titleText,
+            style: GoogleFonts.notoSansThai(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+            ),
+          ),
+          actions: [
+            if (_isEdit)
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded, color: AppColors.red),
+                onPressed: _loading ? null : _deleteBill,
+              ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () {
+            if (_showEmojiPicker) setState(() => _showEmojiPicker = false);
+            FocusScope.of(context).unfocus();
+          },
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 40,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Emoji + Name ──────────────────────────────
+                FormSectionLabel(label: 'ชื่อบิล *'),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () => setState(() => _showEmojiPicker = !_showEmojiPicker),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.bgDark : AppColors.neutral100,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _showEmojiPicker
+                                ? AppColors.primary
+                                : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                            width: _showEmojiPicker ? 2 : 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            _emoji ?? '💸',
+                            style: const TextStyle(fontSize: 22),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: _nameCtrl,
+                        autofocus: !_isEdit,
+                        decoration: const InputDecoration(
+                          hintText: 'เช่น ข้าวเย็น, ปาร์ตี้...',
+                        ),
+                        onSubmitted: (_) => _submit(),
+                      ),
+                    ),
+                  ],
+                ),
+
+                if (_showEmojiPicker) ...[
+                  const SizedBox(height: 8),
+                  _EmojiPickerGrid(
+                    selected: _emoji,
+                    isDark: isDark,
+                    onSelect: (e) => setState(() {
+                      _emoji = e;
+                      _showEmojiPicker = false;
+                    }),
+                    onClear: () => setState(() {
+                      _emoji = null;
+                      _showEmojiPicker = false;
+                    }),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+
+                // ── Description ───────────────────────────────
+                const FormSectionLabel(label: 'คำอธิบาย (ไม่บังคับ)'),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _descCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    hintText: 'คำอธิบายเพิ่มเติม...',
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // ── Tags ──────────────────────────────────────
+                const FormSectionLabel(label: 'แท็ก'),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: _kDefaultTags.map((tag) {
+                    final selected = _tags.contains(tag);
+                    return GestureDetector(
+                      onTap: () => _toggleTag(tag),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? AppColors.primary.withValues(alpha: 0.12)
+                              : (isDark ? AppColors.surfaceDark : AppColors.neutral100),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: selected
+                                ? AppColors.primary.withValues(alpha: 0.4)
+                                : Colors.transparent,
+                          ),
+                        ),
+                        child: Text(
+                          '#$tag',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 12,
+                            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                            color: selected
+                                ? AppColors.primary
+                                : (isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _tagCtrl,
+                        decoration: const InputDecoration(
+                          hintText: 'เพิ่มแท็กเอง...',
+                          prefixText: '#',
+                        ),
+                        onSubmitted: (_) => _addCustomTag(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: _addCustomTag,
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // ── Bill Settings ─────────────────────────────
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Divider(
+                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Text(
+                        'ตั้งค่าบิล',
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 12,
+                          color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Divider(
+                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // VAT + Service
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ToggleCard(
+                        label: 'VAT',
+                        enabled: _isVat,
+                        isDark: isDark,
+                        onToggle: (v) => setState(() => _isVat = v),
+                        child: _isVat
+                            ? Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _vatCtrl,
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                      style: GoogleFonts.notoSansThai(fontSize: 13),
+                                      decoration: const InputDecoration(
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text('%', style: GoogleFonts.notoSansThai(fontSize: 13)),
+                                ],
+                              )
+                            : Text(
+                                'ปิดอยู่',
+                                style: GoogleFonts.notoSansThai(
+                                  fontSize: 12,
+                                  color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _ToggleCard(
+                        label: 'Service',
+                        enabled: _isService,
+                        isDark: isDark,
+                        onToggle: (v) => setState(() => _isService = v),
+                        child: _isService
+                            ? Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _serviceCtrl,
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                      style: GoogleFonts.notoSansThai(fontSize: 13),
+                                      decoration: const InputDecoration(
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text('%', style: GoogleFonts.notoSansThai(fontSize: 13)),
+                                ],
+                              )
+                            : Text(
+                                'ปิดอยู่',
+                                style: GoogleFonts.notoSansThai(
+                                  fontSize: 12,
+                                  color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 14),
+
+                // Currency
+                const FormSectionLabel(label: 'สกุลเงิน'),
+                const SizedBox(height: 8),
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 3.2,
+                  children: _kCurrencies.map((c) {
+                    final selected = _currency == c['code'];
+                    return GestureDetector(
+                      onTap: () => setState(() => _currency = c['code']!),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? AppColors.primary
+                              : (isDark ? AppColors.surfaceDark : AppColors.neutral100),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(c['flag']!, style: const TextStyle(fontSize: 14)),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${c['symbol']} ${c['label']}',
+                              style: GoogleFonts.notoSansThai(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: selected
+                                    ? Colors.white
+                                    : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                              ),
+                            ),
+                            if (selected) ...[
+                              const SizedBox(width: 4),
+                              const Icon(Icons.check_rounded, size: 14, color: Colors.white),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+
+                const SizedBox(height: 14),
+
+                // Rounding
+                const FormSectionLabel(label: 'การปัดเศษ'),
+                const SizedBox(height: 8),
+                Row(
+                  children: _kRoundingOptions.map((r) {
+                    final selected = _roundingMode == r['value'];
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _roundingMode = r['value']!),
+                        child: Container(
+                          margin: EdgeInsets.only(right: r['value'] != 'down' ? 6 : 0),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? AppColors.primary
+                                : (isDark ? AppColors.surfaceDark : AppColors.neutral100),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Center(
+                            child: Text(
+                              r['label']!,
+                              style: GoogleFonts.notoSansThai(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: selected
+                                    ? Colors.white
+                                    : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+
+                const SizedBox(height: 32),
+
+                // ── Submit ────────────────────────────────────
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _nameCtrl,
+                  builder: (_, val, __) {
+                    final canSubmit = val.text.trim().isNotEmpty && !_loading;
+                    return ElevatedButton(
+                      onPressed: canSubmit ? _submit : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.4),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: _loading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : Text(
+                              submitLabel,
+                              style: GoogleFonts.notoSansThai(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Emoji Picker Grid ──────────────────────────────────────────
+
+class _EmojiPickerGrid extends StatelessWidget {
+  final String? selected;
+  final bool isDark;
+  final void Function(String) onSelect;
+  final VoidCallback onClear;
+
+  const _EmojiPickerGrid({
+    required this.selected,
+    required this.isDark,
+    required this.onSelect,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 192),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.bgDark : AppColors.neutral50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(8),
+        child: Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          children: [
+            GestureDetector(
+              onTap: onClear,
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.borderDark : AppColors.neutral100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Center(
+                  child: Text('✕', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                ),
+              ),
+            ),
+            ..._kEmojiPresets.map((e) {
+              final isSelected = selected == e;
+              return GestureDetector(
+                onTap: () => onSelect(e),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: isSelected ? Border.all(color: AppColors.primary, width: 2) : null,
+                  ),
+                  child: Center(child: Text(e, style: const TextStyle(fontSize: 18))),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Toggle Card ────────────────────────────────────────────────
+
+class _ToggleCard extends StatelessWidget {
+  final String label;
+  final bool enabled;
+  final bool isDark;
+  final ValueChanged<bool> onToggle;
+  final Widget child;
+
+  const _ToggleCard({
+    required this.label,
+    required this.enabled,
+    required this.isDark,
+    required this.onToggle,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : AppColors.neutral50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: enabled
+              ? AppColors.primary.withValues(alpha: 0.4)
+              : (isDark ? AppColors.borderDark : AppColors.borderLight),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                ),
+              ),
+              Transform.scale(
+                scale: 0.8,
+                child: Switch(
+                  value: enabled,
+                  onChanged: onToggle,
+                  activeColor: AppColors.primary,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          child,
+        ],
+      ),
+    );
+  }
+}

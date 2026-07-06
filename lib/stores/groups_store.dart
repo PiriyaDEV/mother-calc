@@ -60,15 +60,23 @@ class GroupsStore extends ChangeNotifier {
     }
   }
 
-  Future<Group?> createGroup({required String name, String? emoji}) async {
+  Future<Group?> createGroup({
+    required String name,
+    String? emoji,
+    List<String> tags = const [],
+  }) async {
     final user = _supabase.auth.currentUser;
     if (user == null) return null;
     try {
       // No profile-row guard here — AuthProvider._ensureProfile() is the
       // single source of truth for that, and always runs before the user
       // could reach this call.
-      final group =
-          await _repo.insertGroup(name: name, emoji: emoji, ownerId: user.id);
+      final group = await _repo.insertGroup(
+        name: name,
+        emoji: emoji,
+        ownerId: user.id,
+        tags: tags,
+      );
       await _repo.insertOwnerMembership(group.id, user.id);
       await loadGroups(force: true);
       return group;

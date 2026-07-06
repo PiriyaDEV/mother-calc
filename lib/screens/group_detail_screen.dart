@@ -12,7 +12,6 @@ import '../theme/app_theme.dart';
 import '../utils/bill_utils.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../widgets/shared_bill_card.dart';
-import '../widgets/create_entity_sheet.dart';
 import '../widgets/member_avatar.dart';
 import '../widgets/summary_tab.dart';
 
@@ -200,35 +199,9 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
   }
 
   // ── Edit Group Sheet ─────────────────────────────────────────
-  Future<void> _showEditGroup(
-      BuildContext context, Group group, GroupsStore gp) async {
-    final result = await showCreateEntitySheet(
-      context,
-      type: 'group',
-      mode: 'edit',
-      initialData: EntityFormResult(
-        name: group.name,
-        emoji: group.emoji,
-        description: group.description ?? '',
-        tags: group.tags,
-      ),
-      onDelete: () async {
-        await gp.deleteGroup(group.id);
-        if (context.mounted) context.pop();
-      },
-    );
-
-    if (!mounted) return;
-
-    if (result != null) {
-      await gp.updateGroup(
-        groupId: group.id,
-        name: result.name,
-        emoji: result.emoji,
-        description: result.description,
-        tags: result.tags,
-      );
-    }
+  void _showEditGroup(
+      BuildContext context, Group group, GroupsStore gp) {
+    context.push('/groups/${group.id}/edit');
   }
 
 }
@@ -667,23 +640,8 @@ class _BillsTab extends StatelessWidget {
   }
 
 
-  Future<void> _createBill(BuildContext context) async {
-    final billsStore = context.read<BillsStore>();
-    final result = await showCreateEntitySheet(
-      context,
-      type: 'bill',
-      mode: 'create',
-    );
-    if (result == null) return;
-    final newBill = await billsStore.createBill(
-      groupId: group.id,
-      title: result.name,
-      emoji: result.emoji,
-      tags: result.tags,
-    );
-    if (newBill != null && context.mounted) {
-      await context.push('/bills/${newBill.id}');
-    }
+  void _createBill(BuildContext context) {
+    context.push('/bills/create?groupId=${group.id}');
   }
 }
 

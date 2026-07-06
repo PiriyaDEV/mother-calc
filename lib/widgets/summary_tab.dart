@@ -1281,8 +1281,8 @@ class _DebtCard extends StatelessWidget {
             ),
           ],
 
-          // Paid toggle (isCompleted only)
-          if (bill.isCompleted) ...[
+          // Paid toggle (isCompleted or pending_payment)
+          if (bill.isCompleted || bill.status == 'pending_payment') ...[
             Divider(
                 height: 1,
                 color: isDark ? AppColors.borderDark : AppColors.borderLight),
@@ -1314,7 +1314,7 @@ class _DebtCard extends StatelessWidget {
                   Builder(
                     builder: (ctx) => GestureDetector(
                       onTap: () async {
-                        if (!isPaid && hasPromptPay) {
+                        if (!isPaid) {
                           await _pickSlipAndMarkPaid(
                             ctx,
                             billsStore: billsStore,
@@ -1340,11 +1340,8 @@ class _DebtCard extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (!isPaid && hasPromptPay)
+                            if (!isPaid)
                               const Icon(Icons.upload_rounded,
-                                  size: 14, color: Colors.white),
-                            if (!isPaid && !hasPromptPay)
-                              const Icon(Icons.check_rounded,
                                   size: 14, color: Colors.white),
                             if (isPaid)
                               Icon(
@@ -1356,9 +1353,7 @@ class _DebtCard extends StatelessWidget {
                               ),
                             const SizedBox(width: 4),
                             Text(
-                              isPaid
-                                  ? 'ยกเลิก'
-                                  : (hasPromptPay ? 'อัพโหลดสลิป' : 'จ่ายแล้ว ✓'),
+                              isPaid ? 'ยกเลิก' : 'อัพโหลดสลิป',
                               style: GoogleFonts.notoSansThai(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,

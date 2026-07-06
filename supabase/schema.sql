@@ -254,6 +254,8 @@ returns boolean language sql security definer stable set search_path = public as
 $$;
 
 -- Returns true if the current user can access the given bill.
+-- Checks: owner, group member, or direct bill_member (for personal bills
+-- shared by a friend who added the current user as a member).
 create function public.can_access_bill(p_bill_id uuid)
 returns boolean language sql security definer stable set search_path = public as $$
   select exists (
@@ -262,6 +264,11 @@ returns boolean language sql security definer stable set search_path = public as
       and (
         b.owner_id = auth.uid()
         or (b.group_id is not null and public.is_group_member(b.group_id))
+        or exists (
+          select 1 from public.bill_members bm
+          where bm.bill_id = b.id
+            and bm.user_id = auth.uid()
+        )
       )
   );
 $$;
@@ -385,6 +392,11 @@ create policy "bills_select" on public.bills
   for select using (
     auth.uid() = owner_id
     or (group_id is not null and public.is_group_member(group_id))
+    or exists (
+      select 1 from public.bill_members bm
+      where bm.bill_id = id
+        and bm.user_id = auth.uid()
+    )
   );
 
 create policy "bills_insert" on public.bills

@@ -13,6 +13,8 @@ import 'screens/group_detail_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/create_bill_screen.dart';
+import 'screens/create_group_screen.dart';
 
 // Which stage of the auth/onboarding lifecycle the app is in — gates which
 // top-level route the user is allowed to be on. Not related to a bill's
@@ -122,6 +124,35 @@ class AppRouter {
           path: '/groups/:id',
           builder: (context, state) =>
               GroupDetailScreen(groupId: state.pathParameters['id']!),
+        ),
+        GoRoute(
+          path: '/bills/create',
+          builder: (context, state) {
+            // Support both query param (?groupId=...) and extra map
+            final queryGroupId = state.uri.queryParameters['groupId'];
+            final extra = state.extra as Map<String, dynamic>?;
+            return CreateBillScreen(
+              groupId: queryGroupId ?? extra?['groupId'] as String?,
+            );
+          },
+        ),
+        GoRoute(
+          path: '/bills/:id/edit',
+          builder: (context, state) => CreateBillScreen(
+            mode: 'edit',
+            billId: state.pathParameters['id'],
+          ),
+        ),
+        GoRoute(
+          path: '/groups/create',
+          builder: (context, state) => const CreateGroupScreen(),
+        ),
+        GoRoute(
+          path: '/groups/:id/edit',
+          builder: (context, state) => CreateGroupScreen(
+            mode: 'edit',
+            groupId: state.pathParameters['id'],
+          ),
         ),
         GoRoute(
           path: '/notifications',

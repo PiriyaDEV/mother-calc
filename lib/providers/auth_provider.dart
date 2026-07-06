@@ -201,6 +201,8 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
         await _ensureProfile();
       }
       if (_profile != null) _syncSiblings(_profile!);
+      // Start realtime subscriptions now that we have a valid session.
+      _billsStore?.subscribeRealtime();
       notifyListeners();
       PushNotificationService.saveToken();
     } on PostgrestException catch (e) {
@@ -752,7 +754,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     await _supabase.auth.signOut();
     _profile = null;
     _groupsStore?.clear();
-    _billsStore?.clear();
+    _billsStore?.clear(); // also calls _unsubscribeRealtime internally
     notifyListeners();
   }
 
