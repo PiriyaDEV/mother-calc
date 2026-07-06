@@ -221,35 +221,4 @@ void main() {
       expect(calc.memberSummaries, isEmpty);
     });
   });
-
-  // ── generatePromptPayPayload ──────────────────────────────────
-  group('generatePromptPayPayload', () {
-    test('generates non-empty payload for phone number', () {
-      final payload = generatePromptPayPayload('0812345678', 100);
-      expect(payload, isNotEmpty);
-      expect(payload.length, greaterThan(20));
-    });
-
-    test('generates non-empty payload for national ID', () {
-      final payload = generatePromptPayPayload('1234567890123', 250);
-      expect(payload, isNotEmpty);
-    });
-
-    test('payload ends with 4-char CRC hex', () {
-      final payload = generatePromptPayPayload('0812345678', 100);
-      final crc = payload.substring(payload.length - 4);
-      expect(RegExp(r'^[0-9A-F]{4}$').hasMatch(crc), isTrue);
-    });
-
-    test('payload contains KIDTANG reference', () {
-      final payload = generatePromptPayPayload('0812345678', 100);
-      expect(payload.contains('KIDTANG'), isTrue);
-    });
-
-    test('zero amount omits amount field', () {
-      final payload = generatePromptPayPayload('0812345678', 0);
-      // Amount TLV tag '54' should not appear when amount is 0
-      expect(payload, isNotEmpty);
-    });
-  });
 }

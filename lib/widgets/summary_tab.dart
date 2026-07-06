@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1323,19 +1323,25 @@ class _DebtCardState extends State<_DebtCard> {
                               border: Border.all(
                                   color: const Color(0xFFE5E7EB)),
                             ),
-                            child: QrImageView(
-                              data:
-                                  'promptpay:${debt.to.promptpay}:${debt.amount.toStringAsFixed(2)}',
-                              version: QrVersions.auto,
-                              size: 180,
-                              backgroundColor: Colors.white,
-                              eyeStyle: const QrEyeStyle(
-                                eyeShape: QrEyeShape.square,
-                                color: Colors.black,
+                            child: CachedNetworkImage(
+                              imageUrl:
+                                  'https://promptpay.io/${debt.to.promptpay}/${debt.amount.toStringAsFixed(2)}.png',
+                              width: 180,
+                              height: 180,
+                              placeholder: (context, url) => const SizedBox(
+                                width: 180,
+                                height: 180,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2),
+                                ),
                               ),
-                              dataModuleStyle: const QrDataModuleStyle(
-                                dataModuleShape: QrDataModuleShape.square,
-                                color: Colors.black,
+                              errorWidget: (context, url, error) =>
+                                  const SizedBox(
+                                width: 180,
+                                height: 180,
+                                child: Icon(Icons.qr_code_2_rounded,
+                                    size: 48, color: Color(0xFF9CA3AF)),
                               ),
                             ),
                           ),

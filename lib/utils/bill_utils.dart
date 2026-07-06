@@ -223,6 +223,26 @@ class _NetEntry {
   _NetEntry(this.member, this.amount);
 }
 
+// ── Bills equality check ──────────────────────────────────────
+/// Cheap O(n) signature check used by [didUpdateWidget] caches.
+/// Returns true when the two lists are content-equivalent (same length,
+/// same ids, same item counts, same updatedAt timestamps).
+///
+/// Comparing [updatedAt] fixes the correctness gap where an in-place price
+/// edit that keeps the same item count would otherwise not retrigger a
+/// recompute (the old check only compared id + item count).
+bool billsEqual(List<Bill> a, List<Bill> b) {
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i].id != b[i].id ||
+        a[i].items.length != b[i].items.length ||
+        a[i].updatedAt != b[i].updatedAt) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // ── Username validation ───────────────────────────────────────
 bool isValidUsername(String username) {
   return RegExp(r'^[a-zA-Z0-9_]{3,30}$').hasMatch(username);

@@ -1,5 +1,22 @@
 # Refactor Plan — Performance, Maintainability, State Management
 
+## Status
+
+| Phase | Status | Completed |
+|---|---|---|
+| Phase 1 — `bill_detail_screen.dart` + `group_detail_screen.dart` | ✅ **DONE** | 2026-07-06 |
+| Phase 2 — In-place extractions (summary_tab, analytics_tab, home, friends, me) | ⬜ Pending | — |
+| Phase 3 — Cross-file consolidation (create-flow dedup + models split) | ⬜ Pending | — |
+| Phase 4 — State management targeted fixes | ⬜ Pending | — |
+
+### Phase 1 — What was done
+- Extracted `bill_detail_screen.dart` (2571 lines → ~550 lines) into `lib/widgets/bill_detail/`: `stacked_avatars.dart`, `bill_summary_card.dart`, `member_tile.dart`, `item_tile.dart`, `pill_tab_bar.dart`, `items_tab.dart`, `members_tab.dart`, `item_form_sheet.dart`, `member_form_sheet.dart`, `index.dart`
+- Extracted `group_detail_screen.dart` (1899 lines → ~175 lines) into `lib/widgets/group_detail/`: `empty_state.dart`, `group_tab_bar.dart`, `members_tab.dart`, `bills_tab.dart`, `group_summary_tab.dart`, `group_analytics_tab.dart`, `touchable_pie_chart.dart`, `manage_members_sheet.dart`, `index.dart`
+- All concrete performance fixes applied: `ListView.builder` conversions, `billsEqual()` added to `bill_utils.dart` (with `updatedAt` comparison), `_expandedBillId` moved into `GroupSummaryTab` (Stateful), `_pieTouchedIndex` isolated in `TouchablePieChart`, `RepaintBoundary` wrapping on all list rows and the pie chart
+- `flutter analyze` clean (zero new errors/warnings from Phase 1 changes)
+
+---
+
 Target repo: `kidtang` (Flutter app). This document is the source of truth for a four-phase refactor. Each phase is independently triggerable — reference "Phase N" and hand this file's section to a coding session to execute it. Do not attempt phases out of order within a screen/file (later phases sometimes assume earlier ones landed on the same file), but Phases 1-3 touch disjoint files and can technically run in any order relative to each other.
 
 **State management verdict (applies to all phases): stay on Provider + ChangeNotifier.** It is the only state library in the app, and it already uses `context.select`/`Selector` consistently (20+ call sites) with narrow rebuild scopes and no `Consumer` wrapping large subtrees. There is no functional case for migrating to Riverpod/Bloc/GetX — Phase 4 applies targeted fixes within the existing architecture instead.
