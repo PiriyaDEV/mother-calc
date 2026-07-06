@@ -97,92 +97,84 @@ class _LoginScreenState extends State<LoginScreen>
   // iOS Safari doesn't let a web app trigger "Add to Home Screen" itself —
   // this walks the user through the manual Share-sheet steps instead.
   void _showIosInstallInstructions() {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (sheetContext) {
-        final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
-        return Container(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.borderDark : AppColors.neutral100,
-                    borderRadius: BorderRadius.circular(2),
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceDark : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'บันทึก Kidtang ไปที่หน้าจอหลัก',
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                   ),
                 ),
-              ),
-              Text(
-                'บันทึก Kidtang ไปที่หน้าจอหลัก',
-                style: GoogleFonts.notoSansThai(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                const SizedBox(height: 4),
+                Text(
+                  'เพื่อเปิดแอปได้เร็วขึ้นในครั้งถัดไป เหมือนแอปทั่วไป',
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 13,
+                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'เพื่อเปิดแอปได้เร็วขึ้นในครั้งถัดไป เหมือนแอปทั่วไป',
-                style: GoogleFonts.notoSansThai(
-                  fontSize: 13,
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                const SizedBox(height: 24),
+                _InstallStep(
+                  number: 1,
+                  icon: Icons.ios_share,
+                  text: 'แตะปุ่ม Share ที่แถบด้านล่างของ Safari',
+                  isDark: isDark,
                 ),
-              ),
-              const SizedBox(height: 24),
-              _InstallStep(
-                number: 1,
-                icon: Icons.ios_share,
-                text: 'แตะปุ่ม Share ที่แถบด้านล่างของ Safari',
-                isDark: isDark,
-              ),
-              const SizedBox(height: 16),
-              _InstallStep(
-                number: 2,
-                icon: Icons.add_box_outlined,
-                text: 'เลื่อนลงแล้วเลือก "เพิ่มไปที่หน้าจอโฮม" (Add to Home Screen)',
-                isDark: isDark,
-              ),
-              const SizedBox(height: 16),
-              _InstallStep(
-                number: 3,
-                icon: Icons.check_circle_outline,
-                text: 'แตะ "เพิ่ม" (Add) ที่มุมขวาบน',
-                isDark: isDark,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(sheetContext),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: AppColors.primaryBlue.withValues(alpha: isDark ? 0.16 : 0.08),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 16),
+                _InstallStep(
+                  number: 2,
+                  icon: Icons.add_box_outlined,
+                  text: 'เลื่อนลงแล้วเลือก "เพิ่มไปที่หน้าจอโฮม" (Add to Home Screen)',
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 16),
+                _InstallStep(
+                  number: 3,
+                  icon: Icons.check_circle_outline,
+                  text: 'แตะ "เพิ่ม" (Add) ที่มุมขวาบน',
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: AppColors.primaryBlue.withValues(alpha: isDark ? 0.16 : 0.08),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    'เข้าใจแล้ว',
-                    style: GoogleFonts.notoSansThai(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryBlue,
+                    child: Text(
+                      'เข้าใจแล้ว',
+                      style: GoogleFonts.notoSansThai(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryBlue,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

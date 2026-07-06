@@ -21,62 +21,56 @@ Future<void> _pickSlipAndMarkPaid(
 }) async {
   final isDark = Theme.of(context).brightness == Brightness.dark;
 
-  final source = await showModalBottomSheet<ImageSource>(
+  final source = await showDialog<ImageSource>(
     context: context,
-    backgroundColor: Colors.transparent,
-    builder: (ctx) => Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Center(
-            child: Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
+    barrierDismissible: true,
+    builder: (ctx) => Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'อัพโหลดสลิปการโอน',
+              style: GoogleFonts.notoSansThai(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'อัพโหลดสลิปการโอน',
-            style: GoogleFonts.notoSansThai(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+            const SizedBox(height: 8),
+            Text(
+              'เลือกหลักฐานการโอนเงิน เพื่อยืนยันการชำระ',
+              style: GoogleFonts.notoSansThai(
+                fontSize: 13,
+                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'เลือกหลักฐานการโอนเงิน เพื่อยืนยันการชำระ',
-            style: GoogleFonts.notoSansThai(
-              fontSize: 13,
-              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            const SizedBox(height: 16),
+            ListTile(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              tileColor: isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB),
+              leading: const Icon(Icons.photo_library_outlined, color: AppColors.blue400),
+              title: Text('เลือกจากคลังรูป', style: GoogleFonts.notoSansThai(fontSize: 14)),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          ListTile(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            tileColor: isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB),
-            leading: const Icon(Icons.photo_library_outlined, color: AppColors.blue400),
-            title: Text('เลือกจากคลังรูป', style: GoogleFonts.notoSansThai(fontSize: 14)),
-            onTap: () => Navigator.pop(ctx, ImageSource.gallery),
-          ),
-          const SizedBox(height: 8),
-          ListTile(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            tileColor: isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB),
-            leading: const Icon(Icons.camera_alt_outlined, color: AppColors.blue400),
-            title: Text('ถ่ายภาพ', style: GoogleFonts.notoSansThai(fontSize: 14)),
-            onTap: () => Navigator.pop(ctx, ImageSource.camera),
-          ),
-        ],
+            const SizedBox(height: 8),
+            ListTile(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              tileColor: isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB),
+              leading: const Icon(Icons.camera_alt_outlined, color: AppColors.blue400),
+              title: Text('ถ่ายภาพ', style: GoogleFonts.notoSansThai(fontSize: 14)),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+          ],
+        ),
       ),
     ),
   );

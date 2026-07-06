@@ -681,14 +681,17 @@ class _ItemsTab extends StatelessWidget {
 
   void _showAddItemSheet(
       BuildContext context, Bill bill, BillsStore billsStore) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _ItemFormSheet(
-        bill: bill,
-        billsStore: billsStore,
-        members: bill.members,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: _ItemFormSheet(
+          bill: bill,
+          billsStore: billsStore,
+          members: bill.members,
+        ),
       ),
     );
   }
@@ -839,15 +842,18 @@ class _ItemTile extends StatelessWidget {
   }
 
   void _showEditItemSheet(BuildContext context) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _ItemFormSheet(
-        bill: bill,
-        billsStore: billsStore,
-        members: members,
-        editItem: item,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: _ItemFormSheet(
+          bill: bill,
+          billsStore: billsStore,
+          members: members,
+          editItem: item,
+        ),
       ),
     );
   }
@@ -1078,14 +1084,16 @@ class _MembersTab extends StatelessWidget {
 
   void _showAddMemberSheet(
       BuildContext context, Bill bill, BillsStore billsStore) {
-showModalBottomSheet(
-context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _MemberFormSheet(
-        bill: bill,
-        billsStore: billsStore,
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: _MemberFormSheet(
+          bill: bill,
+          billsStore: billsStore,
+        ),
       ),
     );
   }
@@ -1123,15 +1131,17 @@ class _MemberTile extends StatelessWidget {
     return GestureDetector(
       onTap: readOnly || !member.isExternal
           ? null
-          : () => showModalBottomSheet(
+          : () => showDialog(
                 context: context,
-                isScrollControlled: true,
-                useSafeArea: true,
-                backgroundColor: Colors.transparent,
-                builder: (ctx) => _MemberFormSheet(
-                  bill: bill,
-                  billsStore: billsStore,
-                  editMember: member,
+                barrierDismissible: true,
+                builder: (ctx) => Dialog(
+                  backgroundColor: Colors.transparent,
+                  insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                  child: _MemberFormSheet(
+                    bill: bill,
+                    billsStore: billsStore,
+                    editMember: member,
+                  ),
                 ),
               ),
       child: Container(
@@ -1449,30 +1459,18 @@ class _ItemFormSheetState extends State<_ItemFormSheet> {
     final price = _price;
 
     return Container(
-      padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Handle bar
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
             // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2043,40 +2041,29 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
         return !alreadyAddedExternalNames.contains(m.name);
       }).toList();
 
-      return SizedBox(
-        height: MediaQuery.of(context).size.height * 0.65,
-        child: Container(
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: Center(
-                  child: Container(
-                    width: 40, height: 4,
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
+      return Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Text(
+                'เพิ่มสมาชิก',
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 18, fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: Text(
-                  'เพิ่มสมาชิก',
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 18, fontWeight: FontWeight.bold,
-                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                  ),
-                ),
-              ),
-              Expanded(child: _buildGroupMembersTab(context, isDark, availableGroupMembers)),
-            ],
-          ),
+            ),
+            Flexible(child: _buildGroupMembersTab(context, isDark, availableGroupMembers)),
+          ],
         ),
       );
     }
@@ -2092,73 +2079,62 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
         .map((f) => f.otherProfile(currentUserId)!)
         .toList();
 
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.75,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: Center(
-                child: Container(
-                  width: 40, height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+            child: Text(
+              'เพิ่มสมาชิก',
+              style: GoogleFonts.notoSansThai(
+                fontSize: 18, fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Text(
-                'เพิ่มสมาชิก',
-                style: GoogleFonts.notoSansThai(
-                  fontSize: 18, fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                ),
-              ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(height: 12),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
-                borderRadius: BorderRadius.circular(12),
+            child: TabBar(
+              controller: _tabCtrl,
+              indicator: BoxDecoration(
+                color: isDark ? AppColors.borderDark : Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 1))],
               ),
-              child: TabBar(
-                controller: _tabCtrl,
-                indicator: BoxDecoration(
-                  color: isDark ? AppColors.borderDark : Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 1))],
-                ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                labelColor: AppColors.primary,
-                unselectedLabelColor: isDark ? AppColors.textTertiaryDark : AppColors.neutral600,
-                labelStyle: GoogleFonts.notoSansThai(fontSize: 13, fontWeight: FontWeight.w600),
-                unselectedLabelStyle: GoogleFonts.notoSansThai(fontSize: 13),
-                tabs: const [Tab(text: 'เพื่อน'), Tab(text: 'สร้างเอง')],
-              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              labelColor: AppColors.primary,
+              unselectedLabelColor: isDark ? AppColors.textTertiaryDark : AppColors.neutral600,
+              labelStyle: GoogleFonts.notoSansThai(fontSize: 13, fontWeight: FontWeight.w600),
+              unselectedLabelStyle: GoogleFonts.notoSansThai(fontSize: 13),
+              tabs: const [Tab(text: 'เพื่อน'), Tab(text: 'สร้างเอง')],
             ),
-            const SizedBox(height: 4),
-            Expanded(
-              child: TabBarView(
-                controller: _tabCtrl,
-                children: [
-                  _buildFriendsTab(context, isDark, availableFriends),
-                  _buildCustomForm(context, isDark),
-                ],
-              ),
+          ),
+          const SizedBox(height: 4),
+          Expanded(
+            child: TabBarView(
+              controller: _tabCtrl,
+              children: [
+                _buildFriendsTab(context, isDark, availableFriends),
+                _buildCustomForm(context, isDark),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -2431,35 +2407,19 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
   }
 
   Widget _buildEditForm(BuildContext context, bool isDark) {
-    return AnimatedPadding(
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.easeOut,
-      padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.borderDark
-                      : AppColors.borderLight,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
             Text(
               'แก้ไขสมาชิก',
               style: GoogleFonts.notoSansThai(
@@ -2539,7 +2499,6 @@ class _MemberFormSheetState extends State<_MemberFormSheet>
             ),
           ],
         ),
-      ),
       ),
     );
   }

@@ -323,14 +323,17 @@ class _MembersTab extends StatelessWidget {
   });
 
   void _showManageMembersSheet(BuildContext context) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _ManageMembersSheet(
-        group: group,
-        acceptedMembers: acceptedMembers,
-        isDark: isDark,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: _ManageMembersSheet(
+          group: group,
+          acceptedMembers: acceptedMembers,
+          isDark: isDark,
+        ),
       ),
     );
   }
@@ -1508,85 +1511,72 @@ class _ManageMembersSheetState extends State<_ManageMembersSheet>
         .map((f) => f.otherProfile(currentUserId)!)
         .toList();
 
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.75,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            // Handle bar
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                    borderRadius: BorderRadius.circular(2),
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+            child: Text(
+              'จัดการสมาชิก',
+              style: GoogleFonts.notoSansThai(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Tab bar
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: TabBar(
+              controller: _tabCtrl,
+              indicator: BoxDecoration(
+                color: isDark ? AppColors.borderDark : Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
                   ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Text(
-                'จัดการสมาชิก',
-                style: GoogleFonts.notoSansThai(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Tab bar
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TabBar(
-                controller: _tabCtrl,
-                indicator: BoxDecoration(
-                  color: isDark ? AppColors.borderDark : Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                labelColor: AppColors.primary,
-                unselectedLabelColor: isDark ? AppColors.textTertiaryDark : AppColors.neutral600,
-                labelStyle: GoogleFonts.notoSansThai(fontSize: 13, fontWeight: FontWeight.w600),
-                unselectedLabelStyle: GoogleFonts.notoSansThai(fontSize: 13),
-                tabs: const [Tab(text: 'ชวนเพื่อน'), Tab(text: 'เพิ่มสมาชิกภายนอก')],
-              ),
-            ),
-            const SizedBox(height: 4),
-            Expanded(
-              child: TabBarView(
-                controller: _tabCtrl,
-                children: [
-                  // ── Tab 0: ชวนเพื่อน ──
-                  _buildFriendsTab(isDark, availableFriends),
-                  // ── Tab 1: เพิ่มสมาชิกภายนอก ──
-                  _buildExternalTab(isDark),
                 ],
               ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              labelColor: AppColors.primary,
+              unselectedLabelColor: isDark ? AppColors.textTertiaryDark : AppColors.neutral600,
+              labelStyle: GoogleFonts.notoSansThai(fontSize: 13, fontWeight: FontWeight.w600),
+              unselectedLabelStyle: GoogleFonts.notoSansThai(fontSize: 13),
+              tabs: const [Tab(text: 'ชวนเพื่อน'), Tab(text: 'เพิ่มสมาชิกภายนอก')],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 4),
+          Expanded(
+            child: TabBarView(
+              controller: _tabCtrl,
+              children: [
+                // ── Tab 0: ชวนเพื่อน ──
+                _buildFriendsTab(isDark, availableFriends),
+                // ── Tab 1: เพิ่มสมาชิกภายนอก ──
+                _buildExternalTab(isDark),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

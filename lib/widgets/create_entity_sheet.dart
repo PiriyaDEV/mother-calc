@@ -70,16 +70,18 @@ Future<EntityFormResult?> showCreateEntitySheet(
   EntityFormResult? initialData,
   Future<void> Function()? onDelete,
 }) {
-  return showModalBottomSheet<EntityFormResult>(
+  return showDialog<EntityFormResult>(
     context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => _CreateEntitySheet(
-      type: type,
-      mode: mode,
-      initialData: initialData,
-      onDelete: onDelete,
+    barrierDismissible: true,
+    builder: (_) => Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: _CreateEntitySheet(
+        type: type,
+        mode: mode,
+        initialData: initialData,
+        onDelete: onDelete,
+      ),
     ),
   );
 }
@@ -227,27 +229,18 @@ class _CreateEntitySheetState extends State<_CreateEntitySheet> {
         if (_showEmojiPicker) setState(() => _showEmojiPicker = false);
       },
       child: Container(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
         ),
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Drag handle
-            const SizedBox(height: 12),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
             // Header row
+            const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
               child: Row(
