@@ -115,16 +115,7 @@ class AppRouter {
             ),
           ],
         ),
-        GoRoute(
-          path: '/bills/:id',
-          builder: (context, state) =>
-              BillDetailScreen(billId: state.pathParameters['id']!),
-        ),
-        GoRoute(
-          path: '/groups/:id',
-          builder: (context, state) =>
-              GroupDetailScreen(groupId: state.pathParameters['id']!),
-        ),
+        // ── Create routes MUST come before :id wildcards ──────────
         GoRoute(
           path: '/bills/create',
           builder: (context, state) {
@@ -137,6 +128,16 @@ class AppRouter {
           },
         ),
         GoRoute(
+          path: '/groups/create',
+          builder: (context, state) => const CreateGroupScreen(),
+        ),
+        // ── Wildcard :id routes after static segments ─────────────
+        GoRoute(
+          path: '/bills/:id',
+          builder: (context, state) =>
+              BillDetailScreen(billId: state.pathParameters['id']!),
+        ),
+        GoRoute(
           path: '/bills/:id/edit',
           builder: (context, state) => CreateBillScreen(
             mode: 'edit',
@@ -144,8 +145,9 @@ class AppRouter {
           ),
         ),
         GoRoute(
-          path: '/groups/create',
-          builder: (context, state) => const CreateGroupScreen(),
+          path: '/groups/:id',
+          builder: (context, state) =>
+              GroupDetailScreen(groupId: state.pathParameters['id']!),
         ),
         GoRoute(
           path: '/groups/:id/edit',

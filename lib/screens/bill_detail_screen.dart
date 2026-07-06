@@ -31,6 +31,22 @@ class _BillDetailScreenState extends State<BillDetailScreen>
   late TabController _tabController;
   bool _loading = true;
 
+  // Cache the last bill + its calculation to avoid recomputing on every rebuild.
+  Bill? _lastBill;
+  BillCalculation? _cachedCalc;
+
+  BillCalculation _getCalc(Bill bill) {
+    if (!identical(_lastBill, bill) &&
+        (_lastBill == null ||
+            _lastBill!.items != bill.items ||
+            _lastBill!.members != bill.members ||
+            _lastBill!.settings != bill.settings)) {
+      _lastBill = bill;
+      _cachedCalc = calculateBill(bill);
+    }
+    return _cachedCalc!;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -107,7 +123,7 @@ class _BillDetailScreenState extends State<BillDetailScreen>
       );
     }
 
-    final calc = calculateBill(bill);
+    final calc = _getCalc(bill);
 
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
     final isOwner = bill.ownerId == currentUserId;

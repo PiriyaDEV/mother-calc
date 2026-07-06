@@ -28,6 +28,13 @@ class BillsStore extends ChangeNotifier {
   bool _hasLoaded = false;
   String? _error;
 
+  // ── Cached computed lists — invalidated whenever _byId changes ──────
+  List<Bill>? _cachedAll;
+  List<Bill>? _cachedActive;
+  List<Bill>? _cachedPendingPayment;
+  List<Bill>? _cachedCompleted;
+  List<Bill>? _cachedPersonal;
+
   // Realtime channels
   RealtimeChannel? _billsChannel;
   RealtimeChannel? _membersChannel;
@@ -41,16 +48,34 @@ class BillsStore extends ChangeNotifier {
   bool get hasLoaded => _hasLoaded;
   String? get error => _error;
 
-  List<Bill> get all => _byId.values.toList();
+  /// Invalidate all cached lists. Must be called whenever _byId is mutated.
+  void _invalidateCache() {
+    _cachedAll = null;
+    _cachedActive = null;
+    _cachedPendingPayment = null;
+    _cachedCompleted = null;
+    _cachedPersonal = null;
+  }
+
+  List<Bill> get all => _cachedAll ??= _byId.values.toList();
   Bill? getById(String id) => _byId[id];
   List<Bill> forGroup(String groupId) =>
       all.where((b) => b.groupId == groupId).toList();
-  List<Bill> get personalBills => all.where((b) => b.groupId == null).toList();
-  List<Bill> get activeBills => all.where((b) => b.status == 'draft').toList();
+  List<Bill> get personalBills =>
+      _cachedPersonal ??= all.where((b) => b.groupId == null).toList();
+  List<Bill> get activeBills =>
+      _cachedActive ??= all.where((b) => b.status == 'draft').toList();
   List<Bill> get pendingPaymentBills =>
-      all.where((b) => b.status == 'pending_payment').toList();
+      _cachedPendingPayment ??=
+          all.where((b) => b.status == 'pending_payment').toList();
   List<Bill> get completedBills =>
-      all.where((b) => b.status == 'completed').toList();
+      _cachedCompleted ??= all.where((b) => b.status == 'completed').toList();
+
+  /// Notify listeners and invalidate caches in one call.
+  void _notifyAndInvalidate() {
+    _invalidateCache();
+    notifyListeners();
+  }
 
   Future<void> loadAll({bool force = false}) async {
     if (_hasLoaded && !force) return;
@@ -67,7 +92,7 @@ class BillsStore extends ChangeNotifier {
       debugPrint('BillsStore.loadAll: $e');
     } finally {
       _loading = false;
-      notifyListeners();
+      _notifyAndInvalidate();
     }
   }
 
@@ -80,7 +105,7 @@ class BillsStore extends ChangeNotifier {
       for (final b in bills) {
         _byId[b.id] = b;
       }
-      notifyListeners();
+      _notifyAndInvalidate();
     } catch (e) {
       debugPrint('BillsStore.loadForGroup: $e');
     }
@@ -94,7 +119,7 @@ class BillsStore extends ChangeNotifier {
     try {
       final bill = await _repo.fetchById(billId);
       _byId[billId] = bill;
-      notifyListeners();
+      _notifyAndInvalidate();
       return bill;
     } catch (e) {
       debugPrint('BillsStore.ensureLoaded: $e');
@@ -121,7 +146,7 @@ class BillsStore extends ChangeNotifier {
         settings: settings,
       );
       _byId[bill.id] = bill;
-      notifyListeners();
+      _notifyAndInvalidate();
       return bill;
     } catch (e) {
       debugPrint('BillsStore.createBill: $e');
@@ -133,12 +158,12 @@ class BillsStore extends ChangeNotifier {
     final prev = _byId[billId];
     if (prev == null) return;
     _byId.remove(billId);
-    notifyListeners();
+    _notifyAndInvalidate();
     try {
       await _repo.deleteBill(billId);
     } catch (e) {
       _byId[billId] = prev;
-      notifyListeners();
+      _notifyAndInvalidate();
       debugPrint('BillsStore.deleteBill: $e');
       rethrow;
     }
@@ -159,7 +184,7 @@ class BillsStore extends ChangeNotifier {
       tags: tags ?? prev.tags,
       settings: settings ?? prev.settings,
     );
-    notifyListeners();
+    _notifyAndInvalidate();
     try {
       await _repo.updateBill(billId, {
         if (title != null) 'title': title,
@@ -170,7 +195,7 @@ class BillsStore extends ChangeNotifier {
       });
     } catch (e) {
       _byId[billId] = prev;
-      notifyListeners();
+      _notifyAndInvalidate();
       debugPrint('BillsStore.updateBillMeta: $e');
       rethrow;
     }
@@ -180,7 +205,7 @@ class BillsStore extends ChangeNotifier {
     final prev = _byId[billId];
     if (prev == null) return;
     _byId[billId] = prev.copyWith(status: status);
-    notifyListeners();
+    _notifyAndInvalidate();
     try {
       await _repo.updateBill(billId, {
         'status': status,
@@ -188,7 +213,7 @@ class BillsStore extends ChangeNotifier {
       });
     } catch (e) {
       _byId[billId] = prev;
-      notifyListeners();
+      _notifyAndInvalidate();
       debugPrint('BillsStore._updateStatus: $e');
       rethrow;
     }
@@ -206,12 +231,12 @@ class BillsStore extends ChangeNotifier {
         ? prev.paidMemberIds.where((id) => id != memberId).toList()
         : [...prev.paidMemberIds, memberId];
     _byId[billId] = prev.copyWith(paidMemberIds: newIds);
-    notifyListeners();
+    _notifyAndInvalidate();
     try {
       await _repo.updateBill(billId, {'paid_member_ids': newIds});
     } catch (e) {
       _byId[billId] = prev;
-      notifyListeners();
+      _notifyAndInvalidate();
       debugPrint('BillsStore.toggleMemberPaid: $e');
       rethrow;
     }
@@ -260,7 +285,7 @@ class BillsStore extends ChangeNotifier {
       final current = _byId[billId];
       if (current == null) return;
       _byId[billId] = current.copyWith(members: [...current.members, member]);
-      notifyListeners();
+      _notifyAndInvalidate();
     } catch (e) {
       debugPrint('BillsStore.autoAddCurrentUser: $e');
     }
@@ -295,7 +320,7 @@ class BillsStore extends ChangeNotifier {
       final current = _byId[billId];
       if (current == null) return;
       _byId[billId] = current.copyWith(members: [...current.members, member]);
-      notifyListeners();
+      _notifyAndInvalidate();
     } catch (e) {
       debugPrint('BillsStore.addMemberFromGroupMember: $e');
       rethrow;
@@ -322,7 +347,7 @@ class BillsStore extends ChangeNotifier {
       final current = _byId[billId];
       if (current == null) return;
       _byId[billId] = current.copyWith(members: [...current.members, member]);
-      notifyListeners();
+      _notifyAndInvalidate();
     } catch (e) {
       debugPrint('BillsStore.addMember: $e');
       rethrow;
@@ -354,12 +379,12 @@ class BillsStore extends ChangeNotifier {
       return m;
     }).toList();
     _byId[billId] = prev.copyWith(members: newMembers);
-    notifyListeners();
+    _notifyAndInvalidate();
     try {
       await _repo.updateMember(memberId, updates);
     } catch (e) {
       _byId[billId] = prev;
-      notifyListeners();
+      _notifyAndInvalidate();
       debugPrint('BillsStore.editMember: $e');
       rethrow;
     }
@@ -381,12 +406,12 @@ class BillsStore extends ChangeNotifier {
       );
     }).toList();
     _byId[billId] = prev.copyWith(members: newMembers, items: newItems);
-    notifyListeners();
+    _notifyAndInvalidate();
     try {
       await _repo.deleteMember(memberId);
     } catch (e) {
       _byId[billId] = prev;
-      notifyListeners();
+      _notifyAndInvalidate();
       debugPrint('BillsStore.deleteMember: $e');
       rethrow;
     }
@@ -416,7 +441,7 @@ class BillsStore extends ChangeNotifier {
       final current = _byId[billId];
       if (current == null) return;
       _byId[billId] = current.copyWith(items: [...current.items, item]);
-      notifyListeners();
+      _notifyAndInvalidate();
     } catch (e) {
       debugPrint('BillsStore.addItem: $e');
       rethrow;
@@ -464,12 +489,12 @@ class BillsStore extends ChangeNotifier {
       return item;
     }).toList();
     _byId[billId] = prev.copyWith(items: newItems);
-    notifyListeners();
+    _notifyAndInvalidate();
     try {
       await _repo.updateItem(itemId, updates);
     } catch (e) {
       _byId[billId] = prev;
-      notifyListeners();
+      _notifyAndInvalidate();
       debugPrint('BillsStore.editItem: $e');
       rethrow;
     }
@@ -480,12 +505,12 @@ class BillsStore extends ChangeNotifier {
     if (prev == null) return;
     final newItems = prev.items.where((item) => item.id != itemId).toList();
     _byId[billId] = prev.copyWith(items: newItems);
-    notifyListeners();
+    _notifyAndInvalidate();
     try {
       await _repo.deleteItem(itemId);
     } catch (e) {
       _byId[billId] = prev;
-      notifyListeners();
+      _notifyAndInvalidate();
       debugPrint('BillsStore.deleteItem: $e');
       rethrow;
     }
@@ -496,7 +521,7 @@ class BillsStore extends ChangeNotifier {
     _hasLoaded = false;
     _error = null;
     _unsubscribeRealtime();
-    notifyListeners();
+    _notifyAndInvalidate();
   }
 
   // ── Realtime ──────────────────────────────────────────────
@@ -534,7 +559,7 @@ class BillsStore extends ChangeNotifier {
             final id = payload.oldRecord['id'] as String?;
             if (id != null) {
               _byId.remove(id);
-              notifyListeners();
+              _notifyAndInvalidate();
             }
           },
         )
@@ -604,12 +629,12 @@ class BillsStore extends ChangeNotifier {
       try {
         final bill = await _repo.fetchById(billId);
         _byId[billId] = bill;
-        notifyListeners();
+        _notifyAndInvalidate();
       } catch (e) {
         // Bill may have been deleted or is no longer accessible — remove it
         if (_byId.containsKey(billId)) {
           _byId.remove(billId);
-          notifyListeners();
+          _notifyAndInvalidate();
         }
         debugPrint('BillsStore._scheduleReloadBill($billId): $e');
       }

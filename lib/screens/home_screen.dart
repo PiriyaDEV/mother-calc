@@ -98,46 +98,40 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  List<Bill> get _allBills => context.watch<BillsStore>().all;
-  List<Group> get _groups => context.watch<GroupsStore>().groups;
-  bool get _dataLoading {
-    final bills = context.watch<BillsStore>();
-    final groups = context.watch<GroupsStore>();
-    return (bills.loading && !bills.hasLoaded) ||
-        (groups.loading && !groups.hasLoaded);
-  }
-
-  double get _grandTotal =>
-      _allBills.fold(0, (s, b) => s + _billTotal(b));
-
-  int get _totalItems =>
-      _allBills.fold(0, (s, b) => s + b.items.length);
-
   double _billTotal(Bill b) =>
       b.items.fold(0.0, (s, i) => s + i.price);
-
-  List<Bill> get _recentBills {
-    final sorted = [..._allBills]
-      ..sort((a, b) {
-        final aTime = a.updatedAt ?? DateTime(0);
-        final bTime = b.updatedAt ?? DateTime(0);
-        return bTime.compareTo(aTime);
-      });
-    return sorted.take(3).toList();
-  }
-
-  Bill? get _biggestBill {
-    if (_allBills.isEmpty) return null;
-    return [..._allBills]
-        .reduce((a, b) => _billTotal(a) >= _billTotal(b) ? a : b);
-  }
 
   String _formatBaht(double n) => formatNumber(n);
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Watch each store once — avoids triple-watch that caused 3× rebuilds.
+    final billsStore = context.watch<BillsStore>();
+    final groupsStore = context.watch<GroupsStore>();
     final profile = context.watch<AuthProvider>().profile;
+
+    final allBills = billsStore.all;
+    final groups = groupsStore.groups;
+    final dataLoading = (billsStore.loading && !billsStore.hasLoaded) ||
+        (groupsStore.loading && !groupsStore.hasLoaded);
+
+    // Derived values computed once per build, not on every getter call.
+    final grandTotal = allBills.fold<double>(0, (s, b) => s + _billTotal(b));
+    final totalItems = allBills.fold<int>(0, (s, b) => s + b.items.length);
+    final recentBills = ([...allBills]
+          ..sort((a, b) {
+            final aTime = a.updatedAt ?? DateTime(0);
+            final bTime = b.updatedAt ?? DateTime(0);
+            return bTime.compareTo(aTime);
+          }))
+        .take(3)
+        .toList();
+    final biggestBill = allBills.isEmpty
+        ? null
+        : [...allBills]
+            .reduce((a, b) => _billTotal(a) >= _billTotal(b) ? a : b);
     final user = _supabase.auth.currentUser;
     final displayName = profile?.displayName ??
         profile?.username ??
@@ -215,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 : AppColors.neutral600,
                           ),
                         ),
-                      ],
+                      ], 
                     ),
                   ),
                 ),
@@ -281,7 +275,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              if (_dataLoading)
+                              if (dataLoading)
                                 const SizedBox(
                                   width: 24,
                                   height: 24,
@@ -290,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 )
                               else
                                 Text(
-                                  '฿${_formatBaht(_grandTotal)}',
+                                  '฿${_formatBaht(grandTotal)}',
                                   style: GoogleFonts.anuphan(
                                     fontSize: 38,
                                     fontWeight: FontWeight.w700,
@@ -301,21 +295,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               const SizedBox(height: 20),
                               // Stats pills row
-                              if (!_dataLoading)
+                              if (!dataLoading)
                                 Row(
                                   children: [
                                     _HeroPill(
-                                      label: '${_groups.length} กลุ่ม',
+                                      label: '${groups.length} กลุ่ม',
                                       icon: Icons.people_rounded,
                                     ),
                                     const SizedBox(width: 8),
                                     _HeroPill(
-                                      label: '${_allBills.length} บิล',
+                                      label: '${allBills.length} บิล',
                                       icon: Icons.receipt_rounded,
                                     ),
                                     const SizedBox(width: 8),
                                     _HeroPill(
-                                      label: '$_totalItems รายการ',
+                                      label: '$totalItems รายการ',
                                       icon: Icons.list_rounded,
                                     ),
                                   ],
@@ -502,7 +496,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 // ── Stats / loading ──────────────────────────────
-                if (_dataLoading)
+                if (dataLoading)
                   const SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.symmetric(vertical: 40),
@@ -516,7 +510,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   )
                 else ...[
                   // Stats cards
-                  if (_allBills.isNotEmpty) ...[
+                  if (allBills.isNotEmpty) ...[
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
@@ -546,7 +540,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           _StatCard(
                             icon: Icons.trending_up_rounded,
                             label: 'เฉลี่ยต่อบิล',
-                            value: '฿${_formatBaht(_allBills.isEmpty ? 0 : _grandTotal / _allBills.length)}',
+                            value: '฿${_formatBaht(allBills.isEmpty ? 0 : grandTotal / allBills.length)}',
                             accentColor: AppColors.primaryBlue,
                             bgColor: isDark
                                 ? AppColors.accentIceDark
@@ -555,7 +549,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           _StatCard(
                             icon: Icons.receipt_long_rounded,
                             label: 'บิลทั้งหมด',
-                            value: '${_allBills.length} บิล',
+                            value: '${allBills.length} บิล',
                             accentColor: const Color(0xFF7B5CF6),
                             bgColor: isDark
                                 ? const Color(0xFF1E1A3A)
@@ -564,7 +558,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           _StatCard(
                             icon: Icons.format_list_bulleted_rounded,
                             label: 'รายการทั้งหมด',
-                            value: '$_totalItems รายการ',
+                            value: '$totalItems รายการ',
                             accentColor: AppColors.amber,
                             bgColor: isDark
                                 ? AppColors.amber.withValues(alpha: 0.12)
@@ -573,8 +567,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           _StatCard(
                             icon: Icons.star_rounded,
                             label: 'บิลใหญ่สุด',
-                            value: _biggestBill != null
-                                ? '฿${_formatBaht(_billTotal(_biggestBill!))}'
+                            value: biggestBill != null
+                                ? '฿${_formatBaht(_billTotal(biggestBill))}'
                                 : '—',
                             accentColor: AppColors.emerald,
                             bgColor: isDark
@@ -587,7 +581,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
 
                   // Recent bills
-                  if (_recentBills.isNotEmpty) ...[
+                  if (recentBills.isNotEmpty) ...[
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
@@ -638,7 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
-                            final bill = _recentBills[index];
+                            final bill = recentBills[index];
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 10),
                               child: SharedBillCard(
@@ -647,14 +641,14 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             );
                           },
-                          childCount: _recentBills.length,
+                          childCount: recentBills.length,
                         ),
                       ),
                     ),
                   ],
 
                   // Empty state
-                  if (_allBills.isEmpty)
+                  if (allBills.isEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),

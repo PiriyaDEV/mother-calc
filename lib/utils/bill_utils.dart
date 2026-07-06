@@ -4,14 +4,15 @@ import '../models/models.dart';
 import '../theme/app_theme.dart';
 
 // ── Number formatting ─────────────────────────────────────────
+// Static cached formatters — NumberFormat is expensive to construct.
+final _fmtWhole = NumberFormat('#,##0', 'en_US');
+final _fmtDecimal = NumberFormat('#,##0.##', 'en_US');
+
 String formatNumber(double value, {int decimals = 2}) {
   if (value == value.truncateToDouble()) {
-    // Whole number
-    final formatter = NumberFormat('#,##0', 'en_US');
-    return formatter.format(value);
+    return _fmtWhole.format(value);
   }
-  final formatter = NumberFormat('#,##0.##', 'en_US');
-  return formatter.format(value);
+  return _fmtDecimal.format(value);
 }
 
 String formatCurrency(double value, String currency) {
@@ -28,16 +29,21 @@ String getTotalEmoji(double total) {
 }
 
 // ── Color from hex string ─────────────────────────────────────
+// Memoize parsed colors — hex strings repeat constantly across members/items.
+final _colorCache = <String, Color>{};
+
 Color colorFromHex(String hex) {
-  try {
-    final h = hex.replaceAll('#', '');
-    if (h.length == 6) {
-      return Color(int.parse('FF$h', radix: 16));
-    } else if (h.length == 8) {
-      return Color(int.parse(h, radix: 16));
-    }
-  } catch (_) {}
-  return AppColors.primary;
+  return _colorCache.putIfAbsent(hex, () {
+    try {
+      final h = hex.replaceAll('#', '');
+      if (h.length == 6) {
+        return Color(int.parse('FF$h', radix: 16));
+      } else if (h.length == 8) {
+        return Color(int.parse(h, radix: 16));
+      }
+    } catch (_) {}
+    return AppColors.primary;
+  });
 }
 
 String hexFromColor(Color color) {
