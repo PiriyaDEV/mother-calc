@@ -8,16 +8,22 @@ class NotificationsProvider extends ChangeNotifier {
 
   List<AppNotification> _notifications = [];
   bool _loading = false;
+  bool _hasLoaded = false;
   String? _error;
 
   List<AppNotification> get notifications => _notifications;
   bool get loading => _loading;
+  bool get hasLoaded => _hasLoaded;
   String? get error => _error;
   int get unreadCount => _notifications.where((n) => !n.read).length;
 
-  Future<void> loadNotifications() async {
+  Future<void> loadNotifications({bool force = false}) async {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
+    // Guard: skip if already loaded and not forced — prevents the
+    // post-login burst where multiple widgets call loadNotifications()
+    // simultaneously and each fires a separate DB round-trip.
+    if (_hasLoaded && !force) return;
     _loading = true;
     _error = null;
     notifyListeners();
@@ -32,6 +38,7 @@ class NotificationsProvider extends ChangeNotifier {
       _notifications = (data as List)
           .map((e) => AppNotification.fromJson(e as Map<String, dynamic>))
           .toList();
+      _hasLoaded = true;
     } catch (e) {
       _error = 'ไม่สามารถโหลดการแจ้งเตือนได้';
       debugPrint('Error loading notifications: $e');
@@ -172,6 +179,7 @@ class NotificationsProvider extends ChangeNotifier {
       _channel = null;
     }
     _notifications = [];
+    _hasLoaded = false;
     _error = null;
     notifyListeners();
   }

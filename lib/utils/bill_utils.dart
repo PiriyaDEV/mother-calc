@@ -223,50 +223,6 @@ class _NetEntry {
   _NetEntry(this.member, this.amount);
 }
 
-// ── PromptPay QR payload ──────────────────────────────────────
-String generatePromptPayPayload(String target, double amount) {
-  final cleaned = target.replaceAll('-', '');
-  final isPhone = RegExp(r'^0\d{9}$').hasMatch(cleaned);
-  final isNationalId = RegExp(r'^\d{13}$').hasMatch(cleaned);
-
-  String targetFormatted = cleaned;
-  String targetTag = '01';
-
-  if (isNationalId) {
-    targetTag = '02';
-  } else if (isPhone) {
-    targetFormatted = '66${cleaned.substring(1)}';
-  }
-
-  final amountStr = amount.toStringAsFixed(2);
-
-  String tlv(String tag, String value) {
-    final len = value.length.toString().padLeft(2, '0');
-    return '$tag$len$value';
-  }
-
-  final merchantInfo =
-      tlv('00', '01') + tlv('01', 'A000000677010111') + tlv(targetTag, targetFormatted);
-
-  String payload = tlv('00', '01') +
-      tlv('01', '12') +
-      tlv('29', merchantInfo) +
-      tlv('53', '764') +
-      (amount > 0 ? tlv('54', amountStr) : '') +
-      tlv('58', 'TH') +
-      tlv('62', tlv('07', 'KIDTANG'));
-
-  final withCrc = '${payload}6304';
-  int crc = 0xFFFF;
-  for (int i = 0; i < withCrc.length; i++) {
-    crc = (crc ^ (withCrc.codeUnitAt(i) << 8)) & 0xFFFF;
-    for (int j = 0; j < 8; j++) {
-      crc = ((crc & 0x8000) != 0 ? (crc << 1) ^ 0x1021 : crc << 1) & 0xFFFF;
-    }
-  }
-  return '$withCrc${crc.toRadixString(16).toUpperCase().padLeft(4, '0')}';
-}
-
 // ── Username validation ───────────────────────────────────────
 bool isValidUsername(String username) {
   return RegExp(r'^[a-zA-Z0-9_]{3,30}$').hasMatch(username);

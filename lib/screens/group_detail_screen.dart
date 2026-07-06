@@ -54,7 +54,12 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final gp = context.watch<GroupsStore>();
     final group = gp.getById(widget.groupId);
-    final bills = context.watch<BillsStore>().forGroup(widget.groupId);
+    // Use context.select so only mutations to THIS group's bills trigger a
+    // rebuild of this 1800-line screen (combined with Issue 3 caching,
+    // forGroup() now returns a stable list identity unless the group changed).
+    final bills = context.select<BillsStore, List<Bill>>(
+      (s) => s.forGroup(widget.groupId),
+    );
 
     if (gp.isDetailLoading(widget.groupId)) {
       return Container(
@@ -541,104 +546,117 @@ class _BillsTab extends StatelessWidget {
     required this.gp,
   });
 
+  // Layout: index 0 is the "สร้างบิลใหม่" button + empty state (if no
+  // bills), indices 1..N are the bill rows — built lazily via
+  // ListView.builder so an unbounded bills list doesn't build off-screen
+  // rows up front.
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    return ListView.builder(
       padding: const EdgeInsets.all(AppSpacing.lg),
-      children: [
-        // ── สร้างบิลใหม่ button ──
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () => _createBill(context),
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: Text(
-              'สร้างบิลใหม่',
-              style: GoogleFonts.notoSansThai(
-                  fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-
-        // ── Empty State ──
-        if (bills.isEmpty)
-          GestureDetector(
-            onTap: () => _createBill(context),
-            child: Container(
-              padding: const EdgeInsets.all(AppSpacing.xl),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : Colors.white,
-                borderRadius: BorderRadius.circular(AppRadii.lg),
-                border: Border.all(
-                  color: isDark
-                      ? AppColors.borderDark
-                      : const Color(0xFFE5E7EB),
-                  style: BorderStyle.solid,
+      itemCount: 1 + bills.length,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _createBill(context),
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: Text(
+                    'สร้างบิลใหม่',
+                    style: GoogleFonts.notoSansThai(
+                        fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
+              const SizedBox(height: AppSpacing.lg),
+
+              // ── Empty State ──
+              if (bills.isEmpty)
+                GestureDetector(
+                  onTap: () => _createBill(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppSpacing.xl),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(AppRadii.md),
+                      color: isDark ? AppColors.surfaceDark : Colors.white,
+                      borderRadius: BorderRadius.circular(AppRadii.lg),
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.borderDark
+                            : const Color(0xFFE5E7EB),
+                        style: BorderStyle.solid,
+                      ),
                     ),
-                    child: const Icon(Icons.receipt_outlined,
-                        color: AppColors.primary, size: 20),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          'สร้างบิลแรกของกลุ่ม',
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.textPrimaryLight,
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(AppRadii.md),
+                          ),
+                          child: const Icon(Icons.receipt_outlined,
+                              color: AppColors.primary, size: 20),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'สร้างบิลแรกของกลุ่ม',
+                                style: GoogleFonts.notoSansThai(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? AppColors.textPrimaryDark
+                                      : AppColors.textPrimaryLight,
+                                ),
+                              ),
+                              Text(
+                                'แตะเพื่อเริ่มหารค่าใช้จ่าย',
+                                style: GoogleFonts.notoSansThai(
+                                  fontSize: 12,
+                                  color: isDark
+                                      ? AppColors.textTertiaryDark
+                                      : AppColors.textTertiaryLight,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        Text(
-                          'แตะเพื่อเริ่มหารค่าใช้จ่าย',
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 12,
-                            color: isDark
-                                ? AppColors.textTertiaryDark
-                                : AppColors.textTertiaryLight,
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(AppRadii.sm)),
                           ),
+                          child: const Icon(Icons.add_rounded,
+                              color: Colors.white, size: 18),
                         ),
                       ],
                     ),
                   ),
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.all(Radius.circular(AppRadii.sm)),
-                    ),
-                    child: const Icon(Icons.add_rounded,
-                        color: Colors.white, size: 18),
-                  ),
-                ],
-              ),
-            ),
-          )
-        else
-          ...bills.map((bill) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: SharedBillCard(
-                  bill: bill,
-                  onTap: () => context.push('/bills/${bill.id}'),
                 ),
-              )),
-      ],
+            ],
+          );
+        }
+
+        final bill = bills[index - 1];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: SharedBillCard(
+            bill: bill,
+            onTap: () => context.push('/bills/${bill.id}'),
+          ),
+        );
+      },
     );
   }
 
@@ -686,171 +704,173 @@ class _GroupSummaryTab extends StatelessWidget {
       (sum, b) => sum + b.items.fold<double>(0, (s, i) => s + i.price),
     );
 
-    return ListView(
+    // Layout: index 0 is the hero card, indices 1..N are the per-bill
+    // collapsible rows — built lazily via ListView.builder so an unbounded
+    // bills list doesn't build off-screen rows up front.
+    return ListView.builder(
       padding: const EdgeInsets.all(AppSpacing.lg),
-      children: [
-        // ── Hero Card ──
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF4366f4), Color(0xFF6b8aff)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(AppRadii.xl),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'ยอดรวมทั้งกลุ่ม',
-                style: GoogleFonts.notoSansThai(
-                  fontSize: 13,
-                  color: Colors.white.withValues(alpha: 0.8),
+      itemCount: 1 + bills.length,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF4366f4), Color(0xFF6b8aff)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
+                borderRadius: BorderRadius.circular(AppRadii.xl),
               ),
-              const SizedBox(height: 6),
-              Text(
-                '${formatNumber(totalAmount)} บาท',
-                style: GoogleFonts.notoSansThai(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${bills.length} บิล',
-                style: GoogleFonts.notoSansThai(
-                  fontSize: 12,
-                  color: Colors.white.withValues(alpha: 0.7),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-
-        // ── Per-Bill Collapsible ──
-        ...bills.map((bill) {
-          final billTotal =
-              bill.items.fold<double>(0, (s, i) => s + i.price);
-          final isExpanded = expandedBillId == bill.id;
-
-          return Container(
-            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceDark : Colors.white,
-              borderRadius: BorderRadius.circular(AppRadii.md),
-              border: Border.all(
-                  color: isDark
-                      ? AppColors.borderDark
-                      : AppColors.borderLight),
-            ),
-            child: Column(
-              children: [
-                // Row header
-                GestureDetector(
-                  onTap: () => onToggle(bill.id),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? const Color(0xFF374151)
-                                : const Color(0xFFF3F4F6),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Center(
-                            child: Text(
-                              bill.emoji ?? '🧾',
-                              style: const TextStyle(fontSize: 18),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                bill.title,
-                                style: GoogleFonts.notoSansThai(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark
-                                      ? AppColors.textPrimaryDark
-                                      : AppColors.textPrimaryLight,
-                                ),
-                              ),
-                              Text(
-                                '${bill.items.length} รายการ · ${bill.members.length} คน',
-                                style: GoogleFonts.notoSansThai(
-                                  fontSize: 12,
-                                  color: isDark
-                                      ? AppColors.textTertiaryDark
-                                      : AppColors.textTertiaryLight,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          '${formatNumber(billTotal)} บาท',
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.textPrimaryLight,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          isExpanded
-                              ? Icons.keyboard_arrow_up_rounded
-                              : Icons.keyboard_arrow_down_rounded,
-                          size: 20,
-                          color: isDark
-                              ? AppColors.textTertiaryDark
-                              : AppColors.textTertiaryLight,
-                        ),
-                      ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'ยอดรวมทั้งกลุ่ม',
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 13,
+                      color: Colors.white.withValues(alpha: 0.8),
                     ),
                   ),
-                ),
-                // Expanded: SummaryTab
-                if (isExpanded) ...[
-                  Divider(
-                    height: 1,
-                    color: isDark
-                        ? AppColors.borderDark
-                        : AppColors.borderLight,
+                  const SizedBox(height: 6),
+                  Text(
+                    '${formatNumber(totalAmount)} บาท',
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                  Builder(
-                    builder: (ctx) {
-                      final calc = calculateBill(bill);
-                      return SizedBox(
-                        height: 500,
-                        child: SummaryTab(
-                          bill: bill,
-                          billsStore: ctx.read<BillsStore>(),
-                          calc: calc,
-                        ),
-                      );
-                    },
+                  const SizedBox(height: 4),
+                  Text(
+                    '${bills.length} บิล',
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
                   ),
                 ],
-              ],
+              ),
             ),
           );
-        }),
-      ],
+        }
+
+        final bill = bills[index - 1];
+        final billTotal = bill.items.fold<double>(0, (s, i) => s + i.price);
+        final isExpanded = expandedBillId == bill.id;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.white,
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            border: Border.all(
+                color:
+                    isDark ? AppColors.borderDark : AppColors.borderLight),
+          ),
+          child: Column(
+            children: [
+              // Row header
+              GestureDetector(
+                onTap: () => onToggle(bill.id),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF374151)
+                              : const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: Text(
+                            bill.emoji ?? '🧾',
+                            style: const TextStyle(fontSize: 18),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              bill.title,
+                              style: GoogleFonts.notoSansThai(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight,
+                              ),
+                            ),
+                            Text(
+                              '${bill.items.length} รายการ · ${bill.members.length} คน',
+                              style: GoogleFonts.notoSansThai(
+                                fontSize: 12,
+                                color: isDark
+                                    ? AppColors.textTertiaryDark
+                                    : AppColors.textTertiaryLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        '${formatNumber(billTotal)} บาท',
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        isExpanded
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.keyboard_arrow_down_rounded,
+                        size: 20,
+                        color: isDark
+                            ? AppColors.textTertiaryDark
+                            : AppColors.textTertiaryLight,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Expanded: SummaryTab
+              if (isExpanded) ...[
+                Divider(
+                  height: 1,
+                  color:
+                      isDark ? AppColors.borderDark : AppColors.borderLight,
+                ),
+                Builder(
+                  builder: (ctx) {
+                    final calc = calculateBill(bill);
+                    return SizedBox(
+                      height: 500,
+                      child: SummaryTab(
+                        bill: bill,
+                        billsStore: ctx.read<BillsStore>(),
+                        calc: calc,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -867,7 +887,13 @@ class _GroupAnalyticsTab extends StatefulWidget {
 }
 
 class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
-  int _pieTouchedIndex = -1;
+  // ── Cached derived data — recomputed only when bills content changes ──
+  late List<BillItem> _allItems;
+  late double _totalAmount;
+  late double _avgPerBill;
+  late int _totalMembers;
+  late List<Bill> _sortedBills;
+  late List<BillItem> _topItems;
 
   static const _chartColors = [
     Color(0xFF4366f4),
@@ -881,10 +907,55 @@ class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    final allItems = widget.bills.expand((b) => b.items).toList();
+  void initState() {
+    super.initState();
+    _recompute();
+  }
 
-    if (allItems.isEmpty) {
+  @override
+  void didUpdateWidget(_GroupAnalyticsTab old) {
+    super.didUpdateWidget(old);
+    // Only recompute when the bills list actually changed (different length
+    // or different bill ids / item counts — cheap O(n) signature check).
+    if (!_billsEqual(old.bills, widget.bills)) {
+      _recompute();
+    }
+  }
+
+  static bool _billsEqual(List<Bill> a, List<Bill> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id || a[i].items.length != b[i].items.length) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void _recompute() {
+    _allItems = widget.bills.expand((b) => b.items).toList();
+    _totalAmount = _allItems.fold<double>(0, (s, i) => s + i.price);
+    _avgPerBill = widget.bills.isNotEmpty ? _totalAmount / widget.bills.length : 0.0;
+    _totalMembers = widget.bills
+        .expand((b) => b.members)
+        .map((m) => m.id)
+        .toSet()
+        .length;
+    _sortedBills = List<Bill>.from(widget.bills)
+      ..sort((a, b) {
+        final at = a.items.fold<double>(0, (s, i) => s + i.price);
+        final bt = b.items.fold<double>(0, (s, i) => s + i.price);
+        return bt.compareTo(at); // descending
+      });
+    _topItems = (List<BillItem>.from(_allItems)
+          ..sort((a, b) => b.price.compareTo(a.price)))
+        .take(5)
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_allItems.isEmpty) {
       return Center(
         child: _EmptyState(
           icon: Icons.analytics_outlined,
@@ -895,40 +966,32 @@ class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
       );
     }
 
-    final totalAmount = allItems.fold<double>(0, (s, i) => s + i.price);
-    final avgPerBill = widget.bills.isNotEmpty ? totalAmount / widget.bills.length : 0.0;
-    final totalMembers = widget.bills.expand((b) => b.members).map((m) => m.id).toSet().length;
-
-    final sortedBills = List<Bill>.from(widget.bills)
-      ..sort((a, b) {
-        final at = b.items.fold<double>(0, (s, i) => s + i.price);
-        final bt = a.items.fold<double>(0, (s, i) => s + i.price);
-        return at.compareTo(bt);
-      });
-
-    final topItems = (List<BillItem>.from(allItems)..sort((a, b) => b.price.compareTo(a.price))).take(5).toList();
-
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         // ── Hero Stats ──
-        _buildHeroStats(totalAmount, allItems.length, avgPerBill, totalMembers),
+        _buildHeroStats(_totalAmount, _allItems.length, _avgPerBill, _totalMembers),
         const SizedBox(height: AppSpacing.lg),
 
         // ── Pie Chart: Bills Distribution ──
         if (widget.bills.length > 1) ...[
-          _buildBillsPieChart(sortedBills, totalAmount),
+          _TouchablePieChart(
+            sortedBills: _sortedBills,
+            totalAmount: _totalAmount,
+            chartColors: _chartColors,
+            isDark: widget.isDark,
+          ),
           const SizedBox(height: AppSpacing.md),
         ],
 
         // ── Bar Chart: Bills Comparison ──
         if (widget.bills.length >= 2) ...[
-          _buildBillsBarChart(sortedBills),
+          _buildBillsBarChart(_sortedBills),
           const SizedBox(height: AppSpacing.md),
         ],
 
         // ── Top Items ──
-        _buildTopItemsCard(topItems, totalAmount),
+        _buildTopItemsCard(_topItems, _totalAmount),
         const SizedBox(height: AppSpacing.xxl),
       ],
     );
@@ -1031,128 +1094,6 @@ class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildBillsPieChart(List<Bill> sortedBills, double totalAmount) {
-    final isDark = widget.isDark;
-    final displayBills = sortedBills.take(8).toList();
-
-    final sections = displayBills.asMap().entries.map((entry) {
-      final i = entry.key;
-      final bill = entry.value;
-      final billTotal = bill.items.fold<double>(0, (s, item) => s + item.price);
-      final pct = totalAmount > 0 ? billTotal / totalAmount * 100 : 0.0;
-      final color = _chartColors[i % _chartColors.length];
-      final isTouched = i == _pieTouchedIndex;
-
-      return PieChartSectionData(
-        color: color,
-        value: billTotal,
-        title: pct >= 10 ? '${pct.toStringAsFixed(0)}%' : '',
-        radius: isTouched ? 90 : 75,
-        titleStyle: GoogleFonts.notoSansThai(
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-        titlePositionPercentageOffset: 0.6,
-      );
-    }).toList();
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
-        boxShadow: isDark ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '🥧 สัดส่วนค่าใช้จ่ายต่อบิล',
-            style: GoogleFonts.notoSansThai(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          SizedBox(
-            height: 200,
-            child: PieChart(
-              PieChartData(
-                pieTouchData: PieTouchData(
-                  touchCallback: (FlTouchEvent event, response) {
-                    setState(() {
-                      if (!event.isInterestedForInteractions || response?.touchedSection == null) {
-                        _pieTouchedIndex = -1;
-                        return;
-                      }
-                      _pieTouchedIndex = response!.touchedSection!.touchedSectionIndex;
-                    });
-                  },
-                ),
-                sections: sections,
-                centerSpaceRadius: 44,
-                sectionsSpace: 2,
-              ),
-              swapAnimationDuration: const Duration(milliseconds: 300),
-              swapAnimationCurve: Curves.easeInOut,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          // Legend
-          ...displayBills.asMap().entries.map((entry) {
-            final i = entry.key;
-            final bill = entry.value;
-            final billTotal = bill.items.fold<double>(0, (s, item) => s + item.price);
-            final pct = totalAmount > 0 ? (billTotal / totalAmount * 100).toStringAsFixed(1) : '0';
-            final color = _chartColors[i % _chartColors.length];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3)),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '${bill.emoji ?? '🧾'} ${bill.title}',
-                      style: GoogleFonts.notoSansThai(
-                        fontSize: 12,
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Text(
-                    '$pct%',
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: color,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '฿${formatNumber(billTotal)}',
-                    style: GoogleFonts.notoSansThai(
-                      fontSize: 12,
-                      color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ),
     );
   }
 
@@ -1378,6 +1319,175 @@ class _GroupAnalyticsTabState extends State<_GroupAnalyticsTab> {
                           ),
                         ],
                       ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Touchable Pie Chart — owns only _pieTouchedIndex so drag-setState
+// is confined to this subtree and does NOT rebuild the whole analytics tab.
+class _TouchablePieChart extends StatefulWidget {
+  final List<Bill> sortedBills;
+  final double totalAmount;
+  final List<Color> chartColors;
+  final bool isDark;
+
+  const _TouchablePieChart({
+    required this.sortedBills,
+    required this.totalAmount,
+    required this.chartColors,
+    required this.isDark,
+  });
+
+  @override
+  State<_TouchablePieChart> createState() => _TouchablePieChartState();
+}
+
+class _TouchablePieChartState extends State<_TouchablePieChart> {
+  int _pieTouchedIndex = -1;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = widget.isDark;
+    final displayBills = widget.sortedBills.take(8).toList();
+    final totalAmount = widget.totalAmount;
+
+    final sections = displayBills.asMap().entries.map((entry) {
+      final i = entry.key;
+      final bill = entry.value;
+      final billTotal = bill.items.fold<double>(0, (s, item) => s + item.price);
+      final pct = totalAmount > 0 ? billTotal / totalAmount * 100 : 0.0;
+      final color = widget.chartColors[i % widget.chartColors.length];
+      final isTouched = i == _pieTouchedIndex;
+
+      return PieChartSectionData(
+        color: color,
+        value: billTotal,
+        title: pct >= 10 ? '${pct.toStringAsFixed(0)}%' : '',
+        radius: isTouched ? 90 : 75,
+        titleStyle: GoogleFonts.notoSansThai(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        titlePositionPercentageOffset: 0.6,
+      );
+    }).toList();
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                )
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '🥧 สัดส่วนค่าใช้จ่ายต่อบิล',
+            style: GoogleFonts.notoSansThai(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: isDark
+                  ? AppColors.textPrimaryDark
+                  : AppColors.textPrimaryLight,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          SizedBox(
+            height: 200,
+            child: PieChart(
+              PieChartData(
+                pieTouchData: PieTouchData(
+                  touchCallback: (FlTouchEvent event, response) {
+                    setState(() {
+                      if (!event.isInterestedForInteractions ||
+                          response?.touchedSection == null) {
+                        _pieTouchedIndex = -1;
+                        return;
+                      }
+                      _pieTouchedIndex =
+                          response!.touchedSection!.touchedSectionIndex;
+                    });
+                  },
+                ),
+                sections: sections,
+                centerSpaceRadius: 44,
+                sectionsSpace: 2,
+              ),
+              swapAnimationDuration: const Duration(milliseconds: 300),
+              swapAnimationCurve: Curves.easeInOut,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          // Legend
+          ...displayBills.asMap().entries.map((entry) {
+            final i = entry.key;
+            final bill = entry.value;
+            final billTotal =
+                bill.items.fold<double>(0, (s, item) => s + item.price);
+            final pct = totalAmount > 0
+                ? (billTotal / totalAmount * 100).toStringAsFixed(1)
+                : '0';
+            final color = widget.chartColors[i % widget.chartColors.length];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(3)),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${bill.emoji ?? '🧾'} ${bill.title}',
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 12,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    '$pct%',
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '฿${formatNumber(billTotal)}',
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 12,
+                      color: isDark
+                          ? AppColors.textTertiaryDark
+                          : AppColors.textTertiaryLight,
                     ),
                   ),
                 ],

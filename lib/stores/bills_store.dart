@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../repositories/bills_repository.dart';
@@ -28,12 +28,17 @@ class BillsStore extends ChangeNotifier {
   bool _hasLoaded = false;
   String? _error;
 
-  // ── Cached computed lists — invalidated whenever _byId changes ──────
-  List<Bill>? _cachedAll;
-  List<Bill>? _cachedActive;
-  List<Bill>? _cachedPendingPayment;
-  List<Bill>? _cachedCompleted;
-  List<Bill>? _cachedPersonal;
+  // ── Cached computed lists — recomputed whenever _byId changes, but a
+  // recomputed list only replaces the cached reference when its content
+  // actually differs (via listEquals). This keeps context.select/Selector
+  // identity checks working, so a mutation to one bill/group doesn't churn
+  // the list identity for unrelated bills/groups and trigger their rebuilds.
+  List<Bill> _cachedAll = const [];
+  List<Bill> _cachedActive = const [];
+  List<Bill> _cachedPendingPayment = const [];
+  List<Bill> _cachedCompleted = const [];
+  List<Bill> _cachedPersonal = const [];
+  final Map<String, List<Bill>> _cachedByGroup = {};
 
   // Realtime channels
   RealtimeChannel? _billsChannel;
@@ -48,28 +53,49 @@ class BillsStore extends ChangeNotifier {
   bool get hasLoaded => _hasLoaded;
   String? get error => _error;
 
-  /// Invalidate all cached lists. Must be called whenever _byId is mutated.
+  /// Recompute cached lists from `_byId`. Must be called whenever `_byId` is
+  /// mutated. Each cache keeps its previous reference when the newly
+  /// filtered content is unchanged (see field comment above).
   void _invalidateCache() {
-    _cachedAll = null;
-    _cachedActive = null;
-    _cachedPendingPayment = null;
-    _cachedCompleted = null;
-    _cachedPersonal = null;
+    final newAll = _byId.values.toList();
+    _cachedAll = listEquals(_cachedAll, newAll) ? _cachedAll : newAll;
+
+    final newActive = _cachedAll.where((b) => b.status == 'draft').toList();
+    _cachedActive =
+        listEquals(_cachedActive, newActive) ? _cachedActive : newActive;
+
+    final newPendingPayment =
+        _cachedAll.where((b) => b.status == 'pending_payment').toList();
+    _cachedPendingPayment = listEquals(_cachedPendingPayment, newPendingPayment)
+        ? _cachedPendingPayment
+        : newPendingPayment;
+
+    final newCompleted =
+        _cachedAll.where((b) => b.status == 'completed').toList();
+    _cachedCompleted =
+        listEquals(_cachedCompleted, newCompleted) ? _cachedCompleted : newCompleted;
+
+    final newPersonal = _cachedAll.where((b) => b.groupId == null).toList();
+    _cachedPersonal =
+        listEquals(_cachedPersonal, newPersonal) ? _cachedPersonal : newPersonal;
+
+    for (final groupId in _cachedByGroup.keys.toList()) {
+      final newForGroup =
+          _cachedAll.where((b) => b.groupId == groupId).toList();
+      final old = _cachedByGroup[groupId];
+      _cachedByGroup[groupId] =
+          (old != null && listEquals(old, newForGroup)) ? old : newForGroup;
+    }
   }
 
-  List<Bill> get all => _cachedAll ??= _byId.values.toList();
+  List<Bill> get all => _cachedAll;
   Bill? getById(String id) => _byId[id];
-  List<Bill> forGroup(String groupId) =>
-      all.where((b) => b.groupId == groupId).toList();
-  List<Bill> get personalBills =>
-      _cachedPersonal ??= all.where((b) => b.groupId == null).toList();
-  List<Bill> get activeBills =>
-      _cachedActive ??= all.where((b) => b.status == 'draft').toList();
-  List<Bill> get pendingPaymentBills =>
-      _cachedPendingPayment ??=
-          all.where((b) => b.status == 'pending_payment').toList();
-  List<Bill> get completedBills =>
-      _cachedCompleted ??= all.where((b) => b.status == 'completed').toList();
+  List<Bill> forGroup(String groupId) => _cachedByGroup[groupId] ??=
+      _cachedAll.where((b) => b.groupId == groupId).toList();
+  List<Bill> get personalBills => _cachedPersonal;
+  List<Bill> get activeBills => _cachedActive;
+  List<Bill> get pendingPaymentBills => _cachedPendingPayment;
+  List<Bill> get completedBills => _cachedCompleted;
 
   /// Notify listeners and invalidate caches in one call.
   void _notifyAndInvalidate() {

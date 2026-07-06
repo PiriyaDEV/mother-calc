@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../stores/bills_store.dart';
@@ -1243,12 +1242,26 @@ class _DebtCard extends StatelessWidget {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: QrImageView(
-                      data: generatePromptPayPayload(
-                          debt.to.promptpay!, debt.amount),
-                      version: QrVersions.auto,
-                      size: 180,
-                      backgroundColor: Colors.white,
+                    child: Image.network(
+                      'https://promptpay.io/${debt.to.promptpay}/${debt.amount.toStringAsFixed(2)}.png',
+                      width: 180,
+                      height: 180,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const SizedBox(
+                          width: 180,
+                          height: 180,
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) => const SizedBox(
+                        width: 180,
+                        height: 180,
+                        child: Center(
+                          child: Icon(Icons.qr_code_rounded, size: 48, color: Colors.grey),
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),

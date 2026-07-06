@@ -417,187 +417,225 @@ class _FriendsScreenState extends State<FriendsScreen> {
                   : RefreshIndicator(
                       onRefresh: () => provider.loadFriends(),
                       color: AppColors.primary,
-                      child: ListView(
+                      // Use ListView.builder so only visible rows are built.
+                      // Layout:
+                      //   index 0            → pending-requests section (if any)
+                      //   index 1            → friends section header
+                      //   index 2            → empty state OR first friend row
+                      //   index 3..N+1       → remaining friend rows
+                      child: ListView.builder(
                         padding: const EdgeInsets.all(AppSpacing.lg),
-                        children: [
-                          // ── Pending Requests ──
-                          if (requests.isNotEmpty) ...[
-                            _SectionHeader(
-                              title: 'คำขอเป็นเพื่อน',
-                              count: requests.length,
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? AppColors.surfaceDark
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(AppRadii.lg),
-                                border: Border.all(
-                                  color: isDark
-                                      ? AppColors.borderDark
-                                      : const Color(0xFFDBEAFE),
-                                ),
-                              ),
-                              child: Column(
-                                children: requests.asMap().entries.map((e) {
-                                  final idx = e.key;
-                                  final req = e.value;
-                                  final myId = Supabase.instance.client.auth
-                                          .currentUser?.id ??
-                                      '';
-                                  final profile = req.requesterProfile ??
-                                      req.otherProfile(myId);
-                                  final name = profile?.displayName ??
-                                      profile?.username ??
-                                      'ผู้ใช้';
-                                  final username = profile?.username;
-                                  final isResponding =
-                                      _respondingId == req.id;
-                                  final isLast =
-                                      idx == requests.length - 1;
-
-                                  return Column(
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.all(14),
-                                        child: Row(
+                        itemCount: requests.isNotEmpty
+                            ? 2 + (friends.isEmpty ? 1 : friends.length)
+                            : 1 + (friends.isEmpty ? 1 : friends.length),
+                        itemBuilder: (ctx, index) {
+                          // ── Pending Requests block ──
+                          if (requests.isNotEmpty) {
+                            if (index == 0) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _SectionHeader(
+                                    title: 'คำขอเป็นเพื่อน',
+                                    count: requests.length,
+                                  ),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? AppColors.surfaceDark
+                                          : Colors.white,
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadii.lg),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? AppColors.borderDark
+                                            : const Color(0xFFDBEAFE),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: requests.asMap().entries.map((e) {
+                                        final idx = e.key;
+                                        final req = e.value;
+                                        final myId = Supabase.instance.client
+                                                .auth.currentUser?.id ??
+                                            '';
+                                        final profile =
+                                            req.requesterProfile ??
+                                                req.otherProfile(myId);
+                                        final name = profile?.displayName ??
+                                            profile?.username ??
+                                            'ผู้ใช้';
+                                        final username = profile?.username;
+                                        final isResponding =
+                                            _respondingId == req.id;
+                                        final isLast =
+                                            idx == requests.length - 1;
+                                        return Column(
                                           children: [
-                                            // Avatar (rounded rect 16)
-                                            _RoundedAvatar(
-                                              name: name,
-                                              avatarUrl: profile?.avatarUrl,
-                                              size: 40,
-                                              radius: 16,
-                                            ),
-                                            const SizedBox(width: AppSpacing.md),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment
-                                                        .start,
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.all(14),
+                                              child: Row(
                                                 children: [
-                                                  Text(
-                                                    name,
-                                                    style: GoogleFonts
-                                                        .notoSansThai(
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: isDark
-                                                          ? AppColors
-                                                              .textPrimaryDark
-                                                          : AppColors
-                                                              .textPrimaryLight,
+                                                  _RoundedAvatar(
+                                                    name: name,
+                                                    avatarUrl:
+                                                        profile?.avatarUrl,
+                                                    size: 40,
+                                                    radius: 16,
+                                                  ),
+                                                  const SizedBox(
+                                                      width: AppSpacing.md),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          name,
+                                                          style: GoogleFonts
+                                                              .notoSansThai(
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w600,
+                                                            color: isDark
+                                                                ? AppColors
+                                                                    .textPrimaryDark
+                                                                : AppColors
+                                                                    .textPrimaryLight,
+                                                          ),
+                                                        ),
+                                                        if (username != null)
+                                                          Text(
+                                                            '@$username',
+                                                            style: GoogleFonts
+                                                                .notoSansThai(
+                                                              fontSize: 12,
+                                                              color: isDark
+                                                                  ? AppColors
+                                                                      .textTertiaryDark
+                                                                  : AppColors
+                                                                      .textTertiaryLight,
+                                                            ),
+                                                          ),
+                                                      ],
                                                     ),
                                                   ),
-                                                  if (username != null)
-                                                    Text(
-                                                      '@$username',
-                                                      style: GoogleFonts
-                                                          .notoSansThai(
-                                                        fontSize: 12,
-                                                        color: isDark
-                                                            ? AppColors
-                                                                .textTertiaryDark
-                                                            : AppColors
-                                                                .textTertiaryLight,
+                                                  GestureDetector(
+                                                    onTap: isResponding
+                                                        ? null
+                                                        : () =>
+                                                            _handleAccept(req),
+                                                    child: Container(
+                                                      width: 32,
+                                                      height: 32,
+                                                      decoration: BoxDecoration(
+                                                        color: isResponding
+                                                            ? const Color(
+                                                                0xFF9CA3AF)
+                                                            : const Color(
+                                                                0xFF286BFE),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(
+                                                                    AppRadii
+                                                                        .md),
                                                       ),
+                                                      child: const Icon(
+                                                          Icons.check_rounded,
+                                                          color: Colors.white,
+                                                          size: 16),
                                                     ),
+                                                  ),
+                                                  const SizedBox(
+                                                      width: AppSpacing.sm),
+                                                  GestureDetector(
+                                                    onTap: isResponding
+                                                        ? null
+                                                        : () =>
+                                                            _handleDecline(
+                                                                req),
+                                                    child: Container(
+                                                      width: 32,
+                                                      height: 32,
+                                                      decoration: BoxDecoration(
+                                                        color: isDark
+                                                            ? const Color(
+                                                                0xFF374151)
+                                                            : AppColors
+                                                                .borderLight,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(
+                                                                    AppRadii
+                                                                        .md),
+                                                      ),
+                                                      child: Icon(
+                                                          Icons.close_rounded,
+                                                          color: isDark
+                                                              ? AppColors
+                                                                  .textTertiaryDark
+                                                              : const Color(
+                                                                  0xFF6B7280),
+                                                          size: 16),
+                                                    ),
+                                                  ),
                                                 ],
                                               ),
                                             ),
-                                            // ✓ Accept
-                                            GestureDetector(
-                                              onTap: isResponding
-                                                  ? null
-                                                  : () =>
-                                                      _handleAccept(req),
-                                              child: Container(
-                                                width: 32,
-                                                height: 32,
-                                                decoration: BoxDecoration(
-                                                  color: isResponding
-                                                      ? const Color(
-                                                          0xFF9CA3AF)
-                                                      : const Color(
-                                                          0xFF286BFE),
-                                                  borderRadius:
-                                                      BorderRadius
-                                                          .circular(AppRadii.md),
-                                                ),
-                                                child: const Icon(
-                                                    Icons.check_rounded,
-                                                    color: Colors.white,
-                                                    size: 16),
+                                            if (!isLast)
+                                              Divider(
+                                                height: 1,
+                                                color: isDark
+                                                    ? AppColors.borderDark
+                                                    : AppColors.borderLight,
                                               ),
-                                            ),
-                                            const SizedBox(width: AppSpacing.sm),
-                                            // ✗ Decline
-                                            GestureDetector(
-                                              onTap: isResponding
-                                                  ? null
-                                                  : () =>
-                                                      _handleDecline(req),
-                                              child: Container(
-                                                width: 32,
-                                                height: 32,
-                                                decoration: BoxDecoration(
-                                                  color: isDark
-                                                      ? const Color(
-                                                          0xFF374151)
-                                                      : AppColors.borderLight,
-                                                  borderRadius:
-                                                      BorderRadius
-                                                          .circular(AppRadii.md),
-                                                ),
-                                                child: Icon(
-                                                    Icons.close_rounded,
-                                                    color: isDark
-                                                        ? AppColors
-                                                            .textTertiaryDark
-                                                        : const Color(
-                                                            0xFF6B7280),
-                                                    size: 16),
-                                              ),
-                                            ),
                                           ],
-                                        ),
-                                      ),
-                                      if (!isLast)
-                                        Divider(
-                                          height: 1,
-                                          color: isDark
-                                              ? AppColors.borderDark
-                                              : AppColors.borderLight,
-                                        ),
-                                    ],
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xl),
-                          ],
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.xl),
+                                ],
+                              );
+                            }
+                            // shift remaining indices by 1
+                            index -= 1;
+                          }
 
-                          // ── Friends List ──
-                          _SectionHeader(
-                            title: 'เพื่อนทั้งหมด',
-                            count: friends.length,
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
+                          // ── Friends section header ──
+                          if (index == 0) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _SectionHeader(
+                                  title: 'เพื่อนทั้งหมด',
+                                  count: friends.length,
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                              ],
+                            );
+                          }
 
-                          if (friends.isEmpty)
-                            _EmptyFriendsState(
+                          // ── Empty state ──
+                          if (friends.isEmpty) {
+                            return _EmptyFriendsState(
                               isDark: isDark,
                               onAdd: () => setState(() => _showAdd = true),
-                            )
-                          else
-                            ...friends.map((f) => _FriendRow(
-                                  friend: f,
-                                  isDark: isDark,
-                                  onRemove: () => _handleRemove(f),
-                                )),
-                        ],
+                            );
+                          }
+
+                          // ── Friend rows (index 1..N) ──
+                          final f = friends[index - 1];
+                          return _FriendRow(
+                            friend: f,
+                            isDark: isDark,
+                            onRemove: () => _handleRemove(f),
+                          );
+                        },
                       ),
                     ),
             ),

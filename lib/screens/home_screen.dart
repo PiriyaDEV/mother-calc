@@ -14,6 +14,8 @@ import '../utils/bill_utils.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../widgets/shared_bill_card.dart';
 
+double _billTotal(Bill b) => b.items.fold(0.0, (s, i) => s + i.price);
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -98,40 +100,23 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  double _billTotal(Bill b) =>
-      b.items.fold(0.0, (s, i) => s + i.price);
-
-  String _formatBaht(double n) => formatNumber(n);
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Watch each store once — avoids triple-watch that caused 3× rebuilds.
-    final billsStore = context.watch<BillsStore>();
-    final groupsStore = context.watch<GroupsStore>();
-    final profile = context.watch<AuthProvider>().profile;
+    // Scoped selects instead of context.watch<Store>() — each only causes
+    // this build() to re-run when the SPECIFIC selected value changes, not
+    // on every notifyListeners() from that store. The bill/group totals
+    // themselves are computed inside _HeroBalanceCard/_StatsGrid/
+    // _RecentBillsList so an unrelated notify (e.g. AuthProvider profile
+    // edit) doesn't force those computations to rerun either.
+    final profile = context.select<AuthProvider, Profile?>((a) => a.profile);
+    final dataLoading = context.select<BillsStore, bool>(
+            (s) => s.loading && !s.hasLoaded) ||
+        context.select<GroupsStore, bool>((s) => s.loading && !s.hasLoaded);
+    final hasBills =
+        context.select<BillsStore, bool>((s) => s.all.isNotEmpty);
 
-    final allBills = billsStore.all;
-    final groups = groupsStore.groups;
-    final dataLoading = (billsStore.loading && !billsStore.hasLoaded) ||
-        (groupsStore.loading && !groupsStore.hasLoaded);
-
-    // Derived values computed once per build, not on every getter call.
-    final grandTotal = allBills.fold<double>(0, (s, b) => s + _billTotal(b));
-    final totalItems = allBills.fold<int>(0, (s, b) => s + b.items.length);
-    final recentBills = ([...allBills]
-          ..sort((a, b) {
-            final aTime = a.updatedAt ?? DateTime(0);
-            final bTime = b.updatedAt ?? DateTime(0);
-            return bTime.compareTo(aTime);
-          }))
-        .take(3)
-        .toList();
-    final biggestBill = allBills.isEmpty
-        ? null
-        : [...allBills]
-            .reduce((a, b) => _billTotal(a) >= _billTotal(b) ? a : b);
     final user = _supabase.auth.currentUser;
     final displayName = profile?.displayName ??
         profile?.username ??
@@ -215,112 +200,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 // ── Hero balance card ────────────────────────────
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2D5BFF), Color(0xFF1A3FCC), Color(0xFF0B1E3D)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          stops: [0.0, 0.55, 1.0],
-                        ),
-                        borderRadius: BorderRadius.circular(AppRadii.lg),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF2D5BFF).withValues(alpha: 0.40),
-                            blurRadius: 32,
-                            offset: const Offset(0, 12),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        children: [
-                          // Decorative circles
-                          Positioned(
-                            right: -24,
-                            top: -32,
-                            child: Container(
-                              width: 130,
-                              height: 130,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withValues(alpha: 0.06),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            right: 30,
-                            bottom: -50,
-                            child: Container(
-                              width: 100,
-                              height: 100,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withValues(alpha: 0.04),
-                              ),
-                            ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'ยอดรวมทั้งหมด',
-                                style: GoogleFonts.notoSansThai(
-                                  fontSize: 13,
-                                  color: Colors.white.withValues(alpha: 0.65),
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              if (dataLoading)
-                                const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: Colors.white),
-                                )
-                              else
-                                Text(
-                                  '฿${_formatBaht(grandTotal)}',
-                                  style: GoogleFonts.anuphan(
-                                    fontSize: 38,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                    letterSpacing: -1,
-                                    height: 1.1,
-                                  ),
-                                ),
-                              const SizedBox(height: 20),
-                              // Stats pills row
-                              if (!dataLoading)
-                                Row(
-                                  children: [
-                                    _HeroPill(
-                                      label: '${groups.length} กลุ่ม',
-                                      icon: Icons.people_rounded,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _HeroPill(
-                                      label: '${allBills.length} บิล',
-                                      icon: Icons.receipt_rounded,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _HeroPill(
-                                      label: '$totalItems รายการ',
-                                      icon: Icons.list_rounded,
-                                    ),
-                                  ],
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                // Scoped to BillsStore + GroupsStore only (see
+                // _HeroBalanceCard) — an AuthProvider notify elsewhere
+                // doesn't re-run this fold/sort work.
+                const SliverToBoxAdapter(child: _HeroBalanceCard()),
 
                 // ── Quick actions ────────────────────────────────
                 SliverToBoxAdapter(
@@ -496,6 +379,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 // ── Stats / loading ──────────────────────────────
+                // hasBills/dataLoading are scoped selects (see build() top)
+                // — the fold/sort work itself lives inside _StatsGrid /
+                // _RecentBillsList so it only reruns when BillsStore's
+                // `all` list actually changes content, not on every
+                // unrelated GroupsStore/AuthProvider notify.
                 if (dataLoading)
                   const SliverToBoxAdapter(
                     child: Padding(
@@ -510,7 +398,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   )
                 else ...[
                   // Stats cards
-                  if (allBills.isNotEmpty) ...[
+                  if (hasBills) ...[
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
@@ -526,62 +414,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      sliver: SliverGrid(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 1.55,
-                        ),
-                        delegate: SliverChildListDelegate([
-                          _StatCard(
-                            icon: Icons.trending_up_rounded,
-                            label: 'เฉลี่ยต่อบิล',
-                            value: '฿${_formatBaht(allBills.isEmpty ? 0 : grandTotal / allBills.length)}',
-                            accentColor: AppColors.primaryBlue,
-                            bgColor: isDark
-                                ? AppColors.accentIceDark
-                                : AppColors.accentIce,
-                          ),
-                          _StatCard(
-                            icon: Icons.receipt_long_rounded,
-                            label: 'บิลทั้งหมด',
-                            value: '${allBills.length} บิล',
-                            accentColor: const Color(0xFF7B5CF6),
-                            bgColor: isDark
-                                ? const Color(0xFF1E1A3A)
-                                : const Color(0xFFEDE9FE),
-                          ),
-                          _StatCard(
-                            icon: Icons.format_list_bulleted_rounded,
-                            label: 'รายการทั้งหมด',
-                            value: '$totalItems รายการ',
-                            accentColor: AppColors.amber,
-                            bgColor: isDark
-                                ? AppColors.amber.withValues(alpha: 0.12)
-                                : AppColors.amberFaint,
-                          ),
-                          _StatCard(
-                            icon: Icons.star_rounded,
-                            label: 'บิลใหญ่สุด',
-                            value: biggestBill != null
-                                ? '฿${_formatBaht(_billTotal(biggestBill))}'
-                                : '—',
-                            accentColor: AppColors.emerald,
-                            bgColor: isDark
-                                ? AppColors.emerald.withValues(alpha: 0.12)
-                                : AppColors.greenFaint,
-                          ),
-                        ]),
-                      ),
-                    ),
-                  ],
+                    _StatsGrid(isDark: isDark),
 
-                  // Recent bills
-                  if (recentBills.isNotEmpty) ...[
+                    // Recent bills
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
@@ -627,28 +462,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final bill = recentBills[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: SharedBillCard(
-                                bill: bill,
-                                onTap: () => context.push('/bills/${bill.id}'),
-                              ),
-                            );
-                          },
-                          childCount: recentBills.length,
-                        ),
-                      ),
-                    ),
+                    const _RecentBillsList(),
                   ],
 
                   // Empty state
-                  if (allBills.isEmpty)
+                  if (!hasBills)
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
@@ -797,6 +615,252 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ── Scoped sections ──────────────────────────────────────────────────────
+// Each below watches only the store(s) it needs via Selector/Selector2, so
+// a notify from an unrelated store (e.g. AuthProvider on profile edit)
+// doesn't re-run this section's fold/sort work or rebuild its subtree.
+
+class _HeroBalanceCard extends StatelessWidget {
+  const _HeroBalanceCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector2<BillsStore, GroupsStore, (List<Bill>, int, bool)>(
+      selector: (_, billsStore, groupsStore) => (
+        billsStore.all,
+        groupsStore.groups.length,
+        (billsStore.loading && !billsStore.hasLoaded) ||
+            (groupsStore.loading && !groupsStore.hasLoaded),
+      ),
+      builder: (context, data, _) {
+        final (allBills, groupsCount, dataLoading) = data;
+        final grandTotal =
+            allBills.fold<double>(0, (s, b) => s + _billTotal(b));
+        final totalItems =
+            allBills.fold<int>(0, (s, b) => s + b.items.length);
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF2D5BFF), Color(0xFF1A3FCC), Color(0xFF0B1E3D)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                stops: [0.0, 0.55, 1.0],
+              ),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF2D5BFF).withValues(alpha: 0.40),
+                  blurRadius: 32,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Decorative circles
+                Positioned(
+                  right: -24,
+                  top: -32,
+                  child: Container(
+                    width: 130,
+                    height: 130,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.06),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 30,
+                  bottom: -50,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.04),
+                    ),
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ยอดรวมทั้งหมด',
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.65),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (dataLoading)
+                      const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
+                      )
+                    else
+                      Text(
+                        '฿${formatNumber(grandTotal)}',
+                        style: GoogleFonts.anuphan(
+                          fontSize: 38,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: -1,
+                          height: 1.1,
+                        ),
+                      ),
+                    const SizedBox(height: 20),
+                    // Stats pills row
+                    if (!dataLoading)
+                      Row(
+                        children: [
+                          _HeroPill(
+                            label: '$groupsCount กลุ่ม',
+                            icon: Icons.people_rounded,
+                          ),
+                          const SizedBox(width: 8),
+                          _HeroPill(
+                            label: '${allBills.length} บิล',
+                            icon: Icons.receipt_rounded,
+                          ),
+                          const SizedBox(width: 8),
+                          _HeroPill(
+                            label: '$totalItems รายการ',
+                            icon: Icons.list_rounded,
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _StatsGrid extends StatelessWidget {
+  final bool isDark;
+  const _StatsGrid({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector<BillsStore, List<Bill>>(
+      selector: (_, s) => s.all,
+      builder: (context, allBills, _) {
+        if (allBills.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+        final grandTotal =
+            allBills.fold<double>(0, (s, b) => s + _billTotal(b));
+        final totalItems =
+            allBills.fold<int>(0, (s, b) => s + b.items.length);
+        final biggestBill =
+            allBills.reduce((a, b) => _billTotal(a) >= _billTotal(b) ? a : b);
+
+        return SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.55,
+            ),
+            delegate: SliverChildListDelegate([
+              _StatCard(
+                icon: Icons.trending_up_rounded,
+                label: 'เฉลี่ยต่อบิล',
+                value: '฿${formatNumber(grandTotal / allBills.length)}',
+                accentColor: AppColors.primaryBlue,
+                bgColor: isDark ? AppColors.accentIceDark : AppColors.accentIce,
+              ),
+              _StatCard(
+                icon: Icons.receipt_long_rounded,
+                label: 'บิลทั้งหมด',
+                value: '${allBills.length} บิล',
+                accentColor: const Color(0xFF7B5CF6),
+                bgColor: isDark
+                    ? const Color(0xFF1E1A3A)
+                    : const Color(0xFFEDE9FE),
+              ),
+              _StatCard(
+                icon: Icons.format_list_bulleted_rounded,
+                label: 'รายการทั้งหมด',
+                value: '$totalItems รายการ',
+                accentColor: AppColors.amber,
+                bgColor: isDark
+                    ? AppColors.amber.withValues(alpha: 0.12)
+                    : AppColors.amberFaint,
+              ),
+              _StatCard(
+                icon: Icons.star_rounded,
+                label: 'บิลใหญ่สุด',
+                value: '฿${formatNumber(_billTotal(biggestBill))}',
+                accentColor: AppColors.emerald,
+                bgColor: isDark
+                    ? AppColors.emerald.withValues(alpha: 0.12)
+                    : AppColors.greenFaint,
+              ),
+            ]),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _RecentBillsList extends StatelessWidget {
+  const _RecentBillsList();
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector<BillsStore, List<Bill>>(
+      selector: (_, s) => s.all,
+      builder: (context, allBills, _) {
+        final recentBills = ([...allBills]
+              ..sort((a, b) {
+                final aTime = a.updatedAt ?? DateTime(0);
+                final bTime = b.updatedAt ?? DateTime(0);
+                return bTime.compareTo(aTime);
+              }))
+            .take(3)
+            .toList();
+        if (recentBills.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+        return SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final bill = recentBills[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: SharedBillCard(
+                    bill: bill,
+                    onTap: () => context.push('/bills/${bill.id}'),
+                  ),
+                );
+              },
+              childCount: recentBills.length,
+            ),
+          ),
+        );
+      },
     );
   }
 }
