@@ -5,6 +5,8 @@
 [build.environment]
   # These keys appear in example/config files intentionally — not real leaks.
   SECRETS_SCAN_OMIT_KEYS = "ADMOB_BANNER_ANDROID,ADMOB_BANNER_IOS,ADSENSE_PUBLISHER_ID,GOOGLE_WEB_CLIENT_ID,FCM_WEB_VAPID_KEY"
+  # Firebase client API keys are public by design; exclude the files that embed them.
+  SECRETS_SCAN_OMIT_PATHS = "android/app/google-services.json,lib/firebase_options.dart,web/firebase-messaging-sw.js,build/web/**"
 
 [[redirects]]
   from = "/*"
