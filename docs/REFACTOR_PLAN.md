@@ -5,7 +5,7 @@
 | Phase | Status | Completed |
 |---|---|---|
 | Phase 1 — `bill_detail_screen.dart` + `group_detail_screen.dart` | ✅ **DONE** | 2026-07-06 |
-| Phase 2 — In-place extractions (summary_tab, analytics_tab, home, friends, me) | ⬜ Pending | — |
+| Phase 2 — In-place extractions (summary_tab, analytics_tab, home, friends, me) | ✅ **DONE** | analytics_tab ✅ 2026-07-06, summary_tab ✅ 2026-07-06, friends ✅ 2026-07-07, home ✅ 2026-07-07, me ✅ 2026-07-07 |
 | Phase 3 — Cross-file consolidation (create-flow dedup + models split) | ⬜ Pending | — |
 | Phase 4 — State management targeted fixes | ⬜ Pending | — |
 
