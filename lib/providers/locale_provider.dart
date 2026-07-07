@@ -16,7 +16,7 @@ class LocaleProvider extends ChangeNotifier {
   bool get isThai => _locale == 'th';
 
   LocaleProvider() {
-    _loadStrings();
+    _loadStrings().then((_) => notifyListeners());
   }
 
   /// Called by AuthProvider after profile is loaded from Supabase.
