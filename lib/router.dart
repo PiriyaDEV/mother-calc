@@ -49,7 +49,7 @@ class AppRouter {
             return isOnboardingRoute ? null : '/onboarding';
           case _AuthRouteState.ready:
             return (isLoginRoute || isSplashRoute || isOnboardingRoute)
-                ? '/home'
+                ? '/'
                 : null;
         }
       },
@@ -71,7 +71,7 @@ class AppRouter {
             StatefulShellBranch(
               routes: [
                 GoRoute(
-                  path: '/home',
+                  path: '/',
                   pageBuilder: (context, state) =>
                       const NoTransitionPage(child: HomeScreen()),
                 ),
