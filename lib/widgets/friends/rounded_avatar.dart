@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
+import 'package:kidtang_flutter/theme/app_theme.dart';
 
 class RoundedAvatar extends StatelessWidget {
   final String name;

@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/models.dart';
+import 'package:kidtang_flutter/models/models.dart';
 
 /// Pure Supabase I/O for groups/group_members. No state — all caching and
 /// optimistic-update logic lives in [GroupsStore].

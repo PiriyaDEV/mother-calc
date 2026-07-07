@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../models/models.dart';
-import '../../stores/bills_store.dart';
-import '../../stores/groups_store.dart';
-import '../../theme/app_theme.dart';
-import '../../utils/bill_utils.dart';
+import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/stores/bills_store.dart';
+import 'package:kidtang_flutter/stores/groups_store.dart';
+import 'package:kidtang_flutter/theme/app_theme.dart';
+import 'package:kidtang_flutter/utils/bill_utils.dart';
 
 double _billTotal(Bill b) => b.items.fold(0.0, (s, i) => s + i.price);
 

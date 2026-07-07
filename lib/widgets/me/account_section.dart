@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../models/models.dart';
-import '../../theme/app_theme.dart';
-import '../section_header.dart';
+import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/theme/app_theme.dart';
+import 'package:kidtang_flutter/widgets/shared/section_header.dart';
 import 'profile_field_row.dart';
 
 class AccountSection extends StatelessWidget {

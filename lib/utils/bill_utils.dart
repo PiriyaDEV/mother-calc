@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../models/models.dart';
-import '../theme/app_theme.dart';
+import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/theme/app_theme.dart';
 
 // ── Number formatting ─────────────────────────────────────────
 // Static cached formatters — NumberFormat is expensive to construct.

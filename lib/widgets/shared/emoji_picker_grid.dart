@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
+import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'bill_form_constants.dart';
 
 /// Emoji picker grid shared by CreateBillScreen and CreateGroupScreen.

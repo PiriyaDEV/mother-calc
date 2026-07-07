@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/models.dart';
+import 'package:kidtang_flutter/models/models.dart';
 
 class NotificationsProvider extends ChangeNotifier {
   final _supabase = Supabase.instance.client;

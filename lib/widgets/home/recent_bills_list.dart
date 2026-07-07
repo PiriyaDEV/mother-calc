@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../models/models.dart';
-import '../../stores/bills_store.dart';
-import '../../widgets/shared_bill_card.dart';
+import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/stores/bills_store.dart';
+import 'package:kidtang_flutter/widgets/shared/shared_bill_card.dart';
 
 class RecentBillsList extends StatelessWidget {
   const RecentBillsList({super.key});

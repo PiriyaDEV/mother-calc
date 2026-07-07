@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/models.dart';
-import '../services/profile_repository.dart';
-import '../services/push_notification_service.dart';
-import '../services/social_auth_service.dart';
-import '../stores/bills_store.dart';
-import '../stores/groups_store.dart';
+import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/services/profile_repository.dart';
+import 'package:kidtang_flutter/services/push_notification_service.dart';
+import 'package:kidtang_flutter/services/social_auth_service.dart';
+import 'package:kidtang_flutter/stores/bills_store.dart';
+import 'package:kidtang_flutter/stores/groups_store.dart';
 import 'locale_provider.dart';
 
 class AuthProvider extends ChangeNotifier {

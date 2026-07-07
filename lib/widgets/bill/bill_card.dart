@@ -1,0 +1,213 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/theme/app_theme.dart';
+import 'package:kidtang_flutter/utils/bill_utils.dart';
+import 'package:kidtang_flutter/widgets/shared/member_avatar.dart';
+
+class BillCard extends StatelessWidget {
+  final Bill bill;
+  final VoidCallback onTap;
+
+  const BillCard({super.key, required this.bill, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final calc = calculateBill(bill);
+    final currency = bill.settings.currency;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          boxShadow: isDark ? null : AppColors.shadowCard,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                // Emoji / icon
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.borderDark
+                        : AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                  ),
+                  child: Center(
+                    child: Text(
+                      bill.emoji ?? '🧾',
+                      style: const TextStyle(fontSize: 22),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        bill.title,
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        formatDate(bill.updatedAt ?? bill.createdAt),
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 12,
+                          color: isDark
+                              ? AppColors.textTertiaryDark
+                              : AppColors.textTertiaryLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      formatNumber(calc.total),
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDark
+                            ? AppColors.textPrimaryDark
+                            : AppColors.textPrimaryLight,
+                      ),
+                    ),
+                    Text(
+                      currency,
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 11,
+                        color: isDark
+                            ? AppColors.textTertiaryDark
+                            : AppColors.textTertiaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            if (bill.members.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  // Member avatars
+                  MemberAvatarStack(
+                    members: bill.members
+                        .map((m) => (
+                              name: m.name,
+                              color: colorFromHex(m.color),
+                              avatarUrl: m.profile?.avatarUrl,
+                            ))
+                        .toList(),
+                    size: 24,
+                    maxVisible: 5,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    '${bill.members.length} คน',
+                    style: GoogleFonts.notoSansThai(
+                      fontSize: 12,
+                      color: isDark
+                          ? AppColors.textTertiaryDark
+                          : AppColors.textTertiaryLight,
+                    ),
+                  ),
+                  const Spacer(),
+                  // Status pill
+                  _BillStatusBadge(status: bill.status),
+                ],
+              ),
+            ] else ...[
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _BillStatusBadge(status: bill.status),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BillStatusBadge extends StatelessWidget {
+  final String status;
+
+  const _BillStatusBadge({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final Color bgColor;
+    final Color dotColor;
+    final Color textColor;
+    final String label;
+
+    if (status == 'completed') {
+      bgColor = AppColors.emeraldLight;
+      dotColor = AppColors.emerald;
+      textColor = AppColors.emeraldText;
+      label = 'เสร็จแล้ว';
+    } else if (status == 'pending_payment') {
+      bgColor = AppColors.amberLight;
+      dotColor = AppColors.amber;
+      textColor = AppColors.amberText;
+      label = 'รอจ่าย';
+    } else {
+      bgColor = AppColors.borderLight;
+      dotColor = AppColors.textTertiaryLight;
+      textColor = AppColors.textSecondaryLight;
+      label = 'ดราฟ';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(AppRadii.xl),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: dotColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            label,
+            style: GoogleFonts.notoSansThai(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

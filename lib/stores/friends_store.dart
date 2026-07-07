@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/models.dart';
-import '../repositories/friends_repository.dart';
+import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/repositories/friends_repository.dart';
 
 /// Single in-memory source of truth for the current user's friend rows
 /// (accepted + pending, both directions), keyed by row id.

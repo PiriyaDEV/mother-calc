@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'providers/auth_provider.dart';
-import 'screens/login_screen.dart';
-import 'screens/main_shell.dart';
-import 'screens/home_screen.dart';
-import 'screens/bills_screen.dart';
-import 'screens/groups_screen.dart';
-import 'screens/friends_screen.dart';
-import 'screens/me_screen.dart';
-import 'screens/bill_detail_screen.dart';
-import 'screens/group_detail_screen.dart';
-import 'screens/notifications_screen.dart';
-import 'screens/onboarding_screen.dart';
-import 'screens/profile_screen.dart';
-import 'screens/create_bill_screen.dart';
-import 'screens/create_group_screen.dart';
+import 'package:kidtang_flutter/screens/shared/login_screen.dart';
+import 'package:kidtang_flutter/screens/shared/main_shell.dart';
+import 'package:kidtang_flutter/screens/home/home_screen.dart';
+import 'package:kidtang_flutter/screens/bill/bills_screen.dart';
+import 'package:kidtang_flutter/screens/group/groups_screen.dart';
+import 'package:kidtang_flutter/screens/friend/friends_screen.dart';
+import 'package:kidtang_flutter/screens/me/me_screen.dart';
+import 'package:kidtang_flutter/screens/bill/bill_detail_screen.dart';
+import 'package:kidtang_flutter/screens/group/group_detail_screen.dart';
+import 'package:kidtang_flutter/screens/friend/notifications_screen.dart';
+import 'package:kidtang_flutter/screens/shared/onboarding_screen.dart';
+import 'package:kidtang_flutter/screens/me/profile_screen.dart';
+import 'package:kidtang_flutter/screens/bill/create_bill_screen.dart';
+import 'package:kidtang_flutter/screens/group/create_group_screen.dart';
 
 // Which stage of the auth/onboarding lifecycle the app is in — gates which
 // top-level route the user is allowed to be on. Not related to a bill's

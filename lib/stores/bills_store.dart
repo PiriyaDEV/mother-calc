@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/models.dart';
-import '../repositories/bills_repository.dart';
+import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/repositories/bills_repository.dart';
 
 /// Single in-memory source of truth for every bill the current user can
 /// see, keyed by id. Replaces the old BillProvider (single-bill copy) +

@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import '../../models/models.dart';
-import '../../theme/app_theme.dart';
+import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/theme/app_theme.dart';
 
 class ProfileAvatar extends StatelessWidget {
   final Profile? profile;

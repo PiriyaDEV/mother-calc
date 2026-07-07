@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../models/models.dart';
-import '../../theme/app_theme.dart';
+import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'rounded_avatar.dart';
 
 class FriendRow extends StatelessWidget {

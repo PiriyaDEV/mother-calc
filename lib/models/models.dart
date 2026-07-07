@@ -1,13 +1,12 @@
 // Barrel — import this file to get all models.
-// Individual model files live alongside this barrel.
-export 'app_config.dart';
-export 'bill_calculation.dart';
-export 'bill_item.dart';
-export 'bill_member.dart';
-export 'bill_settings.dart';
-export 'bill.dart';
-export 'friend.dart';
-export 'group_member.dart';
-export 'group.dart';
-export 'notification.dart';
-export 'profile.dart';
+export 'bill/bill.dart';
+export 'bill/bill_calculation.dart';
+export 'bill/bill_item.dart';
+export 'bill/bill_member.dart';
+export 'bill/bill_settings.dart';
+export 'group/group.dart';
+export 'group/group_member.dart';
+export 'friend/friend.dart';
+export 'me/profile.dart';
+export 'shared/app_config.dart';
+export 'shared/notification.dart';

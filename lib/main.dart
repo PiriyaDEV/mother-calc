@@ -14,7 +14,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
-import 'screens/line_web_return_screen.dart';
+import 'package:kidtang_flutter/screens/shared/line_web_return_screen.dart';
 import 'services/app_config_service.dart';
 import 'services/push_notification_service.dart';
 import 'providers/theme_provider.dart';

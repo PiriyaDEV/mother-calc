@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../stores/friends_store.dart';
-import '../../theme/app_theme.dart';
+import 'package:kidtang_flutter/stores/friends_store.dart';
+import 'package:kidtang_flutter/theme/app_theme.dart';
 
 /// Self-contained add-friend panel.
 /// Owns its own text-field state so keystrokes only rebuild this widget,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/models.dart';
-import '../repositories/groups_repository.dart';
+import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/repositories/groups_repository.dart';
 
 /// Single in-memory source of truth for the groups the current user
 /// belongs to, keyed by id. Group bill lists are NOT stored here — they

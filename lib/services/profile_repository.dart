@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/models.dart';
+import 'package:kidtang_flutter/models/models.dart';
 
 /// Plain class — no ChangeNotifier, no UI coupling.
 /// Owns all raw Supabase profile CRUD so AuthProvider stays focused on
