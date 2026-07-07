@@ -8,20 +8,9 @@ import '../stores/bills_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/form_label.dart';
-
-// ── Constants ──────────────────────────────────────────────────
-
-const _kEmojiPresets = [
-  '🍜', '🍕', '🍺', '🎉', '✈️', '🏖️', '🎂', '🛒',
-  '🏠', '💊', '🎮', '🎵', '🚗', '⚽', '📚', '💼',
-  '🌮', '🍣', '🥗', '🍔', '🍦', '☕', '🍷', '🎁',
-  '🏋️', '🎬', '🛫', '🏕️', '🎯', '💰',
-];
-
-const _kDefaultTags = [
-  'อาหาร', 'เที่ยว', 'ปาร์ตี้', 'ช้อปปิ้ง', 'ที่พัก',
-  'เดินทาง', 'บันเทิง', 'สุขภาพ', 'การศึกษา', 'อื่นๆ',
-];
+import '../widgets/shared/bill_form_constants.dart';
+import '../widgets/shared/emoji_picker_grid.dart';
+import '../widgets/shared/toggle_card.dart';
 
 const _kCurrencies = [
   {'code': 'THB', 'flag': '🇹🇭', 'symbol': '฿',  'label': 'บาท'},
@@ -268,7 +257,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // ── Emoji + Name ──────────────────────────────
-                FormSectionLabel(label: 'ชื่อบิล *'),
+                const FormSectionLabel(label: 'ชื่อบิล *'),
                 const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -312,7 +301,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
 
                 if (_showEmojiPicker) ...[
                   const SizedBox(height: 8),
-                  _EmojiPickerGrid(
+                  EmojiPickerGrid(
                     selected: _emoji,
                     isDark: isDark,
                     onSelect: (e) => setState(() {
@@ -347,7 +336,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
-                  children: _kDefaultTags.map((tag) {
+                  children: kDefaultTags.map((tag) {
                     final selected = _tags.contains(tag);
                     return GestureDetector(
                       onTap: () => _toggleTag(tag),
@@ -441,7 +430,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: _ToggleCard(
+                      child: ToggleCard(
                         label: 'VAT',
                         enabled: _isVat,
                         isDark: isDark,
@@ -476,7 +465,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _ToggleCard(
+                      child: ToggleCard(
                         label: 'Service',
                         enabled: _isService,
                         isDark: isDark,
@@ -640,132 +629,3 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
   }
 }
 
-// ── Emoji Picker Grid ──────────────────────────────────────────
-
-class _EmojiPickerGrid extends StatelessWidget {
-  final String? selected;
-  final bool isDark;
-  final void Function(String) onSelect;
-  final VoidCallback onClear;
-
-  const _EmojiPickerGrid({
-    required this.selected,
-    required this.isDark,
-    required this.onSelect,
-    required this.onClear,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(maxHeight: 192),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.bgDark : AppColors.neutral50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(8),
-        child: Wrap(
-          spacing: 4,
-          runSpacing: 4,
-          children: [
-            GestureDetector(
-              onTap: onClear,
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.borderDark : AppColors.neutral100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Center(
-                  child: Text('✕', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                ),
-              ),
-            ),
-            ..._kEmojiPresets.map((e) {
-              final isSelected = selected == e;
-              return GestureDetector(
-                onTap: () => onSelect(e),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                    border: isSelected ? Border.all(color: AppColors.primary, width: 2) : null,
-                  ),
-                  child: Center(child: Text(e, style: const TextStyle(fontSize: 18))),
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Toggle Card ────────────────────────────────────────────────
-
-class _ToggleCard extends StatelessWidget {
-  final String label;
-  final bool enabled;
-  final bool isDark;
-  final ValueChanged<bool> onToggle;
-  final Widget child;
-
-  const _ToggleCard({
-    required this.label,
-    required this.enabled,
-    required this.isDark,
-    required this.onToggle,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.neutral50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: enabled
-              ? AppColors.primary.withValues(alpha: 0.4)
-              : (isDark ? AppColors.borderDark : AppColors.borderLight),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                label,
-                style: GoogleFonts.notoSansThai(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                ),
-              ),
-              Transform.scale(
-                scale: 0.8,
-                child: Switch(
-                  value: enabled,
-                  onChanged: onToggle,
-                  activeColor: AppColors.primary,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          child,
-        ],
-      ),
-    );
-  }
-}

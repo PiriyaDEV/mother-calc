@@ -44,116 +44,139 @@ class PendingRequestsCard extends StatelessWidget {
           ),
           child: Column(
             children: requests.asMap().entries.map((e) {
-              final idx = e.key;
-              final req = e.value;
-              final myId =
-                  Supabase.instance.client.auth.currentUser?.id ?? '';
-              final profile =
-                  req.requesterProfile ?? req.otherProfile(myId);
-              final name =
-                  profile?.displayName ?? profile?.username ?? 'ผู้ใช้';
-              final username = profile?.username;
-              final isResponding = respondingId == req.id;
-              final isLast = idx == requests.length - 1;
-
-              return RepaintBoundary(
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Row(
-                        children: [
-                          RoundedAvatar(
-                            name: name,
-                            avatarUrl: profile?.avatarUrl,
-                            size: 40,
-                            radius: 16,
-                          ),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  name,
-                                  style: GoogleFonts.notoSansThai(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: isDark
-                                        ? AppColors.textPrimaryDark
-                                        : AppColors.textPrimaryLight,
-                                  ),
-                                ),
-                                if (username != null)
-                                  Text(
-                                    '@$username',
-                                    style: GoogleFonts.notoSansThai(
-                                      fontSize: 12,
-                                      color: isDark
-                                          ? AppColors.textTertiaryDark
-                                          : AppColors.textTertiaryLight,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: isResponding ? null : () => onAccept(req),
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: isResponding
-                                    ? const Color(0xFF9CA3AF)
-                                    : const Color(0xFF286BFE),
-                                borderRadius:
-                                    BorderRadius.circular(AppRadii.md),
-                              ),
-                              child: const Icon(Icons.check_rounded,
-                                  color: Colors.white, size: 16),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          GestureDetector(
-                            onTap:
-                                isResponding ? null : () => onDecline(req),
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF374151)
-                                    : AppColors.borderLight,
-                                borderRadius:
-                                    BorderRadius.circular(AppRadii.md),
-                              ),
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: isDark
-                                    ? AppColors.textTertiaryDark
-                                    : const Color(0xFF6B7280),
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (!isLast)
-                      Divider(
-                        height: 1,
-                        color: isDark
-                            ? AppColors.borderDark
-                            : AppColors.borderLight,
-                      ),
-                  ],
-                ),
+              return _RequestTile(
+                key: ValueKey(e.value.id),
+                request: e.value,
+                isLast: e.key == requests.length - 1,
+                isResponding: respondingId == e.value.id,
+                isDark: isDark,
+                onAccept: onAccept,
+                onDecline: onDecline,
               );
             }).toList(),
           ),
         ),
         const SizedBox(height: AppSpacing.xl),
       ],
+    );
+  }
+}
+
+// ── Private extracted tile ────────────────────────────────────────────────────
+// Extracted from the inline map() so each row is an independent widget with
+// its own RepaintBoundary — only the tapped row rebuilds on isResponding change.
+class _RequestTile extends StatelessWidget {
+  final Friend request;
+  final bool isLast;
+  final bool isResponding;
+  final bool isDark;
+  final void Function(Friend) onAccept;
+  final void Function(Friend) onDecline;
+
+  const _RequestTile({
+    super.key,
+    required this.request,
+    required this.isLast,
+    required this.isResponding,
+    required this.isDark,
+    required this.onAccept,
+    required this.onDecline,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final myId = Supabase.instance.client.auth.currentUser?.id ?? '';
+    final profile = request.requesterProfile ?? request.otherProfile(myId);
+    final name = profile?.displayName ?? profile?.username ?? 'ผู้ใช้';
+    final username = profile?.username;
+
+    return RepaintBoundary(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                RoundedAvatar(
+                  name: name,
+                  avatarUrl: profile?.avatarUrl,
+                  size: 40,
+                  radius: 16,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: GoogleFonts.notoSansThai(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight,
+                        ),
+                      ),
+                      if (username != null)
+                        Text(
+                          '@$username',
+                          style: GoogleFonts.notoSansThai(
+                            fontSize: 12,
+                            color: isDark
+                                ? AppColors.textTertiaryDark
+                                : AppColors.textTertiaryLight,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: isResponding ? null : () => onAccept(request),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: isResponding
+                          ? const Color(0xFF9CA3AF)
+                          : const Color(0xFF286BFE),
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                    ),
+                    child: const Icon(Icons.check_rounded,
+                        color: Colors.white, size: 16),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                GestureDetector(
+                  onTap: isResponding ? null : () => onDecline(request),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF374151)
+                          : AppColors.borderLight,
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                    ),
+                    child: Icon(
+                      Icons.close_rounded,
+                      color: isDark
+                          ? AppColors.textTertiaryDark
+                          : const Color(0xFF6B7280),
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!isLast)
+            Divider(
+              height: 1,
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+        ],
+      ),
     );
   }
 }

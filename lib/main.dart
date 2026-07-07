@@ -168,15 +168,18 @@ class _KidtangAppState extends State<KidtangApp> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = context.watch<ThemeProvider>();
-    final authProvider = context.watch<AuthProvider>();
+    // Narrow selects — only rebuild when the specific field changes.
+    final isDark = context.select<ThemeProvider, bool>((t) => t.isDark);
+    final needsLineReturn = context.select<AuthProvider, bool>(
+      (a) => a.lineWebLoginNeedsReturnToApp,
+    );
 
     return MaterialApp.router(
       title: 'Kidtang! - มาจ่ายเงินกัน',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: themeProvider.isDark ? ThemeMode.dark : ThemeMode.light,
+      themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
       routerConfig: _router,
       builder: (context, child) {
         return Center(
@@ -186,7 +189,7 @@ class _KidtangAppState extends State<KidtangApp> {
             // the installed PWA) finishes here — override the router's
             // child entirely and tell the user to switch back to the app
             // rather than showing the normal app UI in this throwaway tab.
-            child: authProvider.lineWebLoginNeedsReturnToApp
+            child: needsLineReturn
                 ? const LineWebReturnScreen()
                 : child!,
           ),

@@ -15,7 +15,6 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
-  bool _lineLoading = false;
   bool _googleLoading = false;
   String? _error;
   bool _showIosInstallBanner = false;
@@ -64,20 +63,6 @@ class _LoginScreenState extends State<LoginScreen>
     if (kIsWeb) context.read<AuthProvider>().removeListener(_onAuthChanged);
     _animCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _signInWithLine() async {
-    setState(() {
-      _lineLoading = true;
-      _error = null;
-    });
-    final err = await context.read<AuthProvider>().signInWithLine();
-    if (mounted) {
-      setState(() {
-        _lineLoading = false;
-        _error = err;
-      });
-    }
   }
 
   Future<void> _signInWithGoogle() async {
@@ -339,7 +324,7 @@ class _LoginScreenState extends State<LoginScreen>
                         // up via the onCurrentUserChanged listener in
                         // AuthProvider (same as before).
                         _SocialButton(
-                          onTap: _lineLoading || _googleLoading
+                          onTap: _googleLoading
                               ? null
                               : _signInWithGoogle,
                           isLoading: _googleLoading,
@@ -620,24 +605,20 @@ class _FeaturePill extends StatelessWidget {
 class _SocialButton extends StatelessWidget {
   final VoidCallback? onTap;
   final bool isLoading;
-  final Gradient? gradient;
   final Color? backgroundColor;
   final Widget icon;
   final String label;
   final Color labelColor;
   final BoxBorder? border;
-  final Color? shadowColor;
 
   const _SocialButton({
     required this.onTap,
     required this.isLoading,
-    this.gradient,
     this.backgroundColor,
     required this.icon,
     required this.label,
     required this.labelColor,
     this.border,
-    this.shadowColor,
   });
 
   @override
@@ -651,33 +632,20 @@ class _SocialButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Ink(
           decoration: BoxDecoration(
-            gradient: isDisabled
-                ? null
-                : gradient,
-            color: gradient == null
-                ? (isDisabled
-                    ? (backgroundColor ?? Colors.grey).withValues(alpha: 0.5)
-                    : backgroundColor)
-                : null,
+            color: isDisabled
+                ? (backgroundColor ?? Colors.grey).withValues(alpha: 0.5)
+                : backgroundColor,
             borderRadius: BorderRadius.circular(16),
             border: border,
-            boxShadow: shadowColor != null && !isDisabled
+            boxShadow: border == null
                 ? [
                     BoxShadow(
-                      color: shadowColor!.withValues(alpha: 0.35),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
                   ]
-                : border == null
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
-                    : null,
+                : null,
           ),
           child: InkWell(
             onTap: onTap,

@@ -6,18 +6,8 @@ import '../stores/groups_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/form_label.dart';
-
-const _kEmojiPresets = [
-  '🍜', '🍕', '🍺', '🎉', '✈️', '🏖️', '🎂', '🛒',
-  '🏠', '💊', '🎮', '🎵', '🚗', '⚽', '📚', '💼',
-  '🌮', '🍣', '🥗', '🍔', '🍦', '☕', '🍷', '🎁',
-  '🏋️', '🎬', '🛫', '🏕️', '🎯', '💰',
-];
-
-const _kDefaultTags = [
-  'อาหาร', 'เที่ยว', 'ปาร์ตี้', 'ช้อปปิ้ง', 'ที่พัก',
-  'เดินทาง', 'บันเทิง', 'สุขภาพ', 'การศึกษา', 'อื่นๆ',
-];
+import '../widgets/shared/bill_form_constants.dart';
+import '../widgets/shared/emoji_picker_grid.dart';
 
 /// Full-page create/edit group screen.
 class CreateGroupScreen extends StatefulWidget {
@@ -62,7 +52,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           setState(() {
             _nameCtrl.text = group.name;
             _emoji = group.emoji;
-            _tags = List<String>.from(group.tags ?? []);
+            _tags = List<String>.from(group.tags);
           });
         }
       });
@@ -249,7 +239,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
 
                 if (_showEmojiPicker) ...[
                   const SizedBox(height: 8),
-                  _EmojiPickerGrid(
+                  EmojiPickerGrid(
                     selected: _emoji,
                     isDark: isDark,
                     onSelect: (e) => setState(() {
@@ -282,7 +272,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
-                  children: _kDefaultTags.map((tag) {
+                  children: kDefaultTags.map((tag) {
                     final selected = _tags.contains(tag);
                     return GestureDetector(
                       onTap: () => _toggleTag(tag),
@@ -385,69 +375,3 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
   }
 }
 
-// ── Emoji Picker Grid ──────────────────────────────────────────
-
-class _EmojiPickerGrid extends StatelessWidget {
-  final String? selected;
-  final bool isDark;
-  final void Function(String) onSelect;
-  final VoidCallback onClear;
-
-  const _EmojiPickerGrid({
-    required this.selected,
-    required this.isDark,
-    required this.onSelect,
-    required this.onClear,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(maxHeight: 192),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.bgDark : AppColors.neutral50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(8),
-        child: Wrap(
-          spacing: 4,
-          runSpacing: 4,
-          children: [
-            GestureDetector(
-              onTap: onClear,
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.borderDark : AppColors.neutral100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Center(
-                  child: Text('✕', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                ),
-              ),
-            ),
-            ..._kEmojiPresets.map((e) {
-              final isSelected = selected == e;
-              return GestureDetector(
-                onTap: () => onSelect(e),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                    border: isSelected ? Border.all(color: AppColors.primary, width: 2) : null,
-                  ),
-                  child: Center(child: Text(e, style: const TextStyle(fontSize: 18))),
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-}

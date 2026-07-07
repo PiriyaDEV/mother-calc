@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../repositories/friends_repository.dart';
@@ -14,31 +14,55 @@ class FriendsStore extends ChangeNotifier {
   bool _hasLoaded = false;
   String? _error;
 
+  // ── Cached derived lists (same reference when content unchanged) ──────────
+  // Mirrors BillsStore's listEquals-based cache-invalidation pattern.
+  // context.select on these getters now provides real dedup — the selector
+  // only fires a rebuild when the list reference actually changes.
+  List<Friend> _cachedFriends = const [];
+  List<Friend> _cachedPendingReceived = const [];
+  List<Friend> _cachedPendingSent = const [];
+
   bool get loading => _loading;
   bool get hasLoaded => _hasLoaded;
   String? get error => _error;
 
   String? get _myId => _supabase.auth.currentUser?.id;
 
-  List<Friend> get friends =>
-      _byId.values.where((f) => f.status == 'accepted').toList();
-  List<Friend> get pendingReceived {
-    final myId = _myId;
-    if (myId == null) return [];
-    return _byId.values
-        .where((f) => f.status == 'pending' && f.addresseeId == myId)
-        .toList();
-  }
+  List<Friend> get friends => _cachedFriends;
+  List<Friend> get pendingReceived => _cachedPendingReceived;
+  List<Friend> get pendingSent => _cachedPendingSent;
 
-  List<Friend> get pendingSent {
-    final myId = _myId;
-    if (myId == null) return [];
-    return _byId.values
-        .where((f) => f.status == 'pending' && f.requesterId == myId)
-        .toList();
-  }
+  int get pendingCount => _cachedPendingReceived.length;
 
-  int get pendingCount => pendingReceived.length;
+  /// Recompute derived lists and keep the same reference when content is
+  /// unchanged — so context.select sees no change and skips the rebuild.
+  void _invalidateCache() {
+    final myId = _myId;
+
+    final newFriends =
+        _byId.values.where((f) => f.status == 'accepted').toList();
+    if (!listEquals(_cachedFriends, newFriends)) {
+      _cachedFriends = newFriends;
+    }
+
+    final newPendingReceived = myId == null
+        ? <Friend>[]
+        : _byId.values
+            .where((f) => f.status == 'pending' && f.addresseeId == myId)
+            .toList();
+    if (!listEquals(_cachedPendingReceived, newPendingReceived)) {
+      _cachedPendingReceived = newPendingReceived;
+    }
+
+    final newPendingSent = myId == null
+        ? <Friend>[]
+        : _byId.values
+            .where((f) => f.status == 'pending' && f.requesterId == myId)
+            .toList();
+    if (!listEquals(_cachedPendingSent, newPendingSent)) {
+      _cachedPendingSent = newPendingSent;
+    }
+  }
 
   Future<void> loadFriends({bool force = false}) async {
     final user = _supabase.auth.currentUser;
@@ -53,6 +77,7 @@ class FriendsStore extends ChangeNotifier {
         for (final row in rows) (row['id'] as String): Friend.fromJson(row)
       };
       _hasLoaded = true;
+      _invalidateCache();
     } catch (e) {
       _error = 'ไม่สามารถโหลดข้อมูลเพื่อนได้';
       debugPrint('FriendsStore.loadFriends: $e');
@@ -90,12 +115,14 @@ class FriendsStore extends ChangeNotifier {
     final prev = _byId[rowId];
     if (prev == null) return null;
     _byId[rowId] = prev.copyWith(status: 'accepted');
+    _invalidateCache();
     notifyListeners();
     try {
       await _repo.updateStatus(rowId, 'accepted');
       return null;
     } catch (e) {
       _byId[rowId] = prev;
+      _invalidateCache();
       notifyListeners();
       debugPrint('FriendsStore.acceptFriendRequest: $e');
       return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
@@ -107,12 +134,14 @@ class FriendsStore extends ChangeNotifier {
     final prev = _byId[rowId];
     if (prev == null) return null;
     _byId.remove(rowId);
+    _invalidateCache();
     notifyListeners();
     try {
       await _repo.deleteRow(rowId);
       return null;
     } catch (e) {
       _byId[rowId] = prev;
+      _invalidateCache();
       notifyListeners();
       debugPrint('FriendsStore.declineFriendRequest: $e');
       return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
@@ -123,12 +152,14 @@ class FriendsStore extends ChangeNotifier {
     final prev = _byId[rowId];
     if (prev == null) return null;
     _byId.remove(rowId);
+    _invalidateCache();
     notifyListeners();
     try {
       await _repo.deleteRow(rowId);
       return null;
     } catch (e) {
       _byId[rowId] = prev;
+      _invalidateCache();
       notifyListeners();
       debugPrint('FriendsStore.removeFriend: $e');
       return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
@@ -139,6 +170,7 @@ class FriendsStore extends ChangeNotifier {
     _byId = {};
     _hasLoaded = false;
     _error = null;
+    _invalidateCache();
     notifyListeners();
   }
 }

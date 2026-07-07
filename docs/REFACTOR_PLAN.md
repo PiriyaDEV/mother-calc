@@ -6,8 +6,8 @@
 |---|---|---|
 | Phase 1 — `bill_detail_screen.dart` + `group_detail_screen.dart` | ✅ **DONE** | 2026-07-06 |
 | Phase 2 — In-place extractions (summary_tab, analytics_tab, home, friends, me) | ✅ **DONE** | analytics_tab ✅ 2026-07-06, summary_tab ✅ 2026-07-06, friends ✅ 2026-07-07, home ✅ 2026-07-07, me ✅ 2026-07-07 |
-| Phase 3 — Cross-file consolidation (create-flow dedup + models split) | ⬜ Pending | — |
-| Phase 4 — State management targeted fixes | ⬜ Pending | — |
+| Phase 3 — Cross-file consolidation (create-flow dedup + models split) | ✅ **DONE** | create-flow dedup ✅ 2026-07-07, models split ✅ 2026-07-07 |
+| Phase 4 — State management targeted fixes | ✅ **DONE** | items 1,3,4 ✅ 2026-07-07 · item 2 (AuthProvider decomposition) ✅ 2026-07-07 |
 
 ### Phase 1 — What was done
 - Extracted `bill_detail_screen.dart` (2571 lines → ~550 lines) into `lib/widgets/bill_detail/`: `stacked_avatars.dart`, `bill_summary_card.dart`, `member_tile.dart`, `item_tile.dart`, `pill_tab_bar.dart`, `items_tab.dart`, `members_tab.dart`, `item_form_sheet.dart`, `member_form_sheet.dart`, `index.dart`
