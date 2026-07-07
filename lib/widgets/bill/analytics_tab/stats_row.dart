@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
-
-const _kEmerald500 = Color(0xFF10B981);
 
 class StatsRow extends StatelessWidget {
   final int itemCount;
@@ -49,7 +48,7 @@ class StatsRow extends StatelessWidget {
             label: 'เฉลี่ย/คน',
             gradientColors: const [Color(0xFFECFDF5), Color(0xFFF0FDFA)],
             borderColor: const Color(0xFFA7F3D0),
-            valueColor: _kEmerald500,
+            valueColor: AppColors.emerald500,
           ),
         ),
       ],

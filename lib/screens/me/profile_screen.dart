@@ -87,7 +87,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/me');
+            }
+          },
         ),
         title: Text('แก้ไขโปรไฟล์', style: GoogleFonts.notoSansThai(fontWeight: FontWeight.w600)),
         elevation: 0,

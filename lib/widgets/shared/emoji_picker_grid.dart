@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
-import 'bill_form_constants.dart';
+import 'constants.dart';
 
 /// Emoji picker grid shared by CreateBillScreen and CreateGroupScreen.
 class EmojiPickerGrid extends StatelessWidget {

@@ -102,7 +102,13 @@ class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerPr
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_rounded),
-              onPressed: () => context.pop(),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/bills');
+                }
+              },
             ),
           ),
           body: Center(
@@ -144,7 +150,13 @@ class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerPr
                     backgroundColor: isDark ? AppColors.bgDark.withValues(alpha: 0.95) : Colors.white.withValues(alpha: 0.95),
                     leading: IconButton(
                       icon: const Icon(Icons.arrow_back_ios_rounded),
-                      onPressed: () => context.pop(),
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/bills');
+                        }
+                      },
                     ),
                     title: _BillAppBarTitle(
                       bill: bill,

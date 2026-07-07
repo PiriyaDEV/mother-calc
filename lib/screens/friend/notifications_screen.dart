@@ -107,7 +107,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 children: [
                   // ← back
                   GestureDetector(
-                    onTap: () => context.go('/'),
+                    onTap: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/me');
+                      }
+                    },
                     child: Container(
                       width: 32,
                       height: 32,

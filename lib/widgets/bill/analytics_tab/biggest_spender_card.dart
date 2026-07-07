@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
 import 'package:kidtang_flutter/widgets/shared/member_avatar.dart';
 import 'member_total.dart';
-
-const _kAmber50 = Color(0xFFFFFBEB);
-const _kOrange50 = Color(0xFFFFF7ED);
-const _kAmberBorder = Color(0xFFFDE68A);
-const _kAmber500 = Color(0xFFF59E0B);
-const _kAmber600 = Color(0xFFD97706);
 
 class BiggestSpenderCard extends StatelessWidget {
   final MemberTotal payer;
@@ -29,12 +24,12 @@ class BiggestSpenderCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [_kAmber50, _kOrange50],
+          colors: [AppColors.amber50, AppColors.orange50],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _kAmberBorder),
+        border: Border.all(color: AppColors.amberBorder),
       ),
       child: Row(
         children: [
@@ -42,7 +37,7 @@ class BiggestSpenderCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: _kAmber500.withValues(alpha: 0.15),
+              color: AppColors.amber500.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Center(
@@ -59,7 +54,7 @@ class BiggestSpenderCard extends StatelessWidget {
                   style: GoogleFonts.notoSansThai(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: _kAmber600,
+                    color: AppColors.amber600,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -98,14 +93,14 @@ class BiggestSpenderCard extends StatelessWidget {
                 style: GoogleFonts.notoSansThai(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: _kAmber600,
+                  color: AppColors.amber600,
                 ),
               ),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: _kAmber500.withValues(alpha: 0.15),
+                  color: AppColors.amber500.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -113,7 +108,7 @@ class BiggestSpenderCard extends StatelessWidget {
                   style: GoogleFonts.notoSansThai(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: _kAmber600,
+                    color: AppColors.amber600,
                   ),
                 ),
               ),

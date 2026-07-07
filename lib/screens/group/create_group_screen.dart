@@ -6,7 +6,7 @@ import 'package:kidtang_flutter/stores/groups_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/confirm_dialog.dart';
 import 'package:kidtang_flutter/widgets/shared/form_label.dart';
-import 'package:kidtang_flutter/widgets/shared/bill_form_constants.dart';
+import 'package:kidtang_flutter/widgets/shared/constants.dart';
 import 'package:kidtang_flutter/widgets/shared/emoji_picker_grid.dart';
 
 /// Full-page create/edit group screen.
@@ -163,7 +163,13 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_rounded),
-            onPressed: () => context.pop(),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/groups');
+              }
+            },
           ),
           title: Text(
             titleText,

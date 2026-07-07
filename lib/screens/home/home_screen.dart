@@ -11,6 +11,7 @@ import 'package:kidtang_flutter/stores/bills_store.dart';
 import 'package:kidtang_flutter/stores/groups_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
+import 'package:kidtang_flutter/widgets/shared/constants.dart';
 import 'package:kidtang_flutter/widgets/shared/skeleton_loader.dart';
 import 'package:kidtang_flutter/widgets/home/index.dart';
 
@@ -28,18 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _ratesLoading = true;
   String _ratesUpdated = '';
 
-  static const _currencies = [
-    _CurrencyConfig('USD', 'ดอลลาร์สหรัฐ', '🇺🇸'),
-    _CurrencyConfig('EUR', 'ยูโร', '🇪🇺'),
-    _CurrencyConfig('JPY', 'เยนญี่ปุ่น', '🇯🇵'),
-    _CurrencyConfig('CNY', 'หยวนจีน', '🇨🇳'),
-    _CurrencyConfig('GBP', 'ปอนด์อังกฤษ', '🇬🇧'),
-    _CurrencyConfig('KRW', 'วอนเกาหลี', '🇰🇷'),
-    _CurrencyConfig('SGD', 'ดอลลาร์สิงคโปร์', '🇸🇬'),
-    _CurrencyConfig('AUD', 'ดอลลาร์ออสเตรเลีย', '🇦🇺'),
-    _CurrencyConfig('HKD', 'ดอลลาร์ฮ่องกง', '🇭🇰'),
-    _CurrencyConfig('MYR', 'ริงกิตมาเลเซีย', '🇲🇾'),
-  ];
+  static const _currencies = kExchangeRateCurrencies;
 
   @override
   void initState() {
@@ -357,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               : r.rate.toStringAsFixed(2);
                                           return CurrencyCard(
                                             code: r.code,
-                                            name: cfg.name,
+                                            name: cfg.label,
                                             flag: cfg.flag,
                                             rateStr: rateStr,
                                             isDark: isDark,
@@ -464,14 +454,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// ── Local data models (currency config + rate) ────────────────────────────────
-
-class _CurrencyConfig {
-  final String code;
-  final String name;
-  final String flag;
-  const _CurrencyConfig(this.code, this.name, this.flag);
-}
+// ── Local data model (rate) ───────────────────────────────────────────────────
 
 class _RateData {
   final String code;

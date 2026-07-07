@@ -4,9 +4,6 @@ import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
 import 'member_total.dart';
 
-const _kAmber500 = Color(0xFFF59E0B);
-const _kEmerald500 = Color(0xFF10B981);
-
 class FairnessCard extends StatelessWidget {
   final MemberTotal biggestPayer;
   final MemberTotal smallestPayer;
@@ -32,10 +29,10 @@ class FairnessCard extends StatelessWidget {
       fairnessColor = AppColors.red;
     } else if (ratio > 1.5) {
       fairnessEmoji = '🤔';
-      fairnessColor = _kAmber500;
+      fairnessColor = AppColors.amber500;
     } else {
       fairnessEmoji = '😊';
-      fairnessColor = _kEmerald500;
+      fairnessColor = AppColors.emerald500;
     }
     final ratioText = '${ratio.toStringAsFixed(1)}x';
 
@@ -103,7 +100,7 @@ class FairnessCard extends StatelessWidget {
                   label: 'จ่ายน้อยสุด',
                   name: smallestPayer.member.name,
                   amount: smallestPayer.total,
-                  color: _kEmerald500,
+                  color: AppColors.emerald500,
                   isDark: isDark,
                   align: CrossAxisAlignment.start,
                 ),
@@ -122,7 +119,7 @@ class FairnessCard extends StatelessWidget {
                   label: 'จ่ายเยอะสุด',
                   name: biggestPayer.member.name,
                   amount: biggestPayer.total,
-                  color: _kAmber500,
+                  color: AppColors.amber500,
                   isDark: isDark,
                   align: CrossAxisAlignment.end,
                 ),

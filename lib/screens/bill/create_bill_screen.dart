@@ -8,27 +8,9 @@ import 'package:kidtang_flutter/stores/bills_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/confirm_dialog.dart';
 import 'package:kidtang_flutter/widgets/shared/form_label.dart';
-import 'package:kidtang_flutter/widgets/shared/bill_form_constants.dart';
+import 'package:kidtang_flutter/widgets/shared/constants.dart';
 import 'package:kidtang_flutter/widgets/shared/emoji_picker_grid.dart';
 import 'package:kidtang_flutter/widgets/shared/toggle_card.dart';
-
-const _kCurrencies = [
-  {'code': 'THB', 'flag': '🇹🇭', 'symbol': '฿',  'label': 'บาท'},
-  {'code': 'USD', 'flag': '🇺🇸', 'symbol': '\$', 'label': 'USD'},
-  {'code': 'EUR', 'flag': '🇪🇺', 'symbol': '€',  'label': 'EUR'},
-  {'code': 'JPY', 'flag': '🇯🇵', 'symbol': '¥',  'label': 'JPY'},
-  {'code': 'SGD', 'flag': '🇸🇬', 'symbol': 'S\$','label': 'SGD'},
-  {'code': 'GBP', 'flag': '🇬🇧', 'symbol': '£',  'label': 'GBP'},
-  {'code': 'CNY', 'flag': '🇨🇳', 'symbol': '¥',  'label': 'CNY'},
-  {'code': 'KRW', 'flag': '🇰🇷', 'symbol': '₩',  'label': 'KRW'},
-];
-
-const _kRoundingOptions = [
-  {'value': 'none',    'label': 'ไม่ปัด'},
-  {'value': 'nearest', 'label': 'ใกล้สุด'},
-  {'value': 'up',      'label': 'ขึ้น'},
-  {'value': 'down',    'label': 'ลง'},
-];
 
 // ── Screen ─────────────────────────────────────────────────────
 
@@ -223,7 +205,13 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_rounded),
-            onPressed: () => context.pop(),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/bills');
+              }
+            },
           ),
           title: Text(
             titleText,
@@ -513,10 +501,10 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                   crossAxisSpacing: 8,
                   mainAxisSpacing: 8,
                   childAspectRatio: 3.2,
-                  children: _kCurrencies.map((c) {
-                    final selected = _currency == c['code'];
+                  children: kBillFormCurrencies.map((c) {
+                    final selected = _currency == c.code;
                     return GestureDetector(
-                      onTap: () => setState(() => _currency = c['code']!),
+                      onTap: () => setState(() => _currency = c.code),
                       child: Container(
                         decoration: BoxDecoration(
                           color: selected
@@ -527,10 +515,10 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(c['flag']!, style: const TextStyle(fontSize: 14)),
+                            Text(c.flag, style: const TextStyle(fontSize: 14)),
                             const SizedBox(width: 6),
                             Text(
-                              '${c['symbol']} ${c['label']}',
+                              '${c.symbol} ${c.label}',
                               style: GoogleFonts.notoSansThai(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -556,7 +544,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                 const FormSectionLabel(label: 'การปัดเศษ'),
                 const SizedBox(height: 8),
                 Row(
-                  children: _kRoundingOptions.map((r) {
+                  children: kRoundingOptions.map((r) {
                     final selected = _roundingMode == r['value'];
                     return Expanded(
                       child: GestureDetector(

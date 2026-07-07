@@ -96,6 +96,14 @@ class AppColors {
   static const redFaint = Color(0xFFFFEEEE);
   static const greenFaint = Color(0xFFEEFBF4);
 
+  // ── Amber/orange scale (bill analytics UI) — distinct shades
+  // from `amber` above, not aliases of them.
+  static const amber50 = Color(0xFFFFFBEB);
+  static const orange50 = Color(0xFFFFF7ED);
+  static const amberBorder = Color(0xFFFDE68A);
+  static const amber500 = Color(0xFFF59E0B);
+  static const amber600 = Color(0xFFD97706);
+
   // ── Shadow tokens ─────────────────────────────────────────────
   static const shadowSubtle = [
     BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1)),
@@ -167,10 +175,25 @@ class ThemeColors {
 }
 
 class AppTheme {
+  // Same builder on every platform — no CupertinoPageTransitionsBuilder,
+  // so iOS/macOS lose the native edge-swipe-to-pop gesture. Back navigation
+  // must go through an explicit back button (context.pop()) instead.
+  static const _pageTransitionsTheme = PageTransitionsTheme(
+    builders: {
+      TargetPlatform.android: ZoomPageTransitionsBuilder(),
+      TargetPlatform.iOS: ZoomPageTransitionsBuilder(),
+      TargetPlatform.macOS: ZoomPageTransitionsBuilder(),
+      TargetPlatform.linux: ZoomPageTransitionsBuilder(),
+      TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+      TargetPlatform.fuchsia: ZoomPageTransitionsBuilder(),
+    },
+  );
+
   static ThemeData light() {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      pageTransitionsTheme: _pageTransitionsTheme,
       colorScheme: const ColorScheme.light(
         primary: AppColors.primaryBlue,
         secondary: AppColors.accentSky,
@@ -290,6 +313,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      pageTransitionsTheme: _pageTransitionsTheme,
       colorScheme: const ColorScheme.dark(
         primary: AppColors.primaryBlueDark,
         secondary: AppColors.accentSkyDark,
