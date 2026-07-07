@@ -9,10 +9,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
+  flutter_web_plugins:
+    sdk: flutter
+
   # State management
   provider: ^6.1.2
-  
+
   # Navigation
   go_router: ^13.2.0
   
