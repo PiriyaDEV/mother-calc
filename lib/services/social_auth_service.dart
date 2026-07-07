@@ -28,17 +28,19 @@ class SocialAuthResult {
 class SocialAuthService with WidgetsBindingObserver {
   final _supabase = Supabase.instance.client;
   late final GoogleSignIn _googleSignIn;
+  late final String googleWebClientId;
+  void Function(String)? _onGoogleWebError;
 
   Timer? _handoffPollTimer;
 
   /// Called by [AuthProvider] during its own [_init].
-  /// Sets up GoogleSignIn, registers the lifecycle observer, and wires the
-  /// web GIS `onCurrentUserChanged` stream.
+  /// Sets up GoogleSignIn and registers the lifecycle observer.
   ///
-  /// [onGoogleWebError] is called when the GIS popup completes with an error
-  /// (web only) — AuthProvider stores the error and calls notifyListeners().
+  /// [onGoogleWebError] is called when a web Google sign-in (driven by
+  /// [handleGoogleWebCredential]) fails — AuthProvider stores the error and
+  /// calls notifyListeners().
   void init({required void Function(String) onGoogleWebError}) {
-    String googleWebClientId;
+    _onGoogleWebError = onGoogleWebError;
     try {
       googleWebClientId = dotenv.env['GOOGLE_WEB_CLIENT_ID']?.isNotEmpty == true
           ? dotenv.env['GOOGLE_WEB_CLIENT_ID']!
@@ -48,20 +50,11 @@ class SocialAuthService with WidgetsBindingObserver {
     }
 
     _googleSignIn = GoogleSignIn(
-      clientId: kIsWeb && googleWebClientId.isNotEmpty ? googleWebClientId : null,
       serverClientId: !kIsWeb && googleWebClientId.isNotEmpty ? googleWebClientId : null,
       scopes: ['email', 'openid'],
     );
 
     if (kIsWeb) WidgetsBinding.instance.addObserver(this);
-
-    if (kIsWeb) {
-      _googleSignIn.onCurrentUserChanged.listen((account) async {
-        if (account == null) return;
-        final error = await _handleGoogleAccount(account);
-        if (error != null) onGoogleWebError(error);
-      });
-    }
   }
 
   void dispose() {
@@ -71,14 +64,22 @@ class SocialAuthService with WidgetsBindingObserver {
 
   // ── Google ────────────────────────────────────────────────────────────────
 
-  /// Native (mobile) sign-in only — web sign-in is triggered by the user
-  /// clicking Google Identity Services' own rendered button, whose result
-  /// arrives via the `onCurrentUserChanged` listener set up in [init].
+  /// Native (mobile) sign-in only — web sign-in is driven by
+  /// [handleGoogleWebCredential], called once the user clicks Google
+  /// Identity Services' own rendered button (see google_web_button_web.dart).
   Future<String?> signInWithGoogle() async {
     try {
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null; // user cancelled
-      return await _handleGoogleAccount(googleUser);
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      if (idToken == null) return 'Google sign-in failed: missing ID token';
+      return await _finishGoogleSignIn(
+        idToken: idToken,
+        accessToken: googleAuth.accessToken,
+        displayNameHint: googleUser.displayName,
+        avatarUrlHint: googleUser.photoUrl,
+      );
     } on PlatformException catch (e) {
       debugPrint('Google SDK error: ${e.code} — ${e.message}');
       if (e.code == 'sign_in_canceled') return null;
@@ -89,27 +90,39 @@ class SocialAuthService with WidgetsBindingObserver {
     }
   }
 
-  Future<String?> _handleGoogleAccount(GoogleSignInAccount googleUser) async {
-    try {
-      final googleAuth = await googleUser.authentication;
-      final idToken = googleAuth.idToken;
-      if (idToken == null) return 'Google sign-in failed: missing ID token';
+  /// Called by [AuthProvider] once Google Identity Services' web button
+  /// returns a signed credential. [rawNonce] is the same value the button
+  /// passed to Google (hashed) when it initialized — Supabase hashes it
+  /// again and compares against the `nonce` claim in [idToken].
+  Future<void> handleGoogleWebCredential(String idToken, String rawNonce) async {
+    final error = await _finishGoogleSignIn(idToken: idToken, nonce: rawNonce);
+    if (error != null) _onGoogleWebError?.call(error);
+  }
 
+  Future<String?> _finishGoogleSignIn({
+    required String idToken,
+    String? accessToken,
+    String? nonce,
+    String? displayNameHint,
+    String? avatarUrlHint,
+  }) async {
+    try {
       final authResponse = await _supabase.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
-        accessToken: googleAuth.accessToken,
+        accessToken: accessToken,
+        nonce: nonce,
       );
 
       final user = authResponse.user;
       if (user == null) return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
 
-      final displayName = googleUser.displayName ??
+      final displayName = displayNameHint ??
           user.userMetadata?['full_name'] as String? ??
           user.userMetadata?['name'] as String? ??
           user.email?.split('@').first ??
           'Google User';
-      final avatarUrl = googleUser.photoUrl ??
+      final avatarUrl = avatarUrlHint ??
           user.userMetadata?['avatar_url'] as String? ??
           user.userMetadata?['picture'] as String?;
 

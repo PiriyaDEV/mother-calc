@@ -253,6 +253,11 @@ class AuthProvider extends ChangeNotifier {
 
   Future<String?> signInWithGoogle() => _socialAuth.signInWithGoogle();
 
+  String get googleWebClientId => _socialAuth.googleWebClientId;
+
+  Future<void> handleGoogleWebCredential(String idToken, String nonce) =>
+      _socialAuth.handleGoogleWebCredential(idToken, nonce);
+
   Future<String?> signInWithLine() => _socialAuth.signInWithLine();
 
   Future<void> signOut() async {

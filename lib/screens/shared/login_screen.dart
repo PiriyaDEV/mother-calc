@@ -332,7 +332,14 @@ class _LoginScreenState extends State<LoginScreen>
                         // platforms keep the app's own styled button, which
                         // calls signInWithGoogle() directly.
                         if (kIsWeb)
-                          Center(child: renderGoogleSignInButton())
+                          Center(
+                            child: renderGoogleSignInButton(
+                              clientId: context.read<AuthProvider>().googleWebClientId,
+                              onCredential: (idToken, nonce) => context
+                                  .read<AuthProvider>()
+                                  .handleGoogleWebCredential(idToken, nonce),
+                            ),
+                          )
                         else
                           _SocialButton(
                             onTap: _googleLoading
