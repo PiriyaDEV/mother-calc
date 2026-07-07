@@ -16,6 +16,8 @@ drop trigger if exists trips_updated_at           on public.trips;
 drop trigger if exists bills_updated_at           on public.bills;
 drop trigger if exists profiles_sync_names        on public.profiles;
 drop trigger if exists push_on_notification_insert on public.notifications;
+drop trigger if exists bill_items_recalc_total    on public.bill_items;
+drop trigger if exists bills_settings_recalc_total on public.bills;
 
 -- Functions
 drop function if exists public.handle_new_user()             cascade;
@@ -26,6 +28,10 @@ drop function if exists public.is_group_owner(uuid)           cascade;
 drop function if exists public.sync_bill_member_names()       cascade;
 drop function if exists public.trigger_push_on_notification() cascade;
 drop function if exists public.get_line_login_handoff(text)   cascade;
+drop function if exists public.recalc_bill_total(uuid)        cascade;
+drop function if exists public.trg_bill_items_recalc_total()  cascade;
+drop function if exists public.trg_bills_settings_recalc_total() cascade;
+drop function if exists public.get_bill_aggregate_stats()     cascade;
 -- Tables (child -> parent order)
 drop table if exists public.bill_items          cascade;
 drop table if exists public.bill_members        cascade;
@@ -137,6 +143,8 @@ create table public.bills (
   status           text not null default 'draft' check (status in ('draft', 'pending_payment', 'completed')),
                                                       -- 'draft' = editable | 'completed' = locked, payment tracking enabled
   paid_member_ids  jsonb not null default '[]',       -- [uuid] list of bill_member IDs who have paid (updated via toggleMemberPaid)
+  total            numeric not null default 0,        -- kept in sync by recalc_bill_total() — mirrors calculateBill() in bill_utils.dart
+  item_count       integer not null default 0,        -- kept in sync by recalc_bill_total()
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
 );
@@ -204,7 +212,9 @@ create index friends_addressee_idx      on public.friends(addressee_id);
 create index bills_owner_id_idx         on public.bills(owner_id);
 create index bills_group_id_idx         on public.bills(group_id);
 create index bills_trip_id_idx          on public.bills(trip_id);
+create index bills_status_updated_at_idx on public.bills(status, updated_at desc);
 create index bill_members_bill_id_idx   on public.bill_members(bill_id);
+create index bill_members_user_id_idx   on public.bill_members(user_id);
 create index bill_items_bill_id_idx     on public.bill_items(bill_id);
 create index trips_owner_id_idx         on public.trips(owner_id);
 create index trips_group_id_idx         on public.trips(group_id);
@@ -540,6 +550,74 @@ create trigger profiles_sync_names
   after update of display_name on public.profiles
   for each row execute procedure public.sync_bill_member_names();
 
+-- Keeps bills.total/item_count in sync with bill_items + settings so the
+-- app can page through bills (.range()) without fetching every row just
+-- to sum totals. Mirrors calculateBill() in bill_utils.dart exactly:
+-- subtotal (sum of item price — NOT price*quantity) -> + service% ->
+-- + vat% (on subtotal+service) -> + flat tip -> - flat discount.
+create function public.recalc_bill_total(p_bill_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  v_subtotal numeric;
+  v_count    integer;
+  v_settings jsonb;
+  v_service  numeric;
+begin
+  select coalesce(sum(price), 0), count(*)
+    into v_subtotal, v_count
+    from public.bill_items
+    where bill_id = p_bill_id;
+
+  select settings into v_settings from public.bills where id = p_bill_id;
+  if v_settings is null then
+    return;
+  end if;
+
+  v_service := v_subtotal * coalesce((v_settings->>'serviceCharge')::numeric, 0) / 100;
+
+  update public.bills set
+    total = v_subtotal
+      + v_service
+      + (v_subtotal + v_service) * coalesce((v_settings->>'vat')::numeric, 0) / 100
+      + coalesce((v_settings->>'tip')::numeric, 0)
+      - coalesce((v_settings->>'discount')::numeric, 0),
+    item_count = v_count
+  where id = p_bill_id;
+end;
+$$;
+
+create function public.trg_bill_items_recalc_total()
+returns trigger language plpgsql as $$
+begin
+  if tg_op = 'DELETE' then
+    perform public.recalc_bill_total(old.bill_id);
+  else
+    perform public.recalc_bill_total(new.bill_id);
+    if tg_op = 'UPDATE' and old.bill_id is distinct from new.bill_id then
+      perform public.recalc_bill_total(old.bill_id);
+    end if;
+  end if;
+  return null;
+end;
+$$;
+
+create trigger bill_items_recalc_total
+  after insert or update or delete on public.bill_items
+  for each row execute procedure public.trg_bill_items_recalc_total();
+
+create function public.trg_bills_settings_recalc_total()
+returns trigger language plpgsql as $$
+begin
+  perform public.recalc_bill_total(new.id);
+  return null;
+end;
+$$;
+
+create trigger bills_settings_recalc_total
+  after update of settings on public.bills
+  for each row when (old.settings is distinct from new.settings)
+  execute procedure public.trg_bills_settings_recalc_total();
+
 -- Fires after every INSERT into notifications and calls the send-push
 -- Edge Function (fire-and-forget via pg_net). Requires two DB-level
 -- settings this script can't set for you (they're secrets) — run once
@@ -640,4 +718,42 @@ $$;
 -- required for the insert.
 grant execute on function public.get_line_login_handoff(text) to anon, authenticated;
 grant insert on public.line_login_handoffs to anon, authenticated;
+
+-- ============================================================
+-- Bill aggregate stats RPC
+-- ============================================================
+
+-- Aggregate stats for the current user's visible bills (draft/pending/
+-- completed counts, grand total, total items, biggest bill) — lets the
+-- app show accurate totals/tab counts while paging through bills instead
+-- of fetching every row to fold client-side. SECURITY INVOKER (default)
+-- so it's automatically scoped by the bills_select RLS policy.
+create function public.get_bill_aggregate_stats()
+returns table (
+  total_count           integer,
+  draft_count           integer,
+  pending_payment_count integer,
+  completed_count       integer,
+  grand_total           numeric,
+  total_items           bigint,
+  biggest_bill_id       uuid,
+  biggest_bill_title    text,
+  biggest_bill_emoji    text,
+  biggest_bill_total    numeric
+) language sql stable as $$
+  select
+    count(*)::int,
+    count(*) filter (where status = 'draft')::int,
+    count(*) filter (where status = 'pending_payment')::int,
+    count(*) filter (where status = 'completed')::int,
+    coalesce(sum(total), 0),
+    coalesce(sum(item_count), 0),
+    (select id    from public.bills order by total desc limit 1),
+    (select title from public.bills order by total desc limit 1),
+    (select emoji from public.bills order by total desc limit 1),
+    coalesce(max(total), 0)
+  from public.bills;
+$$;
+
+grant execute on function public.get_bill_aggregate_stats() to authenticated;
 

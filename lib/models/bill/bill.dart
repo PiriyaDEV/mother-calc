@@ -17,6 +17,8 @@ class Bill {
   final List<String> paidMemberIds;
   final List<BillMember> members;
   final List<BillItem> items;
+  final double total;
+  final int itemCount;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -34,6 +36,8 @@ class Bill {
     this.paidMemberIds = const [],
     this.members = const [],
     this.items = const [],
+    this.total = 0,
+    this.itemCount = 0,
     this.createdAt,
     this.updatedAt,
   });
@@ -108,6 +112,8 @@ class Bill {
       paidMemberIds: paidMemberIds,
       members: members,
       items: items,
+      total: (json['total'] as num?)?.toDouble() ?? 0,
+      itemCount: (json['item_count'] as num?)?.toInt() ?? 0,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
           : null,
@@ -140,6 +146,8 @@ class Bill {
     List<String>? paidMemberIds,
     List<BillMember>? members,
     List<BillItem>? items,
+    double? total,
+    int? itemCount,
   }) {
     return Bill(
       id: id,
@@ -153,6 +161,8 @@ class Bill {
       paidMemberIds: paidMemberIds ?? this.paidMemberIds,
       members: members ?? this.members,
       items: items ?? this.items,
+      total: total ?? this.total,
+      itemCount: itemCount ?? this.itemCount,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );

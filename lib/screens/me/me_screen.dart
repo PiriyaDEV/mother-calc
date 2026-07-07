@@ -14,6 +14,7 @@ import 'package:kidtang_flutter/providers/notifications_provider.dart';
 import 'package:kidtang_flutter/providers/theme_provider.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
+import 'package:kidtang_flutter/widgets/shared/skeleton_loader.dart';
 import 'package:kidtang_flutter/widgets/me/index.dart';
 
 // ── Helpers ────────────────────────────────────────────────────
@@ -272,6 +273,14 @@ class _MeScreenState extends State<MeScreen>
     final providers = auth.user?.appMetadata['providers'] as List?;
     final isGoogleUser =
         providers != null && providers.contains('google');
+
+    if (profile == null) {
+      return const Scaffold(
+        backgroundColor: Colors.transparent,
+        bottomNavigationBar: BannerAdWidget(),
+        body: SafeArea(child: MeScreenSkeleton()),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.transparent,

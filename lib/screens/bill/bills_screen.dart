@@ -26,7 +26,11 @@ class _BillsScreenState extends State<BillsScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<BillsStore>().loadAll();
+      final store = context.read<BillsStore>();
+      store.loadStats();
+      for (final status in kBillStatuses) {
+        store.loadInitialPage(status);
+      }
     });
   }
 
@@ -43,12 +47,16 @@ class _BillsScreenState extends State<BillsScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final activeBills = context.select<BillsStore, List<Bill>>((s) => s.activeBills);
-    final pendingPaymentBills = context.select<BillsStore, List<Bill>>((s) => s.pendingPaymentBills);
-    final completedBills = context.select<BillsStore, List<Bill>>((s) => s.completedBills);
-    final allBillsCount = context.select<BillsStore, int>((s) => s.all.length);
-    final loading = context.select<BillsStore, bool>((s) => s.loading);
-    final hasLoaded = context.select<BillsStore, bool>((s) => s.hasLoaded);
+    final store = context.watch<BillsStore>();
+    final draftView = store.viewFor('draft');
+    final pendingView = store.viewFor('pending_payment');
+    final completedView = store.viewFor('completed');
+    final stats = store.stats;
+    final allBillsCount = stats?.totalCount ?? 0;
+    final draftCount = stats?.draftCount ?? draftView.items.length;
+    final pendingCount = stats?.pendingPaymentCount ?? pendingView.items.length;
+    final completedCount = stats?.completedCount ?? completedView.items.length;
+    final allLoaded = draftView.loaded && pendingView.loaded && completedView.loaded;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -158,9 +166,9 @@ class _BillsScreenState extends State<BillsScreen>
                     fontWeight: FontWeight.w400,
                   ),
                   tabs: [
-                    Tab(text: 'ดราฟ (${activeBills.length})'),
-                    Tab(text: 'รอจ่าย (${pendingPaymentBills.length})'),
-                    Tab(text: 'เสร็จแล้ว (${completedBills.length})'),
+                    Tab(text: 'ดราฟ ($draftCount)'),
+                    Tab(text: 'รอจ่าย ($pendingCount)'),
+                    Tab(text: 'เสร็จแล้ว ($completedCount)'),
                   ],
                 ),
               ),
@@ -171,33 +179,33 @@ class _BillsScreenState extends State<BillsScreen>
 
             // ── Content ──────────────────────────────────────────
             Expanded(
-              child: loading && !hasLoaded
+              child: !allLoaded
                   ? const BillsListSkeleton()
                   : TabBarView(
                       controller: _tabController,
                       children: [
                         _BillList(
-                          bills: activeBills,
+                          status: 'draft',
+                          view: draftView,
                           emptyEmoji: '🧾',
                           emptyText: 'ยังไม่มีบิล',
                           emptySubtext: 'กดปุ่ม + เพื่อสร้างบิลแรกของคุณ',
                           emptyCtaLabel: 'สร้างบิล',
                           onEmptyCta: _createBill,
-                          onRefresh: () => context.read<BillsStore>().loadAll(force: true),
                         ),
                         _BillList(
-                          bills: pendingPaymentBills,
+                          status: 'pending_payment',
+                          view: pendingView,
                           emptyEmoji: '⏳',
                           emptyText: 'ยังไม่มีบิลที่รอจ่าย',
                           emptySubtext: 'บิลที่ปิดแล้วและรอชำระเงินจะปรากฏที่นี่',
-                          onRefresh: () => context.read<BillsStore>().loadAll(force: true),
                         ),
                         _BillList(
-                          bills: completedBills,
+                          status: 'completed',
+                          view: completedView,
                           emptyEmoji: '✅',
                           emptyText: 'ยังไม่มีบิลที่เสร็จ',
                           emptySubtext: 'บิลที่ชำระครบแล้วจะปรากฏที่นี่',
-                          onRefresh: () => context.read<BillsStore>().loadAll(force: true),
                         ),
                       ],
                     ),
@@ -210,36 +218,73 @@ class _BillsScreenState extends State<BillsScreen>
 }
 
 // ── Bill List ──────────────────────────────────────────────────
-class _BillList extends StatelessWidget {
-  final List<Bill> bills;
+class _BillList extends StatefulWidget {
+  final String status;
+  final BillsListView view;
   final String emptyText;
   final String emptySubtext;
   final String? emptyEmoji;
   final String? emptyCtaLabel;
   final VoidCallback? onEmptyCta;
-  final Future<void> Function() onRefresh;
 
   const _BillList({
-    required this.bills,
+    required this.status,
+    required this.view,
     required this.emptyText,
     required this.emptySubtext,
     this.emptyEmoji,
     this.emptyCtaLabel,
     this.onEmptyCta,
-    required this.onRefresh,
   });
+
+  @override
+  State<_BillList> createState() => _BillListState();
+}
+
+class _BillListState extends State<_BillList> {
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels > position.maxScrollExtent - 400) {
+      context.read<BillsStore>().loadMore(widget.status);
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    final store = context.read<BillsStore>();
+    await Future.wait([
+      store.refreshPage(widget.status),
+      store.loadStats(force: true),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bills = widget.view.items;
 
     if (bills.isEmpty) {
       return EmptyStateWidget(
-        emoji: emptyEmoji ?? '🧾',
-        title: emptyText,
-        subtitle: emptySubtext,
-        ctaLabel: emptyCtaLabel,
-        onCta: onEmptyCta,
+        emoji: widget.emptyEmoji ?? '🧾',
+        title: widget.emptyText,
+        subtitle: widget.emptySubtext,
+        ctaLabel: widget.emptyCtaLabel,
+        onCta: widget.onEmptyCta,
       );
     }
 
@@ -276,13 +321,30 @@ class _BillList extends StatelessWidget {
       }
     }
 
+    final showFooter = widget.view.loadingMore || widget.view.hasMore;
+
     return RefreshIndicator(
-      onRefresh: onRefresh,
+      onRefresh: _onRefresh,
       color: AppColors.primary,
       child: ListView.builder(
+        controller: _scrollController,
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
-        itemCount: items.length,
+        itemCount: items.length + (showFooter ? 1 : 0),
         itemBuilder: (context, index) {
+          if (index >= items.length) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: widget.view.loadingMore
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            );
+          }
           final item = items[index];
           if (item is _SectionHeader) {
             return _SectionHeaderWidget(item: item, isDark: isDark);

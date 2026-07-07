@@ -7,6 +7,7 @@ import 'package:kidtang_flutter/providers/notifications_provider.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
 import 'package:kidtang_flutter/widgets/shared/empty_state.dart';
+import 'package:kidtang_flutter/widgets/shared/skeleton_loader.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -192,9 +193,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             // ── Body ─────────────────────────────────────────
             Expanded(
               child: provider.loading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                          color: AppColors.primary, strokeWidth: 2))
+                  ? const NotificationsListSkeleton()
                   : RefreshIndicator(
                       onRefresh: () => provider.loadNotifications(),
                       color: AppColors.primary,

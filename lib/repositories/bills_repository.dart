@@ -23,6 +23,43 @@ class BillsRepository {
         .toList();
   }
 
+  /// One status tab's page of bills, newest-first. No owner_id filter for
+  /// the same RLS reason as [fetchAllForCurrentUser].
+  Future<List<Bill>> fetchPage({
+    required String status,
+    required int offset,
+    required int limit,
+  }) async {
+    final data = await _supabase
+        .from('bills')
+        .select(_billSelectWithGroup)
+        .eq('status', status)
+        .order('updated_at', ascending: false)
+        .range(offset, offset + limit - 1);
+    return (data as List)
+        .map((e) => Bill.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Most recently updated bills across every status — backs the home
+  /// screen's "recent bills" list without loading the whole history.
+  Future<List<Bill>> fetchRecent({int limit = 3}) async {
+    final data = await _supabase
+        .from('bills')
+        .select(_billSelectWithGroup)
+        .order('updated_at', ascending: false)
+        .limit(limit);
+    return (data as List)
+        .map((e) => Bill.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<BillAggregateStats> fetchAggregateStats() async {
+    final data = await _supabase.rpc('get_bill_aggregate_stats');
+    final row = (data as List).first as Map<String, dynamic>;
+    return BillAggregateStats.fromJson(row);
+  }
+
   Future<List<Bill>> fetchForGroup(String groupId) async {
     final data = await _supabase
         .from('bills')

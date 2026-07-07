@@ -6,26 +6,21 @@ import 'package:kidtang_flutter/stores/bills_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
 
-double _billTotal(Bill b) => b.items.fold(0.0, (s, i) => s + i.price);
-
 class StatsGrid extends StatelessWidget {
   final bool isDark;
   const StatsGrid({super.key, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
-    return Selector<BillsStore, List<Bill>>(
-      selector: (_, s) => s.all,
-      builder: (context, allBills, _) {
-        if (allBills.isEmpty) {
+    return Selector<BillsStore, BillAggregateStats?>(
+      selector: (_, s) => s.stats,
+      builder: (context, stats, _) {
+        if (stats == null || stats.totalCount == 0) {
           return const SliverToBoxAdapter(child: SizedBox.shrink());
         }
-        final grandTotal =
-            allBills.fold<double>(0, (s, b) => s + _billTotal(b));
-        final totalItems =
-            allBills.fold<int>(0, (s, b) => s + b.items.length);
-        final biggestBill =
-            allBills.reduce((a, b) => _billTotal(a) >= _billTotal(b) ? a : b);
+        final grandTotal = stats.grandTotal;
+        final totalItems = stats.totalItems;
+        final biggestBillTotal = stats.biggestBillTotal;
 
         return SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -40,7 +35,7 @@ class StatsGrid extends StatelessWidget {
               StatCard(
                 icon: Icons.trending_up_rounded,
                 label: 'เฉลี่ยต่อบิล',
-                value: '฿${formatNumber(grandTotal / allBills.length)}',
+                value: '฿${formatNumber(grandTotal / stats.totalCount)}',
                 accentColor: AppColors.primaryBlue,
                 bgColor:
                     isDark ? AppColors.accentIceDark : AppColors.accentIce,
@@ -48,7 +43,7 @@ class StatsGrid extends StatelessWidget {
               StatCard(
                 icon: Icons.receipt_long_rounded,
                 label: 'บิลทั้งหมด',
-                value: '${allBills.length} บิล',
+                value: '${stats.totalCount} บิล',
                 accentColor: const Color(0xFF7B5CF6),
                 bgColor: isDark
                     ? const Color(0xFF1E1A3A)
@@ -66,7 +61,7 @@ class StatsGrid extends StatelessWidget {
               StatCard(
                 icon: Icons.star_rounded,
                 label: 'บิลใหญ่สุด',
-                value: '฿${formatNumber(_billTotal(biggestBill))}',
+                value: '฿${formatNumber(biggestBillTotal)}',
                 accentColor: AppColors.emerald,
                 bgColor: isDark
                     ? AppColors.emerald.withValues(alpha: 0.12)

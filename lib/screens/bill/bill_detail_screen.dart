@@ -10,6 +10,7 @@ import 'package:kidtang_flutter/stores/groups_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
 import 'package:kidtang_flutter/widgets/shared/confirm_dialog.dart';
+import 'package:kidtang_flutter/widgets/shared/skeleton_loader.dart';
 import 'package:kidtang_flutter/widgets/bill/analytics_tab.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
 import 'package:kidtang_flutter/widgets/bill/summary_tab.dart';
@@ -85,9 +86,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerPr
         ),
         child: const Scaffold(
           backgroundColor: Colors.transparent,
-          body: Center(
-            child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
-          ),
+          body: SafeArea(child: BillDetailSkeleton()),
         ),
       );
     }
@@ -147,7 +146,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerPr
                   SliverAppBar(
                     pinned: true,
                     expandedHeight: 0,
-                    backgroundColor: isDark ? AppColors.bgDark.withValues(alpha: 0.95) : Colors.white.withValues(alpha: 0.95),
+                    backgroundColor: Colors.transparent,
                     leading: IconButton(
                       icon: const Icon(Icons.arrow_back_ios_rounded),
                       onPressed: () {

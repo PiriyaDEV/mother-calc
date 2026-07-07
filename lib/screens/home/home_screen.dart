@@ -40,8 +40,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadData({bool force = false}) async {
     await Future.wait([
-      context.read<BillsStore>().loadAll(force: force),
-      context.read<GroupsStore>().loadGroups(force: force),
+      context.read<BillsStore>().loadStats(force: force),
+      context.read<BillsStore>().loadRecent(force: force),
+      context.read<GroupsStore>().loadGroupsCount(force: force),
     ]);
   }
 
@@ -91,10 +92,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final profile = context.select<AuthProvider, Profile?>((a) => a.profile);
     final dataLoading = context.select<BillsStore, bool>(
-            (s) => s.loading && !s.hasLoaded) ||
-        context.select<GroupsStore, bool>((s) => s.loading && !s.hasLoaded);
-    final hasBills =
-        context.select<BillsStore, bool>((s) => s.all.isNotEmpty);
+        (s) => s.statsLoading && s.stats == null);
+    final hasBills = context
+        .select<BillsStore, bool>((s) => (s.stats?.totalCount ?? 0) > 0);
 
     final user = _supabase.auth.currentUser;
     final displayName = profile?.displayName ??
@@ -313,21 +313,14 @@ class _HomeScreenState extends State<HomeScreen> {
                               SizedBox(
                                 height: 116,
                                 child: _ratesLoading
-                                    ? ListView.separated(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount: 5,
-                                        separatorBuilder: (_, __) =>
-                                            const SizedBox(width: 10),
-                                        itemBuilder: (_, __) => Container(
-                                          width: 130,
-                                          decoration: BoxDecoration(
-                                            color: isDark
-                                                ? AppColors.surfaceDark
-                                                : Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(
-                                                    AppRadii.md),
-                                          ),
+                                    ? SkeletonLoader(
+                                        child: ListView.separated(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: 5,
+                                          separatorBuilder: (_, __) =>
+                                              const SizedBox(width: 10),
+                                          itemBuilder: (_, __) =>
+                                              const CurrencyCardSkeleton(),
                                         ),
                                       )
                                     : ListView.separated(

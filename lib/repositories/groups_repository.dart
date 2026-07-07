@@ -22,6 +22,18 @@ class GroupsRepository {
     }).toList();
   }
 
+  /// Cheap count-only query — backs the home hero card's group count
+  /// without loading every group's full member+profile join.
+  Future<int> fetchAcceptedGroupsCount(String userId) async {
+    final response = await _supabase
+        .from('group_members')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('status', 'accepted')
+        .count(CountOption.exact);
+    return response.count;
+  }
+
   Future<Group> fetchGroupDetail(String groupId) async {
     final data = await _supabase
         .from('groups')

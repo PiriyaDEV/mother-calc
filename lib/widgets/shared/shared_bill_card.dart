@@ -14,7 +14,7 @@ class SharedBillCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final total = bill.items.fold(0.0, (s, i) => s + i.price);
+    final total = bill.total;
     final isCompleted = bill.isCompleted;
 
     return GestureDetector(

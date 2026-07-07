@@ -49,10 +49,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
   }
 
   void _recompute() {
-    _totalAmount = widget.bills.fold<double>(
-      0,
-      (sum, b) => sum + b.items.fold<double>(0, (s, i) => s + i.price),
-    );
+    _totalAmount = widget.bills.fold<double>(0, (sum, b) => sum + b.total);
   }
 
   void _toggle(String billId) {
@@ -133,8 +130,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
         }
 
         final bill = widget.bills[index - 1];
-        final billTotal =
-            bill.items.fold<double>(0, (s, i) => s + i.price);
+        final billTotal = bill.total;
         final isExpanded = _expandedBillId == bill.id;
 
         return RepaintBoundary(

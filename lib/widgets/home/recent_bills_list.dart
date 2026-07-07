@@ -11,16 +11,8 @@ class RecentBillsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Selector<BillsStore, List<Bill>>(
-      selector: (_, s) => s.all,
-      builder: (context, allBills, _) {
-        final recentBills = ([...allBills]
-              ..sort((a, b) {
-                final aTime = a.updatedAt ?? DateTime(0);
-                final bTime = b.updatedAt ?? DateTime(0);
-                return bTime.compareTo(aTime);
-              }))
-            .take(3)
-            .toList();
+      selector: (_, s) => s.recentBills,
+      builder: (context, recentBills, _) {
         if (recentBills.isEmpty) {
           return const SliverToBoxAdapter(child: SizedBox.shrink());
         }

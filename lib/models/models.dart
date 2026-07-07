@@ -1,5 +1,6 @@
 // Barrel — import this file to get all models.
 export 'bill/bill.dart';
+export 'bill/bill_aggregate_stats.dart';
 export 'bill/bill_calculation.dart';
 export 'bill/bill_item.dart';
 export 'bill/bill_member.dart';

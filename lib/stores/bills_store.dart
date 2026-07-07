@@ -5,11 +5,60 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kidtang_flutter/models/models.dart';
 import 'package:kidtang_flutter/repositories/bills_repository.dart';
 
-/// Single in-memory source of truth for every bill the current user can
-/// see, keyed by id. Replaces the old BillProvider (single-bill copy) +
+const List<String> kBillStatuses = ['draft', 'pending_payment', 'completed'];
+const int kBillsPageSize = 20;
+
+/// One status tab's paginated view into [BillsStore._byId].
+class BillsListView {
+  final List<Bill> items;
+  final bool hasMore;
+  final bool loaded;
+  final bool loadingInitial;
+  final bool loadingMore;
+  final String? error;
+
+  const BillsListView({
+    required this.items,
+    required this.hasMore,
+    required this.loaded,
+    required this.loadingInitial,
+    required this.loadingMore,
+    required this.error,
+  });
+
+  static const empty = BillsListView(
+    items: [],
+    hasMore: true,
+    loaded: false,
+    loadingInitial: false,
+    loadingMore: false,
+    error: null,
+  );
+}
+
+class _BillsPage {
+  List<String> ids = [];
+  bool hasMore = true;
+  bool loaded = false;
+  bool loadingInitial = false;
+  bool loadingMore = false;
+  String? error;
+}
+
+/// Single in-memory source of truth for every bill the current user has
+/// touched, keyed by id. Replaces the old BillProvider (single-bill copy) +
 /// BillsListProvider (list copy) + GroupsProvider._currentGroupBills
 /// (per-group copy) — those three used to drift out of sync with each
 /// other because each mutation only patched one of them.
+///
+/// Unlike the old design, this store does NOT assume `_byId` holds every
+/// bill the user can see — the global "all my bills" views (draft/pending/
+/// completed tabs, home screen stats/recent) are paginated: `_byId` only
+/// holds whatever pages/bills have actually been fetched. Per-group bill
+/// lists ([forGroup]) and single-bill lookups ([getById]/[ensureLoaded])
+/// still behave as full/on-demand fetches, since a group's bill history is
+/// naturally bounded (see plan discussion — group screens need every item
+/// for their fairness/analytics math anyway).
 ///
 /// Updates/deletes on a bill already in the map apply optimistically
 /// (mutate the map + notifyListeners immediately, persist to Supabase in
@@ -24,20 +73,20 @@ class BillsStore extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
 
   Map<String, Bill> _byId = {};
-  bool _loading = false;
-  bool _hasLoaded = false;
   String? _error;
 
-  // ── Cached computed lists — recomputed whenever _byId changes, but a
-  // recomputed list only replaces the cached reference when its content
-  // actually differs (via listEquals). This keeps context.select/Selector
-  // identity checks working, so a mutation to one bill/group doesn't churn
-  // the list identity for unrelated bills/groups and trigger their rebuilds.
-  List<Bill> _cachedAll = const [];
-  List<Bill> _cachedActive = const [];
-  List<Bill> _cachedPendingPayment = const [];
-  List<Bill> _cachedCompleted = const [];
-  List<Bill> _cachedPersonal = const [];
+  // ── Global paginated views ───────────────────────────────────
+  final Map<String, _BillsPage> _pagesByStatus = {
+    for (final s in kBillStatuses) s: _BillsPage(),
+  };
+  List<String> _recentIds = [];
+  bool _recentLoading = false;
+  bool _recentLoaded = false;
+  BillAggregateStats? _stats;
+  bool _statsLoading = false;
+  bool _statsLoaded = false;
+
+  // ── Per-group bill lists (unpaginated — see class doc) ───────
   final Map<String, List<Bill>> _cachedByGroup = {};
 
   // Realtime channels
@@ -46,92 +95,165 @@ class BillsStore extends ChangeNotifier {
   RealtimeChannel? _itemsChannel;
 
   // Debounce timers to avoid hammering DB on rapid changes
-  Timer? _reloadAllDebounce;
+  Timer? _realtimeInsertDebounce;
   final Map<String, Timer> _reloadBillDebounce = {};
 
-  bool get loading => _loading;
-  bool get hasLoaded => _hasLoaded;
   String? get error => _error;
 
-  /// Recompute cached lists from `_byId`. Must be called whenever `_byId` is
-  /// mutated. Each cache keeps its previous reference when the newly
-  /// filtered content is unchanged (see field comment above).
-  void _invalidateCache() {
-    final newAll = _byId.values.toList();
-    _cachedAll = listEquals(_cachedAll, newAll) ? _cachedAll : newAll;
+  BillAggregateStats? get stats => _stats;
+  bool get statsLoading => _statsLoading;
 
-    final newActive = _cachedAll.where((b) => b.status == 'draft').toList();
-    _cachedActive =
-        listEquals(_cachedActive, newActive) ? _cachedActive : newActive;
+  Bill? getById(String id) => _byId[id];
 
-    final newPendingPayment =
-        _cachedAll.where((b) => b.status == 'pending_payment').toList();
-    _cachedPendingPayment = listEquals(_cachedPendingPayment, newPendingPayment)
-        ? _cachedPendingPayment
-        : newPendingPayment;
+  /// Per-group bills — only ever populated via explicit [loadForGroup],
+  /// merged into the shared `_byId` map so there's still only one copy of
+  /// any given bill's content.
+  List<Bill> forGroup(String groupId) => _cachedByGroup[groupId] ??=
+      _byId.values.where((b) => b.groupId == groupId).toList();
 
-    final newCompleted =
-        _cachedAll.where((b) => b.status == 'completed').toList();
-    _cachedCompleted =
-        listEquals(_cachedCompleted, newCompleted) ? _cachedCompleted : newCompleted;
+  List<Bill> get recentBills =>
+      _recentIds.map((id) => _byId[id]).whereType<Bill>().toList();
+  bool get recentLoading => _recentLoading;
 
-    final newPersonal = _cachedAll.where((b) => b.groupId == null).toList();
-    _cachedPersonal =
-        listEquals(_cachedPersonal, newPersonal) ? _cachedPersonal : newPersonal;
+  BillsListView viewFor(String status) {
+    final page = _pagesByStatus[status];
+    if (page == null) return BillsListView.empty;
+    return BillsListView(
+      items: page.ids.map((id) => _byId[id]).whereType<Bill>().toList(),
+      hasMore: page.hasMore,
+      loaded: page.loaded,
+      loadingInitial: page.loadingInitial,
+      loadingMore: page.loadingMore,
+      error: page.error,
+    );
+  }
 
-    for (final groupId in _cachedByGroup.keys.toList()) {
-      final newForGroup =
-          _cachedAll.where((b) => b.groupId == groupId).toList();
-      final old = _cachedByGroup[groupId];
-      _cachedByGroup[groupId] =
-          (old != null && listEquals(old, newForGroup)) ? old : newForGroup;
+  void _invalidateGroupCache(String? groupId) {
+    if (groupId != null) _cachedByGroup.remove(groupId);
+  }
+
+  // ── Global aggregate stats ───────────────────────────────────
+
+  Future<void> loadStats({bool force = false}) async {
+    if (_statsLoaded && !force) return;
+    if (_supabase.auth.currentUser == null) return;
+    _statsLoading = true;
+    notifyListeners();
+    try {
+      _stats = await _repo.fetchAggregateStats();
+      _statsLoaded = true;
+    } catch (e) {
+      debugPrint('BillsStore.loadStats: $e');
+    } finally {
+      _statsLoading = false;
+      notifyListeners();
     }
   }
 
-  List<Bill> get all => _cachedAll;
-  Bill? getById(String id) => _byId[id];
-  List<Bill> forGroup(String groupId) => _cachedByGroup[groupId] ??=
-      _cachedAll.where((b) => b.groupId == groupId).toList();
-  List<Bill> get personalBills => _cachedPersonal;
-  List<Bill> get activeBills => _cachedActive;
-  List<Bill> get pendingPaymentBills => _cachedPendingPayment;
-  List<Bill> get completedBills => _cachedCompleted;
-
-  /// Notify listeners and invalidate caches in one call.
-  void _notifyAndInvalidate() {
-    _invalidateCache();
-    notifyListeners();
-  }
-
-  Future<void> loadAll({bool force = false}) async {
-    if (_hasLoaded && !force) return;
+  Future<void> loadRecent({bool force = false, int limit = 3}) async {
+    if (_recentLoaded && !force) return;
     if (_supabase.auth.currentUser == null) return;
-    _loading = true;
-    _error = null;
+    _recentLoading = true;
     notifyListeners();
     try {
-      final bills = await _repo.fetchAllForCurrentUser();
-      _byId = {for (final b in bills) b.id: b};
-      _hasLoaded = true;
+      final bills = await _repo.fetchRecent(limit: limit);
+      for (final b in bills) {
+        _byId[b.id] = b;
+      }
+      _recentIds = bills.map((b) => b.id).toList();
+      _recentLoaded = true;
     } catch (e) {
-      _error = 'ไม่สามารถโหลดบิลได้';
-      debugPrint('BillsStore.loadAll: $e');
+      debugPrint('BillsStore.loadRecent: $e');
     } finally {
-      _loading = false;
-      _notifyAndInvalidate();
+      _recentLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // ── Per-status paginated tabs (bills_screen) ─────────────────
+
+  Future<void> loadInitialPage(String status, {int limit = kBillsPageSize}) async {
+    final page = _pagesByStatus[status];
+    if (page == null || page.loaded || page.loadingInitial) return;
+    if (_supabase.auth.currentUser == null) return;
+    page.loadingInitial = true;
+    page.error = null;
+    notifyListeners();
+    try {
+      final bills = await _repo.fetchPage(status: status, offset: 0, limit: limit);
+      for (final b in bills) {
+        _byId[b.id] = b;
+      }
+      page.ids = bills.map((b) => b.id).toList();
+      page.hasMore = bills.length == limit;
+      page.loaded = true;
+    } catch (e) {
+      page.error = 'ไม่สามารถโหลดบิลได้';
+      debugPrint('BillsStore.loadInitialPage($status): $e');
+    } finally {
+      page.loadingInitial = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadMore(String status, {int limit = kBillsPageSize}) async {
+    final page = _pagesByStatus[status];
+    if (page == null) return;
+    if (page.loadingMore || page.loadingInitial || !page.hasMore) return;
+    page.loadingMore = true;
+    notifyListeners();
+    try {
+      final bills = await _repo.fetchPage(
+        status: status,
+        offset: page.ids.length,
+        limit: limit,
+      );
+      for (final b in bills) {
+        _byId[b.id] = b;
+      }
+      page.ids = [...page.ids, ...bills.map((b) => b.id)];
+      page.hasMore = bills.length == limit;
+    } catch (e) {
+      debugPrint('BillsStore.loadMore($status): $e');
+    } finally {
+      page.loadingMore = false;
+      notifyListeners();
+    }
+  }
+
+  /// Pull-to-refresh — re-fetches from offset 0, keeping the same number of
+  /// rows already loaded (so refreshing doesn't visually shrink the list).
+  Future<void> refreshPage(String status) async {
+    final page = _pagesByStatus[status];
+    if (page == null) return;
+    final limit = page.ids.isEmpty ? kBillsPageSize : page.ids.length;
+    try {
+      final bills = await _repo.fetchPage(status: status, offset: 0, limit: limit);
+      for (final b in bills) {
+        _byId[b.id] = b;
+      }
+      page.ids = bills.map((b) => b.id).toList();
+      page.hasMore = bills.length == limit;
+      page.loaded = true;
+      page.error = null;
+    } catch (e) {
+      debugPrint('BillsStore.refreshPage($status): $e');
+    } finally {
+      notifyListeners();
     }
   }
 
   /// Fetches bills for one group and merges them into the shared map —
-  /// does not replace the whole store, so it's safe to call alongside
-  /// [loadAll].
+  /// does not replace the whole store, so it's safe to call alongside the
+  /// global paginated views above.
   Future<void> loadForGroup(String groupId) async {
     try {
       final bills = await _repo.fetchForGroup(groupId);
       for (final b in bills) {
         _byId[b.id] = b;
       }
-      _notifyAndInvalidate();
+      _invalidateGroupCache(groupId);
+      notifyListeners();
     } catch (e) {
       debugPrint('BillsStore.loadForGroup: $e');
     }
@@ -145,12 +267,36 @@ class BillsStore extends ChangeNotifier {
     try {
       final bill = await _repo.fetchById(billId);
       _byId[billId] = bill;
-      _notifyAndInvalidate();
+      notifyListeners();
       return bill;
     } catch (e) {
       debugPrint('BillsStore.ensureLoaded: $e');
       return null;
     }
+  }
+
+  // ── Page/stats bookkeeping helpers for mutations ─────────────
+
+  void _insertIntoPage(String status, String billId) {
+    final page = _pagesByStatus[status];
+    if (page == null || !page.loaded) return;
+    if (!page.ids.contains(billId)) {
+      page.ids = [billId, ...page.ids];
+    }
+  }
+
+  void _removeFromPage(String status, String billId) {
+    final page = _pagesByStatus[status];
+    if (page == null) return;
+    page.ids = page.ids.where((id) => id != billId).toList();
+  }
+
+  /// Fire-and-forget refresh of global aggregates after a mutation that
+  /// changes counts/totals — deliberately not awaited so it never blocks
+  /// the optimistic UI update that already happened.
+  void _refreshAggregatesInBackground({bool refreshRecent = false}) {
+    loadStats(force: true);
+    if (refreshRecent) loadRecent(force: true);
   }
 
   Future<Bill?> createBill({
@@ -172,7 +318,10 @@ class BillsStore extends ChangeNotifier {
         settings: settings,
       );
       _byId[bill.id] = bill;
-      _notifyAndInvalidate();
+      _insertIntoPage(bill.status, bill.id);
+      _invalidateGroupCache(bill.groupId);
+      notifyListeners();
+      _refreshAggregatesInBackground(refreshRecent: true);
       return bill;
     } catch (e) {
       debugPrint('BillsStore.createBill: $e');
@@ -184,12 +333,18 @@ class BillsStore extends ChangeNotifier {
     final prev = _byId[billId];
     if (prev == null) return;
     _byId.remove(billId);
-    _notifyAndInvalidate();
+    _removeFromPage(prev.status, billId);
+    _recentIds = _recentIds.where((id) => id != billId).toList();
+    _invalidateGroupCache(prev.groupId);
+    notifyListeners();
     try {
       await _repo.deleteBill(billId);
+      _refreshAggregatesInBackground();
     } catch (e) {
       _byId[billId] = prev;
-      _notifyAndInvalidate();
+      _insertIntoPage(prev.status, billId);
+      _invalidateGroupCache(prev.groupId);
+      notifyListeners();
       debugPrint('BillsStore.deleteBill: $e');
       rethrow;
     }
@@ -210,7 +365,8 @@ class BillsStore extends ChangeNotifier {
       tags: tags ?? prev.tags,
       settings: settings ?? prev.settings,
     );
-    _notifyAndInvalidate();
+    _invalidateGroupCache(prev.groupId);
+    notifyListeners();
     try {
       await _repo.updateBill(billId, {
         if (title != null) 'title': title,
@@ -219,9 +375,13 @@ class BillsStore extends ChangeNotifier {
         if (settings != null) 'settings': settings.toJson(),
         'updated_at': DateTime.now().toIso8601String(),
       });
+      // Settings changes affect bills.total server-side (see the
+      // recalc_bill_total trigger) — refresh so stats stay accurate.
+      if (settings != null) _refreshAggregatesInBackground();
     } catch (e) {
       _byId[billId] = prev;
-      _notifyAndInvalidate();
+      _invalidateGroupCache(prev.groupId);
+      notifyListeners();
       debugPrint('BillsStore.updateBillMeta: $e');
       rethrow;
     }
@@ -231,15 +391,20 @@ class BillsStore extends ChangeNotifier {
     final prev = _byId[billId];
     if (prev == null) return;
     _byId[billId] = prev.copyWith(status: status);
-    _notifyAndInvalidate();
+    _removeFromPage(prev.status, billId);
+    _insertIntoPage(status, billId);
+    notifyListeners();
     try {
       await _repo.updateBill(billId, {
         'status': status,
         'updated_at': DateTime.now().toIso8601String(),
       });
+      _refreshAggregatesInBackground(refreshRecent: true);
     } catch (e) {
       _byId[billId] = prev;
-      _notifyAndInvalidate();
+      _removeFromPage(status, billId);
+      _insertIntoPage(prev.status, billId);
+      notifyListeners();
       debugPrint('BillsStore._updateStatus: $e');
       rethrow;
     }
@@ -257,12 +422,12 @@ class BillsStore extends ChangeNotifier {
         ? prev.paidMemberIds.where((id) => id != memberId).toList()
         : [...prev.paidMemberIds, memberId];
     _byId[billId] = prev.copyWith(paidMemberIds: newIds);
-    _notifyAndInvalidate();
+    notifyListeners();
     try {
       await _repo.updateBill(billId, {'paid_member_ids': newIds});
     } catch (e) {
       _byId[billId] = prev;
-      _notifyAndInvalidate();
+      notifyListeners();
       debugPrint('BillsStore.toggleMemberPaid: $e');
       rethrow;
     }
@@ -311,7 +476,7 @@ class BillsStore extends ChangeNotifier {
       final current = _byId[billId];
       if (current == null) return;
       _byId[billId] = current.copyWith(members: [...current.members, member]);
-      _notifyAndInvalidate();
+      notifyListeners();
     } catch (e) {
       debugPrint('BillsStore.autoAddCurrentUser: $e');
     }
@@ -346,7 +511,7 @@ class BillsStore extends ChangeNotifier {
       final current = _byId[billId];
       if (current == null) return;
       _byId[billId] = current.copyWith(members: [...current.members, member]);
-      _notifyAndInvalidate();
+      notifyListeners();
     } catch (e) {
       debugPrint('BillsStore.addMemberFromGroupMember: $e');
       rethrow;
@@ -373,7 +538,7 @@ class BillsStore extends ChangeNotifier {
       final current = _byId[billId];
       if (current == null) return;
       _byId[billId] = current.copyWith(members: [...current.members, member]);
-      _notifyAndInvalidate();
+      notifyListeners();
     } catch (e) {
       debugPrint('BillsStore.addMember: $e');
       rethrow;
@@ -405,12 +570,12 @@ class BillsStore extends ChangeNotifier {
       return m;
     }).toList();
     _byId[billId] = prev.copyWith(members: newMembers);
-    _notifyAndInvalidate();
+    notifyListeners();
     try {
       await _repo.updateMember(memberId, updates);
     } catch (e) {
       _byId[billId] = prev;
-      _notifyAndInvalidate();
+      notifyListeners();
       debugPrint('BillsStore.editMember: $e');
       rethrow;
     }
@@ -432,12 +597,12 @@ class BillsStore extends ChangeNotifier {
       );
     }).toList();
     _byId[billId] = prev.copyWith(members: newMembers, items: newItems);
-    _notifyAndInvalidate();
+    notifyListeners();
     try {
       await _repo.deleteMember(memberId);
     } catch (e) {
       _byId[billId] = prev;
-      _notifyAndInvalidate();
+      notifyListeners();
       debugPrint('BillsStore.deleteMember: $e');
       rethrow;
     }
@@ -467,7 +632,10 @@ class BillsStore extends ChangeNotifier {
       final current = _byId[billId];
       if (current == null) return;
       _byId[billId] = current.copyWith(items: [...current.items, item]);
-      _notifyAndInvalidate();
+      notifyListeners();
+      // bills.total/item_count update server-side via the
+      // recalc_bill_total trigger — refresh the aggregate view of it.
+      _refreshAggregatesInBackground();
     } catch (e) {
       debugPrint('BillsStore.addItem: $e');
       rethrow;
@@ -515,12 +683,13 @@ class BillsStore extends ChangeNotifier {
       return item;
     }).toList();
     _byId[billId] = prev.copyWith(items: newItems);
-    _notifyAndInvalidate();
+    notifyListeners();
     try {
       await _repo.updateItem(itemId, updates);
+      if (price != null) _refreshAggregatesInBackground();
     } catch (e) {
       _byId[billId] = prev;
-      _notifyAndInvalidate();
+      notifyListeners();
       debugPrint('BillsStore.editItem: $e');
       rethrow;
     }
@@ -531,12 +700,13 @@ class BillsStore extends ChangeNotifier {
     if (prev == null) return;
     final newItems = prev.items.where((item) => item.id != itemId).toList();
     _byId[billId] = prev.copyWith(items: newItems);
-    _notifyAndInvalidate();
+    notifyListeners();
     try {
       await _repo.deleteItem(itemId);
+      _refreshAggregatesInBackground();
     } catch (e) {
       _byId[billId] = prev;
-      _notifyAndInvalidate();
+      notifyListeners();
       debugPrint('BillsStore.deleteItem: $e');
       rethrow;
     }
@@ -544,10 +714,20 @@ class BillsStore extends ChangeNotifier {
 
   void clear() {
     _byId = {};
-    _hasLoaded = false;
     _error = null;
+    for (final page in _pagesByStatus.values) {
+      page.ids = [];
+      page.hasMore = true;
+      page.loaded = false;
+      page.error = null;
+    }
+    _recentIds = [];
+    _recentLoaded = false;
+    _stats = null;
+    _statsLoaded = false;
+    _cachedByGroup.clear();
     _unsubscribeRealtime();
-    _notifyAndInvalidate();
+    notifyListeners();
   }
 
   // ── Realtime ──────────────────────────────────────────────
@@ -566,7 +746,7 @@ class BillsStore extends ChangeNotifier {
           event: PostgresChangeEvent.insert,
           schema: 'public',
           table: 'bills',
-          callback: (_) => _scheduleReloadAll(),
+          callback: (_) => _scheduleRealtimeInsertRefresh(),
         )
         .onPostgresChanges(
           event: PostgresChangeEvent.update,
@@ -584,8 +764,14 @@ class BillsStore extends ChangeNotifier {
           callback: (payload) {
             final id = payload.oldRecord['id'] as String?;
             if (id != null) {
+              final prev = _byId[id];
               _byId.remove(id);
-              _notifyAndInvalidate();
+              if (prev != null) {
+                _removeFromPage(prev.status, id);
+                _invalidateGroupCache(prev.groupId);
+              }
+              _recentIds = _recentIds.where((rid) => rid != id).toList();
+              notifyListeners();
             }
           },
         )
@@ -629,19 +815,27 @@ class BillsStore extends ChangeNotifier {
     _billsChannel = null;
     _membersChannel = null;
     _itemsChannel = null;
-    _reloadAllDebounce?.cancel();
+    _realtimeInsertDebounce?.cancel();
     for (final t in _reloadBillDebounce.values) {
       t.cancel();
     }
     _reloadBillDebounce.clear();
   }
 
-  /// Debounced full reload — used when a new bill INSERT arrives (we don't
-  /// know the id yet so we can't do a targeted fetch).
-  void _scheduleReloadAll() {
-    _reloadAllDebounce?.cancel();
-    _reloadAllDebounce = Timer(const Duration(milliseconds: 800), () {
-      loadAll(force: true);
+  /// Debounced refresh after a `bills` INSERT arrives from realtime (we
+  /// don't know which bill it is up front, so there's no single id to
+  /// patch). Rather than reloading the whole history like the old
+  /// full-table `loadAll()` did, this only refreshes pages/lists already
+  /// loaded on screen, bounded by however many rows they already hold —
+  /// bounded and self-healing, not another unbounded fetch.
+  void _scheduleRealtimeInsertRefresh() {
+    _realtimeInsertDebounce?.cancel();
+    _realtimeInsertDebounce = Timer(const Duration(milliseconds: 800), () {
+      for (final status in kBillStatuses) {
+        if (_pagesByStatus[status]!.loaded) refreshPage(status);
+      }
+      if (_recentLoaded) loadRecent(force: true);
+      loadStats(force: true);
     });
   }
 
@@ -652,15 +846,26 @@ class BillsStore extends ChangeNotifier {
     _reloadBillDebounce[billId] =
         Timer(const Duration(milliseconds: 400), () async {
       _reloadBillDebounce.remove(billId);
+      final prevStatus = _byId[billId]?.status;
       try {
         final bill = await _repo.fetchById(billId);
         _byId[billId] = bill;
-        _notifyAndInvalidate();
+        if (prevStatus != null && prevStatus != bill.status) {
+          _removeFromPage(prevStatus, billId);
+          _insertIntoPage(bill.status, billId);
+        }
+        _invalidateGroupCache(bill.groupId);
+        notifyListeners();
       } catch (e) {
         // Bill may have been deleted or is no longer accessible — remove it
         if (_byId.containsKey(billId)) {
-          _byId.remove(billId);
-          _notifyAndInvalidate();
+          final prev = _byId.remove(billId);
+          if (prev != null) {
+            _removeFromPage(prev.status, billId);
+            _invalidateGroupCache(prev.groupId);
+          }
+          _recentIds = _recentIds.where((id) => id != billId).toList();
+          notifyListeners();
         }
         debugPrint('BillsStore._scheduleReloadBill($billId): $e');
       }

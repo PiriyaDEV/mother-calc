@@ -7,26 +7,22 @@ import 'package:kidtang_flutter/stores/groups_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
 
-double _billTotal(Bill b) => b.items.fold(0.0, (s, i) => s + i.price);
-
 class HeroBalanceCard extends StatelessWidget {
   const HeroBalanceCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Selector2<BillsStore, GroupsStore, (List<Bill>, int, bool)>(
+    return Selector2<BillsStore, GroupsStore, (BillAggregateStats?, int, bool)>(
       selector: (_, billsStore, groupsStore) => (
-        billsStore.all,
-        groupsStore.groups.length,
-        (billsStore.loading && !billsStore.hasLoaded) ||
-            (groupsStore.loading && !groupsStore.hasLoaded),
+        billsStore.stats,
+        groupsStore.groupsCount ?? 0,
+        billsStore.statsLoading && billsStore.stats == null,
       ),
       builder: (context, data, _) {
-        final (allBills, groupsCount, dataLoading) = data;
-        final grandTotal =
-            allBills.fold<double>(0, (s, b) => s + _billTotal(b));
-        final totalItems =
-            allBills.fold<int>(0, (s, b) => s + b.items.length);
+        final (stats, groupsCount, dataLoading) = data;
+        final grandTotal = stats?.grandTotal ?? 0;
+        final totalItems = stats?.totalItems ?? 0;
+        final totalBills = stats?.totalCount ?? 0;
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -119,7 +115,7 @@ class HeroBalanceCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           HeroPill(
-                            label: '${allBills.length} บิล',
+                            label: '$totalBills บิล',
                             icon: Icons.receipt_rounded,
                           ),
                           const SizedBox(width: 8),

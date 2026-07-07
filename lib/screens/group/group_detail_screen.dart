@@ -7,6 +7,7 @@ import 'package:kidtang_flutter/stores/bills_store.dart';
 import 'package:kidtang_flutter/stores/groups_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
+import 'package:kidtang_flutter/widgets/shared/skeleton_loader.dart';
 import 'package:kidtang_flutter/widgets/group/index.dart';
 
 // ─────────────────────────────────────────────────────────────
@@ -66,10 +67,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
         ),
         child: const Scaffold(
           backgroundColor: Colors.transparent,
-          body: Center(
-            child: CircularProgressIndicator(
-                color: AppColors.primary, strokeWidth: 2),
-          ),
+          body: SafeArea(child: GroupDetailSkeleton()),
         ),
       );
     }
@@ -122,9 +120,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
             SliverAppBar(
               pinned: true,
               expandedHeight: 0,
-              backgroundColor: isDark
-                  ? AppColors.bgDark.withValues(alpha: 0.95)
-                  : Colors.white.withValues(alpha: 0.95),
+              backgroundColor: Colors.transparent,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_rounded),
                 onPressed: () {

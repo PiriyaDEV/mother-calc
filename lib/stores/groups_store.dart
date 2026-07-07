@@ -17,12 +17,37 @@ class GroupsStore extends ChangeNotifier {
   String? _error;
   final Set<String> _detailLoadingIds = {};
 
+  int? _groupsCount;
+  bool _groupsCountLoading = false;
+
   List<Group> get groups => _byId.values.toList();
   Group? getById(String id) => _byId[id];
   bool get loading => _loading;
   bool get hasLoaded => _hasLoaded;
   String? get error => _error;
   bool isDetailLoading(String groupId) => _detailLoadingIds.contains(groupId);
+
+  /// Cheap count of the user's accepted groups — used by the home hero
+  /// card so it doesn't need the full [loadGroups] fetch (every group's
+  /// full member+profile join) just to show a number.
+  int? get groupsCount => _groupsCount;
+  bool get groupsCountLoading => _groupsCountLoading;
+
+  Future<void> loadGroupsCount({bool force = false}) async {
+    if (_groupsCount != null && !force) return;
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+    _groupsCountLoading = true;
+    notifyListeners();
+    try {
+      _groupsCount = await _repo.fetchAcceptedGroupsCount(user.id);
+    } catch (e) {
+      debugPrint('GroupsStore.loadGroupsCount: $e');
+    } finally {
+      _groupsCountLoading = false;
+      notifyListeners();
+    }
+  }
 
   Future<void> loadGroups({bool force = false}) async {
     if (_hasLoaded && !force) return;
@@ -211,6 +236,7 @@ class GroupsStore extends ChangeNotifier {
     _byId = {};
     _hasLoaded = false;
     _error = null;
+    _groupsCount = null;
     notifyListeners();
   }
 }

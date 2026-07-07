@@ -57,7 +57,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
 
   void _recompute() {
     _allItems = widget.bills.expand((b) => b.items).toList();
-    _totalAmount = _allItems.fold<double>(0, (s, i) => s + i.price);
+    _totalAmount = widget.bills.fold<double>(0, (s, b) => s + b.total);
     _avgPerBill = widget.bills.isNotEmpty
         ? _totalAmount / widget.bills.length
         : 0.0;
@@ -67,11 +67,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
         .toSet()
         .length;
     _sortedBills = List<Bill>.from(widget.bills)
-      ..sort((a, b) {
-        final at = a.items.fold<double>(0, (s, i) => s + i.price);
-        final bt = b.items.fold<double>(0, (s, i) => s + i.price);
-        return bt.compareTo(at);
-      });
+      ..sort((a, b) => b.total.compareTo(a.total));
     _topItems = (List<BillItem>.from(_allItems)
           ..sort((a, b) => b.price.compareTo(a.price)))
         .take(5)
@@ -236,16 +232,13 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
   Widget _buildBillsBarChart(List<Bill> sortedBills) {
     final isDark = widget.isDark;
     final displayBills = sortedBills.take(6).toList();
-    final maxVal = displayBills.fold<double>(0, (max, b) {
-      final t = b.items.fold<double>(0, (s, i) => s + i.price);
-      return t > max ? t : max;
-    });
+    final maxVal = displayBills.fold<double>(
+        0, (max, b) => b.total > max ? b.total : max);
 
     final barGroups = displayBills.asMap().entries.map((entry) {
       final i = entry.key;
       final bill = entry.value;
-      final billTotal =
-          bill.items.fold<double>(0, (s, item) => s + item.price);
+      final billTotal = bill.total;
       final color = _chartColors[i % _chartColors.length];
       return BarChartGroupData(
         x: i,
