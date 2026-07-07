@@ -8,6 +8,7 @@ import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
 import 'package:kidtang_flutter/widgets/shared/empty_state.dart';
 import 'package:kidtang_flutter/widgets/shared/skeleton_loader.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:kidtang_flutter/widgets/shared/shared_bill_card.dart';
 
 class BillsScreen extends StatefulWidget {
@@ -47,6 +48,7 @@ class _BillsScreenState extends State<BillsScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l = context.watch<LocaleProvider>();
     final store = context.watch<BillsStore>();
     final draftView = store.viewFor('draft');
     final pendingView = store.viewFor('pending_payment');
@@ -73,7 +75,7 @@ class _BillsScreenState extends State<BillsScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'บิลของฉัน',
+                          l.t('bills_title'),
                           style: GoogleFonts.anuphan(
                             fontSize: 26,
                             fontWeight: FontWeight.w700,
@@ -86,7 +88,7 @@ class _BillsScreenState extends State<BillsScreen>
                         if (allBillsCount > 0) ...[
                           const SizedBox(height: 2),
                           Text(
-                            '$allBillsCount บิลทั้งหมด',
+                            '$allBillsCount ${l.t('nav_bills')}',
                             style: GoogleFonts.notoSansThai(
                               fontSize: 13,
                               color: isDark
@@ -166,9 +168,9 @@ class _BillsScreenState extends State<BillsScreen>
                     fontWeight: FontWeight.w400,
                   ),
                   tabs: [
-                    Tab(text: 'ดราฟ ($draftCount)'),
-                    Tab(text: 'รอจ่าย ($pendingCount)'),
-                    Tab(text: 'เสร็จแล้ว ($completedCount)'),
+                    Tab(text: '${l.t('bills_tab_draft')} ($draftCount)'),
+                    Tab(text: '${l.t('bills_tab_pending')} ($pendingCount)'),
+                    Tab(text: '${l.t('bills_tab_completed')} ($completedCount)'),
                   ],
                 ),
               ),
@@ -187,25 +189,25 @@ class _BillsScreenState extends State<BillsScreen>
                         _BillList(
                           status: 'draft',
                           view: draftView,
-                          emptyEmoji: '🧾',
-                          emptyText: 'ยังไม่มีบิล',
-                          emptySubtext: 'กดปุ่ม + เพื่อสร้างบิลแรกของคุณ',
-                          emptyCtaLabel: 'สร้างบิล',
+                           emptyEmoji: '🧾',
+                           emptyText: l.t('bills_empty_draft'),
+                           emptySubtext: l.t('bills_empty_draft_sub'),
+                           emptyCtaLabel: l.t('bills_create'),
                           onEmptyCta: _createBill,
                         ),
                         _BillList(
                           status: 'pending_payment',
                           view: pendingView,
-                          emptyEmoji: '⏳',
-                          emptyText: 'ยังไม่มีบิลที่รอจ่าย',
-                          emptySubtext: 'บิลที่ปิดแล้วและรอชำระเงินจะปรากฏที่นี่',
+                           emptyEmoji: '⏳',
+                           emptyText: l.t('bills_empty_pending'),
+                           emptySubtext: l.t('bills_empty_pending_sub'),
                         ),
                         _BillList(
                           status: 'completed',
                           view: completedView,
-                          emptyEmoji: '✅',
-                          emptyText: 'ยังไม่มีบิลที่เสร็จ',
-                          emptySubtext: 'บิลที่ชำระครบแล้วจะปรากฏที่นี่',
+                           emptyEmoji: '✅',
+                           emptyText: l.t('bills_empty_completed'),
+                           emptySubtext: l.t('bills_empty_completed_sub'),
                         ),
                       ],
                     ),
@@ -276,6 +278,7 @@ class _BillListState extends State<_BillList> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l = context.watch<LocaleProvider>();
     final bills = widget.view.items;
 
     if (bills.isEmpty) {
@@ -299,7 +302,7 @@ class _BillListState extends State<_BillList> {
     final List<_ListItem> items = [];
 
     if (standaloneBills.isNotEmpty) {
-      items.add(_SectionHeader(label: 'บิลเดี่ยว', count: standaloneBills.length));
+      items.add(_SectionHeader(label: l.t('bills_section_standalone'), count: standaloneBills.length));
       for (final b in standaloneBills) {
         items.add(_BillEntry(bill: b));
       }
