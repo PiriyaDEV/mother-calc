@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -75,6 +76,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bill = context.select<BillsStore, Bill?>((s) => s.getById(widget.billId));
     final billsStore = context.read<BillsStore>();
@@ -112,7 +114,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerPr
           ),
           body: Center(
             child: Text(
-              'ไม่พบบิล',
+              l.t('bill_not_found'),
               style: GoogleFonts.notoSansThai(fontSize: 16),
             ),
           ),
@@ -179,7 +181,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerPr
                       child: PillTabBar(
                         controller: _tabController,
                         tabs: [
-                          CountTab(label: 'สมาชิก', count: members.length),
+                          CountTab(label: l.t('bill_tab_members'), count: members.length),
                           CountTab(label: 'รายการ', count: items.length),
                           const CountTab(label: 'สรุป', count: 0),
                           const CountTab(label: 'วิเคราะห์', count: 0),

@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -83,6 +84,7 @@ class _LoginScreenState extends State<LoginScreen>
   // iOS Safari doesn't let a web app trigger "Add to Home Screen" itself —
   // this walks the user through the manual Share-sheet steps instead.
   void _showIosInstallInstructions() {
+      final l = context.read<LocaleProvider>();
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -102,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'บันทึก Kidtang ไปที่หน้าจอหลัก',
+                  l.t('login_install_prompt'),
                   style: GoogleFonts.notoSansThai(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
@@ -111,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'เพื่อเปิดแอปได้เร็วขึ้นในครั้งถัดไป เหมือนแอปทั่วไป',
+                  l.t('login_install_sub'),
                   style: GoogleFonts.notoSansThai(
                     fontSize: 13,
                     color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,

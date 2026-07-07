@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
@@ -17,13 +19,14 @@ class StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     return Row(
       children: [
         Expanded(
           child: _GradientStatCard(
             emoji: '🧾',
             value: itemCount.toString(),
-            label: 'รายการ',
+            label: l.t('analytics_items_label'),
             gradientColors: const [Color(0xFFEFF6FF), Color(0xFFEEF2FF)],
             borderColor: const Color(0xFFBFDBFE),
             valueColor: const Color(0xFF4366f4),
@@ -34,7 +37,7 @@ class StatsRow extends StatelessWidget {
           child: _GradientStatCard(
             emoji: '👥',
             value: memberCount.toString(),
-            label: 'สมาชิก',
+            label: l.t('analytics_members_label'),
             gradientColors: const [Color(0xFFFAF5FF), Color(0xFFF5F3FF)],
             borderColor: const Color(0xFFE9D5FF),
             valueColor: const Color(0xFFA855F7),
@@ -45,7 +48,7 @@ class StatsRow extends StatelessWidget {
           child: _GradientStatCard(
             emoji: '💰',
             value: formatNumber(avgPerPerson, decimals: 0),
-            label: 'เฉลี่ย/คน',
+            label: l.t('analytics_avg_per_person_short'),
             gradientColors: const [Color(0xFFECFDF5), Color(0xFFF0FDFA)],
             borderColor: const Color(0xFFA7F3D0),
             valueColor: AppColors.emerald500,

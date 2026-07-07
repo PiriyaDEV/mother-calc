@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -56,6 +57,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
   }
 
   Future<void> _addExternal() async {
+      final l = context.read<LocaleProvider>();
     final name = _externalNameCtrl.text.trim();
     if (name.isEmpty) return;
     setState(() {
@@ -71,7 +73,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
       if (err != null) {
         _externalError = err;
       } else {
-        _externalSuccess = 'เพิ่ม "$name" เรียบร้อย';
+        _externalSuccess = l.t('group_external_added').replaceAll('{name}', name);
         _externalNameCtrl.clear();
       }
     });
@@ -79,6 +81,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = widget.isDark;
     final currentUserId =
         Supabase.instance.client.auth.currentUser?.id ?? '';
@@ -111,7 +114,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             child: Text(
-              'จัดการสมาชิก',
+              l.t('group_manage_members'),
               style: GoogleFonts.notoSansThai(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -152,9 +155,9 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
               labelStyle: GoogleFonts.notoSansThai(
                   fontSize: 13, fontWeight: FontWeight.w600),
               unselectedLabelStyle: GoogleFonts.notoSansThai(fontSize: 13),
-              tabs: const [
-                Tab(text: 'ชวนเพื่อน'),
-                Tab(text: 'เพิ่มสมาชิกภายนอก'),
+              tabs: [
+                Tab(text: l.t('group_invite_friend')),
+                Tab(text: l.t('group_add_external')),
               ],
             ),
           ),
@@ -270,6 +273,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
   }
 
   Widget _buildExternalTab(bool isDark) {
+    final l = context.read<LocaleProvider>();
     return SingleChildScrollView(
       padding: EdgeInsets.only(
         left: 20,
@@ -281,7 +285,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'สมาชิกที่ไม่มีบัญชีในแอป สามารถเพิ่มลงบิลในกลุ่มได้',
+            l.t('group_external_member_desc'),
             style: GoogleFonts.notoSansThai(
               fontSize: 13,
               color: isDark
@@ -296,7 +300,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
                 child: TextField(
                   controller: _externalNameCtrl,
                   decoration: InputDecoration(
-                    hintText: 'ชื่อสมาชิก',
+                    hintText: l.t('member_name_hint'),
                     hintStyle: GoogleFonts.notoSansThai(fontSize: 13),
                   ),
                   onSubmitted: (_) => _addExternal(),

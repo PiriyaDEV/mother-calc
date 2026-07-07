@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -26,6 +28,7 @@ class ItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final assignedMembers = members
         .where((m) =>
@@ -74,7 +77,7 @@ class ItemTile extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        'หารไม่เท่า',
+                        l.t('item_tile_unequal'),
                         style: GoogleFonts.notoSansThai(
                           fontSize: 10,
                           color: AppColors.amber,
@@ -126,7 +129,7 @@ class ItemTile extends StatelessWidget {
                     ),
                     if (paidByMember != null) ...[
                       Text(
-                        'จ่ายโดย',
+                        l.t('item_tile_paid_by'),
                         style: GoogleFonts.notoSansThai(
                           fontSize: 10,
                           color: isDark

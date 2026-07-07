@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:kidtang_flutter/stores/friends_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
+import 'package:provider/provider.dart';
 
 /// Self-contained add-friend panel.
 /// Owns its own text-field state so keystrokes only rebuild this widget,
@@ -66,6 +68,7 @@ class _AddFriendPanelState extends State<AddFriendPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.watch<LocaleProvider>();
     final isDark = widget.isDark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -86,7 +89,7 @@ class _AddFriendPanelState extends State<AddFriendPanel> {
               children: [
                 Expanded(
                   child: Text(
-                    'เพิ่มเพื่อนใหม่',
+                    l.t('friends_add_new'),
                     style: GoogleFonts.notoSansThai(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -199,7 +202,7 @@ class _AddFriendPanelState extends State<AddFriendPanel> {
                                 strokeWidth: 2, color: Colors.white),
                           )
                         : Text(
-                            'ส่ง',
+                            l.t('friends_send'),
                             style: GoogleFonts.notoSansThai(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,

@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -18,6 +20,7 @@ class BillBreakdownCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final settings = bill.settings;
 
     return Container(
@@ -32,7 +35,7 @@ class BillBreakdownCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'รายละเอียดบิล',
+            l.t('breakdown_title'),
             style: GoogleFonts.notoSansThai(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -43,7 +46,7 @@ class BillBreakdownCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _BreakdownRow(
-            label: 'ยอดรวมสินค้า',
+            label: l.t('breakdown_subtotal'),
             value: calc.subtotal,
             currency: settings.currency,
             isDark: isDark,
@@ -65,14 +68,14 @@ class BillBreakdownCard extends StatelessWidget {
             ),
           if (calc.tipAmount > 0)
             _BreakdownRow(
-              label: 'ทิป',
+              label: l.t('breakdown_tip'),
               value: calc.tipAmount,
               currency: settings.currency,
               isDark: isDark,
             ),
           if (calc.discountAmount > 0)
             _BreakdownRow(
-              label: 'ส่วนลด',
+              label: l.t('breakdown_discount'),
               value: -calc.discountAmount,
               currency: settings.currency,
               isDark: isDark,
@@ -85,7 +88,7 @@ class BillBreakdownCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'รวมทั้งสิ้น',
+                l.t('breakdown_total'),
                 style: GoogleFonts.notoSansThai(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,

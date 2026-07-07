@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
@@ -20,12 +22,13 @@ class MemberSpendingList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final maxMemberTotal =
         memberTotals.isNotEmpty ? memberTotals.first.total : 1.0;
 
     return SectionCard(
       isDark: isDark,
-      title: '💸 ค่าใช้จ่ายแต่ละคน',
+      title: l.t('analytics_member_spending'),
       child: Column(
         children: memberTotals.asMap().entries.map((entry) {
           final rank = entry.key;

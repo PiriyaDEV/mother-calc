@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +13,7 @@ class HeroBalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     return Selector2<BillsStore, GroupsStore, (BillAggregateStats?, int, bool)>(
       selector: (_, billsStore, groupsStore) => (
         billsStore.stats,
@@ -79,7 +81,7 @@ class HeroBalanceCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'ยอดรวมทั้งหมด',
+                      l.t('home_stats_title'),
                       style: GoogleFonts.notoSansThai(
                         fontSize: 13,
                         color: Colors.white.withValues(alpha: 0.65),

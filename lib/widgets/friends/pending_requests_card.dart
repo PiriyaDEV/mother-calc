@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:kidtang_flutter/models/models.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'friends_section_header.dart';
 import 'rounded_avatar.dart';
 
@@ -24,11 +26,12 @@ class PendingRequestsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.watch<LocaleProvider>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         FriendsSectionHeader(
-          title: 'คำขอเป็นเพื่อน',
+          title: l.t('friends_request_label'),
           count: requests.length,
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -87,7 +90,7 @@ class _RequestTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final myId = Supabase.instance.client.auth.currentUser?.id ?? '';
     final profile = request.requesterProfile ?? request.otherProfile(myId);
-    final name = profile?.displayName ?? profile?.username ?? 'ผู้ใช้';
+    final name = profile?.displayName ?? profile?.username ?? context.read<LocaleProvider>().t('common_user');
     final username = profile?.username;
 
     return RepaintBoundary(

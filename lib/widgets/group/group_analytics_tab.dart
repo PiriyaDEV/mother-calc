@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -76,12 +78,13 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     if (_allItems.isEmpty) {
       return Center(
         child: GroupDetailEmptyState(
           icon: Icons.analytics_outlined,
-          label: 'ยังไม่มีข้อมูลวิเคราะห์',
-          sub: 'สร้างบิลและเพิ่มรายการก่อน',
+          label: l.t('analytics_no_data_group'),
+          sub: l.t('analytics_add_bill_first'),
           isDark: widget.isDark,
         ),
       );
@@ -117,6 +120,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
 
   Widget _buildHeroStats(
       double total, int itemCount, double avgPerBill, int memberCount) {
+    final l = context.read<LocaleProvider>();
     final isDark = widget.isDark;
     return Column(
       children: [
@@ -205,7 +209,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
-                  'เฉลี่ยต่อบิล',
+                  l.t('analytics_avg_per_bill'),
                   style: GoogleFonts.notoSansThai(
                     fontSize: 14,
                     color: isDark
@@ -230,6 +234,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
   }
 
   Widget _buildBillsBarChart(List<Bill> sortedBills) {
+    final l = context.read<LocaleProvider>();
     final isDark = widget.isDark;
     final displayBills = sortedBills.take(6).toList();
     final maxVal = displayBills.fold<double>(
@@ -278,7 +283,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '📊 เปรียบเทียบยอดแต่ละบิล',
+            l.t('analytics_compare_bills'),
             style: GoogleFonts.notoSansThai(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -377,6 +382,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
   }
 
   Widget _buildTopItemsCard(List<BillItem> topItems) {
+    final l = context.read<LocaleProvider>();
     final isDark = widget.isDark;
     final maxPrice = topItems.isNotEmpty ? topItems.first.price : 1.0;
     return Container(
@@ -399,7 +405,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '🔥 รายการแพงสุด',
+            l.t('analytics_top_items'),
             style: GoogleFonts.notoSansThai(
               fontSize: 14,
               fontWeight: FontWeight.w700,

@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -60,6 +61,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     if (widget.bills.isEmpty) {
       return Center(
         child: Column(
@@ -68,7 +70,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
             GroupDetailEmptyState(
               icon: Icons.bar_chart_rounded,
               label: 'ยังไม่มีบิลในกลุ่ม',
-              sub: 'สร้างบิลก่อนเพื่อดูสรุป',
+              sub: l.t('summary_create_bill_first'),
               isDark: widget.isDark,
             ),
           ],
@@ -100,7 +102,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'ยอดรวมทั้งกลุ่ม',
+                    l.t('group_total_label'),
                     style: GoogleFonts.notoSansThai(
                       fontSize: 13,
                       color: Colors.white.withValues(alpha: 0.8),

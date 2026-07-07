@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -165,6 +167,7 @@ class _ItemFormSheetState extends State<ItemFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isEdit = widget.editItem != null;
     final selectedCount = _selected.values.where((v) => v).length;
@@ -205,7 +208,7 @@ class _ItemFormSheetState extends State<ItemFormSheet> {
                   TextField(
                     controller: _nameCtrl,
                     autofocus: !isEdit,
-                    decoration: const InputDecoration(hintText: 'ชื่อรายการ'),
+                    decoration: InputDecoration(hintText: l.t('item_form_name_hint')),
                   ),
                   const SizedBox(height: 12),
                   // Price field
@@ -218,7 +221,7 @@ class _ItemFormSheetState extends State<ItemFormSheet> {
                           RegExp(r'^\d*\.?\d*')),
                     ],
                     onChanged: _onPriceChanged,
-                    decoration: const InputDecoration(hintText: 'ราคา'),
+                    decoration: InputDecoration(hintText: l.t('item_form_price_hint')),
                   ),
                   const SizedBox(height: 16),
                   // Split mode toggle
@@ -283,7 +286,7 @@ class _ItemFormSheetState extends State<ItemFormSheet> {
                                 strokeWidth: 2, color: Colors.white),
                           )
                         : Text(
-                            isEdit ? 'บันทึก' : 'เพิ่มรายการ',
+                            isEdit ? l.t('item_form_save') : l.t('item_form_add_btn'),
                             style: GoogleFonts.notoSansThai(
                                 fontSize: 15, fontWeight: FontWeight.w600),
                           ),
@@ -315,13 +318,14 @@ class _ItemFormHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       child: Row(
         children: [
           Expanded(
             child: Text(
-              isEdit ? 'แก้ไขรายการ' : 'เพิ่มรายการ',
+              isEdit ? l.t('item_form_edit_title') : l.t('item_form_add_title'),
               style: GoogleFonts.notoSansThai(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -356,10 +360,11 @@ class _SplitModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     return Row(
       children: [
         Text(
-          'วิธีหาร',
+          l.t('item_form_split_method'),
           style: GoogleFonts.notoSansThai(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -370,14 +375,14 @@ class _SplitModeToggle extends StatelessWidget {
         ),
         const Spacer(),
         _ToggleChip(
-          label: 'เท่ากัน',
+          label: l.t('item_form_split_equal'),
           selected: !isUnequal,
           onTap: () => onChanged(false),
           isDark: isDark,
         ),
         const SizedBox(width: 8),
         _ToggleChip(
-          label: 'ไม่เท่ากัน',
+          label: l.t('item_form_split_custom'),
           selected: isUnequal,
           onTap: () => onChanged(true),
           isDark: isDark,
@@ -452,11 +457,12 @@ class _MemberPickerList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'สมาชิกที่ร่วมจ่าย',
+          l.t('item_form_members_label'),
           style: GoogleFonts.notoSansThai(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -521,7 +527,7 @@ class _MemberPickerList extends StatelessWidget {
                         ],
                         onChanged: (_) => onWeightChanged(),
                         decoration: InputDecoration(
-                          hintText: 'น้ำหนัก',
+                          hintText: l.t('item_form_weight_hint'),
                           hintStyle:
                               GoogleFonts.notoSansThai(fontSize: 11),
                           contentPadding: const EdgeInsets.symmetric(
@@ -572,6 +578,7 @@ class _UnequalValidationBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     double totalWeight = 0;
     for (final m in members) {
       if (selected[m.id] == true) {
@@ -589,8 +596,7 @@ class _UnequalValidationBanner extends StatelessWidget {
       ),
       child: Text(
         isValid
-            ? 'น้ำหนักรวม: $totalWeight'
-            : 'กรุณาใส่น้ำหนักให้ครบ',
+            ? l.t('item_form_weight_total').replaceAll('{total}', totalWeight.toString()) : l.t('item_form_weight_incomplete'),
         style: GoogleFonts.notoSansThai(
           fontSize: 12,
           color: isValid ? AppColors.emerald : AppColors.amber,
@@ -615,11 +621,12 @@ class _PaidByPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ใครจ่ายก่อน? (ไม่บังคับ)',
+          l.t('item_form_paid_by'),
           style: GoogleFonts.notoSansThai(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -647,7 +654,7 @@ class _PaidByPicker extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'ไม่ระบุ',
+                  l.t('item_form_paid_by_none'),
                   style: GoogleFonts.notoSansThai(
                     fontSize: 12,
                     color: paidBy == null

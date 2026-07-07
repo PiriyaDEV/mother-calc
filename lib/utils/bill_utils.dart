@@ -193,6 +193,10 @@ List<DebtTransaction> simplifyDebts(
     if (amt > 0.005) creditors.add(_NetEntry(member, amt));
   });
 
+  // Sort descending so largest debts/credits are matched first
+  debtors.sort((a, b) => b.amount.compareTo(a.amount));
+  creditors.sort((a, b) => b.amount.compareTo(a.amount));
+
   // Minimum-transactions algorithm
   final List<DebtTransaction> debts = [];
   int di = 0, ci = 0;

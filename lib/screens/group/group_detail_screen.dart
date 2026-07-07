@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -45,6 +46,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // context.select — only rebuilds when THIS group's data changes.
@@ -94,7 +96,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
             ),
           ),
           body: Center(
-            child: Text('ไม่พบกลุ่ม',
+            child: Text(l.t('groups_not_found'),
                 style: GoogleFonts.notoSansThai(fontSize: 16)),
           ),
         ),

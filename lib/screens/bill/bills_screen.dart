@@ -311,7 +311,7 @@ class _BillListState extends State<_BillList> {
     if (byGroup.isNotEmpty) {
       for (final entry in byGroup.entries) {
         final groupBillList = entry.value;
-        final groupName = groupBillList.first.groupName ?? 'กลุ่ม';
+        final groupName = groupBillList.first.groupName ?? l.t('bills_group_fallback');
         final groupEmoji = groupBillList.first.groupEmoji ?? '👥';
         items.add(_SectionHeader(
           label: '$groupEmoji $groupName',

@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -23,13 +25,14 @@ class MemberSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ดูสรุปของ',
+          l.t('summary_view_of'),
           style: GoogleFonts.notoSansThai(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -115,7 +118,7 @@ class MemberSelector extends StatelessWidget {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            'คุณ',
+                            l.t('member_selector_you'),
                             style: GoogleFonts.notoSansThai(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,

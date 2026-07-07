@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -23,6 +25,7 @@ class ItemsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final items = bill.items;
     final members = bill.members;
@@ -75,7 +78,7 @@ class ItemsTab extends StatelessWidget {
             ),
             icon: const Icon(Icons.add_rounded, size: 18),
             label: Text(
-              'เพิ่มรายการ',
+              l.t('items_tab_add'),
               style: GoogleFonts.notoSansThai(fontSize: 14),
             ),
             style: OutlinedButton.styleFrom(

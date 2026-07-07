@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -36,6 +38,7 @@ class AnalyticsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final members = bill.members;
     final items = bill.items;
@@ -63,7 +66,7 @@ class AnalyticsTab extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'เพิ่มสมาชิกและรายการก่อน',
+              l.t('analytics_add_first'),
               style: GoogleFonts.notoSansThai(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -74,7 +77,7 @@ class AnalyticsTab extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'กราฟและสถิติจะแสดงเมื่อมีข้อมูล',
+              l.t('analytics_no_data'),
               style: GoogleFonts.notoSansThai(
                 fontSize: 13,
                 color: isDark

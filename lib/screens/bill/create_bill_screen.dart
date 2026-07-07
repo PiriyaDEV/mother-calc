@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -162,12 +163,13 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
   }
 
   Future<void> _deleteBill() async {
+      final l = context.read<LocaleProvider>();
     if (widget.billId == null) return;
     final confirmed = await showConfirmDialog(
       context,
-      title: 'ลบบิลนี้?',
-      description: 'บิลและข้อมูลทั้งหมดจะถูกลบถาวร ไม่สามารถกู้คืนได้',
-      confirmLabel: 'ลบ',
+      title: l.t('create_bill_delete_title'),
+      description: l.t('create_bill_delete_desc'),
+      confirmLabel: l.t('create_bill_delete_confirm'),
       danger: true,
     );
     if (!confirmed || !mounted) return;
@@ -188,9 +190,10 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final titleText = _isEdit ? 'แก้ไขบิล' : 'สร้างบิลใหม่';
-    final submitLabel = _isEdit ? 'บันทึกบิล' : 'สร้างบิล';
+    final titleText = _isEdit ? l.t('create_bill_title_edit') : l.t('create_bill_title_new');
+    final submitLabel = _isEdit ? l.t('create_bill_submit_edit') : l.t('create_bill_submit_new');
 
     return Container(
       decoration: BoxDecoration(
@@ -245,7 +248,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // ── Emoji + Name ──────────────────────────────
-                const FormSectionLabel(label: 'ชื่อบิล *'),
+                FormSectionLabel(label: l.t('create_bill_name_label')),
                 const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -278,8 +281,8 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                       child: TextField(
                         controller: _nameCtrl,
                         autofocus: !_isEdit,
-                        decoration: const InputDecoration(
-                          hintText: 'เช่น ข้าวเย็น, ปาร์ตี้...',
+                        decoration: InputDecoration(
+                          hintText: l.t('create_bill_name_hint'),
                         ),
                         onSubmitted: (_) => _submit(),
                       ),
@@ -306,20 +309,20 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                 const SizedBox(height: 16),
 
                 // ── Description ───────────────────────────────
-                const FormSectionLabel(label: 'คำอธิบาย (ไม่บังคับ)'),
+                FormSectionLabel(label: l.t('create_bill_desc_label')),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _descCtrl,
                   maxLines: 2,
-                  decoration: const InputDecoration(
-                    hintText: 'คำอธิบายเพิ่มเติม...',
+                  decoration: InputDecoration(
+                    hintText: l.t('create_bill_desc_hint'),
                   ),
                 ),
 
                 const SizedBox(height: 16),
 
                 // ── Tags ──────────────────────────────────────
-                const FormSectionLabel(label: 'แท็ก'),
+                FormSectionLabel(label: l.t('create_bill_tags_label')),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 6,
@@ -363,8 +366,8 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                     Expanded(
                       child: TextField(
                         controller: _tagCtrl,
-                        decoration: const InputDecoration(
-                          hintText: 'เพิ่มแท็กเอง...',
+                        decoration: InputDecoration(
+                          hintText: l.t('create_bill_tag_hint'),
                           prefixText: '#',
                         ),
                         onSubmitted: (_) => _addCustomTag(),
@@ -398,7 +401,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       child: Text(
-                        'ตั้งค่าบิล',
+                        l.t('create_bill_settings_label'),
                         style: GoogleFonts.notoSansThai(
                           fontSize: 12,
                           color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
@@ -443,7 +446,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                                 ],
                               )
                             : Text(
-                                'ปิดอยู่',
+                                l.t('create_bill_off'),
                                 style: GoogleFonts.notoSansThai(
                                   fontSize: 12,
                                   color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
@@ -478,7 +481,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                                 ],
                               )
                             : Text(
-                                'ปิดอยู่',
+                                l.t('create_bill_off'),
                                 style: GoogleFonts.notoSansThai(
                                   fontSize: 12,
                                   color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
@@ -492,7 +495,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                 const SizedBox(height: 14),
 
                 // Currency
-                const FormSectionLabel(label: 'สกุลเงิน'),
+                FormSectionLabel(label: l.t('create_bill_currency_label')),
                 const SizedBox(height: 8),
                 GridView.count(
                   crossAxisCount: 2,
@@ -541,7 +544,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                 const SizedBox(height: 14),
 
                 // Rounding
-                const FormSectionLabel(label: 'การปัดเศษ'),
+                FormSectionLabel(label: l.t('create_bill_rounding_label')),
                 const SizedBox(height: 8),
                 Row(
                   children: kRoundingOptions.map((r) {

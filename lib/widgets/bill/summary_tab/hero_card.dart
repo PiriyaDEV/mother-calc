@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -22,6 +24,7 @@ class HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final settings = bill.settings;
     final memberCount = bill.members.isNotEmpty ? bill.members.length : 1;
     final emoji = getTotalEmoji(calc.total);
@@ -40,7 +43,7 @@ class HeroCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'ยอดรวมทั้งสิ้น',
+            l.t('hero_grand_total'),
             style: GoogleFonts.notoSansThai(
               fontSize: 13,
               color: Colors.white.withValues(alpha: 0.8),
@@ -66,7 +69,7 @@ class HeroCard extends StatelessWidget {
           if (settings.isService) ...[
             const SizedBox(height: 4),
             Text(
-              'รวม Service Charge ${settings.serviceCharge.toStringAsFixed(0)}%',
+              l.t('hero_service_charge').replaceAll('{pct}', settings.serviceCharge.toStringAsFixed(0)),
               style: GoogleFonts.notoSansThai(
                 fontSize: 11,
                 color: Colors.white.withValues(alpha: 0.7),
@@ -76,7 +79,7 @@ class HeroCard extends StatelessWidget {
           if (settings.isVat) ...[
             const SizedBox(height: 2),
             Text(
-              'รวม VAT ${settings.vat.toStringAsFixed(0)}%',
+              l.t('hero_vat').replaceAll('{pct}', settings.vat.toStringAsFixed(0)),
               style: GoogleFonts.notoSansThai(
                 fontSize: 11,
                 color: Colors.white.withValues(alpha: 0.7),
@@ -91,7 +94,7 @@ class HeroCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'สถานะการชำระ',
+                  l.t('summary_payment_status'),
                   style: GoogleFonts.notoSansThai(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.8),
@@ -125,7 +128,7 @@ class HeroCard extends StatelessWidget {
                       color: Colors.white, size: 16),
                   const SizedBox(width: 6),
                   Text(
-                    'ทุกคนจ่ายแล้ว!',
+                    l.t('summary_all_paid'),
                     style: GoogleFonts.notoSansThai(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,

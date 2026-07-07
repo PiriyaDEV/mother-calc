@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -39,9 +41,10 @@ class DebtSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isMe = selectedMember.userId == currentUserId;
     final title = isMe
-        ? 'ฉันต้องโอนให้'
+        ? l.t('summary_i_owe')
         : '${selectedMember.name} ต้องโอนให้';
 
     return Column(
@@ -74,7 +77,7 @@ class DebtSection extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   isMe
-                      ? 'คุณไม่ต้องโอนให้ใคร'
+                      ? l.t('summary_no_debt_me')
                       : '${selectedMember.name} ไม่ต้องโอนให้ใคร',
                   style: GoogleFonts.notoSansThai(
                     fontSize: 13,
@@ -130,6 +133,7 @@ class _DebtCardState extends State<_DebtCard> {
   Future<void> _saveQrToGallery() async {
     if (_savingQr) return;
     setState(() => _savingQr = true);
+    final l = context.read<LocaleProvider>();
     try {
       final boundary = _qrKey.currentContext?.findRenderObject()
           as RenderRepaintBoundary?;
@@ -151,7 +155,7 @@ class _DebtCardState extends State<_DebtCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            success ? 'บันทึก QR Code แล้ว 🎉' : 'บันทึกไม่สำเร็จ',
+            success ? l.t('debt_save_qr_success') : l.t('debt_save_qr_fail'),
             style: const TextStyle(fontFamily: 'NotoSansThai'),
           ),
           backgroundColor:
@@ -166,7 +170,7 @@ class _DebtCardState extends State<_DebtCard> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('บันทึกไม่สำเร็จ'),
+          content: Text(l.t('debt_save_qr_fail_msg')),
           backgroundColor: AppColors.red,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -180,6 +184,7 @@ class _DebtCardState extends State<_DebtCard> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final debt = widget.debt;
     final bill = widget.bill;
     final billsStore = widget.billsStore;
@@ -249,7 +254,7 @@ class _DebtCardState extends State<_DebtCard> {
                       ),
                       if (hasPromptPay)
                         Text(
-                          'พร้อมเพย์: ${debt.to.promptpay}',
+                          l.t('debt_promptpay').replaceAll('{pp}', debt.to.promptpay ?? ''),
                           style: GoogleFonts.notoSansThai(
                             fontSize: 11,
                             color: isDark
@@ -368,7 +373,7 @@ class _DebtCardState extends State<_DebtCard> {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            'สแกนโอนให้ ${debt.to.name}',
+                            l.t('debt_scan_qr').replaceAll('{name}', debt.to.name),
                             style: GoogleFonts.notoSansThai(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -445,8 +450,8 @@ class _DebtCardState extends State<_DebtCard> {
                             const SizedBox(width: 6),
                             Text(
                               _savingQr
-                                  ? 'กำลังบันทึก...'
-                                  : 'บันทึกรูป QR Code',
+                                  ? l.t('summary_saving_qr')
+                                  : l.t('summary_save_qr'),
                               style: GoogleFonts.notoSansThai(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -483,7 +488,7 @@ class _DebtCardState extends State<_DebtCard> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    isPaid ? 'จ่ายแล้ว' : 'ยังไม่ได้จ่าย',
+                    isPaid ? 'จ่ายแล้ว' : l.t('summary_not_paid_label'),
                     style: GoogleFonts.notoSansThai(
                       fontSize: 13,
                       color: isPaid
@@ -536,7 +541,7 @@ class _DebtCardState extends State<_DebtCard> {
                               ),
                             const SizedBox(width: 4),
                             Text(
-                              isPaid ? 'ยกเลิก' : 'อัพโหลดสลิป',
+                              isPaid ? 'ยกเลิก' : l.t('summary_upload_slip'),
                               style: GoogleFonts.notoSansThai(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,

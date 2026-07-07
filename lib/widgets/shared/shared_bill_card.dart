@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -13,6 +15,7 @@ class SharedBillCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final total = bill.total;
     final isCompleted = bill.isCompleted;
@@ -169,7 +172,7 @@ class SharedBillCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        isCompleted ? 'เสร็จแล้ว' : 'ดำเนินการ',
+                        isCompleted ? 'เสร็จแล้ว' : l.t('common_proceed'),
                         style: GoogleFonts.notoSansThai(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,

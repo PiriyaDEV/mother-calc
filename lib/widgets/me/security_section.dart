@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
@@ -26,10 +28,11 @@ class SecuritySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeaderWidget(label: 'ความปลอดภัย'),
+        SectionHeaderWidget(label: l.t('me_security')),
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
@@ -47,7 +50,7 @@ class SecuritySection extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'เปลี่ยนรหัสผ่าน',
+                        l.t('me_change_password'),
                         style: GoogleFonts.notoSansThai(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -94,13 +97,13 @@ class SecuritySection extends StatelessWidget {
                     children: [
                       PasswordField(
                         controller: newPassCtrl,
-                        hint: 'รหัสผ่านใหม่',
+                        hint: l.t('me_new_password'),
                         isDark: isDark,
                       ),
                       const SizedBox(height: 10),
                       PasswordField(
                         controller: confirmPassCtrl,
-                        hint: 'ยืนยันรหัสผ่านใหม่',
+                        hint: l.t('me_confirm_password'),
                         isDark: isDark,
                       ),
                       const SizedBox(height: 14),
@@ -119,7 +122,7 @@ class SecuritySection extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text(
-                              saving ? 'กำลังบันทึก...' : 'บันทึก',
+                              saving ? l.t('me_saving') : l.t('common_save'),
                               style: GoogleFonts.notoSansThai(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,

@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -73,6 +75,7 @@ class _SummaryTabState extends State<SummaryTab> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bill = widget.bill;
     final calc = widget.calc;
@@ -88,7 +91,7 @@ class _SummaryTabState extends State<SummaryTab> {
             const Text('👥', style: TextStyle(fontSize: 48)),
             const SizedBox(height: 12),
             Text(
-              'เพิ่มสมาชิกและรายการก่อน',
+              l.t('summary_add_members_first'),
               style: GoogleFonts.notoSansThai(
                 fontSize: 15,
                 color: isDark

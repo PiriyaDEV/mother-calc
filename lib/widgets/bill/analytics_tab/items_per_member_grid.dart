@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
@@ -18,9 +20,10 @@ class ItemsPerMemberGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     return SectionCard(
       isDark: isDark,
-      title: '📋 รายการต่อคน',
+      title: l.t('analytics_items_per_member'),
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),

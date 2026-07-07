@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -88,6 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final profile = context.select<AuthProvider, Profile?>((a) => a.profile);
@@ -133,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  'สวัสดี, $firstName 👋 !',
+                                  l.t('home_greeting').replaceAll('{name}', firstName),
                                   style: GoogleFonts.anuphan(
                                     fontSize: 22,
                                     fontWeight: FontWeight.w700,
@@ -189,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'เมนูหลัก',
+                                l.t('home_main_menu'),
                                 style: GoogleFonts.anuphan(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
@@ -204,8 +206,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Expanded(
                                     child: QuickActionTile(
                                       icon: Icons.receipt_long_rounded,
-                                      label: 'บิล',
-                                      sublabel: 'จัดการบิล',
+                                      label: l.t('home_nav_bills'),
+                                      sublabel: l.t('home_nav_bills_sub'),
                                       color: AppColors.primaryBlue,
                                       bgColor: isDark
                                           ? AppColors.accentIceDark
@@ -217,8 +219,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Expanded(
                                     child: QuickActionTile(
                                       icon: Icons.group_rounded,
-                                      label: 'กลุ่ม',
-                                      sublabel: 'จัดการกลุ่ม',
+                                      label: l.t('home_nav_groups'),
+                                      sublabel: l.t('home_nav_groups_sub'),
                                       color: const Color(0xFF7B5CF6),
                                       bgColor: isDark
                                           ? const Color(0xFF1E1A3A)
@@ -230,8 +232,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Expanded(
                                     child: QuickActionTile(
                                       icon: Icons.people_rounded,
-                                      label: 'เพื่อน',
-                                      sublabel: 'จัดการ',
+                                      label: l.t('home_nav_friends'),
+                                      sublabel: l.t('home_nav_friends_sub'),
                                       color: AppColors.accentAqua,
                                       bgColor: isDark
                                           ? const Color(0xFF0D2A28)
@@ -258,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      'อัตราแลกเปลี่ยน${_ratesUpdated.isNotEmpty ? ' · $_ratesUpdated' : ''}',
+                                      l.t('home_exchange_rate') + (_ratesUpdated.isNotEmpty ? ' · \$_ratesUpdated' : ''),
                                       style: GoogleFonts.anuphan(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,
@@ -365,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               padding: const EdgeInsets.fromLTRB(
                                   20, 28, 20, 14),
                               child: Text(
-                                'สถิติของคุณ',
+                                l.t('home_stats_title'),
                                 style: GoogleFonts.anuphan(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
@@ -387,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      'บิลล่าสุด',
+                                      l.t('home_recent_bills'),
                                       style: GoogleFonts.anuphan(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,
@@ -410,7 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             AppRadii.full),
                                       ),
                                       child: Text(
-                                        'ดูทั้งหมด',
+                                        l.t('home_see_all'),
                                         style: GoogleFonts.notoSansThai(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,

@@ -94,6 +94,7 @@ class _MeScreenState extends State<MeScreen>
 
   // ── Save Name ──────────────────────────────────────────────
   Future<void> _handleSaveName() async {
+      final l = context.read<LocaleProvider>();
     final val = _nameCtrl.text.trim();
     if (val.isEmpty) return;
     final auth = context.read<AuthProvider>();
@@ -102,10 +103,10 @@ class _MeScreenState extends State<MeScreen>
       await auth.updateProfile(displayName: val);
       if (!mounted) return;
       setState(() => _editingName = false);
-      _showSuccess('บันทึกชื่อเรียบร้อย');
+      _showSuccess(l.t('me_save_name_success'));
     } catch (e) {
       if (!mounted) return;
-      _showError('เกิดข้อผิดพลาด กรุณาลองใหม่');
+      _showError(l.t('me_error_generic'));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -113,6 +114,7 @@ class _MeScreenState extends State<MeScreen>
 
   // ── Save Username ──────────────────────────────────────────
   Future<void> _handleSaveUsername() async {
+      final l = context.read<LocaleProvider>();
     final val = _usernameCtrl.text.trim().toLowerCase();
     if (!_isValidUsername(val)) {
       _showError(
@@ -135,10 +137,10 @@ class _MeScreenState extends State<MeScreen>
       await auth.updateProfile(username: val);
       if (!mounted) return;
       setState(() => _editingUsername = false);
-      _showSuccess('บันทึก username เรียบร้อย');
+      _showSuccess(l.t('me_save_username_success'));
     } catch (e) {
       if (!mounted) return;
-      _showError('เกิดข้อผิดพลาด กรุณาลองใหม่');
+      _showError(l.t('me_error_generic'));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -146,6 +148,7 @@ class _MeScreenState extends State<MeScreen>
 
   // ── Save Promptpay ─────────────────────────────────────────
   Future<void> _handleSavePromptpay() async {
+      final l = context.read<LocaleProvider>();
     final val = _promptpayCtrl.text.trim();
     final auth = context.read<AuthProvider>();
     setState(() => _saving = true);
@@ -153,10 +156,10 @@ class _MeScreenState extends State<MeScreen>
       await auth.updateProfile(promptpay: val.isEmpty ? null : val);
       if (!mounted) return;
       setState(() => _editingPromptpay = false);
-      _showSuccess('บันทึกพร้อมเพย์เรียบร้อย');
+      _showSuccess(l.t('me_save_promptpay_success'));
     } catch (e) {
       if (!mounted) return;
-      _showError('เกิดข้อผิดพลาด กรุณาลองใหม่');
+      _showError(l.t('me_error_generic'));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -164,14 +167,15 @@ class _MeScreenState extends State<MeScreen>
 
   // ── Save Password ──────────────────────────────────────────
   Future<void> _handleSavePassword() async {
+      final l = context.read<LocaleProvider>();
     final np = _newPassCtrl.text;
     final cp = _confirmPassCtrl.text;
     if (np.length < 6) {
-      _showError('รหัสผ่านต้องมีอย่างน้อย 6 ตัว');
+      _showError(l.t('me_password_min_length'));
       return;
     }
     if (np != cp) {
-      _showError('รหัสผ่านไม่ตรงกัน');
+      _showError(l.t('me_password_mismatch'));
       return;
     }
     final auth = context.read<AuthProvider>();
@@ -185,12 +189,13 @@ class _MeScreenState extends State<MeScreen>
       _newPassCtrl.clear();
       _confirmPassCtrl.clear();
       setState(() => _editingPassword = false);
-      _showSuccess('เปลี่ยนรหัสผ่านเรียบร้อย');
+      _showSuccess(l.t('me_change_password_success'));
     }
   }
 
   // ── Upload Avatar ──────────────────────────────────────────
   Future<void> _handlePickAvatar() async {
+      final l = context.read<LocaleProvider>();
     final picker = ImagePicker();
     final picked = await picker.pickImage(
         source: ImageSource.gallery,
@@ -205,10 +210,10 @@ class _MeScreenState extends State<MeScreen>
       final base64Str = 'data:image/jpeg;base64,${base64Encode(bytes)}';
       await auth.updateProfile(avatarUrl: base64Str);
       if (!mounted) return;
-      _showSuccess('อัปโหลดรูปโปรไฟล์เรียบร้อย');
+      _showSuccess(l.t('me_upload_avatar_success'));
     } catch (e) {
       if (!mounted) return;
-      _showError('อัปโหลดรูปไม่สำเร็จ');
+      _showError(l.t('me_upload_avatar_fail'));
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
     }
@@ -216,23 +221,24 @@ class _MeScreenState extends State<MeScreen>
 
   // ── Sign Out ───────────────────────────────────────────────
   Future<void> _handleSignOut() async {
+      final l = context.read<LocaleProvider>();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('ออกจากระบบ',
+        title: Text(l.t('me_logout_title'),
             style: GoogleFonts.notoSansThai(fontWeight: FontWeight.w600)),
-        content: Text('ต้องการออกจากระบบหรือไม่?',
+        content: Text(l.t('me_logout_confirm_msg'),
             style: GoogleFonts.notoSansThai()),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text('ยกเลิก',
+            child: Text(l.t('me_logout_cancel'),
                 style: GoogleFonts.notoSansThai(
                     color: AppColors.textSecondaryLight)),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('ออกจากระบบ',
+            child: Text(l.t('me_logout_confirm'),
                 style: GoogleFonts.notoSansThai(
                     color: AppColors.red, fontWeight: FontWeight.w600)),
           ),
@@ -315,6 +321,7 @@ class _MeScreenState extends State<MeScreen>
   ) {
     final themeProvider = context.read<ThemeProvider>();
     final locale = context.read<LocaleProvider>();
+    final l = locale;
     final notifUnread =
         context.select<NotificationsProvider, int>((p) => p.unreadCount);
 
@@ -410,7 +417,7 @@ class _MeScreenState extends State<MeScreen>
                     size: 18, color: AppColors.red),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
-                  'ออกจากระบบ',
+                  l.t('me_logout_btn'),
                   style: GoogleFonts.notoSansThai(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,

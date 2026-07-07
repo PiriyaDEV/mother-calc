@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
@@ -14,6 +16,7 @@ class LanguageDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Dialog(
@@ -30,7 +33,7 @@ class LanguageDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'เลือกภาษา / Select Language',
+              l.t('me_language_select'),
               style: GoogleFonts.notoSansThai(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -52,7 +55,7 @@ class LanguageDialog extends StatelessWidget {
             LangOption(
               flag: '🇬🇧',
               name: 'English',
-              subtitle: 'อังกฤษ',
+              subtitle: l.t('language_english'),
               selected: currentLocale == 'en',
               isDark: isDark,
               onTap: () => onSelect('en'),

@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -26,6 +28,7 @@ class MembersTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final members = bill.members;
     final currency = bill.settings.currency;
@@ -63,7 +66,7 @@ class MembersTab extends StatelessWidget {
               ),
               icon: const Icon(Icons.person_add_outlined, size: 18),
               label: Text(
-                'เพิ่มสมาชิก',
+                l.t('members_tab_add'),
                 style: GoogleFonts.notoSansThai(fontSize: 14),
               ),
               style: OutlinedButton.styleFrom(

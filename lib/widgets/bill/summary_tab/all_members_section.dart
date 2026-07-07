@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -33,6 +35,7 @@ class AllMembersSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
@@ -50,7 +53,7 @@ class AllMembersSection extends StatelessWidget {
               child: Row(
                 children: [
                   Text(
-                    'สรุปทุกคน',
+                    l.t('summary_all_members'),
                     style: GoogleFonts.notoSansThai(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -83,7 +86,7 @@ class AllMembersSection extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                 child: Text(
-                  'ใครโอนให้ใคร',
+                  l.t('summary_who_owes_whom'),
                   style: GoogleFonts.notoSansThai(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -235,19 +238,19 @@ class AllMembersSection extends StatelessWidget {
                                   if (isExternal) ...[
                                     const SizedBox(width: 4),
                                     _SmallBadge(
-                                        label: 'ภายนอก', isDark: isDark),
+                                        label: l.t('member_external_label'), isDark: isDark),
                                   ],
                                   if (isMe) ...[
                                     const SizedBox(width: 4),
                                     _SmallBadge(
-                                        label: 'คุณ',
+                                        label: l.t('common_you'),
                                         color: AppColors.blue400,
                                         isDark: isDark),
                                   ],
                                   if (isPaid) ...[
                                     const SizedBox(width: 4),
                                     _SmallBadge(
-                                        label: 'จ่ายแล้ว',
+                                        label: l.t('summary_paid_label'),
                                         color: AppColors.emerald600,
                                         isDark: isDark),
                                   ],
@@ -255,7 +258,7 @@ class AllMembersSection extends StatelessWidget {
                               ),
                               if (hasPromptPay)
                                 Text(
-                                  'พร้อมเพย์: ${member.promptpay}',
+                                  l.t('all_members_promptpay').replaceAll('{pp}', member.promptpay ?? ''),
                                   style: GoogleFonts.notoSansThai(
                                     fontSize: 11,
                                     color: isDark
@@ -365,10 +368,10 @@ class AllMembersSection extends StatelessWidget {
                                 const SizedBox(width: 4),
                                 Text(
                                   isPaid
-                                      ? 'จ่ายแล้ว'
+                                      ? l.t('summary_paid_label')
                                       : (requiresSlip
-                                          ? 'อัพโหลดสลิป'
-                                          : 'ทำเครื่องหมายว่าจ่ายแล้ว'),
+                                          ? l.t('summary_upload_slip')
+                                          : l.t('summary_mark_paid')),
                                   style: GoogleFonts.notoSansThai(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,

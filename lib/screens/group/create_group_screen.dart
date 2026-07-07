@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -116,12 +117,13 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
   }
 
   Future<void> _deleteGroup() async {
+      final l = context.read<LocaleProvider>();
     if (widget.groupId == null) return;
     final confirmed = await showConfirmDialog(
       context,
-      title: 'ลบกลุ่มนี้?',
-      description: 'กลุ่มและข้อมูลทั้งหมดจะถูกลบถาวร ไม่สามารถกู้คืนได้',
-      confirmLabel: 'ลบ',
+      title: l.t('create_group_delete_title'),
+      description: l.t('create_group_delete_desc'),
+      confirmLabel: l.t('create_group_delete_confirm'),
       danger: true,
     );
     if (!confirmed || !mounted) return;
@@ -146,9 +148,10 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final titleText = _isEdit ? 'แก้ไขกลุ่ม' : 'สร้างกลุ่มใหม่';
-    final submitLabel = _isEdit ? 'บันทึกกลุ่ม' : 'สร้างกลุ่ม';
+    final titleText = _isEdit ? l.t('create_group_title_edit') : l.t('create_group_title_new');
+    final submitLabel = _isEdit ? l.t('create_group_submit_edit') : l.t('create_group_submit_new');
 
     return Container(
       decoration: BoxDecoration(
@@ -203,7 +206,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // ── Emoji + Name ──────────────────────────────
-                const FormSectionLabel(label: 'ชื่อกลุ่ม *'),
+                FormSectionLabel(label: l.t('create_group_name_label')),
                 const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -236,7 +239,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                       child: TextField(
                         controller: _nameCtrl,
                         autofocus: !_isEdit,
-                        decoration: const InputDecoration(hintText: 'ชื่อกลุ่ม'),
+                        decoration: InputDecoration(hintText: l.t('create_group_name_hint')),
                         onSubmitted: (_) => _submit(),
                       ),
                     ),
@@ -262,18 +265,18 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 const SizedBox(height: 16),
 
                 // ── Description ───────────────────────────────
-                const FormSectionLabel(label: 'คำอธิบาย (ไม่บังคับ)'),
+                FormSectionLabel(label: l.t('create_group_desc_label')),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _descCtrl,
                   maxLines: 2,
-                  decoration: const InputDecoration(hintText: 'คำอธิบายเพิ่มเติม...'),
+                  decoration: InputDecoration(hintText: l.t('create_group_desc_hint')),
                 ),
 
                 const SizedBox(height: 16),
 
                 // ── Tags ──────────────────────────────────────
-                const FormSectionLabel(label: 'แท็ก'),
+                FormSectionLabel(label: l.t('create_group_tags_label')),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 6,
@@ -317,8 +320,8 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     Expanded(
                       child: TextField(
                         controller: _tagCtrl,
-                        decoration: const InputDecoration(
-                          hintText: 'เพิ่มแท็กเอง...',
+                        decoration: InputDecoration(
+                          hintText: l.t('create_group_tag_hint'),
                           prefixText: '#',
                         ),
                         onSubmitted: (_) => _addCustomTag(),

@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -73,6 +74,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // context.select — only rebuilds when unreadCount changes, not on every
     // notification list mutation (e.g. individual read-state toggles).
@@ -135,7 +137,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Text(
-                    'การแจ้งเตือน',
+                    l.t('notifications_title'),
                     style: GoogleFonts.notoSansThai(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -174,7 +176,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               size: 14, color: AppColors.primary),
                           const SizedBox(width: 4),
                           Text(
-                            'อ่านทั้งหมด',
+                            l.t('notifications_mark_all_read'),
                             style: GoogleFonts.notoSansThai(
                               fontSize: 12,
                               color: AppColors.primary,
@@ -234,10 +236,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildEmpty(bool isDark) {
-    return const EmptyStateWidget(
+    final l = context.read<LocaleProvider>();
+    return EmptyStateWidget(
       emoji: '🔔',
-      title: 'ไม่มีการแจ้งเตือน',
-      subtitle: 'คำเชิญกลุ่มและการอัพเดตจะปรากฏที่นี่',
+      title: l.t('notifications_empty_title'),
+      subtitle: l.t('notifications_empty_sub'),
     );
   }
 }
@@ -363,6 +366,7 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isUnread = !notification.read;
     final showActions = isUnread &&
         (notification.type == 'group_invite' ||
@@ -465,7 +469,7 @@ class _NotificationCard extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text(
-                              isResponding ? 'กำลังดำเนินการ...' : 'ปฏิเสธ',
+                              isResponding ? l.t('notifications_responding') : l.t('notifications_decline'),
                               style: GoogleFonts.notoSansThai(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -493,7 +497,7 @@ class _NotificationCard extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text(
-                              isResponding ? 'กำลังดำเนินการ...' : 'รับคำเชิญ',
+                              isResponding ? l.t('notifications_responding') : l.t('notifications_accept'),
                               style: GoogleFonts.notoSansThai(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -518,7 +522,7 @@ class _NotificationCard extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        'ดูคำขอเป็นเพื่อน',
+                        l.t('notifications_view_friend_request'),
                         style: GoogleFonts.notoSansThai(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,

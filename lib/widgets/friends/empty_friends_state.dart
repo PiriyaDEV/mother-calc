@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
+import 'package:provider/provider.dart';
 
 class EmptyFriendsState extends StatelessWidget {
   final bool isDark;
@@ -14,6 +16,7 @@ class EmptyFriendsState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.watch<LocaleProvider>();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 40),
       child: Column(
@@ -30,7 +33,7 @@ class EmptyFriendsState extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'ยังไม่มีเพื่อน',
+            l.t('friends_empty_title'),
             style: GoogleFonts.notoSansThai(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -41,7 +44,7 @@ class EmptyFriendsState extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'เพิ่มเพื่อนด้วย @username เพื่อเพิ่มเข้ากลุ่มได้',
+            l.t('friends_empty_sub'),
             style: GoogleFonts.notoSansThai(
               fontSize: 12,
               color: isDark
@@ -61,7 +64,7 @@ class EmptyFriendsState extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadii.md),
               ),
               child: Text(
-                'เพิ่มเพื่อนคนแรก',
+                l.t('friends_add_first'),
                 style: GoogleFonts.notoSansThai(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,

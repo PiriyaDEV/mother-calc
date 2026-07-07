@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -31,6 +32,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final provider = context.read<GroupsStore>();
     // context.select — only rebuilds when the groups list changes.
@@ -54,7 +56,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'กลุ่มของฉัน',
+                          l.t('groups_title'),
                           style: GoogleFonts.anuphan(
                             fontSize: 26,
                             fontWeight: FontWeight.w700,
@@ -120,10 +122,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       child: provider.groups.isEmpty
                           ? EmptyStateWidget(
                               emoji: '👥',
-                              title: 'ยังไม่มีกลุ่ม',
+                              title: l.t('groups_empty_title'),
                               subtitle:
-                                  'สร้างกลุ่มและเชิญเพื่อนมาหารค่าใช้จ่ายด้วยกัน',
-                              ctaLabel: 'สร้างกลุ่มแรก',
+                                  l.t('groups_empty_sub'),
+                              ctaLabel: l.t('groups_create_first'),
                               onCta: _showCreateGroupSheet,
                             )
                           : ListView.separated(

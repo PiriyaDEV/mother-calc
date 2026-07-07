@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -21,6 +23,7 @@ class SelectedMemberCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final member = summary.member;
     final color = colorFromHex(member.color);
     final isMe = member.userId == currentUserId;
@@ -75,7 +78,7 @@ class SelectedMemberCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                'ภายนอก',
+                                l.t('selected_member_external'),
                                 style: GoogleFonts.notoSansThai(
                                   fontSize: 10,
                                   color: isDark
@@ -96,7 +99,7 @@ class SelectedMemberCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                'คุณ',
+                                l.t('selected_member_you'),
                                 style: GoogleFonts.notoSansThai(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
@@ -111,7 +114,7 @@ class SelectedMemberCard extends StatelessWidget {
                           member.promptpay!.isNotEmpty) ...[
                         const SizedBox(height: 2),
                         Text(
-                          'พร้อมเพย์: ${member.promptpay}',
+                          l.t('selected_member_promptpay').replaceAll('{pp}', member.promptpay ?? ''),
                           style: GoogleFonts.notoSansThai(
                             fontSize: 12,
                             color: isDark
@@ -137,7 +140,7 @@ class SelectedMemberCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '$emoji ส่วนของ${isMe ? 'ฉัน' : member.name}',
+                      l.t('selected_member_share_title').replaceAll('{emoji}', emoji).replaceAll('{name}', isMe ? l.t('selected_member_share_me') : member.name),
                       style: GoogleFonts.notoSansThai(
                         fontSize: 11,
                         color: isDark
@@ -159,7 +162,7 @@ class SelectedMemberCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
               child: Text(
-                'รายการที่สั่ง',
+                l.t('selected_member_items_ordered'),
                 style: GoogleFonts.notoSansThai(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -207,7 +210,7 @@ class SelectedMemberCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'รวม (รวม VAT/SC)',
+                    l.t('selected_member_total_with_tax'),
                     style: GoogleFonts.notoSansThai(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,

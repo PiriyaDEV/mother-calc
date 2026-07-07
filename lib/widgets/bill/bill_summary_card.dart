@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -12,6 +14,7 @@ class BillSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -25,7 +28,7 @@ class BillSummaryCard extends StatelessWidget {
       child: Column(
         children: [
           _SummaryRow(
-              label: 'ยอดรวมก่อนภาษี',
+              label: l.t('summary_subtotal'),
               value: calc.subtotal,
               currency: currency),
           if (calc.serviceAmount > 0)
@@ -38,10 +41,10 @@ class BillSummaryCard extends StatelessWidget {
                 label: 'VAT', value: calc.vatAmount, currency: currency),
           if (calc.tipAmount > 0)
             _SummaryRow(
-                label: 'ทิป', value: calc.tipAmount, currency: currency),
+                label: l.t('summary_tip'), value: calc.tipAmount, currency: currency),
           if (calc.discountAmount > 0)
             _SummaryRow(
-                label: 'ส่วนลด',
+                label: l.t('summary_discount'),
                 value: -calc.discountAmount,
                 currency: currency,
                 isDiscount: true),
@@ -50,7 +53,7 @@ class BillSummaryCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'ยอดรวมทั้งหมด',
+                l.t('summary_grand_total'),
                 style: GoogleFonts.notoSansThai(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,

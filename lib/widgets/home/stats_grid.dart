@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +13,7 @@ class StatsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     return Selector<BillsStore, BillAggregateStats?>(
       selector: (_, s) => s.stats,
       builder: (context, stats, _) {
@@ -42,7 +44,7 @@ class StatsGrid extends StatelessWidget {
               ),
               StatCard(
                 icon: Icons.receipt_long_rounded,
-                label: 'บิลทั้งหมด',
+                label: l.t('stats_total_bills'),
                 value: '${stats.totalCount} บิล',
                 accentColor: const Color(0xFF7B5CF6),
                 bgColor: isDark
@@ -51,7 +53,7 @@ class StatsGrid extends StatelessWidget {
               ),
               StatCard(
                 icon: Icons.format_list_bulleted_rounded,
-                label: 'รายการทั้งหมด',
+                label: l.t('stats_total_items'),
                 value: '$totalItems รายการ',
                 accentColor: AppColors.amber,
                 bgColor: isDark
@@ -60,7 +62,7 @@ class StatsGrid extends StatelessWidget {
               ),
               StatCard(
                 icon: Icons.star_rounded,
-                label: 'บิลใหญ่สุด',
+                label: l.t('stats_biggest_bill'),
                 value: '฿${formatNumber(biggestBillTotal)}',
                 accentColor: AppColors.emerald,
                 bgColor: isDark

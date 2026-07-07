@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -37,6 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _save() async {
+      final l = context.read<LocaleProvider>();
     setState(() => _loading = true);
     try {
       await context.read<AuthProvider>().updateProfile(
@@ -58,7 +60,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('เกิดข้อผิดพลาด', style: GoogleFonts.notoSansThai()),
+            content: Text(l.t('profile_error'), style: GoogleFonts.notoSansThai()),
             backgroundColor: AppColors.red,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -72,6 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // context.select — only rebuilds when the profile object itself changes.
     final profile = context.select<AuthProvider, dynamic>((a) => a.profile);
@@ -95,13 +98,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             }
           },
         ),
-        title: Text('แก้ไขโปรไฟล์', style: GoogleFonts.notoSansThai(fontWeight: FontWeight.w600)),
+        title: Text(l.t('profile_edit_title'), style: GoogleFonts.notoSansThai(fontWeight: FontWeight.w600)),
         elevation: 0,
         actions: [
           TextButton(
             onPressed: _loading ? null : _save,
             child: Text(
-              'บันทึก',
+              l.t('profile_save_btn'),
               style: GoogleFonts.notoSansThai(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
@@ -146,15 +149,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: AppSpacing.xxl),
 
           // Form fields
-          const _FormLabel(label: 'ชื่อที่แสดง'),
+          _FormLabel(label: l.t('profile_display_name_label')),
           const SizedBox(height: 6),
           TextField(
             controller: _displayNameCtrl,
-            decoration: const InputDecoration(hintText: 'ชื่อที่แสดงในแอป'),
+            decoration: InputDecoration(hintText: l.t('profile_display_name_hint')),
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          const _FormLabel(label: 'ชื่อผู้ใช้'),
+          _FormLabel(label: l.t('profile_username_label')),
           const SizedBox(height: 6),
           TextField(
             controller: _usernameCtrl,
@@ -162,16 +165,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          const _FormLabel(label: 'เบอร์ PromptPay'),
+          _FormLabel(label: l.t('profile_promptpay_label')),
           const SizedBox(height: 6),
           TextField(
             controller: _promptpayCtrl,
             keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(hintText: 'เบอร์โทรหรือเลขบัตรประชาชน'),
+            decoration: InputDecoration(hintText: l.t('profile_promptpay_hint')),
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          const _FormLabel(label: 'อีเมล'),
+          _FormLabel(label: l.t('profile_email_label')),
           const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 14),
@@ -202,7 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
                 : Text(
-                    'บันทึกการเปลี่ยนแปลง',
+                    l.t('profile_save_changes'),
                     style: GoogleFonts.notoSansThai(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
           ),

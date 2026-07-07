@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:kidtang_flutter/models/models.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
@@ -54,10 +56,11 @@ class AccountSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeaderWidget(label: 'บัญชี'),
+        SectionHeaderWidget(label: l.t('me_account')),
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
@@ -71,7 +74,7 @@ class AccountSection extends StatelessWidget {
             children: [
               ProfileFieldRow(
                 isDark: isDark,
-                label: 'ชื่อที่แสดง',
+                label: l.t('profile_display_name'),
                 value: profile?.displayName ?? '',
                 isEditing: editingName,
                 controller: nameCtrl,
@@ -105,7 +108,7 @@ class AccountSection extends StatelessWidget {
                       : AppColors.borderLight),
               ProfileFieldRow(
                 isDark: isDark,
-                label: 'พร้อมเพย์ (ใช้เป็น default ในบิล)',
+                label: l.t('me_promptpay_default_label'),
                 value: profile?.promptpay != null &&
                         profile!.promptpay!.isNotEmpty
                     ? '📱 ${profile!.promptpay}'
@@ -117,7 +120,7 @@ class AccountSection extends StatelessWidget {
                 isEditing: editingPromptpay,
                 controller: promptpayCtrl,
                 saving: saving,
-                hintText: 'เบอร์โทร หรือ เลขบัตรประชาชน',
+                hintText: l.t('me_promptpay_hint_short'),
                 onEdit: onEditPromptpay,
                 onSave: onSavePromptpay,
                 onCancel: onCancelPromptpay,

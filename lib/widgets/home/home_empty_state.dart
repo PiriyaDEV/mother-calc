@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
+import 'package:provider/provider.dart';
 
 class HomeEmptyState extends StatelessWidget {
   final bool isDark;
@@ -9,6 +11,7 @@ class HomeEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.watch<LocaleProvider>();
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
@@ -48,7 +51,7 @@ class HomeEmptyState extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'ยังไม่มีบิล',
+                l.t('home_no_bills'),
                 style: GoogleFonts.anuphan(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -59,7 +62,7 @@ class HomeEmptyState extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'สร้างบิลแรกหรือเข้าร่วมกลุ่มเพื่อเริ่มต้น',
+                l.t('home_empty_sub'),
                 style: GoogleFonts.notoSansThai(
                   fontSize: 13,
                   color: isDark
@@ -90,8 +93,8 @@ class HomeEmptyState extends StatelessWidget {
                           ],
                         ),
                         child: Center(
-                          child: Text(
-                            'สร้างบิล',
+                           child: Text(
+                             l.t('bills_create'),
                             style: GoogleFonts.notoSansThai(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -121,8 +124,8 @@ class HomeEmptyState extends StatelessWidget {
                           ),
                         ),
                         child: Center(
-                          child: Text(
-                            'สร้างกลุ่ม',
+                           child: Text(
+                             l.t('home_create_group'),
                             style: GoogleFonts.notoSansThai(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,

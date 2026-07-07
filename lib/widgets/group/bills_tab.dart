@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,6 +29,7 @@ class GroupBillsTab extends StatelessWidget {
   // rows up front.
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     return ListView.builder(
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: 1 + bills.length,
@@ -41,7 +44,7 @@ class GroupBillsTab extends StatelessWidget {
                   onPressed: () => _createBill(context),
                   icon: const Icon(Icons.add_rounded, size: 18),
                   label: Text(
-                    'สร้างบิลใหม่',
+                    l.t('group_bills_create_new'),
                     style: GoogleFonts.notoSansThai(
                         fontSize: 14, fontWeight: FontWeight.w600),
                   ),
@@ -84,7 +87,7 @@ class GroupBillsTab extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'สร้างบิลแรกของกลุ่ม',
+                                l.t('group_bills_create_first'),
                                 style: GoogleFonts.notoSansThai(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -94,7 +97,7 @@ class GroupBillsTab extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                'แตะเพื่อเริ่มหารค่าใช้จ่าย',
+                                l.t('group_bills_start'),
                                 style: GoogleFonts.notoSansThai(
                                   fontSize: 12,
                                   color: isDark

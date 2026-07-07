@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
@@ -24,10 +26,11 @@ class SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeaderWidget(label: 'การตั้งค่า'),
+        SectionHeaderWidget(label: l.t('me_settings')),
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
@@ -48,7 +51,7 @@ class SettingsSection extends StatelessWidget {
                 iconColor: isDark
                     ? const Color(0xFF7C83FD)
                     : const Color(0xFFFFB23E),
-                label: 'โหมดสีเข้ม',
+                label: l.t('me_dark_mode'),
                 trailing: Switch(
                   value: isDark,
                   onChanged: (_) => onToggleDark(),
@@ -69,7 +72,7 @@ class SettingsSection extends StatelessWidget {
                 isDark: isDark,
                 icon: Icons.language_rounded,
                 iconColor: const Color(0xFF34C77B),
-                label: 'ภาษา',
+                label: l.t('language'),
                 trailing: Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 4),
@@ -80,7 +83,7 @@ class SettingsSection extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadii.full),
                   ),
                   child: Text(
-                    isThai ? '🇹🇭 ไทย' : '🇬🇧 EN',
+                    isThai ? l.t('me_language_thai') : 'EN',
                     style: GoogleFonts.notoSansThai(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -102,7 +105,7 @@ class SettingsSection extends StatelessWidget {
                 isDark: isDark,
                 icon: Icons.notifications_outlined,
                 iconColor: const Color(0xFFFF5C5C),
-                label: 'การแจ้งเตือน',
+                label: l.t('me_notifications'),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

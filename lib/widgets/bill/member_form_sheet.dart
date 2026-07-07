@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -98,6 +99,7 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isEdit = widget.editMember != null;
 
@@ -130,7 +132,7 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    isEdit ? 'แก้ไขสมาชิก' : 'เพิ่มสมาชิก',
+                    isEdit ? l.t('member_form_edit_title') : l.t('member_form_add_title'),
                     style: GoogleFonts.notoSansThai(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -162,7 +164,7 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
                   // Quick-add from group (only when adding, not editing)
                   if (!isEdit && availableGroupMembers.isNotEmpty) ...[
                     Text(
-                      'เพิ่มจากกลุ่ม',
+                      l.t('member_form_add_from_group'),
                       style: GoogleFonts.notoSansThai(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -234,7 +236,7 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
                             : AppColors.borderLight),
                     const SizedBox(height: 16),
                     Text(
-                      'หรือเพิ่มสมาชิกใหม่',
+                      l.t('member_form_or_new'),
                       style: GoogleFonts.notoSansThai(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -249,7 +251,7 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
                   TextField(
                     controller: _nameCtrl,
                     autofocus: !isEdit && availableGroupMembers.isEmpty,
-                    decoration: const InputDecoration(hintText: 'ชื่อสมาชิก'),
+                    decoration: InputDecoration(hintText: l.t('member_form_name_hint')),
                   ),
                   const SizedBox(height: 12),
                   // PromptPay field
@@ -257,12 +259,12 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
                     controller: _promptpayCtrl,
                     keyboardType: TextInputType.phone,
                     decoration:
-                        const InputDecoration(hintText: 'เบอร์ PromptPay (ไม่บังคับ)'),
+                        InputDecoration(hintText: l.t('member_form_promptpay_hint')),
                   ),
                   const SizedBox(height: 16),
                   // Color picker
                   Text(
-                    'สีประจำตัว',
+                    l.t('member_form_color_label'),
                     style: GoogleFonts.notoSansThai(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -311,7 +313,7 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
                                 strokeWidth: 2, color: Colors.white),
                           )
                         : Text(
-                            isEdit ? 'บันทึก' : 'เพิ่มสมาชิก',
+                            isEdit ? l.t('member_form_save') : l.t('member_form_add_btn'),
                             style: GoogleFonts.notoSansThai(
                                 fontSize: 15, fontWeight: FontWeight.w600),
                           ),

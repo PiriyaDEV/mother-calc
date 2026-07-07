@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -39,6 +41,7 @@ class GroupMembersTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     return ListView.builder(
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: 1 + (pendingMembers.isNotEmpty ? 1 : 0) + acceptedMembers.length,
@@ -53,7 +56,7 @@ class GroupMembersTab extends StatelessWidget {
                 onPressed: () => _showManageMembersSheet(context),
                 icon: const Icon(Icons.people_outline, size: 18),
                 label: Text(
-                  'จัดการสมาชิก',
+                  l.t('group_manage_members'),
                   style: GoogleFonts.notoSansThai(
                       fontSize: 14, fontWeight: FontWeight.w600),
                 ),
@@ -216,7 +219,7 @@ class GroupMembersTab extends StatelessWidget {
                     m.isExternal
                         ? 'ภายนอก'
                         : isOwner
-                            ? 'เจ้าของ'
+                            ? l.t('group_owner_label')
                             : 'สมาชิก',
                     style: GoogleFonts.notoSansThai(
                       fontSize: 11,

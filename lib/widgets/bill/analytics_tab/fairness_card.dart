@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
@@ -20,6 +22,7 @@ class FairnessCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final ratio =
         biggestPayer.total / (smallestPayer.total > 0 ? smallestPayer.total : 1);
     final String fairnessEmoji;
@@ -52,7 +55,7 @@ class FairnessCard extends StatelessWidget {
               const Text('⚖️', style: TextStyle(fontSize: 16)),
               const SizedBox(width: 8),
               Text(
-                'ความเท่าเทียม',
+                l.t('analytics_fairness'),
                 style: GoogleFonts.notoSansThai(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -97,7 +100,7 @@ class FairnessCard extends StatelessWidget {
             children: [
               Expanded(
                 child: FairnessPersonCol(
-                  label: 'จ่ายน้อยสุด',
+                  label: l.t('analytics_least_spender'),
                   name: smallestPayer.member.name,
                   amount: smallestPayer.total,
                   color: AppColors.emerald500,
@@ -116,7 +119,7 @@ class FairnessCard extends StatelessWidget {
               ),
               Expanded(
                 child: FairnessPersonCol(
-                  label: 'จ่ายเยอะสุด',
+                  label: l.t('analytics_biggest_spender'),
                   name: biggestPayer.member.name,
                   amount: biggestPayer.total,
                   color: AppColors.amber500,
@@ -135,7 +138,7 @@ class FairnessCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'เฉลี่ยต่อคน',
+                l.t('analytics_avg_per_person'),
                 style: GoogleFonts.notoSansThai(
                   fontSize: 13,
                   color: isDark

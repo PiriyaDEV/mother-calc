@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -30,6 +32,7 @@ class _TouchablePieChartState extends State<TouchablePieChart> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = widget.isDark;
     final displayBills = widget.sortedBills.take(8).toList();
     final totalAmount = widget.totalAmount;
@@ -79,7 +82,7 @@ class _TouchablePieChartState extends State<TouchablePieChart> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '🥧 สัดส่วนค่าใช้จ่ายต่อบิล',
+              l.t('analytics_pie_chart_per_bill'),
               style: GoogleFonts.notoSansThai(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,

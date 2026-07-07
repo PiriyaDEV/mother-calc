@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -14,6 +16,7 @@ Future<void> pickSlipAndMarkPaid(
   required Bill bill,
   required String memberId,
 }) async {
+  final l = context.read<LocaleProvider>();
   final isDark = Theme.of(context).brightness == Brightness.dark;
 
   final source = await showDialog<ImageSource>(
@@ -33,7 +36,7 @@ Future<void> pickSlipAndMarkPaid(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'อัพโหลดสลิปการโอน',
+              l.t('slip_upload_title'),
               style: GoogleFonts.notoSansThai(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -44,7 +47,7 @@ Future<void> pickSlipAndMarkPaid(
             ),
             const SizedBox(height: 8),
             Text(
-              'เลือกหลักฐานการโอนเงิน เพื่อยืนยันการชำระ',
+              l.t('slip_upload_sub'),
               style: GoogleFonts.notoSansThai(
                 fontSize: 13,
                 color: isDark
@@ -62,7 +65,7 @@ Future<void> pickSlipAndMarkPaid(
                   : const Color(0xFFF9FAFB),
               leading: const Icon(Icons.photo_library_outlined,
                   color: AppColors.blue400),
-              title: Text('เลือกจากคลังรูป',
+              title: Text(l.t('slip_from_gallery'),
                   style: GoogleFonts.notoSansThai(fontSize: 14)),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
@@ -75,7 +78,7 @@ Future<void> pickSlipAndMarkPaid(
                   : const Color(0xFFF9FAFB),
               leading: const Icon(Icons.camera_alt_outlined,
                   color: AppColors.blue400),
-              title: Text('ถ่ายภาพ',
+              title: Text(l.t('slip_take_photo'),
                   style: GoogleFonts.notoSansThai(fontSize: 14)),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
@@ -104,7 +107,7 @@ Future<void> pickSlipAndMarkPaid(
       shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(
-        'ยืนยันการชำระเงิน',
+        l.t('slip_confirm_title'),
         style: GoogleFonts.notoSansThai(
             fontSize: 16, fontWeight: FontWeight.bold),
       ),
@@ -129,7 +132,7 @@ Future<void> pickSlipAndMarkPaid(
           ),
           const SizedBox(height: 12),
           Text(
-            'ยืนยันว่าคุณได้ทำการโอนเงินแล้ว?',
+            l.t('slip_confirm_msg'),
             style: GoogleFonts.notoSansThai(fontSize: 13),
             textAlign: TextAlign.center,
           ),
@@ -138,13 +141,13 @@ Future<void> pickSlipAndMarkPaid(
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: Text('ยกเลิก', style: GoogleFonts.notoSansThai()),
+          child: Text(l.t('slip_cancel'), style: GoogleFonts.notoSansThai()),
         ),
         FilledButton(
           style: FilledButton.styleFrom(
               backgroundColor: AppColors.emerald500),
           onPressed: () => Navigator.pop(ctx, true),
-          child: Text('ยืนยัน',
+          child: Text(l.t('slip_confirm_btn'),
               style: GoogleFonts.notoSansThai(
                   fontWeight: FontWeight.w600)),
         ),

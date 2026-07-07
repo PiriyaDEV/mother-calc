@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -29,6 +31,7 @@ class _PieChartCardState extends State<PieChartCard> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     if (widget.memberTotals.isEmpty || widget.total == 0) {
       return const SizedBox.shrink();
     }
@@ -55,7 +58,7 @@ class _PieChartCardState extends State<PieChartCard> {
 
     return SectionCard(
       isDark: widget.isDark,
-      title: '🥧 สัดส่วนค่าใช้จ่าย',
+      title: l.t('analytics_pie_chart'),
       child: Column(
         children: [
           SizedBox(

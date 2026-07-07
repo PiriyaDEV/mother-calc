@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -62,15 +63,16 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 
   Future<void> _handleRemove(Friend friend) async {
+      final l = context.read<LocaleProvider>();
     final myId = Supabase.instance.client.auth.currentUser?.id ?? '';
     final profile = friend.otherProfile(myId);
-    final name = profile?.displayName ?? profile?.username ?? 'เพื่อน';
+    final name = profile?.displayName ?? profile?.username ?? l.t('friends_tab_label');
 
     final confirmed = await showConfirmDialog(
       context,
-      title: 'ลบเพื่อน?',
-      description: 'ต้องการลบ $name ออกจากรายชื่อเพื่อนหรือไม่?',
-      confirmLabel: 'ลบ',
+      title: l.t('friends_remove_title'),
+      description: l.t('friends_remove_desc').replaceAll('{name}', name),
+      confirmLabel: l.t('friends_remove_confirm'),
       danger: true,
     );
 
@@ -81,6 +83,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // context.select — rebuilds only when friends list or pending requests change.
     final friends = context.select<FriendsStore, List>((s) => s.friends);
@@ -105,7 +108,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'เพื่อน',
+                          l.t('friends_tab_label'),
                           style: GoogleFonts.notoSansThai(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -146,7 +149,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                               color: Colors.white, size: 16),
                           const SizedBox(width: 6),
                           Text(
-                            'เพิ่มเพื่อน',
+                            l.t('friends_add_btn'),
                             style: GoogleFonts.notoSansThai(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -213,7 +216,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 FriendsSectionHeader(
-                                  title: 'เพื่อนทั้งหมด',
+                                  title: l.t('friends_title'),
                                   count: friends.length,
                                 ),
                                 const SizedBox(height: AppSpacing.sm),

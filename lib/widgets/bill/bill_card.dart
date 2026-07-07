@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -158,6 +160,7 @@ class _BillStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final Color bgColor;
     final Color dotColor;
     final Color textColor;
@@ -167,17 +170,17 @@ class _BillStatusBadge extends StatelessWidget {
       bgColor = AppColors.emeraldLight;
       dotColor = AppColors.emerald;
       textColor = AppColors.emeraldText;
-      label = 'เสร็จแล้ว';
+      label = l.t('bill_status_completed');
     } else if (status == 'pending_payment') {
       bgColor = AppColors.amberLight;
       dotColor = AppColors.amber;
       textColor = AppColors.amberText;
-      label = 'รอจ่าย';
+      label = l.t('bill_status_pending');
     } else {
       bgColor = AppColors.borderLight;
       dotColor = AppColors.textTertiaryLight;
       textColor = AppColors.textSecondaryLight;
-      label = 'ดราฟ';
+      label = l.t('bill_status_draft');
     }
 
     return Container(

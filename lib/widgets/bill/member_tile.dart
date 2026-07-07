@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -91,7 +93,7 @@ class MemberTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                        ..._buildMemberPill(),
+                        ..._buildMemberPill(context),
                       ],
                     ),
                     Text(
@@ -165,18 +167,19 @@ class MemberTile extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildMemberPill() {
+  List<Widget> _buildMemberPill(BuildContext context) {
+    final l = context.read<LocaleProvider>();
     final String label;
     final Color color;
 
     if (member.isExternal) {
-      label = 'ภายนอก';
+      label = l.t('bill_member_external');
       color = AppColors.neutral600;
     } else if (member.userId != null && member.userId == currentUserId) {
-      label = 'ฉัน';
+      label = l.t('bill_member_me');
       color = AppColors.primary;
     } else if (member.userId != null && friendUserIds.contains(member.userId)) {
-      label = 'เพื่อน';
+      label = l.t('bill_member_friend');
       color = AppColors.emerald;
     } else {
       return [];

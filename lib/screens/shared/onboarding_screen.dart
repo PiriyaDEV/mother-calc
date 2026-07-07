@@ -1,3 +1,4 @@
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -36,6 +37,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _submit() async {
+      final l = context.read<LocaleProvider>();
     if (!_formKey.currentState!.validate()) return;
     setState(() {
       _loading = true;
@@ -47,7 +49,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           promptpay: _promptpayCtrl.text.trim(),
         );
     if (mounted) {
-      final isUsernameTaken = err == 'ชื่อผู้ใช้นี้ถูกใช้แล้ว';
+      final isUsernameTaken = err == l.t('onboarding_username_taken');
       setState(() {
         _loading = false;
         _usernameError = isUsernameTaken ? err : null;
@@ -58,6 +60,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -78,7 +81,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'ยินดีต้อนรับ 👋',
+                  l.t('onboarding_welcome'),
                   style: GoogleFonts.notoSansThai(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -89,7 +92,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'ตั้งค่าโปรไฟล์ก่อนเริ่มใช้งาน',
+                  l.t('onboarding_setup_profile'),
                   style: GoogleFonts.notoSansThai(
                     fontSize: 15,
                     color: isDark
@@ -99,7 +102,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                _label(isDark, 'ชื่อที่แสดง'),
+                _label(isDark, l.t('onboarding_display_name_label')),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _displayNameCtrl,
@@ -109,13 +112,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ? AppColors.textPrimaryDark
                         : AppColors.textPrimaryLight,
                   ),
-                  decoration: _inputDecoration(isDark, 'เช่น สมชาย ใจดี'),
+                  decoration: _inputDecoration(isDark, l.t('onboarding_display_name_hint')),
                   validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'กรุณาใส่ชื่อที่แสดง' : null,
+                      (v == null || v.trim().isEmpty) ? l.t('onboarding_display_name_required') : null,
                 ),
                 const SizedBox(height: 20),
 
-                _label(isDark, 'ชื่อผู้ใช้ (@username)'),
+                _label(isDark, l.t('onboarding_username_label')),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _usernameCtrl,
@@ -126,7 +129,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ? AppColors.textPrimaryDark
                         : AppColors.textPrimaryLight,
                   ),
-                  decoration: _inputDecoration(isDark, 'เช่น somchai99')
+                  decoration: _inputDecoration(isDark, l.t('onboarding_username_hint'))
                       .copyWith(errorText: _usernameError),
                   onChanged: (_) {
                     if (_usernameError != null) {
@@ -134,16 +137,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     }
                   },
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'กรุณาใส่ชื่อผู้ใช้';
+                    if (v == null || v.trim().isEmpty) return l.t('onboarding_username_required');
                     if (!RegExp(r'^[a-zA-Z0-9_]{3,30}$').hasMatch(v.trim())) {
-                      return 'ใช้ได้แค่ a-z, 0-9, _ และ 3-30 ตัวอักษร';
+                      return l.t('onboarding_username_invalid');
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
 
-                _label(isDark, 'เบอร์พร้อมเพย์'),
+                _label(isDark, l.t('onboarding_promptpay_label')),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _promptpayCtrl,
@@ -157,11 +160,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ? AppColors.textPrimaryDark
                         : AppColors.textPrimaryLight,
                   ),
-                  decoration: _inputDecoration(isDark, 'เช่น 0812345678'),
+                  decoration: _inputDecoration(isDark, l.t('onboarding_promptpay_hint')),
                   validator: (v) {
                     final digits = v?.trim() ?? '';
-                    if (digits.isEmpty) return 'กรุณาใส่เบอร์พร้อมเพย์';
-                    if (digits.length != 10) return 'เบอร์พร้อมเพย์ต้องมี 10 หลัก';
+                    if (digits.isEmpty) return l.t('onboarding_promptpay_required');
+                    if (digits.length != 10) return l.t('onboarding_promptpay_invalid');
                     return null;
                   },
                 ),
@@ -207,7 +210,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                           )
                         : Text(
-                            'เริ่มใช้งาน',
+                            l.t('onboarding_start'),
                             style: GoogleFonts.notoSansThai(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,

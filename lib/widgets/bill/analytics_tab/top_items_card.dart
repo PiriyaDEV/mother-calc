@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -19,9 +21,10 @@ class TopItemsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     return SectionCard(
       isDark: isDark,
-      title: '🔥 รายการแพงสุด',
+      title: l.t('analytics_top_items'),
       child: Column(
         children: topItems.asMap().entries.map((entry) {
           final rank = entry.key;

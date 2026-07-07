@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
@@ -17,6 +19,7 @@ class BiggestSpenderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      final l = context.watch<LocaleProvider>();
     final color = colorFromHex(payer.member.color);
     final pct = total > 0 ? (payer.total / total * 100).round() : 0;
 
@@ -50,7 +53,7 @@ class BiggestSpenderCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'จ่ายเยอะสุด',
+                  l.t('analytics_biggest_spender'),
                   style: GoogleFonts.notoSansThai(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
