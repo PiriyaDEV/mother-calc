@@ -71,20 +71,10 @@ class SocialAuthService with WidgetsBindingObserver {
 
   // ── Google ────────────────────────────────────────────────────────────────
 
+  /// Native (mobile) sign-in only — web sign-in is triggered by the user
+  /// clicking Google Identity Services' own rendered button, whose result
+  /// arrives via the `onCurrentUserChanged` listener set up in [init].
   Future<String?> signInWithGoogle() async {
-    if (kIsWeb) {
-      try {
-        await _supabase.auth.signInWithOAuth(
-          OAuthProvider.google,
-          redirectTo: '${Uri.base.origin}/',
-          scopes: 'email openid profile',
-        );
-        return null; // page redirects — never reached
-      } catch (e) {
-        debugPrint('Google web OAuth error: $e');
-        return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
-      }
-    }
     try {
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null; // user cancelled

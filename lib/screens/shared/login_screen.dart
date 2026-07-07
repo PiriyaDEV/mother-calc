@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:kidtang_flutter/providers/auth_provider.dart';
+import 'package:kidtang_flutter/services/google_web_button.dart';
 import 'package:kidtang_flutter/services/ios_install_prompt.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 
@@ -318,35 +319,42 @@ class _LoginScreenState extends State<LoginScreen>
                         // ),
                         // const SizedBox(height: 14),
 
-                        // Google button — uses our own styled button on all
-                        // platforms. On web, tapping calls signInWithGoogle()
-                        // which triggers the GIS popup; the result is picked
-                        // up via the onCurrentUserChanged listener in
-                        // AuthProvider (same as before).
-                        _SocialButton(
-                          onTap: _googleLoading
-                              ? null
-                              : _signInWithGoogle,
-                          isLoading: _googleLoading,
-                          backgroundColor: isDark
-                              ? AppColors.surfaceDark
-                              : Colors.white,
-                          icon: Image.asset(
-                            'assets/images/google-logo.png',
-                            width: 22,
-                            height: 22,
+                        // Google button. On web this renders Google
+                        // Identity Services' own button — clicking it opens
+                        // Google's account chooser as a popup/overlay on
+                        // this same page (no redirect through Supabase's
+                        // domain). The result lands on the
+                        // onCurrentUserChanged listener wired up in
+                        // AuthProvider, not a return value here. Native
+                        // platforms keep the app's own styled button, which
+                        // calls signInWithGoogle() directly.
+                        if (kIsWeb)
+                          Center(child: renderGoogleSignInButton())
+                        else
+                          _SocialButton(
+                            onTap: _googleLoading
+                                ? null
+                                : _signInWithGoogle,
+                            isLoading: _googleLoading,
+                            backgroundColor: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
+                            icon: Image.asset(
+                              'assets/images/google-logo.png',
+                              width: 22,
+                              height: 22,
+                            ),
+                            label: 'เข้าสู่ระบบด้วย Google',
+                            labelColor: isDark
+                                ? Colors.white
+                                : const Color(0xFF111827),
+                            border: Border.all(
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.neutral100,
+                              width: 1.5,
+                            ),
                           ),
-                          label: 'เข้าสู่ระบบด้วย Google',
-                          labelColor: isDark
-                              ? Colors.white
-                              : const Color(0xFF111827),
-                          border: Border.all(
-                            color: isDark
-                                ? AppColors.borderDark
-                                : AppColors.neutral100,
-                            width: 1.5,
-                          ),
-                        ),
 
                         // Error
                         if (_error != null) ...[
