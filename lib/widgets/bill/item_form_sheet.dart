@@ -257,7 +257,9 @@ class _ItemFormSheetState extends State<ItemFormSheet> {
                   if (!_isUnequalSplit && perPerson > 0) ...[
                     const SizedBox(height: 8),
                     Text(
-                      '฿${formatNumber(perPerson)}/คน ($selectedCount คน)',
+                      l.t('item_form_per_person')
+                          .replaceFirst('{amount}', formatNumber(perPerson))
+                          .replaceFirst('{count}', '$selectedCount'),
                       style: GoogleFonts.notoSansThai(
                         fontSize: 12,
                         color: isDark

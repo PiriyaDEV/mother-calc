@@ -49,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('บันทึกสำเร็จ', style: GoogleFonts.notoSansThai()),
+            content: Text(context.read<LocaleProvider>().t('profile_save_success'), style: GoogleFonts.notoSansThai()),
             backgroundColor: AppColors.emerald,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

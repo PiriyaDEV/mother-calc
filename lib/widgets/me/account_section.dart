@@ -108,11 +108,11 @@ class AccountSection extends StatelessWidget {
                       : AppColors.borderLight),
               ProfileFieldRow(
                 isDark: isDark,
-                label: l.t('me_promptpay_default_label'),
+                label: l.t('me_promptpay_label'),
                 value: profile?.promptpay != null &&
                         profile!.promptpay!.isNotEmpty
                     ? '📱 ${profile!.promptpay}'
-                    : 'ยังไม่ได้ตั้งค่า',
+                    : l.t('me_not_set'),
                 valueColor: profile?.promptpay == null ||
                         profile!.promptpay!.isEmpty
                     ? AppColors.textTertiaryLight

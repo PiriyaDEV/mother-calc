@@ -80,7 +80,7 @@ class GroupMembersTab extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'รอตอบรับ ${pendingMembers.length} คน',
+                    l.t('group_pending_count').replaceFirst('{count}', '${pendingMembers.length}'),
                     style: GoogleFonts.notoSansThai(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -91,7 +91,7 @@ class GroupMembersTab extends StatelessWidget {
                   ...pendingMembers.map((m) {
                     final name = m.profile?.displayName ??
                         m.profile?.username ??
-                        'ผู้ใช้';
+                        l.t('notifications_user_fallback');
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 6),
                       child: Row(
@@ -141,7 +141,7 @@ class GroupMembersTab extends StatelessWidget {
         if (acceptedMembers.isEmpty && memberIndex == 0) {
           return GroupDetailEmptyState(
             icon: Icons.people_outline,
-            label: 'ยังไม่มีสมาชิก',
+            label: l.t('group_no_members'),
             isDark: isDark,
           );
         }
@@ -217,10 +217,10 @@ class GroupMembersTab extends StatelessWidget {
                   ),
                   child: Text(
                     m.isExternal
-                        ? 'ภายนอก'
+                        ? l.t('bill_member_external')
                         : isOwner
                             ? l.t('group_owner_label')
-                            : 'สมาชิก',
+                            : l.t('group_member_label'),
                     style: GoogleFonts.notoSansThai(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,

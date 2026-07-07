@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 
 /// Shown after a LINE web login completes in a plain Safari tab instead of
@@ -13,6 +15,7 @@ class LineWebReturnScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l = context.watch<LocaleProvider>();
 
     return Scaffold(
       body: Container(
@@ -41,7 +44,7 @@ class LineWebReturnScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'เข้าสู่ระบบสำเร็จ 🎉',
+                    l.t('login_line_return_success'),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.notoSansThai(
                       fontSize: 20,
@@ -51,8 +54,7 @@ class LineWebReturnScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'กรุณากลับไปที่แอป Kidtang บนหน้าจอหลักของคุณ '
-                    'แล้วปิดแท็บนี้ได้เลย',
+                    '${l.t('login_line_return_body')}${l.t('login_line_return_close')}',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.notoSansThai(
                       fontSize: 15,

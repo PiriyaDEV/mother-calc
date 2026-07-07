@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'rounded_avatar.dart';
 
@@ -19,9 +21,10 @@ class FriendRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.read<LocaleProvider>();
     final myId = Supabase.instance.client.auth.currentUser?.id ?? '';
     final profile = friend.otherProfile(myId);
-    final name = profile?.displayName ?? profile?.username ?? 'ผู้ใช้';
+    final name = profile?.displayName ?? profile?.username ?? l.t('notifications_user_fallback');
     final username = profile?.username;
 
     return RepaintBoundary(
@@ -86,7 +89,7 @@ class FriendRow extends StatelessWidget {
                       size: 12, color: Color(0xFF16A34A)),
                   const SizedBox(width: 4),
                   Text(
-                    'เพื่อน',
+                    l.t('friends_tab_label'),
                     style: GoogleFonts.notoSansThai(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,

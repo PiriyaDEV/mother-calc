@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 
 class GroupTabBar extends StatelessWidget {
@@ -53,10 +55,10 @@ class GroupTabBar extends StatelessWidget {
           fontWeight: FontWeight.normal,
         ),
         tabs: [
-          _CountTab(label: 'สมาชิก', count: acceptedCount, isDark: isDark),
-          _CountTab(label: 'บิล', count: billsCount, isDark: isDark),
-          const Tab(text: 'สรุป'),
-          const Tab(text: 'วิเคราะห์'),
+          _CountTab(label: context.watch<LocaleProvider>().t('group_tab_members'), count: acceptedCount, isDark: isDark),
+          _CountTab(label: context.watch<LocaleProvider>().t('group_tab_bills'), count: billsCount, isDark: isDark),
+          Tab(text: context.watch<LocaleProvider>().t('group_tab_summary')),
+          Tab(text: context.watch<LocaleProvider>().t('group_tab_analytics')),
         ],
       ),
     );

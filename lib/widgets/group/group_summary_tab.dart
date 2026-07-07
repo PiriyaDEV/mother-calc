@@ -69,7 +69,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
           children: [
             GroupDetailEmptyState(
               icon: Icons.bar_chart_rounded,
-              label: 'ยังไม่มีบิลในกลุ่ม',
+              label: l.t('group_no_bills'),
               sub: l.t('summary_create_bill_first'),
               isDark: widget.isDark,
             ),
@@ -102,7 +102,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    l.t('group_total_label'),
+                    l.t('analytics_group_total'),
                     style: GoogleFonts.notoSansThai(
                       fontSize: 13,
                       color: Colors.white.withValues(alpha: 0.8),
@@ -110,7 +110,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '${formatNumber(_totalAmount)} บาท',
+                    '${formatNumber(_totalAmount)} ${l.t('common_baht')}',
                     style: GoogleFonts.notoSansThai(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -119,7 +119,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${widget.bills.length} บิล',
+                    l.t('unit_bills').replaceFirst('{count}', '${widget.bills.length}'),
                     style: GoogleFonts.notoSansThai(
                       fontSize: 12,
                       color: Colors.white.withValues(alpha: 0.7),
@@ -187,7 +187,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
                                 ),
                               ),
                               Text(
-                                '${bill.items.length} รายการ · ${bill.members.length} คน',
+                                '${l.t('unit_items').replaceFirst('{count}', '${bill.items.length}')} · ${l.t('unit_people').replaceFirst('{count}', '${bill.members.length}')}',
                                 style: GoogleFonts.notoSansThai(
                                   fontSize: 12,
                                   color: widget.isDark
@@ -199,7 +199,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
                           ),
                         ),
                         Text(
-                          '${formatNumber(billTotal)} บาท',
+                          '${formatNumber(billTotal)} ${l.t('common_baht')}',
                           style: GoogleFonts.notoSansThai(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,

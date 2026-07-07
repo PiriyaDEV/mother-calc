@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
+import 'package:provider/provider.dart';
 
 /// showConfirmDialog — reusable confirm dialog
 /// danger=true  → confirm button สีแดง
@@ -10,13 +12,16 @@ Future<bool> showConfirmDialog(
   required String title,
   required String description,
   required String confirmLabel,
-  String cancelLabel = 'ยกเลิก',
+  String? cancelLabel,
   bool danger = false,
 }) async {
   final isDark = Theme.of(context).brightness == Brightness.dark;
   final result = await showDialog<bool>(
     context: context,
-    builder: (ctx) => AlertDialog(
+    builder: (ctx) {
+      final l = ctx.read<LocaleProvider>();
+      final resolvedCancelLabel = cancelLabel ?? l.t('common_cancel');
+      return AlertDialog(
       backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg)),
       title: Text(
@@ -38,7 +43,7 @@ Future<bool> showConfirmDialog(
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
           child: Text(
-            cancelLabel,
+            resolvedCancelLabel,
             style: GoogleFonts.notoSansThai(
               color: isDark
                   ? AppColors.textSecondaryDark
@@ -57,7 +62,8 @@ Future<bool> showConfirmDialog(
           ),
         ),
       ],
-    ),
+    );
+    },
   );
   return result ?? false;
 }

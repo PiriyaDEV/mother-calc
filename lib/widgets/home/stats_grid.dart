@@ -36,7 +36,7 @@ class StatsGrid extends StatelessWidget {
             delegate: SliverChildListDelegate([
               StatCard(
                 icon: Icons.trending_up_rounded,
-                label: 'เฉลี่ยต่อบิล',
+                label: l.t('stats_avg_per_bill_short'),
                 value: '฿${formatNumber(grandTotal / stats.totalCount)}',
                 accentColor: AppColors.primaryBlue,
                 bgColor:
@@ -45,7 +45,7 @@ class StatsGrid extends StatelessWidget {
               StatCard(
                 icon: Icons.receipt_long_rounded,
                 label: l.t('stats_total_bills'),
-                value: '${stats.totalCount} บิล',
+                value: l.t('unit_bills').replaceFirst('{count}', '${stats.totalCount}'),
                 accentColor: const Color(0xFF7B5CF6),
                 bgColor: isDark
                     ? const Color(0xFF1E1A3A)
@@ -54,7 +54,7 @@ class StatsGrid extends StatelessWidget {
               StatCard(
                 icon: Icons.format_list_bulleted_rounded,
                 label: l.t('stats_total_items'),
-                value: '$totalItems รายการ',
+                value: l.t('unit_items').replaceFirst('{count}', '$totalItems'),
                 accentColor: AppColors.amber,
                 bgColor: isDark
                     ? AppColors.amber.withValues(alpha: 0.12)

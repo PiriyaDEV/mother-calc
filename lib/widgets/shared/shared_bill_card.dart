@@ -116,8 +116,8 @@ class SharedBillCard extends StatelessWidget {
                           maxVisible: 3,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          '${bill.members.length} คน',
+                         Text(
+                           l.t('unit_people').replaceFirst('{count}', '${bill.members.length}'),
                           style: GoogleFonts.notoSansThai(
                             fontSize: 11,
                             color: isDark
@@ -172,7 +172,7 @@ class SharedBillCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        isCompleted ? 'เสร็จแล้ว' : l.t('common_proceed'),
+                        isCompleted ? l.t('bill_status_completed') : l.t('common_proceed'),
                         style: GoogleFonts.notoSansThai(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,

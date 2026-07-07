@@ -76,7 +76,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
-      final l = context.watch<LocaleProvider>();
+    final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bill = context.select<BillsStore, Bill?>((s) => s.getById(widget.billId));
     final billsStore = context.read<BillsStore>();
@@ -182,9 +182,9 @@ class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerPr
                         controller: _tabController,
                         tabs: [
                           CountTab(label: l.t('bill_tab_members'), count: members.length),
-                          CountTab(label: 'รายการ', count: items.length),
-                          const CountTab(label: 'สรุป', count: 0),
-                          const CountTab(label: 'วิเคราะห์', count: 0),
+                          CountTab(label: l.t('bill_tab_items'), count: items.length),
+                          CountTab(label: l.t('bill_tab_summary'), count: 0),
+                          CountTab(label: l.t('bill_tab_analytics'), count: 0),
                         ],
                       ),
                     ),
@@ -244,6 +244,7 @@ class _BillAppBarTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.watch<LocaleProvider>();
     return Row(
       children: [
         Expanded(
@@ -276,7 +277,7 @@ class _BillAppBarTitle extends StatelessWidget {
                       const Icon(Icons.lock_rounded, size: 11, color: AppColors.emerald),
                       const SizedBox(width: 3),
                       Text(
-                        'ปิดแล้ว',
+                        l.t('bill_closed_badge'),
                         style: GoogleFonts.notoSansThai(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -318,21 +319,22 @@ class _BillStatusActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.watch<LocaleProvider>();
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         if (isDraft)
           _ActionChip(
-            label: 'ปิดบิล',
+            label: l.t('bill_close_label'),
             icon: Icons.lock_rounded,
             color: AppColors.amber,
             textColor: Colors.white,
             onTap: () async {
               final ok = await showConfirmDialog(
                 context,
-                title: 'ปิดบิลนี้?',
-                description: 'หลังจากปิดแล้ว จะไม่สามารถแก้ไขสมาชิกหรือรายการได้ แต่ยังสามารถทำเครื่องหมายว่าจ่ายแล้วได้',
-                confirmLabel: 'ปิดบิล',
+                title: l.t('bill_close_confirm_title'),
+                description: l.t('bill_close_confirm_body'),
+                confirmLabel: l.t('bill_close_label'),
               );
               if (ok == true) {
                 await billsStore.setPendingPayment(bill.id);
@@ -342,7 +344,7 @@ class _BillStatusActions extends StatelessWidget {
           )
         else if (isPendingPayment) ...[
           _ActionChip(
-            label: 'เปิดใหม่',
+            label: l.t('bill_reopen'),
             icon: Icons.lock_open_rounded,
             color: isDark ? AppColors.borderDark : AppColors.neutral100,
             textColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
@@ -350,32 +352,32 @@ class _BillStatusActions extends StatelessWidget {
             onTap: () async {
               final ok = await showConfirmDialog(
                 context,
-                title: 'เปิดบิลใหม่?',
-                description: 'บิลจะกลับมาแก้ไขได้อีกครั้ง',
-                confirmLabel: 'เปิดใหม่',
+                title: l.t('bill_reopen_confirm_title'),
+                description: l.t('bill_reopen_confirm_body'),
+                confirmLabel: l.t('bill_reopen'),
               );
               if (ok == true) await billsStore.reopenBill(bill.id);
             },
           ),
           const SizedBox(width: 4),
           _ActionChip(
-            label: 'เสร็จแล้ว',
+            label: l.t('bill_completed_label'),
             icon: Icons.check_rounded,
             color: AppColors.emerald,
             textColor: Colors.white,
             onTap: () async {
               final ok = await showConfirmDialog(
                 context,
-                title: 'ยืนยันเสร็จสิ้น?',
-                description: 'บิลจะถูกปิดสมบูรณ์ ทุกคนชำระเงินครบแล้ว',
-                confirmLabel: 'เสร็จแล้ว',
+                title: l.t('bill_complete_confirm_title'),
+                description: l.t('bill_complete_confirm_body'),
+                confirmLabel: l.t('bill_completed_label'),
               );
               if (ok == true) await billsStore.completeBill(bill.id);
             },
           ),
         ] else
           _ActionChip(
-            label: 'เปิดใหม่',
+            label: l.t('bill_reopen'),
             icon: Icons.lock_open_rounded,
             color: isDark ? AppColors.borderDark : AppColors.neutral100,
             textColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
@@ -383,9 +385,9 @@ class _BillStatusActions extends StatelessWidget {
             onTap: () async {
               final ok = await showConfirmDialog(
                 context,
-                title: 'เปิดบิลใหม่?',
-                description: 'บิลจะกลับมาแก้ไขได้อีกครั้ง',
-                confirmLabel: 'เปิดใหม่',
+                title: l.t('bill_reopen_confirm_title'),
+                description: l.t('bill_reopen_confirm_body'),
+                confirmLabel: l.t('bill_reopen'),
               );
               if (ok == true) await billsStore.reopenBill(bill.id);
             },
@@ -480,7 +482,7 @@ class _StatusBanner extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            isCompleted ? 'บิลนี้เสร็จแล้ว — ดูได้อย่างเดียว' : 'บิลนี้รอจ่าย — ดูได้อย่างเดียว ไม่สามารถแก้ไขได้',
+            isCompleted ? context.watch<LocaleProvider>().t('bill_status_banner_completed') : context.watch<LocaleProvider>().t('bill_status_banner_pending'),
             style: GoogleFonts.notoSansThai(
               fontSize: 13,
               fontWeight: FontWeight.w500,

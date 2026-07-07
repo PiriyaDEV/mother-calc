@@ -488,7 +488,7 @@ class _DebtCardState extends State<_DebtCard> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    isPaid ? 'จ่ายแล้ว' : l.t('summary_not_paid_label'),
+                    isPaid ? l.t('summary_paid_label') : l.t('summary_not_paid_label'),
                     style: GoogleFonts.notoSansThai(
                       fontSize: 13,
                       color: isPaid
@@ -541,7 +541,7 @@ class _DebtCardState extends State<_DebtCard> {
                               ),
                             const SizedBox(width: 4),
                             Text(
-                              isPaid ? 'ยกเลิก' : l.t('summary_upload_slip'),
+                              isPaid ? l.t('common_cancel') : l.t('summary_upload_slip'),
                               style: GoogleFonts.notoSansThai(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,

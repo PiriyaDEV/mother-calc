@@ -146,7 +146,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'ยอดรวมทั้งกลุ่ม',
+                l.t('analytics_group_total'),
                 style: GoogleFonts.notoSansThai(
                   fontSize: 13,
                   color: Colors.white.withValues(alpha: 0.8),
@@ -165,15 +165,15 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
               Row(
                 children: [
                   _HeroStatPill(
-                      label: '${widget.bills.length} บิล',
+                      label: l.t('unit_bills').replaceFirst('{count}', '${widget.bills.length}'),
                       icon: Icons.receipt_rounded),
                   const SizedBox(width: 8),
                   _HeroStatPill(
-                      label: '$itemCount รายการ',
+                      label: l.t('unit_items').replaceFirst('{count}', '$itemCount'),
                       icon: Icons.list_rounded),
                   const SizedBox(width: 8),
                   _HeroStatPill(
-                      label: '$memberCount คน',
+                      label: l.t('unit_people').replaceFirst('{count}', '$memberCount'),
                       icon: Icons.people_rounded),
                 ],
               ),

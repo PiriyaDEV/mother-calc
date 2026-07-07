@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:kidtang_flutter/providers/auth_provider.dart';
 import 'package:kidtang_flutter/services/google_web_button.dart';
-import 'package:kidtang_flutter/services/ios_install_prompt.dart';
+// import 'package:kidtang_flutter/services/ios_install_prompt.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,7 +19,7 @@ class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
   bool _googleLoading = false;
   String? _error;
-  bool _showIosInstallBanner = false;
+  // bool _showIosInstallBanner = false;
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
@@ -32,11 +32,11 @@ class _LoginScreenState extends State<LoginScreen>
     _error = context.read<AuthProvider>().consumeLineWebCallbackError();
 
     // Show iOS install banner if running in Safari on iOS and not already installed
-    if (isIosNotStandalone) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _showIosInstallBanner = true);
-      });
-    }
+    // if (isIosNotStandalone) {
+    //   WidgetsBinding.instance.addPostFrameCallback((_) {
+    //     if (mounted) setState(() => _showIosInstallBanner = true);
+    //   });
+    // }
 
     _animCtrl = AnimationController(
       vsync: this,
@@ -83,95 +83,96 @@ class _LoginScreenState extends State<LoginScreen>
 
   // iOS Safari doesn't let a web app trigger "Add to Home Screen" itself —
   // this walks the user through the manual Share-sheet steps instead.
-  void _showIosInstallInstructions() {
-      final l = context.read<LocaleProvider>();
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) {
-        final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceDark : Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l.t('login_install_prompt'),
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l.t('login_install_sub'),
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 13,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                _InstallStep(
-                  number: 1,
-                  icon: Icons.ios_share,
-                  text: 'แตะปุ่ม Share ที่แถบด้านล่างของ Safari',
-                  isDark: isDark,
-                ),
-                const SizedBox(height: 16),
-                _InstallStep(
-                  number: 2,
-                  icon: Icons.add_box_outlined,
-                  text: 'เลื่อนลงแล้วเลือก "เพิ่มไปที่หน้าจอโฮม" (Add to Home Screen)',
-                  isDark: isDark,
-                ),
-                const SizedBox(height: 16),
-                _InstallStep(
-                  number: 3,
-                  icon: Icons.check_circle_outline,
-                  text: 'แตะ "เพิ่ม" (Add) ที่มุมขวาบน',
-                  isDark: isDark,
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(dialogContext),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: AppColors.primaryBlue.withValues(alpha: isDark ? 0.16 : 0.08),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      'เข้าใจแล้ว',
-                      style: GoogleFonts.notoSansThai(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryBlue,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // void _showIosInstallInstructions() {
+  //     final l = context.read<LocaleProvider>();
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: true,
+  //     builder: (dialogContext) {
+  //       final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+  //       return Dialog(
+  //         backgroundColor: Colors.transparent,
+  //         insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+  //         child: Container(
+  //           padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+  //           decoration: BoxDecoration(
+  //             color: isDark ? AppColors.surfaceDark : Colors.white,
+  //             borderRadius: BorderRadius.circular(20),
+  //           ),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               Text(
+  //                 l.t('login_install_prompt'),
+  //                 style: GoogleFonts.notoSansThai(
+  //                   fontSize: 17,
+  //                   fontWeight: FontWeight.bold,
+  //                   color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 4),
+  //               Text(
+  //                 l.t('login_install_sub'),
+  //                 style: GoogleFonts.notoSansThai(
+  //                   fontSize: 13,
+  //                   color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 24),
+  //               _InstallStep(
+  //                 number: 1,
+  //                 icon: Icons.ios_share,
+  //                 text: l.t('login_pwa_tap_share'),
+  //                 isDark: isDark,
+  //               ),
+  //               const SizedBox(height: 16),
+  //               _InstallStep(
+  //                 number: 2,
+  //                 icon: Icons.add_box_outlined,
+  //                 text: l.t('login_pwa_scroll'),
+  //                 isDark: isDark,
+  //               ),
+  //               const SizedBox(height: 16),
+  //               _InstallStep(
+  //                 number: 3,
+  //                 icon: Icons.check_circle_outline,
+  //                 text: l.t('login_pwa_tap_add'),
+  //                 isDark: isDark,
+  //               ),
+  //               const SizedBox(height: 24),
+  //               SizedBox(
+  //                 width: double.infinity,
+  //                 child: TextButton(
+  //                   onPressed: () => Navigator.pop(dialogContext),
+  //                   style: TextButton.styleFrom(
+  //                     padding: const EdgeInsets.symmetric(vertical: 14),
+  //                     backgroundColor: AppColors.primaryBlue.withValues(alpha: isDark ? 0.16 : 0.08),
+  //                     shape: RoundedRectangleBorder(
+  //                       borderRadius: BorderRadius.circular(12),
+  //                     ),
+  //                   ),
+  //                   child: Text(
+  //                     l.t('login_got_it'),
+  //                     style: GoogleFonts.notoSansThai(
+  //                       fontWeight: FontWeight.w600,
+  //                       color: AppColors.primaryBlue,
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l = context.watch<LocaleProvider>();
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
@@ -274,7 +275,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'แบ่งค่าใช้จ่ายง่ายๆ กับเพื่อน',
+                          l.t('login_tagline'),
                           style: GoogleFonts.notoSansThai(
                             fontSize: 15,
                             color: isDark
@@ -346,7 +347,7 @@ class _LoginScreenState extends State<LoginScreen>
                               width: 22,
                               height: 22,
                             ),
-                            label: 'เข้าสู่ระบบด้วย Google',
+                            label: l.t('login_with_google'),
                             labelColor: isDark
                                 ? Colors.white
                                 : const Color(0xFF111827),
@@ -380,96 +381,96 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ],
 
-                        // iOS Add to Home Screen banner
-                        if (_showIosInstallBanner) ...[
-                          const SizedBox(height: 20),
-                          Material(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(16),
-                            child: InkWell(
-                              onTap: _showIosInstallInstructions,
-                              borderRadius: BorderRadius.circular(16),
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.16 : 0.08),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: AppColors.primaryBlue.withValues(alpha: 0.18),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 34,
-                                      height: 34,
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primaryBlue,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: const Icon(
-                                        Icons.ios_share,
-                                        size: 17,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'บันทึกไปที่หน้าจอหลัก',
-                                            style: GoogleFonts.notoSansThai(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                              color: isDark
-                                                  ? AppColors.textPrimaryDark
-                                                  : AppColors.textPrimaryLight,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            'แตะเพื่อดูวิธี Add to Home Screen',
-                                            style: GoogleFonts.notoSansThai(
-                                              fontSize: 11,
-                                              color: isDark
-                                                  ? AppColors.textSecondaryDark
-                                                  : AppColors.textSecondaryLight,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const Icon(
-                                      Icons.chevron_right,
-                                      size: 20,
-                                      color: AppColors.primaryBlue,
-                                    ),
-                                    GestureDetector(
-                                      onTap: () => setState(() => _showIosInstallBanner = false),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(4),
-                                        child: Icon(
-                                          Icons.close,
-                                          size: 16,
-                                          color: isDark
-                                              ? AppColors.textTertiaryDark
-                                              : AppColors.textTertiaryLight,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                        // iOS Add to Home Screen banner (ปิดการแสดงผลชั่วคราว)
+                        // if (_showIosInstallBanner) ...[
+                        //   const SizedBox(height: 20),
+                        //   Material(
+                        //     color: Colors.transparent,
+                        //     borderRadius: BorderRadius.circular(16),
+                        //     child: InkWell(
+                        //       onTap: _showIosInstallInstructions,
+                        //       borderRadius: BorderRadius.circular(16),
+                        //       child: Container(
+                        //         width: double.infinity,
+                        //         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        //         decoration: BoxDecoration(
+                        //           color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.16 : 0.08),
+                        //           borderRadius: BorderRadius.circular(16),
+                        //           border: Border.all(
+                        //             color: AppColors.primaryBlue.withValues(alpha: 0.18),
+                        //           ),
+                        //         ),
+                        //         child: Row(
+                        //           children: [
+                        //             Container(
+                        //               width: 34,
+                        //               height: 34,
+                        //               decoration: BoxDecoration(
+                        //                 color: AppColors.primaryBlue,
+                        //                 borderRadius: BorderRadius.circular(10),
+                        //               ),
+                        //               child: const Icon(
+                        //                 Icons.ios_share,
+                        //                 size: 17,
+                        //                 color: Colors.white,
+                        //               ),
+                        //             ),
+                        //             const SizedBox(width: 12),
+                        //             Expanded(
+                        //               child: Column(
+                        //                 crossAxisAlignment: CrossAxisAlignment.start,
+                        //                 children: [
+                        //                   Text(
+                        //                     'บันทึกไปที่หน้าจอหลัก',
+                        //                     style: GoogleFonts.notoSansThai(
+                        //                       fontSize: 13,
+                        //                       fontWeight: FontWeight.w600,
+                        //                       color: isDark
+                        //                           ? AppColors.textPrimaryDark
+                        //                           : AppColors.textPrimaryLight,
+                        //                     ),
+                        //                   ),
+                        //                   const SizedBox(height: 2),
+                        //                   Text(
+                        //                     'แตะเพื่อดูวิธี Add to Home Screen',
+                        //                     style: GoogleFonts.notoSansThai(
+                        //                       fontSize: 11,
+                        //                       color: isDark
+                        //                           ? AppColors.textSecondaryDark
+                        //                           : AppColors.textSecondaryLight,
+                        //                     ),
+                        //                   ),
+                        //                 ],
+                        //               ),
+                        //             ),
+                        //             const Icon(
+                        //               Icons.chevron_right,
+                        //               size: 20,
+                        //               color: AppColors.primaryBlue,
+                        //             ),
+                        //             GestureDetector(
+                        //               onTap: () => setState(() => _showIosInstallBanner = false),
+                        //               child: Padding(
+                        //                 padding: const EdgeInsets.all(4),
+                        //                 child: Icon(
+                        //                   Icons.close,
+                        //                   size: 16,
+                        //                   color: isDark
+                        //                       ? AppColors.textTertiaryDark
+                        //                       : AppColors.textTertiaryLight,
+                        //                 ),
+                        //               ),
+                        //             ),
+                        //           ],
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ),
+                        // ],
 
                         const SizedBox(height: 40),
                         Text(
-                          'การเข้าสู่ระบบครั้งแรก ระบบจะสร้างบัญชีให้โดยอัตโนมัติ',
+                          l.t('login_first_time'),
                           style: GoogleFonts.notoSansThai(
                             fontSize: 12,
                             color: isDark
@@ -493,60 +494,60 @@ class _LoginScreenState extends State<LoginScreen>
 }
 
 // ── iOS install step ──────────────────────────────────────────
-class _InstallStep extends StatelessWidget {
-  final int number;
-  final IconData icon;
-  final String text;
-  final bool isDark;
+// class _InstallStep extends StatelessWidget {
+//   final int number;
+//   final IconData icon;
+//   final String text;
+//   final bool isDark;
 
-  const _InstallStep({
-    required this.number,
-    required this.icon,
-    required this.text,
-    required this.isDark,
-  });
+//   const _InstallStep({
+//     required this.number,
+//     required this.icon,
+//     required this.text,
+//     required this.isDark,
+//   });
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.18 : 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            '$number',
-            style: GoogleFonts.notoSansThai(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primaryBlue,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              text,
-              style: GoogleFonts.notoSansThai(
-                fontSize: 14,
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Icon(icon, size: 20, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
-      ],
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Row(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Container(
+//           width: 28,
+//           height: 28,
+//           alignment: Alignment.center,
+//           decoration: BoxDecoration(
+//             color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.18 : 0.1),
+//             borderRadius: BorderRadius.circular(8),
+//           ),
+//           child: Text(
+//             '$number',
+//             style: GoogleFonts.notoSansThai(
+//               fontSize: 13,
+//               fontWeight: FontWeight.w700,
+//               color: AppColors.primaryBlue,
+//             ),
+//           ),
+//         ),
+//         const SizedBox(width: 12),
+//         Expanded(
+//           child: Padding(
+//             padding: const EdgeInsets.only(top: 4),
+//             child: Text(
+//               text,
+//               style: GoogleFonts.notoSansThai(
+//                 fontSize: 14,
+//                 color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+//               ),
+//             ),
+//           ),
+//         ),
+//         const SizedBox(width: 8),
+//         Icon(icon, size: 20, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+//       ],
+//     );
+//   }
+// }
 
 // ── Decorative blob ───────────────────────────────────────────
 class _Blob extends StatelessWidget {

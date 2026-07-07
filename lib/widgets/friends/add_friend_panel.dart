@@ -46,10 +46,11 @@ class _AddFriendPanelState extends State<AddFriendPanel> {
     });
     final profile = await widget.store.searchByUsername(username);
     if (!mounted) return;
+    final l = context.read<LocaleProvider>();
     if (profile == null) {
       setState(() {
         _loading = false;
-        _error = 'ไม่พบผู้ใช้ @$username';
+        _error = l.t('friends_not_found').replaceAll('{username}', username);
       });
       return;
     }
@@ -60,7 +61,7 @@ class _AddFriendPanelState extends State<AddFriendPanel> {
       if (err != null) {
         _error = err;
       } else {
-        _success = 'ส่งคำขอเป็นเพื่อนไปยัง @$username แล้ว!';
+        _success = l.t('friends_request_sent_to').replaceAll('{username}', username);
         _ctrl.clear();
       }
     });

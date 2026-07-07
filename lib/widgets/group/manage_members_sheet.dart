@@ -182,7 +182,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Text(
-            'ไม่มีเพื่อนที่สามารถเชิญได้\nลองเพิ่มเพื่อนในแอปก่อน',
+            context.read<LocaleProvider>().t('group_no_friends_to_invite'),
             style: GoogleFonts.notoSansThai(
               fontSize: 14,
               color: isDark
@@ -201,7 +201,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
       itemBuilder: (ctx, i) {
         final profile = available[i];
         final name =
-            profile.displayName ?? profile.username ?? 'เพื่อน';
+            profile.displayName ?? profile.username ?? context.read<LocaleProvider>().t('friends_fallback_name');
 
         return GestureDetector(
           onTap: _invitingFriend ? null : () => _inviteFriend(profile),
@@ -321,8 +321,8 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white),
                       )
-                    : Text(
-                        'เพิ่ม',
+                     : Text(
+                        l.t('common_add'),
                         style: GoogleFonts.notoSansThai(
                             fontSize: 14, fontWeight: FontWeight.w600),
                       ),

@@ -28,7 +28,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<_RateData> _rates = [];
   bool _ratesLoading = true;
-  String _ratesUpdated = '';
+  bool _ratesIsFallback = false;
+  String _ratesTime = '';
 
   static const _currencies = kExchangeRateCurrencies;
 
@@ -64,8 +65,9 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _rates = parsed;
             _ratesLoading = false;
+            _ratesIsFallback = false;
             final now = TimeOfDay.now();
-            _ratesUpdated =
+            _ratesTime =
                 '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
           });
         }
@@ -82,7 +84,8 @@ class _HomeScreenState extends State<HomeScreen> {
             .map((c) => _RateData(code: c.code, rate: fallback[c.code] ?? 0))
             .toList();
         _ratesLoading = false;
-        _ratesUpdated = 'ข้อมูลสำรอง';
+        _ratesIsFallback = true;
+        _ratesTime = '';
       });
     }
   }
@@ -260,7 +263,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      l.t('home_exchange_rate') + (_ratesUpdated.isNotEmpty ? ' · \$_ratesUpdated' : ''),
+                                      l.t('home_exchange_rate') + (_ratesIsFallback ? ' · ${l.t('home_rates_fallback')}' : (_ratesTime.isNotEmpty ? ' · $_ratesTime' : '')),
                                       style: GoogleFonts.anuphan(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,

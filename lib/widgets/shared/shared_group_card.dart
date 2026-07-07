@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/member_avatar.dart';
 
@@ -16,6 +18,7 @@ class SharedGroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final acceptedMembers = group.members.where((m) => m.isAccepted).toList();
     final pendingCount = group.members.where((m) => m.isPending).length;
@@ -90,7 +93,7 @@ class SharedGroupCard extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        '${acceptedMembers.length} สมาชิก',
+                        l.t('unit_people').replaceFirst('{count}', '${acceptedMembers.length}'),
                         style: GoogleFonts.notoSansThai(
                           fontSize: 12,
                           color: isDark
@@ -108,7 +111,7 @@ class SharedGroupCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(AppRadii.full),
                           ),
                           child: Text(
-                            'รอ $pendingCount',
+                            l.t('group_pending_badge').replaceFirst('{count}', '$pendingCount'),
                             style: GoogleFonts.notoSansThai(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,

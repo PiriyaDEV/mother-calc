@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'profile_avatar.dart';
 import 'toast_banner.dart';
@@ -70,7 +72,7 @@ class ProfileHeader extends StatelessWidget {
                       Text(
                         profile?.displayName ??
                             profile?.username ??
-                            'ผู้ใช้',
+                            context.read<LocaleProvider>().t('notifications_user_fallback'),
                         style: GoogleFonts.notoSansThai(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,

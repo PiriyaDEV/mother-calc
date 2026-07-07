@@ -273,36 +273,37 @@ class _NotificationCard extends StatelessWidget {
     return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
 
-  String _formatDate(DateTime? dt) {
+  String _formatDate(DateTime? dt, LocaleProvider l) {
     if (dt == null) return '';
-    const thMonths = [
+    final months = [
       '',
-      'ม.ค.',
-      'ก.พ.',
-      'มี.ค.',
-      'เม.ย.',
-      'พ.ค.',
-      'มิ.ย.',
-      'ก.ค.',
-      'ส.ค.',
-      'ก.ย.',
-      'ต.ค.',
-      'พ.ย.',
-      'ธ.ค.',
+      l.t('month_jan'),
+      l.t('month_feb'),
+      l.t('month_mar'),
+      l.t('month_apr'),
+      l.t('month_may'),
+      l.t('month_jun'),
+      l.t('month_jul'),
+      l.t('month_aug'),
+      l.t('month_sep'),
+      l.t('month_oct'),
+      l.t('month_nov'),
+      l.t('month_dec'),
     ];
     final buddhistYear = dt.year + 543;
-    final month = thMonths[dt.month];
+    final month = months[dt.month];
     final hour = dt.hour.toString().padLeft(2, '0');
     final minute = dt.minute.toString().padLeft(2, '0');
     return '${dt.day} $month $buddhistYear $hour:$minute';
   }
 
-  Widget _buildBody(bool isDark) {
+  Widget _buildBody(bool isDark, LocaleProvider l) {
     final data = notification.data;
     final baseStyle = GoogleFonts.notoSansThai(
       fontSize: 13,
       color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
     );
+    final fallbackUser = l.t('notifications_user_fallback');
 
     switch (notification.type) {
       case 'group_invite':
@@ -317,7 +318,7 @@ class _NotificationCard extends StatelessWidget {
               TextSpan(
                   text: inviterName,
                   style: const TextStyle(fontWeight: FontWeight.bold)),
-              const TextSpan(text: ' เชิญคุณเข้าร่วมกลุ่ม '),
+              TextSpan(text: l.t('notif_group_invite')),
               TextSpan(
                 text: groupName,
                 style: const TextStyle(
@@ -330,7 +331,7 @@ class _NotificationCard extends StatelessWidget {
       case 'friend_request':
         final username = (data['display_name'] as String?)?.trim() ??
             (data['username'] as String?)?.trim() ??
-            'ผู้ใช้';
+            fallbackUser;
         return RichText(
           text: TextSpan(
             style: baseStyle,
@@ -338,7 +339,7 @@ class _NotificationCard extends StatelessWidget {
               TextSpan(
                   text: username,
                   style: const TextStyle(fontWeight: FontWeight.bold)),
-              const TextSpan(text: ' ส่งคำขอเป็นเพื่อน'),
+              TextSpan(text: l.t('notif_friend_request')),
             ],
           ),
         );
@@ -346,7 +347,7 @@ class _NotificationCard extends StatelessWidget {
       case 'friend_accepted':
         final username = (data['display_name'] as String?)?.trim() ??
             (data['username'] as String?)?.trim() ??
-            'ผู้ใช้';
+            fallbackUser;
         return RichText(
           text: TextSpan(
             style: baseStyle,
@@ -354,7 +355,7 @@ class _NotificationCard extends StatelessWidget {
               TextSpan(
                   text: username,
                   style: const TextStyle(fontWeight: FontWeight.bold)),
-              const TextSpan(text: ' ยอมรับคำขอเป็นเพื่อนของคุณแล้ว'),
+              TextSpan(text: l.t('notif_friend_accepted')),
             ],
           ),
         );
@@ -366,7 +367,7 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-      final l = context.watch<LocaleProvider>();
+    final l = context.watch<LocaleProvider>();
     final isUnread = !notification.read;
     final showActions = isUnread &&
         (notification.type == 'group_invite' ||
@@ -419,10 +420,10 @@ class _NotificationCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildBody(isDark),
-                      const SizedBox(height: 4),
-                      Text(
-                        _formatDate(notification.createdAt),
+                            _buildBody(isDark, l),
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatDate(notification.createdAt, l),
                         style: GoogleFonts.notoSansThai(
                           fontSize: 11,
                           color: isDark
