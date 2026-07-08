@@ -32,13 +32,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
   @override
   Widget build(BuildContext context) {
-      final l = context.watch<LocaleProvider>();
+    final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final provider = context.read<GroupsStore>();
-    // context.select — only rebuilds when the groups list changes.
-    // We still read from provider.groups below; the select just registers
-    // the dependency so this build() re-runs when the list mutates.
-    context.select<GroupsStore, int>((s) => s.groups.length);
+    // context.watch — rebuilds when groups list or loading state changes.
+    final provider = context.watch<GroupsStore>();
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -69,7 +66,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                         if (provider.groups.isNotEmpty) ...[
                           const SizedBox(height: 2),
                           Text(
-                            '${provider.groups.length} กลุ่มทั้งหมด',
+                            l.t('unit_groups').replaceFirst('{count}', '${provider.groups.length}'),
                             style: GoogleFonts.notoSansThai(
                               fontSize: 13,
                               color: isDark
@@ -82,26 +79,35 @@ class _GroupsScreenState extends State<GroupsScreen> {
                     ),
                   ),
                   // Add button
-                  GestureDetector(
-                    onTap: _showCreateGroupSheet,
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        gradient: AppGradients.primaryButtonLight,
+                  Semantics(
+                    label: l.t('groups_create_first'),
+                    button: true,
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                      child: InkWell(
+                        onTap: _showCreateGroupSheet,
                         borderRadius: BorderRadius.circular(AppRadii.md),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primaryBlue.withValues(alpha: 0.35),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
+                        child: Ink(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            gradient: AppGradients.primaryButtonLight,
+                            borderRadius: BorderRadius.circular(AppRadii.md),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primaryBlue.withValues(alpha: 0.35),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.add_rounded,
-                        color: Colors.white,
-                        size: 24,
+                          child: const Icon(
+                            Icons.add_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
                       ),
                     ),
                   ),

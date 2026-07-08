@@ -100,26 +100,35 @@ class _BillsScreenState extends State<BillsScreen>
                       ],
                     ),
                   ),
-                  GestureDetector(
-                    onTap: _createBill,
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        gradient: AppGradients.primaryButtonLight,
+                  Semantics(
+                    label: l.t('bills_create'),
+                    button: true,
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                      child: InkWell(
+                        onTap: _createBill,
                         borderRadius: BorderRadius.circular(AppRadii.md),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primaryBlue.withValues(alpha: 0.35),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
+                        child: Ink(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            gradient: AppGradients.primaryButtonLight,
+                            borderRadius: BorderRadius.circular(AppRadii.md),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primaryBlue.withValues(alpha: 0.35),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.add_rounded,
-                        color: Colors.white,
-                        size: 24,
+                          child: const Icon(
+                            Icons.add_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
                       ),
                     ),
                   ),

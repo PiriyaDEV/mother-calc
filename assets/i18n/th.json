@@ -583,5 +583,6 @@
   "tag_travel": "เที่ยว",
   "unit_bills": "{count} บิล",
   "unit_items": "{count} รายการ",
-  "unit_people": "{count} คน"
+  "unit_people": "{count} คน",
+  "unit_groups": "{count} กลุ่มทั้งหมด"
 }

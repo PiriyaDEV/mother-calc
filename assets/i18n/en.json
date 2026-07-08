@@ -583,5 +583,6 @@
   "tag_travel": "Travel",
   "unit_bills": "{count} bills",
   "unit_items": "{count} items",
-  "unit_people": "{count} people"
+  "unit_people": "{count} people",
+  "unit_groups": "{count} groups total"
 }

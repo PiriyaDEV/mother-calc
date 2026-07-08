@@ -14,6 +14,7 @@ import 'package:kidtang_flutter/providers/notifications_provider.dart';
 import 'package:kidtang_flutter/providers/theme_provider.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
+import 'package:kidtang_flutter/widgets/shared/confirm_dialog.dart';
 import 'package:kidtang_flutter/widgets/shared/skeleton_loader.dart';
 import 'package:kidtang_flutter/widgets/me/index.dart';
 
@@ -114,11 +115,10 @@ class _MeScreenState extends State<MeScreen>
 
   // ── Save Username ──────────────────────────────────────────
   Future<void> _handleSaveUsername() async {
-      final l = context.read<LocaleProvider>();
+    final l = context.read<LocaleProvider>();
     final val = _usernameCtrl.text.trim().toLowerCase();
     if (!_isValidUsername(val)) {
-      _showError(
-          'username ต้องเป็นตัวอักษรภาษาอังกฤษ ตัวเลข หรือ _ (3-30 ตัว)');
+      _showError(l.t('me_username_invalid'));
       return;
     }
     final auth = context.read<AuthProvider>();
@@ -128,7 +128,7 @@ class _MeScreenState extends State<MeScreen>
       if (!mounted) return;
       if (taken) {
         setState(() => _saving = false);
-        _showError('username นี้ถูกใช้งานแล้ว');
+        _showError(l.t('me_username_taken'));
         return;
       }
     }
@@ -221,29 +221,14 @@ class _MeScreenState extends State<MeScreen>
 
   // ── Sign Out ───────────────────────────────────────────────
   Future<void> _handleSignOut() async {
-      final l = context.read<LocaleProvider>();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.t('me_logout_title'),
-            style: GoogleFonts.notoSansThai(fontWeight: FontWeight.w600)),
-        content: Text(l.t('me_logout_confirm_msg'),
-            style: GoogleFonts.notoSansThai()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l.t('me_logout_cancel'),
-                style: GoogleFonts.notoSansThai(
-                    color: AppColors.textSecondaryLight)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l.t('me_logout_confirm'),
-                style: GoogleFonts.notoSansThai(
-                    color: AppColors.red, fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
+    final l = context.read<LocaleProvider>();
+    final confirmed = await showConfirmDialog(
+      context,
+      title: l.t('me_logout_title'),
+      description: l.t('me_logout_confirm_msg'),
+      confirmLabel: l.t('me_logout_confirm'),
+      cancelLabel: l.t('me_logout_cancel'),
+      danger: true,
     );
     if (confirmed != true || !mounted) return;
     final auth = context.read<AuthProvider>();
@@ -319,8 +304,8 @@ class _MeScreenState extends State<MeScreen>
     AuthProvider auth,
     bool isGoogleUser,
   ) {
-    final themeProvider = context.read<ThemeProvider>();
-    final locale = context.read<LocaleProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
+    final locale = context.watch<LocaleProvider>();
     final l = locale;
     final notifUnread =
         context.select<NotificationsProvider, int>((p) => p.unreadCount);
@@ -396,35 +381,43 @@ class _MeScreenState extends State<MeScreen>
         const SizedBox(height: AppSpacing.xl),
 
         // ── Sign Out ───────────────────────────────────────
-        GestureDetector(
-          onTap: _handleSignOut,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceDark : AppColors.redFaint,
+        Semantics(
+          label: l.t('me_logout_btn'),
+          button: true,
+          child: Material(
+            color: isDark ? AppColors.surfaceDark : AppColors.redFaint,
+            borderRadius: BorderRadius.circular(AppRadii.lg),
+            child: InkWell(
+              onTap: _handleSignOut,
               borderRadius: BorderRadius.circular(AppRadii.lg),
-              border: Border.all(
-                color: isDark
-                    ? AppColors.red.withValues(alpha: 0.3)
-                    : AppColors.red.withValues(alpha: 0.20),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.logout_rounded,
-                    size: 18, color: AppColors.red),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  l.t('me_logout_btn'),
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.red,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
+                  border: Border.all(
+                    color: isDark
+                        ? AppColors.red.withValues(alpha: 0.3)
+                        : AppColors.red.withValues(alpha: 0.20),
                   ),
                 ),
-              ],
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.logout_rounded,
+                        size: 18, color: AppColors.red),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      l.t('me_logout_btn'),
+                      style: GoogleFonts.notoSansThai(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
