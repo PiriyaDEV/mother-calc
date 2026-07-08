@@ -7,9 +7,9 @@ class BillsRepository {
   final _supabase = Supabase.instance.client;
 
   static const _billSelectWithGroup =
-      '*, bill_members(*, profiles(id, username, display_name, avatar_url)), bill_items(*), groups!bills_group_id_fkey(id, name, emoji)';
+      '*, bill_members(*, profiles(id, username, display_name, avatar_url, promptpay)), bill_items(*), groups!bills_group_id_fkey(id, name, emoji)';
   static const _billSelect =
-      '*, bill_members(*, profiles(id, username, display_name, avatar_url)), bill_items(*)';
+      '*, bill_members(*, profiles(id, username, display_name, avatar_url, promptpay)), bill_items(*)';
 
   Future<List<Bill>> fetchAllForCurrentUser() async {
     // No owner_id filter — the bills_select RLS policy already scopes this

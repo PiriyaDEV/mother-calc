@@ -24,12 +24,20 @@ class BillMember {
   factory BillMember.fromJson(Map<String, dynamic> json) {
     // Supabase join returns profile under 'profiles' (FK hint) or 'profile'
     final profileRaw = json['profiles'] ?? json['profile'];
+    // Prefer the promptpay stored directly on bill_members; fall back to the
+    // linked user's profile promptpay so friends/outsiders with a profile
+    // promptpay show the QR code even if bill_members.promptpay is null.
+    final memberPromptpay = json['promptpay'] as String?;
+    final profilePromptpay = profileRaw?['promptpay'] as String?;
+    final resolvedPromptpay = (memberPromptpay != null && memberPromptpay.isNotEmpty)
+        ? memberPromptpay
+        : (profilePromptpay != null && profilePromptpay.isNotEmpty ? profilePromptpay : null);
     return BillMember(
       id: json['id'] as String,
       billId: json['bill_id'] as String,
       name: json['name'] as String,
       color: json['color'] as String? ?? '#4366F4',
-      promptpay: json['promptpay'] as String?,
+      promptpay: resolvedPromptpay,
       isExternal: json['is_external'] as bool? ?? true,
       userId: json['user_id'] as String?,
       profile: profileRaw != null
