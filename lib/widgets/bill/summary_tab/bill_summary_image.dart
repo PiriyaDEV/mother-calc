@@ -135,7 +135,7 @@ class BillFullSummaryImage extends StatelessWidget {
 
           if (allDebts.isNotEmpty) ...[
             const SizedBox(height: 16),
-            Divider(height: 1, color: AppColors.borderLight),
+            const Divider(height: 1, color: AppColors.borderLight),
             const SizedBox(height: 12),
             Text(
               'ใครโอนให้ใคร',
@@ -157,8 +157,8 @@ class BillFullSummaryImage extends StatelessWidget {
                           color: AppColors.textPrimaryLight,
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 6),
                         child: Icon(
                           Icons.arrow_forward_rounded,
                           size: 14,
@@ -302,7 +302,7 @@ class BillMemberSummaryImage extends StatelessWidget {
                   ),
                 )),
             const SizedBox(height: 8),
-            Divider(height: 1, color: AppColors.borderLight),
+            const Divider(height: 1, color: AppColors.borderLight),
             const SizedBox(height: 8),
           ],
 
@@ -360,7 +360,7 @@ class BillMemberSummaryImage extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.arrow_forward_rounded,
+                        const Icon(Icons.arrow_forward_rounded,
                             size: 14, color: AppColors.textTertiaryLight),
                         const SizedBox(width: 6),
                         Expanded(

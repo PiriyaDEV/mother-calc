@@ -249,7 +249,6 @@ class _BillAppBarTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l = context.watch<LocaleProvider>();
     return Row(
       children: [
         Expanded(
@@ -268,34 +267,6 @@ class _BillAppBarTitle extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (!isDraft) ...[
-                const SizedBox(width: AppSpacing.sm),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xxs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.emerald.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(AppRadii.full),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.lock_rounded, size: 11, color: AppColors.emerald),
-                      const SizedBox(width: AppSpacing.xxs),
-                      Text(
-                        l.t('bill_closed_badge'),
-                        style: GoogleFonts.sarabun(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.emerald,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
             ],
           ),
         ),
@@ -337,18 +308,46 @@ class _BillStatusActions extends StatelessWidget {
     );
   }
 
+  // Returns the chip appearance for the current bill status.
+  _StatusChipStyle _chipStyle(LocaleProvider l) {
+    if (bill.isCompleted) {
+      return _StatusChipStyle(
+        label: l.t('bill_status_completed'),
+        icon: Icons.check_circle_rounded,
+        color: AppColors.emerald,
+        bgColor: AppColors.emerald.withValues(alpha: 0.15),
+      );
+    } else if (bill.isPendingPayment) {
+      return _StatusChipStyle(
+        label: l.t('bill_status_pending'),
+        icon: Icons.hourglass_top_rounded,
+        color: AppColors.amber,
+        bgColor: AppColors.amber.withValues(alpha: 0.15),
+      );
+    } else {
+      return _StatusChipStyle(
+        label: l.t('bill_status_draft'),
+        icon: Icons.edit_note_rounded,
+        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+        bgColor: isDark ? AppColors.borderDark : AppColors.neutral100,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = context.watch<LocaleProvider>();
+    final style = _chipStyle(l);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         _ActionChip(
-          label: l.t('bill_adjust_status'),
-          icon: Icons.swap_horiz_rounded,
-          color: isDark ? AppColors.borderDark : AppColors.neutral100,
-          textColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-          iconColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+          label: style.label,
+          icon: style.icon,
+          trailingIcon: Icons.expand_more_rounded,
+          color: style.bgColor,
+          textColor: style.color,
+          iconColor: style.color,
           onTap: () => _showStatusPicker(context, l),
         ),
         if (isOwner) ...[
@@ -520,14 +519,10 @@ class _StatusOption extends StatelessWidget {
           vertical: AppSpacing.sm + 2,
         ),
         decoration: BoxDecoration(
-          color: isSelected
-              ? bgColor
-              : (isDark ? AppColors.surfaceDark : AppColors.surfaceLight),
+          color: isSelected ? bgColor : (isDark ? AppColors.surfaceDark : AppColors.surfaceLight),
           borderRadius: BorderRadius.circular(AppRadii.lg),
           border: Border.all(
-            color: isSelected
-                ? color.withValues(alpha: 0.5)
-                : (isDark ? AppColors.borderDark : AppColors.borderLight),
+            color: isSelected ? color.withValues(alpha: 0.5) : (isDark ? AppColors.borderDark : AppColors.borderLight),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -552,9 +547,7 @@ class _StatusOption extends StatelessWidget {
                     style: GoogleFonts.sarabun(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? color
-                          : (isDark ? AppColors.neutral900Dark : AppColors.neutral900),
+                      color: isSelected ? color : (isDark ? AppColors.neutral900Dark : AppColors.neutral900),
                     ),
                   ),
                   Text(
@@ -567,8 +560,7 @@ class _StatusOption extends StatelessWidget {
                 ],
               ),
             ),
-            if (isSelected)
-              Icon(Icons.check_rounded, size: 18, color: color),
+            if (isSelected) Icon(Icons.check_rounded, size: 18, color: color),
           ],
         ),
       ),
@@ -576,9 +568,24 @@ class _StatusOption extends StatelessWidget {
   }
 }
 
+// Simple value object for status chip appearance.
+class _StatusChipStyle {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final Color bgColor;
+  const _StatusChipStyle({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.bgColor,
+  });
+}
+
 class _ActionChip extends StatefulWidget {
   final String label;
   final IconData icon;
+  final IconData? trailingIcon;
   final Color color;
   final Color textColor;
   final Color? iconColor;
@@ -587,6 +594,7 @@ class _ActionChip extends StatefulWidget {
   const _ActionChip({
     required this.label,
     required this.icon,
+    this.trailingIcon,
     required this.color,
     required this.textColor,
     this.iconColor,
@@ -634,6 +642,10 @@ class _ActionChipState extends State<_ActionChip> {
                   color: widget.textColor,
                 ),
               ),
+              if (widget.trailingIcon != null) ...[
+                const SizedBox(width: AppSpacing.xxs),
+                Icon(widget.trailingIcon, size: 14, color: widget.iconColor ?? widget.textColor),
+              ],
             ],
           ),
         ),
