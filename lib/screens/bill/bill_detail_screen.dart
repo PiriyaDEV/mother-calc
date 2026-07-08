@@ -395,6 +395,15 @@ class _BillStatusActions extends StatelessWidget {
               if (ok == true) await billsStore.reopenBill(bill.id);
             },
           ),
+        if (isOwner) ...[
+          IconButton(
+            icon: const Icon(Icons.group_add_outlined),
+            tooltip: l.t('bill_move_to_group_title'),
+            onPressed: () {
+              MoveToGroupSheet.show(context, bill: bill);
+            },
+          ),
+        ],
         if (isOwner && isDraft)
           IconButton(
             icon: const Icon(Icons.edit_outlined),

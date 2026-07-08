@@ -415,6 +415,47 @@ class BillsStore extends ChangeNotifier {
   Future<void> completeBill(String billId) => _updateStatus(billId, 'completed');
   Future<void> reopenBill(String billId) => _updateStatus(billId, 'draft');
 
+  /// Move a draft bill into (or out of) a group.
+  /// Pass [groupId] = null to detach the bill from its current group.
+  /// [groupName] and [groupEmoji] are used for the optimistic in-memory update
+  /// so the UI reflects the new group name immediately without a round-trip.
+  Future<void> moveBillToGroup(
+    String billId, {
+    required String? groupId,
+    String? groupName,
+    String? groupEmoji,
+  }) async {
+    final prev = _byId[billId];
+    if (prev == null) return;
+    final oldGroupId = prev.groupId;
+
+    // Optimistic update
+    _byId[billId] = prev.copyWith(
+      groupId: groupId,
+      groupName: groupName,
+      groupEmoji: groupEmoji,
+    );
+    _invalidateGroupCache(oldGroupId);
+    _invalidateGroupCache(groupId);
+    notifyListeners();
+
+    try {
+      await _repo.updateBill(billId, {
+        'group_id': groupId,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      _refreshAggregatesInBackground(refreshRecent: true);
+    } catch (e) {
+      // Roll back
+      _byId[billId] = prev;
+      _invalidateGroupCache(oldGroupId);
+      _invalidateGroupCache(groupId);
+      notifyListeners();
+      debugPrint('BillsStore.moveBillToGroup: $e');
+      rethrow;
+    }
+  }
+
   Future<List<String>> toggleMemberPaid(String billId, String memberId) async {
     final prev = _byId[billId];
     if (prev == null) return [];

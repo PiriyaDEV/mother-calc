@@ -3,6 +3,9 @@ import 'bill_settings.dart';
 import 'bill_member.dart';
 import 'bill_item.dart';
 
+// Sentinel used by copyWith to distinguish "not provided" from explicit null.
+const Object _keep = Object();
+
 class Bill {
   final String id;
   final String title;
@@ -148,6 +151,10 @@ class Bill {
     List<BillItem>? items,
     double? total,
     int? itemCount,
+    // Use Object? sentinel so callers can explicitly pass null to clear groupId
+    Object? groupId = _keep,
+    Object? groupName = _keep,
+    Object? groupEmoji = _keep,
   }) {
     return Bill(
       id: id,
@@ -156,7 +163,9 @@ class Bill {
       tags: tags ?? this.tags,
       status: status ?? this.status,
       ownerId: ownerId,
-      groupId: groupId,
+      groupId: identical(groupId, _keep) ? this.groupId : groupId as String?,
+      groupName: identical(groupName, _keep) ? this.groupName : groupName as String?,
+      groupEmoji: identical(groupEmoji, _keep) ? this.groupEmoji : groupEmoji as String?,
       settings: settings ?? this.settings,
       paidMemberIds: paidMemberIds ?? this.paidMemberIds,
       members: members ?? this.members,
