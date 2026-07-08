@@ -44,33 +44,15 @@ class _SummaryTabState extends State<SummaryTab> {
     }
   }
 
-  List<DebtTransaction> _computeMyDebts({
+  List<DebtTransaction> _computeSelectedDebts({
     required BillMember selectedMember,
-    required MemberSummary selectedSummary,
     required List<BillMember> members,
     required BillCalculation calc,
   }) {
-    final Map<String, double> owedTo = {};
-
-    for (final itemShare in selectedSummary.items) {
-      final payerId = itemShare.item.paidBy;
-      if (payerId == null) continue;
-      if (payerId == selectedMember.id) continue;
-      owedTo[payerId] = (owedTo[payerId] ?? 0) + itemShare.amount;
-    }
-
-    final result = <DebtTransaction>[];
-    for (final entry in owedTo.entries) {
-      if (entry.value < 0.005) continue;
-      final payer = members.where((m) => m.id == entry.key).firstOrNull;
-      if (payer == null) continue;
-      result.add(DebtTransaction(
-        from: selectedMember,
-        to: payer,
-        amount: entry.value,
-      ));
-    }
-    return result;
+    final allDebts = simplifyDebts(calc.memberSummaries, members, null);
+    return allDebts
+        .where((d) => d.from.id == selectedMember.id)
+        .toList();
   }
 
   @override
@@ -115,9 +97,8 @@ class _SummaryTabState extends State<SummaryTab> {
           MemberSummary(member: selectedMember, total: 0, items: []),
     );
 
-    final selectedDebts = _computeMyDebts(
+    final selectedDebts = _computeSelectedDebts(
       selectedMember: selectedMember,
-      selectedSummary: selectedSummary,
       members: members,
       calc: calc,
     );

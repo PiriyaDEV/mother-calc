@@ -132,34 +132,6 @@ class MemberTile extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(width: 8),
-              // Paid toggle
-              GestureDetector(
-                onTap: () async {
-                  await billsStore.toggleMemberPaid(bill.id, member.id);
-                },
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: isPaid
-                        ? AppColors.emerald
-                        : (isDark
-                            ? AppColors.borderDark
-                            : AppColors.neutral100),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    isPaid ? Icons.check_rounded : Icons.circle_outlined,
-                    color: isPaid
-                        ? Colors.white
-                        : (isDark
-                            ? AppColors.textTertiaryDark
-                            : AppColors.textTertiaryLight),
-                    size: 16,
-                  ),
-                ),
-              ),
             ],
           ),
         ),

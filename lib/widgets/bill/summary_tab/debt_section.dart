@@ -2,7 +2,6 @@ import 'package:provider/provider.dart';
 import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'dart:ui' as ui;
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -12,6 +11,7 @@ import 'package:kidtang_flutter/models/models.dart';
 import 'package:kidtang_flutter/stores/bills_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
+import 'package:kidtang_flutter/widgets/shared/inner_html_text.dart';
 import 'package:kidtang_flutter/widgets/shared/member_avatar.dart';
 import 'slip_upload_helper.dart';
 
@@ -348,26 +348,12 @@ class _DebtCardState extends State<_DebtCard> {
                               border: Border.all(
                                   color: AppColors.borderLight),
                             ),
-                            child: CachedNetworkImage(
-                              imageUrl:
-                                  'https://promptpay.io/${debt.to.promptpay}/${debt.amount.toStringAsFixed(2)}.png',
+                            child: SizedBox(
                               width: 180,
                               height: 180,
-                              placeholder: (context, url) => const SizedBox(
-                                width: 180,
-                                height: 180,
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2),
-                                ),
-                              ),
-                              errorWidget: (context, url, error) =>
-                                  const SizedBox(
-                                width: 180,
-                                height: 180,
-                                child: Icon(Icons.qr_code_2_rounded,
-                                    size: 48,
-                                    color: AppColors.textTertiaryLight),
+                              child: InnerHTMLText(
+                                innerHtml:
+                                    '<img src="https://promptpay.io/${debt.to.promptpay}/${debt.amount.toStringAsFixed(2)}.png" width="180" height="180">',
                               ),
                             ),
                           ),

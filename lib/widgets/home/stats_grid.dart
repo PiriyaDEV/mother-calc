@@ -1,4 +1,3 @@
-import 'package:kidtang_flutter/providers/auth_provider.dart';
 import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,9 +14,6 @@ class StatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.watch<LocaleProvider>();
-    final avatarUrl = context.select<AuthProvider, String?>(
-      (a) => a.profile?.avatarUrl,
-    );
     return Selector<BillsStore, BillAggregateStats?>(
       selector: (_, s) => s.stats,
       builder: (context, stats, _) {
@@ -45,7 +41,6 @@ class StatsGrid extends StatelessWidget {
                 accentColor: AppColors.primaryBlue,
                 bgColor:
                     isDark ? AppColors.accentIceDark : AppColors.accentIce,
-                avatarUrl: avatarUrl,
               ),
               StatCard(
                 icon: Icons.receipt_long_rounded,
@@ -55,7 +50,6 @@ class StatsGrid extends StatelessWidget {
                 bgColor: isDark
                     ? AppColors.violet.withValues(alpha: 0.15)
                     : AppColors.violetFaint,
-                avatarUrl: avatarUrl,
               ),
               StatCard(
                 icon: Icons.format_list_bulleted_rounded,
@@ -65,7 +59,6 @@ class StatsGrid extends StatelessWidget {
                 bgColor: isDark
                     ? AppColors.amber.withValues(alpha: 0.12)
                     : AppColors.amberFaint,
-                avatarUrl: avatarUrl,
               ),
               StatCard(
                 icon: Icons.star_rounded,
@@ -75,7 +68,6 @@ class StatsGrid extends StatelessWidget {
                 bgColor: isDark
                     ? AppColors.emerald.withValues(alpha: 0.12)
                     : AppColors.greenFaint,
-                avatarUrl: avatarUrl,
               ),
             ]),
           ),
@@ -91,8 +83,6 @@ class StatCard extends StatelessWidget {
   final String value;
   final Color accentColor;
   final Color bgColor;
-  final String? avatarUrl;
-
   const StatCard({
     super.key,
     required this.icon,
@@ -100,80 +90,58 @@ class StatCard extends StatelessWidget {
     required this.value,
     required this.accentColor,
     required this.bgColor,
-    this.avatarUrl,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadii.md),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadii.md),
-          border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
-          ),
-          boxShadow: isDark ? null : const [AppShadows.subtle],
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
-        child: Stack(
-          fit: StackFit.expand,
+        boxShadow: isDark ? null : const [AppShadows.subtle],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Profile image background at 0.4 opacity
-            if (avatarUrl != null && avatarUrl!.isNotEmpty)
-              Positioned.fill(
-                child: Opacity(
-                  opacity: 0.4,
-                  child: Image.network(
-                    avatarUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: bgColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 18, color: accentColor),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: GoogleFonts.sarabun(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: accentColor,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: GoogleFonts.sarabun(
+                    fontSize: 11,
+                    color: isDark
+                        ? AppColors.neutral400Dark
+                        : AppColors.neutral400,
                   ),
                 ),
-              ),
-            // Card content
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: bgColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(icon, size: 18, color: accentColor),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        value,
-                        style: GoogleFonts.sarabun(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: accentColor,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        label,
-                        style: GoogleFonts.sarabun(
-                          fontSize: 11,
-                          color: isDark
-                              ? AppColors.neutral400Dark
-                              : AppColors.neutral400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              ],
             ),
           ],
         ),

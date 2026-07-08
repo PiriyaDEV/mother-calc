@@ -14,7 +14,7 @@ class RecentBillsList extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
     final friendUserIds = context
-        .read<FriendsStore>()
+        .watch<FriendsStore>()
         .friends
         .map((f) =>
             f.requesterId == currentUserId ? f.addresseeId : f.requesterId)

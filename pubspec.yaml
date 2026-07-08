@@ -58,6 +58,9 @@ dependencies:
   # Sign in with Apple
   sign_in_with_apple: ^6.1.4
 
+  # HTML rendering
+  flutter_widget_from_html: ^0.15.2
+
   # Charts
   fl_chart: ^0.68.0
 
