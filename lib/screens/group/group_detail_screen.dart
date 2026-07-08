@@ -5,7 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:kidtang_flutter/models/models.dart';
 import 'package:kidtang_flutter/stores/bills_store.dart';
+import 'package:kidtang_flutter/stores/friends_store.dart';
 import 'package:kidtang_flutter/stores/groups_store.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
 import 'package:kidtang_flutter/widgets/shared/skeleton_loader.dart';
@@ -108,6 +110,10 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     final pendingMembers =
         group.members.where((m) => m.isPending).toList();
 
+    // Build friend user-id set for member sorting (O(1) lookup)
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final friendUserIds = context.read<FriendsStore>().friends.map((f) => f.requesterId == currentUserId ? f.addresseeId : f.requesterId).toSet();
+
     return Container(
       decoration: BoxDecoration(
         gradient: isDark
@@ -122,7 +128,8 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
             SliverAppBar(
               pinned: true,
               expandedHeight: 0,
-              backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
+              backgroundColor: Colors.transparent,
+              forceMaterialTransparency: true,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_rounded),
                 onPressed: () {
@@ -199,6 +206,8 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                 acceptedMembers: acceptedMembers,
                 pendingMembers: pendingMembers,
                 isDark: isDark,
+                currentUserId: currentUserId,
+                friendUserIds: friendUserIds,
               ),
               // Tab 1: Bills
               GroupBillsTab(

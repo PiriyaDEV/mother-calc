@@ -14,6 +14,8 @@ class GroupMembersTab extends StatelessWidget {
   final List<GroupMember> acceptedMembers;
   final List<GroupMember> pendingMembers;
   final bool isDark;
+  final String? currentUserId;
+  final Set<String> friendUserIds;
 
   const GroupMembersTab({
     super.key,
@@ -21,6 +23,8 @@ class GroupMembersTab extends StatelessWidget {
     required this.acceptedMembers,
     required this.pendingMembers,
     required this.isDark,
+    this.currentUserId,
+    this.friendUserIds = const {},
   });
 
   void _showAddMemberSheet(BuildContext context) {
@@ -43,10 +47,21 @@ class GroupMembersTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-      final l = context.watch<LocaleProvider>();
+    final l = context.watch<LocaleProvider>();
+
+    // Sort accepted members: current user first → friends → others/external
+    final sortedMembers = [...acceptedMembers]..sort((a, b) {
+      int rank(GroupMember m) {
+        if (m.userId != null && m.userId == currentUserId) return 0;
+        if (m.userId != null && friendUserIds.contains(m.userId)) return 1;
+        return 2;
+      }
+      return rank(a).compareTo(rank(b));
+    });
+
     return ListView.builder(
       padding: const EdgeInsets.all(AppSpacing.lg),
-      itemCount: 1 + (pendingMembers.isNotEmpty ? 1 : 0) + acceptedMembers.length,
+      itemCount: 1 + (pendingMembers.isNotEmpty ? 1 : 0) + sortedMembers.length,
       itemBuilder: (context, index) {
         // Index 0: manage button
         if (index == 0) {
@@ -140,7 +155,7 @@ class GroupMembersTab extends StatelessWidget {
         final memberOffset = pendingMembers.isNotEmpty ? 2 : 1;
         final memberIndex = index - memberOffset;
 
-        if (acceptedMembers.isEmpty && memberIndex == 0) {
+        if (sortedMembers.isEmpty && memberIndex == 0) {
           return GroupDetailEmptyState(
             icon: Icons.people_outline,
             label: l.t('group_no_members'),
@@ -148,9 +163,9 @@ class GroupMembersTab extends StatelessWidget {
           );
         }
 
-        if (memberIndex >= acceptedMembers.length) return const SizedBox.shrink();
+        if (memberIndex >= sortedMembers.length) return const SizedBox.shrink();
 
-        final m = acceptedMembers[memberIndex];
+        final m = sortedMembers[memberIndex];
         final name = m.name;
         final username = m.profile?.username;
         final avatarUrl = m.profile?.avatarUrl;

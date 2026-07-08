@@ -45,6 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await Future.wait([
       context.read<BillsStore>().loadStats(force: force),
       context.read<BillsStore>().loadRecent(force: force),
+      context.read<BillsStore>().loadInitialPage('pending_payment'),
       context.read<GroupsStore>().loadGroupsCount(force: force),
     ]);
   }
@@ -312,6 +313,25 @@ class _HomeScreenState extends State<HomeScreen> {
                                       },
                                     ),
                             ),
+                          ],
+                        ),
+                      ),
+
+                      // ── My debts summary ─────────────────────────
+                      SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AppSectionHeader(
+                              title: l.t('home_my_debts_title'),
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.lg,
+                                AppSpacing.xxl,
+                                AppSpacing.lg,
+                                AppSpacing.md,
+                              ),
+                            ),
+                            const MyDebtsCard(),
                           ],
                         ),
                       ),

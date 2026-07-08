@@ -30,7 +30,17 @@ class MembersTab extends StatelessWidget {
   Widget build(BuildContext context) {
       final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final members = bill.members;
+
+    // Sort members: current user first → friends → outsiders/external
+    final members = [...bill.members]..sort((a, b) {
+      int rank(BillMember m) {
+        if (m.userId != null && m.userId == currentUserId) return 0;
+        if (m.userId != null && friendUserIds.contains(m.userId)) return 1;
+        return 2;
+      }
+      return rank(a).compareTo(rank(b));
+    });
+
     final currency = bill.settings.currency;
 
     // Build O(1) lookup map once per build — avoids O(n·m) firstWhere per member
