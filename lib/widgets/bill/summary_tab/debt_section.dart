@@ -353,7 +353,7 @@ class _DebtCardState extends State<_DebtCard> {
                               height: 180,
                               child: InnerHTMLText(
                                 innerHtml:
-                                    '<img src="https://promptpay.io/${debt.to.promptpay}/${debt.amount.toStringAsFixed(2)}.png" width="180" height="180">',
+                                    '<img src="/promptpay-qr/${debt.to.promptpay}/${debt.amount.toStringAsFixed(2)}.png" width="180" height="180">',
                               ),
                             ),
                           ),

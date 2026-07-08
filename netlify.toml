@@ -8,6 +8,14 @@
   # Firebase client API keys are public by design; exclude the files that embed them.
   SECRETS_SCAN_OMIT_PATHS = "android/app/google-services.json,lib/firebase_options.dart,web/firebase-messaging-sw.js,build/web/**"
 
+# Proxy promptpay.io QR image requests to avoid CORS on web.
+# Must come BEFORE the catch-all redirect.
+[[redirects]]
+  from = "/promptpay-qr/*"
+  to = "https://promptpay.io/:splat"
+  status = 200
+  force = true
+
 # Serve sw.js with the correct headers so it can control the full origin.
 # Must come BEFORE the catch-all redirect so Netlify doesn't rewrite it.
 [[redirects]]
