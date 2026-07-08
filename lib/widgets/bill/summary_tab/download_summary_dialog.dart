@@ -78,23 +78,37 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
 
   /// Renders [child] into an off-screen Overlay entry, waits for it to paint,
   /// captures it as PNG bytes, then removes the entry.
-  /// This is the only reliable way to capture widgets on Flutter web because
-  /// Offstage widgets are not composited into a layer.
+  ///
+  /// Uses the root Navigator's overlay so the entry survives even if the
+  /// BottomSheet is popped during the async capture sequence.
   Future<Uint8List?> _captureOffscreen(Widget child) async {
-    final overlayState = Overlay.of(context);
-    final key = GlobalKey();
+    // Use root navigator overlay so it is not destroyed when the sheet closes.
+    final overlayState = Navigator.of(context, rootNavigator: true).overlay;
+    if (overlayState == null) {
+      debugPrint('[DownloadSummaryDialog._captureOffscreen]: no overlay');
+      return null;
+    }
 
-    final completer = Completer<Uint8List?>();
+    final key = GlobalKey();
+    Uint8List? result;
 
     final entry = OverlayEntry(
       builder: (_) => Positioned(
         left: -9999,
         top: -9999,
-        child: Material(
-          type: MaterialType.transparency,
-          child: RepaintBoundary(
-            key: key,
-            child: child,
+        child: MediaQuery(
+          // Provide a fixed MediaQueryData so the widget doesn't depend on
+          // the ambient MediaQuery (which may be gone after sheet pop).
+          data: const MediaQueryData(),
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: Material(
+              type: MaterialType.transparency,
+              child: RepaintBoundary(
+                key: key,
+                child: child,
+              ),
+            ),
           ),
         ),
       ),
@@ -102,32 +116,31 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
 
     overlayState.insert(entry);
 
-    // Wait 3 frames for layout + paint + compositing
-    await Future.delayed(Duration.zero);
-    await Future.delayed(Duration.zero);
-    await Future.delayed(Duration.zero);
+    // Wait enough frames for layout → paint → compositing on Flutter Web.
+    // 5 microtask/frame cycles is reliable across Chrome/Safari.
+    for (int i = 0; i < 5; i++) {
+      await Future.delayed(Duration.zero);
+    }
 
     try {
       final boundary =
           key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) {
         debugPrint(
-            '[DownloadSummaryDialog._captureOffscreen]: boundary is null');
-        completer.complete(null);
+            '[DownloadSummaryDialog._captureOffscreen]: boundary is null after wait');
       } else {
         final image = await boundary.toImage(pixelRatio: 3.0);
         final byteData =
             await image.toByteData(format: ui.ImageByteFormat.png);
-        completer.complete(byteData?.buffer.asUint8List());
+        result = byteData?.buffer.asUint8List();
       }
     } catch (e) {
       debugPrint('[DownloadSummaryDialog._captureOffscreen]: $e');
-      completer.complete(null);
     } finally {
       entry.remove();
     }
 
-    return completer.future;
+    return result;
   }
 
   Future<bool> _saveBytesNative(Uint8List bytes, String name) async {
@@ -273,9 +286,13 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
     }
 
     if (!mounted) return;
+
+    // Capture ScaffoldMessenger before popping the sheet so the snackbar
+    // can still be shown after the sheet's context is disposed.
+    final messenger = ScaffoldMessenger.of(context);
     Navigator.of(context).pop();
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       SnackBar(
         content: Text(
           failed == 0
