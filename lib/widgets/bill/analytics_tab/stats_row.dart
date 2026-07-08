@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
+import 'package:kidtang_flutter/widgets/shared/emoji_text.dart';
 
 class StatsRow extends StatelessWidget {
   final int itemCount;
@@ -88,7 +89,7 @@ class _StatCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 22)),
+          EmojiText(emoji, fontSize: 22),
           const SizedBox(height: 6),
           Text(
             value,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'constants.dart';
+import 'emoji_text.dart';
 
 /// Emoji picker grid shared by CreateBillScreen and CreateGroupScreen.
 /// Includes a [+] button that lets the user type any custom emoji.
@@ -108,7 +109,7 @@ class _EmojiPickerGridState extends State<EmojiPickerGrid> {
                             : null,
                       ),
                       child: Center(
-                        child: Text(e, style: const TextStyle(fontSize: 18)),
+                        child: EmojiText(e, fontSize: 18),
                       ),
                     ),
                   );

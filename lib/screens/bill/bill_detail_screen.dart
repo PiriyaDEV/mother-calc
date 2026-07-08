@@ -15,6 +15,7 @@ import 'package:kidtang_flutter/widgets/bill/analytics_tab.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
 import 'package:kidtang_flutter/widgets/bill/summary_tab.dart';
 import 'package:kidtang_flutter/widgets/bill/index.dart';
+import 'package:kidtang_flutter/widgets/shared/emoji_text.dart';
 
 class BillDetailScreen extends StatefulWidget {
   final String billId;
@@ -254,7 +255,7 @@ class _BillAppBarTitle extends StatelessWidget {
         Expanded(
           child: Row(
             children: [
-              Text(bill.emoji ?? '🧾', style: const TextStyle(fontSize: 18)),
+              EmojiText(bill.emoji ?? '🧾', fontSize: 18),
               const SizedBox(width: AppSpacing.sm),
               Flexible(
                 child: Text(

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
+import 'package:kidtang_flutter/widgets/shared/emoji_text.dart';
 
 class HeroCard extends StatelessWidget {
   final BillCalculation calc;
@@ -59,7 +60,7 @@ class HeroCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Text(emoji, style: const TextStyle(fontSize: 28)),
+              EmojiText(emoji, fontSize: 28),
             ],
           ),
           if (settings.isService) ...[

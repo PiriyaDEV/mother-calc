@@ -12,6 +12,7 @@ import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
 import 'package:kidtang_flutter/widgets/shared/skeleton_loader.dart';
 import 'package:kidtang_flutter/widgets/group/index.dart';
+import 'package:kidtang_flutter/widgets/shared/emoji_text.dart';
 
 // ─────────────────────────────────────────────────────────────
 class GroupDetailScreen extends StatefulWidget {
@@ -146,8 +147,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
               ),
               title: Row(
                 children: [
-                  Text(group.emoji ?? '👥',
-                      style: const TextStyle(fontSize: 20)),
+                  EmojiText(group.emoji ?? '👥', fontSize: 20),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Column(

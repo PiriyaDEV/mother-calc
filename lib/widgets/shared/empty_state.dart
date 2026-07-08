@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kidtang_flutter/widgets/shared/emoji_text.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 
@@ -27,7 +28,7 @@ class EmptyStateWidget extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 64)),
+            EmojiText(emoji, fontSize: 64),
             const SizedBox(height: AppSpacing.lg),
             Text(
               title,

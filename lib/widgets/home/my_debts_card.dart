@@ -8,6 +8,7 @@ import 'package:kidtang_flutter/stores/bills_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
 import 'package:kidtang_flutter/widgets/shared/app_section_header.dart';
+import 'package:kidtang_flutter/widgets/shared/emoji_text.dart';
 
 /// Aggregated debt row: how much the current user owes to one creditor.
 class _DebtRow {
@@ -260,7 +261,7 @@ class _DebtRowTile extends StatelessWidget {
         child: Row(
           children: [
             // Bill emoji
-            Text(debt.billEmoji, style: const TextStyle(fontSize: 20)),
+            EmojiText(debt.billEmoji, fontSize: 20),
             const SizedBox(width: AppSpacing.sm),
             // Bill + creditor info
             Expanded(

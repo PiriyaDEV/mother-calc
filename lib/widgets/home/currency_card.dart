@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
+import 'package:kidtang_flutter/widgets/shared/emoji_text.dart';
 
 class CurrencyCard extends StatelessWidget {
   final String code;
@@ -39,7 +40,7 @@ class CurrencyCard extends StatelessWidget {
             bottom: -10,
             child: Opacity(
               opacity: 0.18,
-              child: Text(flag, style: const TextStyle(fontSize: 52)),
+              child: EmojiText(flag, fontSize: 52),
             ),
           ),
           Column(

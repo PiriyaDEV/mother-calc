@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
+import 'package:kidtang_flutter/widgets/shared/emoji_text.dart';
 
 // ─── Full Bill Summary Image ──────────────────────────────────────────────────
 // Shows: bill title, total, all members with their share, all debt transactions
@@ -33,7 +34,7 @@ class BillFullSummaryImage extends StatelessWidget {
           // Bill title
           Row(
             children: [
-              Text(bill.emoji ?? '🧾', style: const TextStyle(fontSize: 28)),
+              EmojiText(bill.emoji ?? '🧾', fontSize: 28),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -225,7 +226,7 @@ class BillMemberSummaryImage extends StatelessWidget {
           // Bill title
           Row(
             children: [
-              Text(bill.emoji ?? '🧾', style: const TextStyle(fontSize: 22)),
+              EmojiText(bill.emoji ?? '🧾', fontSize: 22),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -429,7 +430,7 @@ class BillQrCardImage extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(bill.emoji ?? '🧾', style: const TextStyle(fontSize: 18)),
+              EmojiText(bill.emoji ?? '🧾', fontSize: 18),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(

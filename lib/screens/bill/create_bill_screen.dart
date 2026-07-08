@@ -1,6 +1,7 @@
 import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:kidtang_flutter/widgets/shared/emoji_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -518,7 +519,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(c.flag, style: const TextStyle(fontSize: 14)),
+                            EmojiText(c.flag, fontSize: 14),
                             const SizedBox(width: 6),
                             Text(
                               '${c.symbol} ${c.label}',

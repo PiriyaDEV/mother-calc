@@ -3,6 +3,7 @@ import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
+import 'package:kidtang_flutter/widgets/shared/emoji_text.dart';
 
 class LanguageDialog extends StatelessWidget {
   final String currentLocale;
@@ -105,7 +106,7 @@ class LangOption extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Text(flag, style: const TextStyle(fontSize: 28)),
+            EmojiText(flag, fontSize: 28),
             const SizedBox(width: 14),
             Expanded(
               child: Column(

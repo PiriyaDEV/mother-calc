@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
+import 'package:kidtang_flutter/widgets/shared/emoji_text.dart';
 import 'package:kidtang_flutter/widgets/shared/member_avatar.dart';
 
 class BillCard extends StatelessWidget {
@@ -65,10 +66,7 @@ class BillCard extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Center(
-                    child: Text(
-                      bill.emoji ?? '🧾',
-                      style: const TextStyle(fontSize: 22),
-                    ),
+                    child: EmojiText(bill.emoji ?? '🧾', fontSize: 22),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
