@@ -38,6 +38,9 @@ dependencies:
   # Image picker
   image_picker: ^1.1.2
 
+  # On-device OCR for slip verification (ML Kit, no API key needed)
+  google_mlkit_text_recognition: ^0.13.1
+
   # Save image to gallery
   image_gallery_saver_plus: ^3.0.3
   path_provider: ^2.1.4

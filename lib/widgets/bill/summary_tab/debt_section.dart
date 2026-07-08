@@ -506,6 +506,7 @@ class _DebtCardState extends State<_DebtCard> {
                             billsStore: billsStore,
                             bill: bill,
                             memberId: debt.from.id,
+                            expectedAmount: debt.amount,
                           );
                         } else {
                           await billsStore.toggleMemberPaid(

@@ -330,6 +330,7 @@ class AllMembersSection extends StatelessWidget {
                                 billsStore: billsStore,
                                 bill: bill,
                                 memberId: member.id,
+                                expectedAmount: summary.total,
                               );
                             } else {
                               await billsStore.toggleMemberPaid(

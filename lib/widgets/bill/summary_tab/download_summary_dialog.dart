@@ -61,9 +61,22 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
   List<DebtTransaction> get _allDebts =>
       simplifyDebts(widget.calc.memberSummaries, widget.bill.members, null);
 
-  List<BillMember> get _membersWithPromptPay => widget.bill.members
-      .where((m) => m.promptpay != null && m.promptpay!.isNotEmpty)
-      .toList();
+  /// Members that have PromptPay AND are owed money by at least one other member.
+  /// These are the people whose QR codes need to be shared.
+  List<({BillMember member, double totalOwed})> get _qrRecipients {
+    final allDebts = _allDebts;
+    final result = <({BillMember member, double totalOwed})>[];
+    for (final m in widget.bill.members) {
+      if (m.promptpay == null || m.promptpay!.isEmpty) continue;
+      final owed = allDebts
+          .where((d) => d.to.id == m.id)
+          .fold<double>(0, (sum, d) => sum + d.amount);
+      if (owed > 0) {
+        result.add((member: m, totalOwed: owed));
+      }
+    }
+    return result;
+  }
 
   List<DebtTransaction> _debtsForMember(String memberId) {
     return _allDebts.where((d) => d.from.id == memberId).toList();
@@ -190,10 +203,10 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
     final members = bill.members;
 
     // Rebuild QR key lists based on current mode
-    final membersWithQr = _membersWithPromptPay;
+    final qrRecipients = _qrRecipients;
 
-    // For full bill mode: one QR per member with PromptPay
-    while (_qrKeys.length < membersWithQr.length) {
+    // For full bill mode: one QR per member that is owed money and has PromptPay
+    while (_qrKeys.length < qrRecipients.length) {
       _qrKeys.add(GlobalKey());
     }
 
@@ -262,7 +275,7 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
               _ModeCard(
                 title: 'สรุปทั้งบิล',
                 subtitle:
-                    'รูปสรุปรวม + QR พร้อมเพย์ของทุกคน (${membersWithQr.length} QR)',
+                    'รูปสรุปรวม + QR พร้อมเพย์ (${qrRecipients.length} QR)',
                 icon: Icons.receipt_long_rounded,
                 selected: _mode == _DownloadMode.fullBill,
                 isDark: isDark,
@@ -372,19 +385,15 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
                     ),
                   ),
                 ),
-                ...List.generate(membersWithQr.length, (i) {
-                  final m = membersWithQr[i];
-                  // For full bill QR, show total amount member owes (sum of their debts)
-                  final debts = _allDebts.where((d) => d.to.id == m.id);
-                  final totalOwed = debts.fold<double>(
-                      0, (sum, d) => sum + d.amount);
+                ...List.generate(qrRecipients.length, (i) {
+                  final r = qrRecipients[i];
                   return Offstage(
                     child: RepaintBoundary(
                       key: _qrKeys[i],
                       child: BillQrCardImage(
                         bill: bill,
-                        toMember: m,
-                        amount: totalOwed > 0 ? totalOwed : calc.total,
+                        toMember: r.member,
+                        amount: r.totalOwed,
                       ),
                     ),
                   );
@@ -424,7 +433,7 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
               // Image count info
               _ImageCountInfo(
                 mode: _mode,
-                membersWithQrCount: membersWithQr.length,
+                membersWithQrCount: qrRecipients.length,
                 memberDebtsWithQrCount: memberDebts.length,
                 isDark: isDark,
               ),
