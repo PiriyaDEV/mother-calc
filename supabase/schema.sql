@@ -64,7 +64,8 @@ create table public.profiles (
   avatar_url           text,
   promptpay            text,
   onboarding_completed boolean not null default false,
-  fcm_token            text,                          -- Firebase push notification token
+  fcm_token            text,                          -- Firebase push notification token (native)
+  vapid_subscription   text,                          -- Web Push subscription JSON (web browsers)
   -- i18n preference
   locale               text    not null default 'th',  -- 'th' | 'en'
   created_at           timestamptz not null default now(),

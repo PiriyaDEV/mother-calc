@@ -136,5 +136,69 @@
 
   <script src="flutter_bootstrap.js" async=""></script>
 
+  <!-- Web Push helper — exposes window._kidtangPush.subscribe / unsubscribe -->
+  <!-- Called by lib/services/web_push_service_web.dart after login -->
+  <script>
+    window._kidtangPush = (function () {
+      function urlBase64ToUint8Array(base64String) {
+        var padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+        var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        var rawData = atob(base64);
+        var outputArray = new Uint8Array(rawData.length);
+        for (var i = 0; i < rawData.length; ++i) {
+          outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+      }
+
+      return {
+        /**
+         * Requests notification permission, registers sw.js, subscribes to
+         * Web Push with the given VAPID public key, and returns the
+         * PushSubscription as a JSON string (or null on failure/denial).
+         */
+        subscribe: async function (vapidPublicKey) {
+          try {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+              console.warn('[WebPush] Push API not supported');
+              return null;
+            }
+            var permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+              console.warn('[WebPush] Permission not granted:', permission);
+              return null;
+            }
+            await navigator.serviceWorker.register('/sw.js');
+            var reg = await navigator.serviceWorker.ready;
+            var existing = await reg.pushManager.getSubscription();
+            var sub = existing || await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+            });
+            return JSON.stringify(sub.toJSON());
+          } catch (e) {
+            console.error('[WebPush] subscribe error:', e);
+            return null;
+          }
+        },
+
+        /**
+         * Unsubscribes the current Push subscription (if any).
+         */
+        unsubscribe: async function () {
+          try {
+            if (!('serviceWorker' in navigator)) return false;
+            var reg = await navigator.serviceWorker.ready;
+            var sub = await reg.pushManager.getSubscription();
+            if (sub) await sub.unsubscribe();
+            return true;
+          } catch (e) {
+            console.error('[WebPush] unsubscribe error:', e);
+            return false;
+          }
+        },
+      };
+    })();
+  </script>
 
 </body></html>

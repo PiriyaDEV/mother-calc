@@ -6,6 +6,7 @@ import 'package:kidtang_flutter/models/models.dart';
 import 'package:kidtang_flutter/services/profile_repository.dart';
 import 'package:kidtang_flutter/services/push_notification_service.dart';
 import 'package:kidtang_flutter/services/social_auth_service.dart';
+import 'package:kidtang_flutter/services/web_push_service.dart';
 import 'package:kidtang_flutter/stores/bills_store.dart';
 import 'package:kidtang_flutter/stores/friends_store.dart';
 import 'package:kidtang_flutter/stores/groups_store.dart';
@@ -198,7 +199,12 @@ class AuthProvider extends ChangeNotifier {
       _friendsStore?.subscribeRealtime();
       _groupsStore?.subscribeRealtime();
       notifyListeners();
-      PushNotificationService.saveToken();
+      // On web use VAPID Web Push; on native use FCM token.
+      if (kIsWeb) {
+        subscribeWebPush();
+      } else {
+        PushNotificationService.saveToken();
+      }
     } on PostgrestException catch (e) {
       if (e.code == '23503' || e.code == '42501') {
         debugPrint('Stale session detected, signing out: $e');
@@ -268,7 +274,11 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> signOut() async {
     await _socialAuth.signOut();
-    await PushNotificationService.clearToken();
+    if (kIsWeb) {
+      await unsubscribeWebPush();
+    } else {
+      await PushNotificationService.clearToken();
+    }
     await _supabase.auth.signOut();
     _profile = null;
     _groupsStore?.clear();
