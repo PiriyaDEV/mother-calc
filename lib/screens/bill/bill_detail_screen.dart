@@ -10,7 +10,6 @@ import 'package:kidtang_flutter/stores/friends_store.dart';
 import 'package:kidtang_flutter/stores/groups_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
-import 'package:kidtang_flutter/widgets/shared/confirm_dialog.dart';
 import 'package:kidtang_flutter/widgets/shared/skeleton_loader.dart';
 import 'package:kidtang_flutter/widgets/bill/analytics_tab.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
@@ -202,6 +201,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerPr
                     Expanded(
                       child: TabBarView(
                         controller: _tabController,
+                        physics: const NeverScrollableScrollPhysics(),
                         children: [
                           MembersTab(
                             bill: bill,
@@ -325,81 +325,32 @@ class _BillStatusActions extends StatelessWidget {
     required this.onEditBill,
   });
 
+  void _showStatusPicker(BuildContext context, LocaleProvider l) {
+    showDialog(
+      context: context,
+      builder: (_) => _BillStatusPickerDialog(
+        bill: bill,
+        billsStore: billsStore,
+        isDark: isDark,
+        tabController: tabController,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = context.watch<LocaleProvider>();
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (isDraft)
-          _ActionChip(
-            label: l.t('bill_close_label'),
-            icon: Icons.lock_rounded,
-            color: AppColors.amber,
-            textColor: Colors.white,
-            onTap: () async {
-              final ok = await showConfirmDialog(
-                context,
-                title: l.t('bill_close_confirm_title'),
-                description: l.t('bill_close_confirm_body'),
-                confirmLabel: l.t('bill_close_label'),
-              );
-              if (ok == true) {
-                await billsStore.setPendingPayment(bill.id);
-                tabController.animateTo(2);
-              }
-            },
-          )
-        else if (isPendingPayment) ...[
-          _ActionChip(
-            label: l.t('bill_reopen'),
-            icon: Icons.lock_open_rounded,
-            color: isDark ? AppColors.borderDark : AppColors.neutral100,
-            textColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-            iconColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-            onTap: () async {
-              final ok = await showConfirmDialog(
-                context,
-                title: l.t('bill_reopen_confirm_title'),
-                description: l.t('bill_reopen_confirm_body'),
-                confirmLabel: l.t('bill_reopen'),
-              );
-              if (ok == true) await billsStore.reopenBill(bill.id);
-            },
-          ),
-          const SizedBox(width: 4),
-          _ActionChip(
-            label: l.t('bill_completed_label'),
-            icon: Icons.check_rounded,
-            color: AppColors.emerald,
-            textColor: Colors.white,
-            onTap: () async {
-              final ok = await showConfirmDialog(
-                context,
-                title: l.t('bill_complete_confirm_title'),
-                description: l.t('bill_complete_confirm_body'),
-                confirmLabel: l.t('bill_completed_label'),
-              );
-              if (ok == true) await billsStore.completeBill(bill.id);
-            },
-          ),
-        ] else
-          _ActionChip(
-            label: l.t('bill_reopen'),
-            icon: Icons.lock_open_rounded,
-            color: isDark ? AppColors.borderDark : AppColors.neutral100,
-            textColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-            iconColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-            onTap: () async {
-              final ok = await showConfirmDialog(
-                context,
-                title: l.t('bill_reopen_confirm_title'),
-                description: l.t('bill_reopen_confirm_body'),
-                confirmLabel: l.t('bill_reopen'),
-              );
-              if (ok == true) await billsStore.reopenBill(bill.id);
-            },
-          ),
+        _ActionChip(
+          label: l.t('bill_adjust_status'),
+          icon: Icons.swap_horiz_rounded,
+          color: isDark ? AppColors.borderDark : AppColors.neutral100,
+          textColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+          iconColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+          onTap: () => _showStatusPicker(context, l),
+        ),
         if (isOwner) ...[
           IconButton(
             icon: const Icon(Icons.group_add_outlined),
@@ -416,6 +367,211 @@ class _BillStatusActions extends StatelessWidget {
           ),
         const SizedBox(width: 4),
       ],
+    );
+  }
+}
+
+// ── Status Picker Dialog ──────────────────────────────────────
+
+class _BillStatusPickerDialog extends StatelessWidget {
+  final Bill bill;
+  final BillsStore billsStore;
+  final bool isDark;
+  final TabController tabController;
+
+  const _BillStatusPickerDialog({
+    required this.bill,
+    required this.billsStore,
+    required this.isDark,
+    required this.tabController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.watch<LocaleProvider>();
+    final currentStatus = bill.status;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xl),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(AppRadii.xl),
+        ),
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l.t('bill_adjust_status'),
+              style: GoogleFonts.sarabun(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: isDark ? AppColors.neutral900Dark : AppColors.neutral900,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              l.t('bill_adjust_status_subtitle'),
+              style: GoogleFonts.sarabun(
+                fontSize: 13,
+                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            _StatusOption(
+              label: l.t('bill_status_draft'),
+              description: l.t('bill_status_draft_desc'),
+              icon: Icons.edit_note_rounded,
+              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              bgColor: isDark ? AppColors.borderDark : AppColors.neutral100,
+              isSelected: currentStatus == 'draft',
+              isDark: isDark,
+              onTap: () async {
+                Navigator.of(context).pop();
+                if (currentStatus == 'draft') return;
+                await billsStore.reopenBill(bill.id);
+              },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _StatusOption(
+              label: l.t('bill_status_pending'),
+              description: l.t('bill_status_pending_desc'),
+              icon: Icons.hourglass_top_rounded,
+              color: AppColors.amber,
+              bgColor: AppColors.amber.withValues(alpha: 0.12),
+              isSelected: currentStatus == 'pending_payment',
+              isDark: isDark,
+              onTap: () async {
+                Navigator.of(context).pop();
+                if (currentStatus == 'pending_payment') return;
+                await billsStore.setPendingPayment(bill.id);
+                tabController.animateTo(2);
+              },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _StatusOption(
+              label: l.t('bill_status_completed'),
+              description: l.t('bill_status_completed_desc'),
+              icon: Icons.check_circle_rounded,
+              color: AppColors.emerald,
+              bgColor: AppColors.emerald.withValues(alpha: 0.12),
+              isSelected: currentStatus == 'completed',
+              isDark: isDark,
+              onTap: () async {
+                Navigator.of(context).pop();
+                if (currentStatus == 'completed') return;
+                await billsStore.completeBill(bill.id);
+              },
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(
+                  l.t('cancel'),
+                  style: GoogleFonts.sarabun(
+                    fontSize: 14,
+                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusOption extends StatelessWidget {
+  final String label;
+  final String description;
+  final IconData icon;
+  final Color color;
+  final Color bgColor;
+  final bool isSelected;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _StatusOption({
+    required this.label,
+    required this.description,
+    required this.icon,
+    required this.color,
+    required this.bgColor,
+    required this.isSelected,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: AppMotion.press,
+        curve: AppMotion.standard,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm + 2,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? bgColor
+              : (isDark ? AppColors.surfaceDark : AppColors.surfaceLight),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          border: Border.all(
+            color: isSelected
+                ? color.withValues(alpha: 0.5)
+                : (isDark ? AppColors.borderDark : AppColors.borderLight),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(AppRadii.md),
+              ),
+              child: Icon(icon, size: 18, color: color),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: GoogleFonts.sarabun(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected
+                          ? color
+                          : (isDark ? AppColors.neutral900Dark : AppColors.neutral900),
+                    ),
+                  ),
+                  Text(
+                    description,
+                    style: GoogleFonts.sarabun(
+                      fontSize: 12,
+                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(Icons.check_rounded, size: 18, color: color),
+          ],
+        ),
+      ),
     );
   }
 }

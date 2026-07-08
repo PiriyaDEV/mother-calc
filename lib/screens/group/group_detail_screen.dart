@@ -203,6 +203,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
           ],
           body: TabBarView(
             controller: _tabController,
+            physics: const NeverScrollableScrollPhysics(),
             children: [
               // Tab 0: Members
               GroupMembersTab(
