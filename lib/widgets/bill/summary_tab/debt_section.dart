@@ -11,7 +11,6 @@ import 'package:kidtang_flutter/models/models.dart';
 import 'package:kidtang_flutter/stores/bills_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
-import 'package:kidtang_flutter/widgets/shared/inner_html_text.dart';
 import 'package:kidtang_flutter/widgets/shared/member_avatar.dart';
 import 'slip_upload_helper.dart';
 
@@ -351,9 +350,22 @@ class _DebtCardState extends State<_DebtCard> {
                             child: SizedBox(
                               width: 180,
                               height: 180,
-                              child: InnerHTMLText(
-                                innerHtml:
-                                    '<img src="/promptpay-qr/${debt.to.promptpay}/${debt.amount.toStringAsFixed(2)}.png" width="180" height="180">',
+                              child: Image.network(
+                                '/promptpay-qr/${debt.to.promptpay}/${debt.amount.toStringAsFixed(2)}.png',
+                                width: 180,
+                                height: 180,
+                                fit: BoxFit.contain,
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+                                  return const Center(
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  );
+                                },
+                                errorBuilder: (context, error, stack) {
+                                  return const Center(
+                                    child: Icon(Icons.qr_code_rounded, size: 60, color: Colors.grey),
+                                  );
+                                },
                               ),
                             ),
                           ),
