@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/services/web_image_saver.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
 import 'bill_summary_image.dart';
@@ -105,7 +106,7 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
     }
   }
 
-  Future<bool> _saveBytes(Uint8List bytes, String name) async {
+  Future<bool> _saveBytesNative(Uint8List bytes, String name) async {
     final result = await ImageGallerySaverPlus.saveImage(
       Uint8List.fromList(bytes),
       quality: 100,
@@ -114,7 +115,15 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
     return result['isSuccess'] == true || result['filePath'] != null;
   }
 
-  Future<void> _download() async {
+  Future<bool> _saveBytesWeb(Uint8List bytes, String name,
+      {bool share = false, String shareTitle = 'สรุปบิล Kidtang'}) async {
+    if (share) {
+      return shareImageOnWeb(bytes, '$name.png', shareTitle);
+    }
+    return downloadImageOnWeb(bytes, '$name.png');
+  }
+
+  Future<void> _download({bool shareOnWeb = false}) async {
     if (_saving) return;
     setState(() => _saving = true);
 
@@ -122,23 +131,30 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
     int failed = 0;
     final ts = DateTime.now().millisecondsSinceEpoch;
 
+    Future<bool> saveBytes(Uint8List bytes, String name) {
+      if (kIsWeb) {
+        return _saveBytesWeb(bytes, name,
+            share: shareOnWeb, shareTitle: 'สรุปบิล ${widget.bill.title}');
+      }
+      return _saveBytesNative(bytes, name);
+    }
+
     try {
       if (_mode == _DownloadMode.fullBill) {
         // 1. Full summary image
         final summaryBytes = await _captureWidget(_fullSummaryKey);
         if (summaryBytes != null) {
-          final ok = await _saveBytes(
-              summaryBytes, 'kidtang_summary_$ts');
+          final ok = await saveBytes(summaryBytes, 'kidtang_summary_$ts');
           ok ? saved++ : failed++;
         } else {
           failed++;
         }
 
-        // 2. QR cards for each member with PromptPay
+        // 2. QR cards for each member with PromptPay (web: download each separately)
         for (int i = 0; i < _qrKeys.length; i++) {
           final bytes = await _captureWidget(_qrKeys[i]);
           if (bytes != null) {
-            final ok = await _saveBytes(bytes, 'kidtang_qr_${i}_$ts');
+            final ok = await saveBytes(bytes, 'kidtang_qr_${i}_$ts');
             ok ? saved++ : failed++;
           } else {
             failed++;
@@ -149,8 +165,7 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
         // 1. Member summary image
         final summaryBytes = await _captureWidget(_memberSummaryKey);
         if (summaryBytes != null) {
-          final ok = await _saveBytes(
-              summaryBytes, 'kidtang_member_summary_$ts');
+          final ok = await saveBytes(summaryBytes, 'kidtang_member_summary_$ts');
           ok ? saved++ : failed++;
         } else {
           failed++;
@@ -160,7 +175,7 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
         for (int i = 0; i < _memberQrKeys.length; i++) {
           final bytes = await _captureWidget(_memberQrKeys[i]);
           if (bytes != null) {
-            final ok = await _saveBytes(bytes, 'kidtang_qr_${i}_$ts');
+            final ok = await saveBytes(bytes, 'kidtang_qr_${i}_$ts');
             ok ? saved++ : failed++;
           } else {
             failed++;
@@ -181,7 +196,9 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
       SnackBar(
         content: Text(
           failed == 0
-              ? 'บันทึก $saved รูปแล้ว 🎉'
+              ? (kIsWeb && shareOnWeb
+                  ? 'แชร์รูปสำเร็จ 🎉'
+                  : 'บันทึก $saved รูปแล้ว 🎉')
               : 'บันทึกสำเร็จ $saved รูป, ล้มเหลว $failed รูป',
           style: const TextStyle(fontFamily: 'NotoSansThai'),
         ),
@@ -439,7 +456,7 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
               ),
               const SizedBox(height: 16),
 
-              // Download button (mobile only)
+              // Download button — mobile: save to gallery, web: download file or share
               if (!kIsWeb)
                 SizedBox(
                   width: double.infinity,
@@ -473,33 +490,66 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
                     ),
                   ),
                 ),
-              if (kIsWeb)
-                Container(
+              // Web buttons: Download + Share (if Web Share API available)
+              if (kIsWeb) ...[
+                SizedBox(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgSubtle,
-                    borderRadius: BorderRadius.circular(AppRadii.md),
-                    border: Border.all(color: AppColors.borderLight),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.info_outline_rounded,
-                          size: 16, color: AppColors.textTertiaryLight),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'การบันทึกรูปรองรับเฉพาะแอปมือถือ',
-                          style: GoogleFonts.sarabun(
-                            fontSize: 13,
-                            color: AppColors.textSecondaryLight,
-                          ),
-                        ),
+                  child: ElevatedButton.icon(
+                    onPressed: _saving ? null : () => _download(shareOnWeb: false),
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.download_rounded,
+                            size: 18, color: Colors.white),
+                    label: Text(
+                      _saving ? 'กำลังดาวน์โหลด...' : 'ดาวน์โหลดรูปภาพ',
+                      style: GoogleFonts.sarabun(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
                       ),
-                    ],
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          _saving ? AppColors.neutral400 : AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadii.xl),
+                      ),
+                      elevation: 0,
+                    ),
                   ),
                 ),
+                if (webShareSupported) ...[
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _saving ? null : () => _download(shareOnWeb: true),
+                      icon: const Icon(Icons.share_rounded, size: 18),
+                      label: Text(
+                        'แชร์รูปภาพ',
+                        style: GoogleFonts.sarabun(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadii.xl),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ],
           ),
         ),
