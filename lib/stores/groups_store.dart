@@ -196,6 +196,29 @@ class GroupsStore extends ChangeNotifier {
     }
   }
 
+  /// Add a friend (app user) directly to the group as an accepted member.
+  /// No invite/notification flow — the member is added immediately.
+  Future<String?> addDirectMember(
+      String groupId, String userId, String displayName) async {
+    try {
+      final existing = await _repo.findMembership(groupId, userId);
+      if (existing != null) return 'ผู้ใช้นี้เป็นสมาชิกอยู่แล้ว';
+
+      await _repo.insertMembership({
+        'group_id': groupId,
+        'user_id': userId,
+        'role': 'member',
+        'status': 'accepted',
+      });
+
+      await loadGroupDetail(groupId);
+      return null;
+    } catch (e) {
+      debugPrint('GroupsStore.addDirectMember: $e');
+      return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+    }
+  }
+
   /// Add an external (non-app-user) member to the group by name.
   Future<String?> addExternalMember(String groupId, String name) async {
     if (name.trim().isEmpty) return 'กรุณาใส่ชื่อ';

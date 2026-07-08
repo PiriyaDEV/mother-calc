@@ -3,10 +3,11 @@ import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/stores/groups_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
+import 'package:kidtang_flutter/widgets/shared/add_member_sheet.dart';
 import 'package:kidtang_flutter/widgets/shared/member_avatar.dart';
 import 'empty_state.dart';
-import 'manage_members_sheet.dart';
 
 class GroupMembersTab extends StatelessWidget {
   final Group group;
@@ -22,7 +23,8 @@ class GroupMembersTab extends StatelessWidget {
     required this.isDark,
   });
 
-  void _showManageMembersSheet(BuildContext context) {
+  void _showAddMemberSheet(BuildContext context) {
+    final groupsStore = context.read<GroupsStore>();
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -30,10 +32,10 @@ class GroupMembersTab extends StatelessWidget {
         backgroundColor: Colors.transparent,
         insetPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        child: ManageMembersSheet(
+        child: AddMemberSheet(
           group: group,
-          acceptedMembers: acceptedMembers,
-          isDark: isDark,
+          groupsStore: groupsStore,
+          existingGroupMembers: acceptedMembers,
         ),
       ),
     );
@@ -53,7 +55,7 @@ class GroupMembersTab extends StatelessWidget {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => _showManageMembersSheet(context),
+                onPressed: () => _showAddMemberSheet(context),
                 icon: const Icon(Icons.people_outline, size: 18),
                 label: Text(
                   l.t('group_manage_members'),

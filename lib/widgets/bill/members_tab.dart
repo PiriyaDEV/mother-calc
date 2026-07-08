@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:kidtang_flutter/models/models.dart';
 import 'package:kidtang_flutter/stores/bills_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
-import 'member_form_sheet.dart';
+import 'package:kidtang_flutter/widgets/shared/add_member_sheet.dart';
 import 'member_tile.dart';
 
 class MembersTab extends StatelessWidget {
@@ -58,7 +58,7 @@ class MembersTab extends StatelessWidget {
                   backgroundColor: Colors.transparent,
                   insetPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-                  child: MemberFormSheet(
+                  child: AddMemberSheet(
                     bill: bill,
                     billsStore: billsStore,
                   ),
