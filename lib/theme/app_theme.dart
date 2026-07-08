@@ -146,22 +146,52 @@ class AppGradients {
 }
 
 class AppSpacing {
+  static const double xxs = 2.0;
   static const double xs = 4.0;
   static const double sm = 8.0;
   static const double md = 12.0;
   static const double lg = 16.0;
-  static const double xl = 20.0;
-  static const double xxl = 24.0;
-  static const double xxxl = 32.0;
+  static const double xl = 24.0;   // was 20 — aligned to Flik spacing scale
+  static const double xxl = 32.0;  // was 24 — aligned to Flik spacing scale
+  static const double xxxl = 48.0; // was 32 — aligned to Flik spacing scale
 }
 
 class AppRadii {
-  static const double xs = 8.0;
-  static const double sm = 12.0;
-  static const double md = 20.0;
-  static const double lg = 28.0;
-  static const double xl = 20.0;
+  static const double xs = 6.0;    // was 8 — tighter, Flik-aligned
+  static const double sm = 10.0;   // was 12 — tighter, Flik-aligned
+  static const double md = 16.0;   // was 20 — Flik card radius
+  static const double lg = 20.0;   // was 28 — Flik sheet/nav radius
+  static const double xl = 24.0;   // was duplicate of md — now distinct
   static const double full = 999.0;
+
+  // Semantic aliases for clarity
+  static const double card = md;       // 16 — standard card
+  static const double sheet = lg;      // 20 — bottom sheets
+  static const double navBar = 28.0;   // floating nav bar pill
+  static const double dialog = 20.0;   // dialogs
+}
+
+/// Centralized animation tokens — use these instead of hardcoded durations.
+/// Flik principle: animations should be subtle, purposeful, and consistent.
+class AppMotion {
+  // Durations
+  static const Duration press = Duration(milliseconds: 80);
+  static const Duration fast = Duration(milliseconds: 150);
+  static const Duration normal = Duration(milliseconds: 220);
+  static const Duration slow = Duration(milliseconds: 320);
+  static const Duration page = Duration(milliseconds: 280);
+  static const Duration skeleton = Duration(milliseconds: 1400);
+
+  // Curves
+  static const Curve standard = Curves.easeInOut;
+  static const Curve decelerate = Curves.easeOut;
+  static const Curve accelerate = Curves.easeIn;
+  static const Curve spring = Curves.elasticOut;
+
+  // Press scale factors
+  static const double pressScaleCard = 0.97;
+  static const double pressScaleNav = 0.88;
+  static const double pressScaleButton = 0.96;
 }
 
 class ThemeColors {

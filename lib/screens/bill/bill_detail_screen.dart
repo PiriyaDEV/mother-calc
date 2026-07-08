@@ -251,31 +251,34 @@ class _BillAppBarTitle extends StatelessWidget {
           child: Row(
             children: [
               Text(bill.emoji ?? '🧾', style: const TextStyle(fontSize: 18)),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSpacing.sm),
               Flexible(
                 child: Text(
                   bill.title,
                   style: GoogleFonts.notoSansThai(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                    color: isDark ? AppColors.neutral900Dark : AppColors.neutral900,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               if (!isDraft) ...[
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSpacing.sm),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xxs,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.emerald.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(AppRadii.full),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.lock_rounded, size: 11, color: AppColors.emerald),
-                      const SizedBox(width: 3),
+                      const SizedBox(width: AppSpacing.xxs),
                       Text(
                         l.t('bill_closed_badge'),
                         style: GoogleFonts.notoSansThai(
@@ -403,7 +406,7 @@ class _BillStatusActions extends StatelessWidget {
   }
 }
 
-class _ActionChip extends StatelessWidget {
+class _ActionChip extends StatefulWidget {
   final String label;
   final IconData icon;
   final Color color;
@@ -421,30 +424,48 @@ class _ActionChip extends StatelessWidget {
   });
 
   @override
+  State<_ActionChip> createState() => _ActionChipState();
+}
+
+class _ActionChipState extends State<_ActionChip> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: iconColor ?? textColor),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: GoogleFonts.notoSansThai(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: textColor,
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? AppMotion.pressScaleButton : 1.0,
+        duration: AppMotion.press,
+        curve: AppMotion.standard,
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm + 4,
+            vertical: AppSpacing.xs,
+          ),
+          decoration: BoxDecoration(
+            color: widget.color,
+            borderRadius: BorderRadius.circular(AppRadii.full),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(widget.icon, size: 14, color: widget.iconColor ?? widget.textColor),
+              const SizedBox(width: AppSpacing.xxs + 2),
+              Text(
+                widget.label,
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: widget.textColor,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -462,7 +483,10 @@ class _StatusBanner extends StatelessWidget {
     final color = isCompleted ? (isDark ? AppColors.emerald : AppColors.emeraldText) : AppColors.amber;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm + 2,
+      ),
       decoration: BoxDecoration(
         color: isCompleted ? (isDark ? AppColors.emeraldDark.withValues(alpha: 0.25) : AppColors.greenFaint) : (isDark ? AppColors.amber.withValues(alpha: 0.15) : AppColors.amberFaint),
         border: Border(
@@ -480,7 +504,7 @@ class _StatusBanner extends StatelessWidget {
             size: 14,
             color: color,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           Text(
             isCompleted ? context.watch<LocaleProvider>().t('bill_status_banner_completed') : context.watch<LocaleProvider>().t('bill_status_banner_pending'),
             style: GoogleFonts.notoSansThai(

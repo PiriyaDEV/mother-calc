@@ -6,10 +6,10 @@ import 'package:kidtang_flutter/models/models.dart';
 import 'package:kidtang_flutter/stores/bills_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
-import 'package:kidtang_flutter/widgets/shared/empty_state.dart';
 import 'package:kidtang_flutter/widgets/shared/skeleton_loader.dart';
 import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:kidtang_flutter/widgets/shared/shared_bill_card.dart';
+import 'package:kidtang_flutter/widgets/shared/app_empty_state.dart';
 
 class BillsScreen extends StatefulWidget {
   const BillsScreen({super.key});
@@ -58,7 +58,8 @@ class _BillsScreenState extends State<BillsScreen>
     final draftCount = stats?.draftCount ?? draftView.items.length;
     final pendingCount = stats?.pendingPaymentCount ?? pendingView.items.length;
     final completedCount = stats?.completedCount ?? completedView.items.length;
-    final allLoaded = draftView.loaded && pendingView.loaded && completedView.loaded;
+    final allLoaded =
+        draftView.loaded && pendingView.loaded && completedView.loaded;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -67,7 +68,12 @@ class _BillsScreenState extends State<BillsScreen>
           children: [
             // ── Header ──────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.lg,
+                0,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -86,7 +92,7 @@ class _BillsScreenState extends State<BillsScreen>
                           ),
                         ),
                         if (allBillsCount > 0) ...[
-                          const SizedBox(height: 2),
+                          const SizedBox(height: AppSpacing.xxs),
                           Text(
                             '$allBillsCount ${l.t('nav_bills')}',
                             style: GoogleFonts.notoSansThai(
@@ -103,34 +109,7 @@ class _BillsScreenState extends State<BillsScreen>
                   Semantics(
                     label: l.t('bills_create'),
                     button: true,
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(AppRadii.md),
-                      child: InkWell(
-                        onTap: _createBill,
-                        borderRadius: BorderRadius.circular(AppRadii.md),
-                        child: Ink(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            gradient: AppGradients.primaryButtonLight,
-                            borderRadius: BorderRadius.circular(AppRadii.md),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primaryBlue.withValues(alpha: 0.35),
-                                blurRadius: 16,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.add_rounded,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                      ),
-                    ),
+                    child: _CreateButton(onTap: _createBill),
                   ),
                 ],
               ),
@@ -138,12 +117,18 @@ class _BillsScreenState extends State<BillsScreen>
 
             // ── Tabs ─────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                0,
+              ),
               child: Container(
                 height: 44,
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
+                  color:
+                      isDark ? AppColors.surfaceDark : AppColors.neutral100,
                   borderRadius: BorderRadius.circular(AppRadii.md),
                 ),
                 child: TabBar(
@@ -179,7 +164,9 @@ class _BillsScreenState extends State<BillsScreen>
                   tabs: [
                     Tab(text: '${l.t('bills_tab_draft')} ($draftCount)'),
                     Tab(text: '${l.t('bills_tab_pending')} ($pendingCount)'),
-                    Tab(text: '${l.t('bills_tab_completed')} ($completedCount)'),
+                    Tab(
+                        text:
+                            '${l.t('bills_tab_completed')} ($completedCount)'),
                   ],
                 ),
               ),
@@ -198,30 +185,84 @@ class _BillsScreenState extends State<BillsScreen>
                         _BillList(
                           status: 'draft',
                           view: draftView,
-                           emptyEmoji: '🧾',
-                           emptyText: l.t('bills_empty_draft'),
-                           emptySubtext: l.t('bills_empty_draft_sub'),
-                           emptyCtaLabel: l.t('bills_create'),
+                          emptyEmoji: '🧾',
+                          emptyText: l.t('bills_empty_draft'),
+                          emptySubtext: l.t('bills_empty_draft_sub'),
+                          emptyCtaLabel: l.t('bills_create'),
                           onEmptyCta: _createBill,
                         ),
                         _BillList(
                           status: 'pending_payment',
                           view: pendingView,
-                           emptyEmoji: '⏳',
-                           emptyText: l.t('bills_empty_pending'),
-                           emptySubtext: l.t('bills_empty_pending_sub'),
+                          emptyEmoji: '⏳',
+                          emptyText: l.t('bills_empty_pending'),
+                          emptySubtext: l.t('bills_empty_pending_sub'),
                         ),
                         _BillList(
                           status: 'completed',
                           view: completedView,
-                           emptyEmoji: '✅',
-                           emptyText: l.t('bills_empty_completed'),
-                           emptySubtext: l.t('bills_empty_completed_sub'),
+                          emptyEmoji: '✅',
+                          emptyText: l.t('bills_empty_completed'),
+                          emptySubtext: l.t('bills_empty_completed_sub'),
                         ),
                       ],
                     ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Animated create button ─────────────────────────────────────────────────────
+
+class _CreateButton extends StatefulWidget {
+  const _CreateButton({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  State<_CreateButton> createState() => _CreateButtonState();
+}
+
+class _CreateButtonState extends State<_CreateButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? AppMotion.pressScaleButton : 1.0,
+        duration: AppMotion.press,
+        curve: AppMotion.standard,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            gradient: isDark
+                ? AppGradients.primaryButtonDark
+                : AppGradients.primaryButtonLight,
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            boxShadow: isDark
+                ? null
+                : [
+                    BoxShadow(
+                      color: AppColors.primaryBlue.withValues(alpha: 0.35),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+          ),
+          child: const Icon(
+            Icons.add_rounded,
+            color: Colors.white,
+            size: 24,
+          ),
         ),
       ),
     );
@@ -291,12 +332,14 @@ class _BillListState extends State<_BillList> {
     final bills = widget.view.items;
 
     if (bills.isEmpty) {
-      return EmptyStateWidget(
-        emoji: widget.emptyEmoji ?? '🧾',
-        title: widget.emptyText,
-        subtitle: widget.emptySubtext,
-        ctaLabel: widget.emptyCtaLabel,
-        onCta: widget.onEmptyCta,
+      return Center(
+        child: AppEmptyState(
+          icon: Icons.receipt_long_outlined,
+          title: widget.emptyText,
+          body: widget.emptySubtext,
+          ctaLabel: widget.emptyCtaLabel,
+          onCta: widget.onEmptyCta,
+        ),
       );
     }
 
@@ -311,7 +354,9 @@ class _BillListState extends State<_BillList> {
     final List<_ListItem> items = [];
 
     if (standaloneBills.isNotEmpty) {
-      items.add(_SectionHeader(label: l.t('bills_section_standalone'), count: standaloneBills.length));
+      items.add(_SectionHeader(
+          label: l.t('bills_section_standalone'),
+          count: standaloneBills.length));
       for (final b in standaloneBills) {
         items.add(_BillEntry(bill: b));
       }
@@ -320,7 +365,8 @@ class _BillListState extends State<_BillList> {
     if (byGroup.isNotEmpty) {
       for (final entry in byGroup.entries) {
         final groupBillList = entry.value;
-        final groupName = groupBillList.first.groupName ?? l.t('bills_group_fallback');
+        final groupName =
+            groupBillList.first.groupName ?? l.t('bills_group_fallback');
         final groupEmoji = groupBillList.first.groupEmoji ?? '👥';
         items.add(_SectionHeader(
           label: '$groupEmoji $groupName',
@@ -340,12 +386,17 @@ class _BillListState extends State<_BillList> {
       color: AppColors.primary,
       child: ListView.builder(
         controller: _scrollController,
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          110,
+        ),
         itemCount: items.length + (showFooter ? 1 : 0),
         itemBuilder: (context, index) {
           if (index >= items.length) {
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Center(
                 child: widget.view.loadingMore
                     ? const SizedBox(
@@ -363,7 +414,7 @@ class _BillListState extends State<_BillList> {
           }
           final bill = (item as _BillEntry).bill;
           return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm + 2),
             child: SharedBillCard(
               bill: bill,
               onTap: () => context.push('/bills/${bill.id}'),
@@ -382,7 +433,8 @@ class _SectionHeader extends _ListItem {
   final String label;
   final int count;
   final bool isGroup;
-  _SectionHeader({required this.label, required this.count, this.isGroup = false});
+  _SectionHeader(
+      {required this.label, required this.count, this.isGroup = false});
 }
 
 class _BillEntry extends _ListItem {
@@ -398,11 +450,17 @@ class _SectionHeaderWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10, top: 6),
+      padding: const EdgeInsets.only(
+        bottom: AppSpacing.sm + 2,
+        top: AppSpacing.xs,
+      ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
+            ),
             decoration: BoxDecoration(
               color: item.isGroup
                   ? AppColors.primaryBlue.withValues(alpha: 0.10)
@@ -413,7 +471,9 @@ class _SectionHeaderWidget extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  item.isGroup ? Icons.group_rounded : Icons.receipt_outlined,
+                  item.isGroup
+                      ? Icons.group_rounded
+                      : Icons.receipt_outlined,
                   size: 13,
                   color: item.isGroup
                       ? AppColors.primaryBlue
@@ -421,7 +481,7 @@ class _SectionHeaderWidget extends StatelessWidget {
                           ? AppColors.neutral400Dark
                           : AppColors.neutral400),
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: AppSpacing.xs),
                 Text(
                   item.label,
                   style: GoogleFonts.notoSansThai(
@@ -434,13 +494,18 @@ class _SectionHeaderWidget extends StatelessWidget {
                             : AppColors.neutral600),
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSpacing.sm),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: item.isGroup
                         ? AppColors.primaryBlue.withValues(alpha: 0.15)
-                        : (isDark ? AppColors.borderDark : AppColors.neutral100),
+                        : (isDark
+                            ? AppColors.borderDark
+                            : AppColors.neutral100),
                     borderRadius: BorderRadius.circular(AppRadii.full),
                   ),
                   child: Text(
@@ -459,7 +524,7 @@ class _SectionHeaderWidget extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSpacing.sm + 2),
           Expanded(
             child: Divider(
               color: isDark ? AppColors.borderDark : AppColors.neutral100,

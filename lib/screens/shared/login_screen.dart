@@ -259,37 +259,37 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: AppSpacing.lg),
 
                         // App name
                         Text(
                           'Kidtang',
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.anuphan(
                             fontSize: 32,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w700,
                             color: isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.textPrimaryLight,
+                                ? AppColors.neutral900Dark
+                                : AppColors.neutral900,
                             letterSpacing: -0.5,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           l.t('login_tagline'),
                           style: GoogleFonts.notoSansThai(
                             fontSize: 15,
                             color: isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight,
+                                ? AppColors.neutral400Dark
+                                : AppColors.neutral400,
                           ),
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.md),
 
                         // Feature pills
                         Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
+                          spacing: AppSpacing.xs,
+                          runSpacing: AppSpacing.xs,
                           alignment: WrapAlignment.center,
                           children: [
                             _FeaturePill(label: '💸 หารบิล', isDark: isDark),
@@ -298,7 +298,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ],
                         ),
 
-                        const SizedBox(height: 52),
+                        const SizedBox(height: AppSpacing.xxl + AppSpacing.md),
 
                         // LINE button
                         // _SocialButton(
@@ -368,14 +368,15 @@ class _LoginScreenState extends State<LoginScreen>
 
                         // Error
                         if (_error != null) ...[
-                          const SizedBox(height: 20),
+                          const SizedBox(height: AppSpacing.lg),
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 12),
+                                horizontal: AppSpacing.md,
+                                vertical: AppSpacing.sm + 2),
                             decoration: BoxDecoration(
                               color: AppColors.red.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(AppRadii.md),
                               border: Border.all(
                                   color: AppColors.red.withValues(alpha: 0.25)),
                             ),

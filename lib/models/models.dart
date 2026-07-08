@@ -10,4 +10,3 @@ export 'group/group_member.dart';
 export 'friend/friend.dart';
 export 'me/profile.dart';
 export 'shared/app_config.dart';
-export 'shared/notification.dart';

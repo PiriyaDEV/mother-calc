@@ -41,7 +41,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
         content: Text(err, style: GoogleFonts.notoSansThai()),
         backgroundColor: AppColors.red,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.sm)),
       ));
     }
   }
@@ -57,16 +58,18 @@ class _FriendsScreenState extends State<FriendsScreen> {
         content: Text(err, style: GoogleFonts.notoSansThai()),
         backgroundColor: AppColors.red,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.sm)),
       ));
     }
   }
 
   Future<void> _handleRemove(Friend friend) async {
-      final l = context.read<LocaleProvider>();
+    final l = context.read<LocaleProvider>();
     final myId = Supabase.instance.client.auth.currentUser?.id ?? '';
     final profile = friend.otherProfile(myId);
-    final name = profile?.displayName ?? profile?.username ?? l.t('friends_tab_label');
+    final name =
+        profile?.displayName ?? profile?.username ?? l.t('friends_tab_label');
 
     final confirmed = await showConfirmDialog(
       context,
@@ -83,7 +86,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
   @override
   Widget build(BuildContext context) {
-      final l = context.watch<LocaleProvider>();
+    final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // context.select — rebuilds only when friends list or pending requests change.
     final friends = context.select<FriendsStore, List>((s) => s.friends);
@@ -97,7 +100,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ──────────────────────────────────────
+            // ── Header ──────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
                   AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
@@ -109,62 +112,41 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       children: [
                         Text(
                           l.t('friends_tab_label'),
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                          style: GoogleFonts.anuphan(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
                             color: isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.textPrimaryLight,
+                                ? AppColors.neutral900Dark
+                                : AppColors.neutral900,
+                            height: 1.1,
                           ),
                         ),
+                        const SizedBox(height: AppSpacing.xxs),
                         Text(
                           requests.isNotEmpty
                               ? '${friends.length} เพื่อน · ${requests.length} คำขอใหม่'
                               : '${friends.length} เพื่อน',
                           style: GoogleFonts.notoSansThai(
-                            fontSize: 12,
+                            fontSize: 13,
                             color: isDark
-                                ? AppColors.textTertiaryDark
+                                ? AppColors.neutral400Dark
                                 : AppColors.neutral400,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => setState(() {
-                      _showAdd = !_showAdd;
-                    }),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryBlue,
-                        borderRadius: BorderRadius.circular(AppRadii.md),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.person_add_outlined,
-                              color: Colors.white, size: 16),
-                          const SizedBox(width: 6),
-                          Text(
-                            l.t('friends_add_btn'),
-                            style: GoogleFonts.notoSansThai(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  // Add friend button — animated press feedback
+                  _AddFriendButton(
+                    label: l.t('friends_add_btn'),
+                    active: _showAdd,
+                    onTap: () => setState(() => _showAdd = !_showAdd),
                   ),
                 ],
               ),
             ),
 
-            // ── Add Friend Panel ─────────────────────────────
+            // ── Add Friend Panel ─────────────────────────────────
             // Owns its own TextField state — keystrokes only rebuild the panel.
             if (_showAdd)
               AddFriendPanel(
@@ -173,10 +155,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 onClose: () => setState(() => _showAdd = false),
               ),
 
-            // ── Ad Banner ────────────────────────────────────
+            // ── Ad Banner ────────────────────────────────────────
             const BannerAdWidget(),
 
-            // ── Body ─────────────────────────────────────────
+            // ── Body ─────────────────────────────────────────────
             Expanded(
               child: provider.loading
                   ? const FriendsListSkeleton()
@@ -244,6 +226,99 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Animated add-friend button ─────────────────────────────────────────────────
+
+class _AddFriendButton extends StatefulWidget {
+  const _AddFriendButton({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  State<_AddFriendButton> createState() => _AddFriendButtonState();
+}
+
+class _AddFriendButtonState extends State<_AddFriendButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? AppMotion.pressScaleButton : 1.0,
+        duration: AppMotion.press,
+        curve: AppMotion.standard,
+        child: AnimatedContainer(
+          duration: AppMotion.fast,
+          curve: AppMotion.standard,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            gradient: widget.active
+                ? null
+                : (isDark
+                    ? AppGradients.primaryButtonDark
+                    : AppGradients.primaryButtonLight),
+            color: widget.active
+                ? (isDark ? AppColors.surfaceDark : AppColors.neutral100)
+                : null,
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            boxShadow: widget.active || isDark
+                ? null
+                : [
+                    BoxShadow(
+                      color: AppColors.primaryBlue.withValues(alpha: 0.30),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                widget.active
+                    ? Icons.close_rounded
+                    : Icons.person_add_outlined,
+                color: widget.active
+                    ? (isDark
+                        ? AppColors.neutral400Dark
+                        : AppColors.neutral600)
+                    : Colors.white,
+                size: 16,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                widget.label,
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: widget.active
+                      ? (isDark
+                          ? AppColors.neutral400Dark
+                          : AppColors.neutral600)
+                      : Colors.white,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

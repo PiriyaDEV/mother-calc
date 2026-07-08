@@ -308,7 +308,12 @@ class _MeScreenState extends State<MeScreen>
     final l = locale;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.xxl,
+      ),
       children: [
         AccountSection(
           isDark: isDark,
@@ -379,45 +384,77 @@ class _MeScreenState extends State<MeScreen>
         Semantics(
           label: l.t('me_logout_btn'),
           button: true,
-          child: Material(
-            color: isDark ? AppColors.surfaceDark : AppColors.redFaint,
-            borderRadius: BorderRadius.circular(AppRadii.lg),
-            child: InkWell(
-              onTap: _handleSignOut,
-              borderRadius: BorderRadius.circular(AppRadii.lg),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppRadii.lg),
-                  border: Border.all(
-                    color: isDark
-                        ? AppColors.red.withValues(alpha: 0.3)
-                        : AppColors.red.withValues(alpha: 0.20),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.logout_rounded,
-                        size: 18, color: AppColors.red),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text(
-                      l.t('me_logout_btn'),
-                      style: GoogleFonts.notoSansThai(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.red,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          child: _SignOutButton(
+            isDark: isDark,
+            label: l.t('me_logout_btn'),
+            onTap: _handleSignOut,
           ),
         ),
         const SizedBox(height: AppSpacing.xxxl),
       ],
+    );
+  }
+}
+
+// ── Animated sign-out button ───────────────────────────────────────────────────
+
+class _SignOutButton extends StatefulWidget {
+  const _SignOutButton({
+    required this.isDark,
+    required this.label,
+    required this.onTap,
+  });
+  final bool isDark;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  State<_SignOutButton> createState() => _SignOutButtonState();
+}
+
+class _SignOutButtonState extends State<_SignOutButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? AppMotion.pressScaleButton : 1.0,
+        duration: AppMotion.press,
+        curve: AppMotion.standard,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md + 2),
+          decoration: BoxDecoration(
+            color: widget.isDark ? AppColors.surfaceDark : AppColors.redFaint,
+            borderRadius: BorderRadius.circular(AppRadii.lg),
+            border: Border.all(
+              color: widget.isDark
+                  ? AppColors.red.withValues(alpha: 0.3)
+                  : AppColors.red.withValues(alpha: 0.20),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.logout_rounded, size: 18, color: AppColors.red),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                widget.label,
+                style: GoogleFonts.notoSansThai(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.red,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

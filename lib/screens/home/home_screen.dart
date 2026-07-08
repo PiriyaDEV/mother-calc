@@ -14,6 +14,7 @@ import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
 import 'package:kidtang_flutter/widgets/shared/constants.dart';
 import 'package:kidtang_flutter/widgets/shared/skeleton_loader.dart';
+import 'package:kidtang_flutter/widgets/shared/app_section_header.dart';
 import 'package:kidtang_flutter/widgets/home/index.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -92,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-      final l = context.watch<LocaleProvider>();
+    final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final profile = context.select<AuthProvider, Profile?>((a) => a.profile);
@@ -132,8 +133,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       // ── Top bar: greeting + wallet icon ─────────
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding:
-                              const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            AppSpacing.lg,
+                            AppSpacing.lg,
+                            0,
+                          ),
                           child: Row(
                             children: [
                               Expanded(
@@ -149,34 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                               ),
-                              Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? AppColors.surfaceDark
-                                      : Colors.white.withValues(alpha: 0.9),
-                                  borderRadius:
-                                      BorderRadius.circular(AppRadii.md),
-                                  boxShadow: isDark
-                                      ? null
-                                      : [
-                                          BoxShadow(
-                                            color: const Color(0xFF2D5BFF)
-                                                .withValues(alpha: 0.10),
-                                            blurRadius: 16,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                ),
-                                child: Icon(
-                                  Icons.account_balance_wallet_outlined,
-                                  size: 20,
-                                  color: isDark
-                                      ? AppColors.neutral600Dark
-                                      : AppColors.neutral600,
-                                ),
-                              ),
+                              _WalletIconButton(isDark: isDark),
                             ],
                           ),
                         ),
@@ -187,24 +165,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       // ── Quick actions ────────────────────────────
                       SliverToBoxAdapter(
-                        child: Padding(
-                          padding:
-                              const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l.t('home_main_menu'),
-                                style: GoogleFonts.anuphan(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDark
-                                      ? AppColors.neutral900Dark
-                                      : AppColors.neutral900,
-                                ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Section header using shared component
+                            AppSectionHeader(
+                              title: l.t('home_main_menu'),
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.lg,
+                                AppSpacing.xxl,
+                                AppSpacing.lg,
+                                AppSpacing.md,
                               ),
-                              const SizedBox(height: 14),
-                              Row(
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.lg,
+                              ),
+                              child: Row(
                                 children: [
                                   Expanded(
                                     child: QuickActionTile(
@@ -218,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       onTap: () => context.go('/bills'),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: AppSpacing.md),
                                   Expanded(
                                     child: QuickActionTile(
                                       icon: Icons.group_rounded,
@@ -231,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       onTap: () => context.go('/groups'),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: AppSpacing.md),
                                   Expanded(
                                     child: QuickActionTile(
                                       icon: Icons.people_rounded,
@@ -246,24 +224,34 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
 
                       // ── Currency exchange rates ───────────────────
                       SliverToBoxAdapter(
-                        child: Padding(
-                          padding:
-                              const EdgeInsets.fromLTRB(20, 28, 20, 0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Section header with inline refresh button
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.lg,
+                                AppSpacing.xxl,
+                                AppSpacing.lg,
+                                AppSpacing.md,
+                              ),
+                              child: Row(
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      l.t('home_exchange_rate') + (_ratesIsFallback ? ' · ${l.t('home_rates_fallback')}' : (_ratesTime.isNotEmpty ? ' · $_ratesTime' : '')),
+                                      l.t('home_exchange_rate') +
+                                          (_ratesIsFallback
+                                              ? ' · ${l.t('home_rates_fallback')}'
+                                              : (_ratesTime.isNotEmpty
+                                                  ? ' · $_ratesTime'
+                                                  : '')),
                                       style: GoogleFonts.anuphan(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,
@@ -273,88 +261,58 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                   ),
-                                  GestureDetector(
+                                  _RefreshButton(
+                                    isDark: isDark,
+                                    loading: _ratesLoading,
                                     onTap: _ratesLoading ? null : _loadRates,
-                                    child: Container(
-                                      width: 32,
-                                      height: 32,
-                                      decoration: BoxDecoration(
-                                        color: isDark
-                                            ? AppColors.surfaceDark
-                                            : Colors.white
-                                                .withValues(alpha: 0.9),
-                                        borderRadius:
-                                            BorderRadius.circular(AppRadii.sm),
-                                        boxShadow: isDark
-                                            ? null
-                                            : [
-                                                BoxShadow(
-                                                  color: Colors.black
-                                                      .withValues(alpha: 0.06),
-                                                  blurRadius: 8,
-                                                  offset: const Offset(0, 2),
-                                                ),
-                                              ],
-                                      ),
-                                      child: _ratesLoading
-                                          ? const Padding(
-                                              padding: EdgeInsets.all(7),
-                                              child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  color: AppColors.primary),
-                                            )
-                                          : Icon(
-                                              Icons.refresh_rounded,
-                                              size: 16,
-                                              color: isDark
-                                                  ? AppColors.neutral600Dark
-                                                  : AppColors.neutral600,
-                                            ),
-                                    ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 14),
-                              SizedBox(
-                                height: 116,
-                                child: _ratesLoading
-                                    ? SkeletonLoader(
-                                        child: ListView.separated(
-                                          scrollDirection: Axis.horizontal,
-                                          itemCount: 5,
-                                          separatorBuilder: (_, __) =>
-                                              const SizedBox(width: 10),
-                                          itemBuilder: (_, __) =>
-                                              const CurrencyCardSkeleton(),
-                                        ),
-                                      )
-                                    : ListView.separated(
+                            ),
+                            SizedBox(
+                              height: 116,
+                              child: _ratesLoading
+                                  ? SkeletonLoader(
+                                      child: ListView.separated(
                                         scrollDirection: Axis.horizontal,
-                                        itemCount: _rates.length,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: AppSpacing.lg,
+                                        ),
+                                        itemCount: 5,
                                         separatorBuilder: (_, __) =>
-                                            const SizedBox(width: 10),
-                                        itemBuilder: (_, i) {
-                                          final r = _rates[i];
-                                          final cfg = _currencies
-                                              .firstWhere(
-                                                  (c) => c.code == r.code);
-                                          final isJpyKrw = r.code == 'JPY' ||
-                                              r.code == 'KRW';
-                                          final rateStr = isJpyKrw
-                                              ? r.rate.toStringAsFixed(4)
-                                              : r.rate.toStringAsFixed(2);
-                                          return CurrencyCard(
-                                            code: r.code,
-                                            name: cfg.label,
-                                            flag: cfg.flag,
-                                            rateStr: rateStr,
-                                            isDark: isDark,
-                                          );
-                                        },
+                                            const SizedBox(width: AppSpacing.sm + 2),
+                                        itemBuilder: (_, __) =>
+                                            const CurrencyCardSkeleton(),
                                       ),
-                              ),
-                            ],
-                          ),
+                                    )
+                                  : ListView.separated(
+                                      scrollDirection: Axis.horizontal,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: AppSpacing.lg,
+                                      ),
+                                      itemCount: _rates.length,
+                                      separatorBuilder: (_, __) =>
+                                          const SizedBox(width: AppSpacing.sm + 2),
+                                      itemBuilder: (_, i) {
+                                        final r = _rates[i];
+                                        final cfg = _currencies.firstWhere(
+                                            (c) => c.code == r.code);
+                                        final isJpyKrw = r.code == 'JPY' ||
+                                            r.code == 'KRW';
+                                        final rateStr = isJpyKrw
+                                            ? r.rate.toStringAsFixed(4)
+                                            : r.rate.toStringAsFixed(2);
+                                        return CurrencyCard(
+                                          code: r.code,
+                                          name: cfg.label,
+                                          flag: cfg.flag,
+                                          rateStr: rateStr,
+                                          isDark: isDark,
+                                        );
+                                      },
+                                    ),
+                            ),
+                          ],
                         ),
                       ),
 
@@ -365,69 +323,20 @@ class _HomeScreenState extends State<HomeScreen> {
                         )
                       else ...[
                         if (hasBills) ...[
+                          // Stats section header
                           SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                  20, 28, 20, 14),
-                              child: Text(
-                                l.t('home_stats_title'),
-                                style: GoogleFonts.anuphan(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDark
-                                      ? AppColors.neutral900Dark
-                                      : AppColors.neutral900,
-                                ),
-                              ),
+                            child: AppSectionHeader(
+                              title: l.t('home_stats_title'),
                             ),
                           ),
                           StatsGrid(isDark: isDark),
 
-                          // Recent bills
+                          // Recent bills section header
                           SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                  20, 28, 20, 14),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      l.t('home_recent_bills'),
-                                      style: GoogleFonts.anuphan(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: isDark
-                                            ? AppColors.neutral900Dark
-                                            : AppColors.neutral900,
-                                      ),
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () => context.go('/bills'),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: isDark
-                                            ? AppColors.accentIceDark
-                                            : AppColors.accentIce,
-                                        borderRadius: BorderRadius.circular(
-                                            AppRadii.full),
-                                      ),
-                                      child: Text(
-                                        l.t('home_see_all'),
-                                        style: GoogleFonts.notoSansThai(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: isDark
-                                              ? AppColors.primaryBlueDark
-                                              : AppColors.primaryBlue,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            child: AppSectionHeader(
+                              title: l.t('home_recent_bills'),
+                              onSeeAll: () => context.go('/bills'),
+                              seeAllLabel: l.t('home_see_all'),
                             ),
                           ),
                           const RecentBillsList(),
@@ -446,6 +355,113 @@ class _HomeScreenState extends State<HomeScreen> {
               const BannerAdWidget(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Wallet icon button ────────────────────────────────────────────────────────
+
+class _WalletIconButton extends StatelessWidget {
+  const _WalletIconButton({required this.isDark});
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.surfaceDark
+            : Colors.white.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: AppColors.primaryBlue.withValues(alpha: 0.10),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+      ),
+      child: Icon(
+        Icons.account_balance_wallet_outlined,
+        size: 20,
+        color: isDark ? AppColors.neutral600Dark : AppColors.neutral600,
+      ),
+    );
+  }
+}
+
+// ── Refresh button for exchange rates ─────────────────────────────────────────
+
+class _RefreshButton extends StatefulWidget {
+  const _RefreshButton({
+    required this.isDark,
+    required this.loading,
+    this.onTap,
+  });
+
+  final bool isDark;
+  final bool loading;
+  final VoidCallback? onTap;
+
+  @override
+  State<_RefreshButton> createState() => _RefreshButtonState();
+}
+
+class _RefreshButtonState extends State<_RefreshButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: widget.onTap != null
+          ? (_) => setState(() => _pressed = true)
+          : null,
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? AppMotion.pressScaleButton : 1.0,
+        duration: AppMotion.press,
+        curve: AppMotion.standard,
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: widget.isDark
+                ? AppColors.surfaceDark
+                : Colors.white.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(AppRadii.xs),
+            boxShadow: widget.isDark
+                ? null
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+          ),
+          child: widget.loading
+              ? const Padding(
+                  padding: EdgeInsets.all(7),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary,
+                  ),
+                )
+              : Icon(
+                  Icons.refresh_rounded,
+                  size: 16,
+                  color: widget.isDark
+                      ? AppColors.neutral600Dark
+                      : AppColors.neutral600,
+                ),
         ),
       ),
     );

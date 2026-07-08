@@ -6,9 +6,9 @@ import 'package:provider/provider.dart';
 import 'package:kidtang_flutter/stores/groups_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
-import 'package:kidtang_flutter/widgets/shared/empty_state.dart';
 import 'package:kidtang_flutter/widgets/shared/shared_group_card.dart';
 import 'package:kidtang_flutter/widgets/shared/skeleton_loader.dart';
+import 'package:kidtang_flutter/widgets/shared/app_empty_state.dart';
 
 class GroupsScreen extends StatefulWidget {
   const GroupsScreen({super.key});
@@ -34,7 +34,6 @@ class _GroupsScreenState extends State<GroupsScreen> {
   Widget build(BuildContext context) {
     final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    // context.watch — rebuilds when groups list or loading state changes.
     final provider = context.watch<GroupsStore>();
 
     return Scaffold(
@@ -45,7 +44,12 @@ class _GroupsScreenState extends State<GroupsScreen> {
           children: [
             // ── Header ──────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.lg,
+                0,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -64,9 +68,10 @@ class _GroupsScreenState extends State<GroupsScreen> {
                           ),
                         ),
                         if (provider.groups.isNotEmpty) ...[
-                          const SizedBox(height: 2),
+                          const SizedBox(height: AppSpacing.xxs),
                           Text(
-                            l.t('unit_groups').replaceFirst('{count}', '${provider.groups.length}'),
+                            l.t('unit_groups').replaceFirst(
+                                '{count}', '${provider.groups.length}'),
                             style: GoogleFonts.notoSansThai(
                               fontSize: 13,
                               color: isDark
@@ -78,38 +83,11 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       ],
                     ),
                   ),
-                  // Add button
+                  // Add button — animated press feedback
                   Semantics(
                     label: l.t('groups_create_first'),
                     button: true,
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(AppRadii.md),
-                      child: InkWell(
-                        onTap: _showCreateGroupSheet,
-                        borderRadius: BorderRadius.circular(AppRadii.md),
-                        child: Ink(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            gradient: AppGradients.primaryButtonLight,
-                            borderRadius: BorderRadius.circular(AppRadii.md),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primaryBlue.withValues(alpha: 0.35),
-                                blurRadius: 16,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.add_rounded,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                      ),
-                    ),
+                    child: _CreateButton(onTap: _showCreateGroupSheet),
                   ),
                 ],
               ),
@@ -126,31 +104,91 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       onRefresh: () => provider.loadGroups(),
                       color: AppColors.primary,
                       child: provider.groups.isEmpty
-                          ? EmptyStateWidget(
-                              emoji: '👥',
-                              title: l.t('groups_empty_title'),
-                              subtitle:
-                                  l.t('groups_empty_sub'),
-                              ctaLabel: l.t('groups_create_first'),
-                              onCta: _showCreateGroupSheet,
+                          ? Center(
+                              child: AppEmptyState(
+                                icon: Icons.group_outlined,
+                                title: l.t('groups_empty_title'),
+                                body: l.t('groups_empty_sub'),
+                                ctaLabel: l.t('groups_create_first'),
+                                onCta: _showCreateGroupSheet,
+                              ),
                             )
                           : ListView.separated(
                               padding: const EdgeInsets.fromLTRB(
-                                  20, 16, 20, 110),
+                                AppSpacing.lg,
+                                AppSpacing.md,
+                                AppSpacing.lg,
+                                110,
+                              ),
                               itemCount: provider.groups.length,
                               separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 10),
+                                  const SizedBox(height: AppSpacing.sm + 2),
                               itemBuilder: (context, index) {
                                 final group = provider.groups[index];
                                 return SharedGroupCard(
                                   group: group,
-                                  onTap: () => context.push('/groups/${group.id}'),
+                                  onTap: () =>
+                                      context.push('/groups/${group.id}'),
                                 );
                               },
                             ),
                     ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Animated create button ─────────────────────────────────────────────────────
+
+class _CreateButton extends StatefulWidget {
+  const _CreateButton({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  State<_CreateButton> createState() => _CreateButtonState();
+}
+
+class _CreateButtonState extends State<_CreateButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? AppMotion.pressScaleButton : 1.0,
+        duration: AppMotion.press,
+        curve: AppMotion.standard,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            gradient: isDark
+                ? AppGradients.primaryButtonDark
+                : AppGradients.primaryButtonLight,
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            boxShadow: isDark
+                ? null
+                : [
+                    BoxShadow(
+                      color: AppColors.primaryBlue.withValues(alpha: 0.35),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+          ),
+          child: const Icon(
+            Icons.add_rounded,
+            color: Colors.white,
+            size: 24,
+          ),
         ),
       ),
     );

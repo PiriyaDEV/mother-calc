@@ -137,7 +137,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                 children: [
                   Text(group.emoji ?? '👥',
                       style: const TextStyle(fontSize: 20)),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,8 +149,8 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.textPrimaryLight,
+                                ? AppColors.neutral900Dark
+                                : AppColors.neutral900,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -161,7 +161,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                             style: GoogleFonts.notoSansThai(
                               fontSize: 11,
                               color: isDark
-                                  ? AppColors.textTertiaryDark
+                                  ? AppColors.neutral400Dark
                                   : AppColors.neutral400,
                             ),
                             overflow: TextOverflow.ellipsis,
