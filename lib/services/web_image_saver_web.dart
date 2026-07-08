@@ -53,6 +53,20 @@ Future<bool> shareImageOnWeb(
   }
 }
 
+/// Downloads PDF bytes as a .pdf file in the browser.
+/// Uses a data URL with application/pdf MIME type.
+bool downloadPdfOnWeb(List<int> bytes, String filename) {
+  try {
+    final base64 = _bytesToBase64(bytes);
+    final dataUrl = 'data:application/pdf;base64,$base64';
+    _jsDownload(dataUrl.toJS, filename.toJS);
+    return true;
+  } catch (e) {
+    debugPrint('[WebImageSaver.downloadPdfOnWeb]: $e');
+    return false;
+  }
+}
+
 /// Whether the Web Share API is available (true on iOS PWA / mobile browsers).
 bool get webShareSupported {
   try {

@@ -3,4 +3,4 @@
 // On mobile/desktop: stub (never called — caller guards with kIsWeb).
 export 'web_image_saver_stub.dart'
     if (dart.library.js_interop) 'web_image_saver_web.dart'
-    show downloadImageOnWeb, shareImageOnWeb, webShareSupported;
+    show downloadImageOnWeb, shareImageOnWeb, webShareSupported, downloadPdfOnWeb;

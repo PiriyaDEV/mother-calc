@@ -15,3 +15,5 @@ Future<bool> shareImageOnWeb(
     false;
 
 bool get webShareSupported => false;
+
+bool downloadPdfOnWeb(List<int> bytes, String filename) => false;

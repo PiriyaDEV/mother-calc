@@ -1,22 +1,20 @@
-import 'dart:async';
-import 'dart:ui' as ui;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:kidtang_flutter/models/models.dart';
 import 'package:kidtang_flutter/services/web_image_saver.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
-import 'bill_summary_image.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+
+import 'bill_pdf_generator.dart';
 
 enum _DownloadMode { fullBill, memberSummary }
 
 /// Shows a bottom-sheet dialog that lets the user choose:
-///   • สรุปทั้งบิล  → renders BillFullSummaryImage + QR cards for all members with PromptPay
-///   • สรุปรายบุคคล → user picks a member → renders BillMemberSummaryImage + QR cards for their debts
+///   • สรุปทั้งบิล  → PDF with full summary + QR pages for all members with PromptPay
+///   • สรุปรายบุคคล → user picks a member → PDF with member summary + QR pages for their debts
 void showDownloadSummaryDialog({
   required BuildContext context,
   required Bill bill,
@@ -72,237 +70,87 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
     return result;
   }
 
-  List<DebtTransaction> _debtsForMember(String memberId) {
-    return _allDebts.where((d) => d.from.id == memberId).toList();
+  List<DebtTransaction> _debtsWithQrForMember(String memberId) {
+    return _allDebts
+        .where((d) =>
+            d.from.id == memberId &&
+            d.to.promptpay != null &&
+            d.to.promptpay!.isNotEmpty)
+        .toList();
   }
 
-  /// Renders [child] into an off-screen Overlay entry, waits for it to paint,
-  /// captures it as PNG bytes, then removes the entry.
-  ///
-  /// Uses the root Navigator's overlay so the entry survives even if the
-  /// BottomSheet is popped during the async capture sequence.
-  Future<Uint8List?> _captureOffscreen(Widget child) async {
-    // Use root navigator overlay so it is not destroyed when the sheet closes.
-    final overlayState = Navigator.of(context, rootNavigator: true).overlay;
-    if (overlayState == null) {
-      debugPrint('[DownloadSummaryDialog._captureOffscreen]: no overlay');
-      return null;
-    }
-
-    final key = GlobalKey();
-    Uint8List? result;
-
-    final entry = OverlayEntry(
-      builder: (_) => Positioned(
-        left: -9999,
-        top: -9999,
-        child: MediaQuery(
-          // Provide a fixed MediaQueryData so the widget doesn't depend on
-          // the ambient MediaQuery (which may be gone after sheet pop).
-          data: const MediaQueryData(),
-          child: Directionality(
-            textDirection: TextDirection.ltr,
-            child: Material(
-              type: MaterialType.transparency,
-              child: RepaintBoundary(
-                key: key,
-                child: child,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    overlayState.insert(entry);
-
-    // Wait enough frames for layout → paint → compositing on Flutter Web.
-    // 5 microtask/frame cycles is reliable across Chrome/Safari.
-    for (int i = 0; i < 5; i++) {
-      await Future.delayed(Duration.zero);
-    }
-
-    try {
-      final boundary =
-          key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) {
-        debugPrint(
-            '[DownloadSummaryDialog._captureOffscreen]: boundary is null after wait');
-      } else {
-        final image = await boundary.toImage(pixelRatio: 3.0);
-        final byteData =
-            await image.toByteData(format: ui.ImageByteFormat.png);
-        result = byteData?.buffer.asUint8List();
-      }
-    } catch (e) {
-      debugPrint('[DownloadSummaryDialog._captureOffscreen]: $e');
-    } finally {
-      entry.remove();
-    }
-
-    return result;
-  }
-
-  Future<bool> _saveBytesNative(Uint8List bytes, String name) async {
-    final result = await ImageGallerySaverPlus.saveImage(
-      Uint8List.fromList(bytes),
-      quality: 100,
-      name: name,
-    );
-    return result['isSuccess'] == true || result['filePath'] != null;
-  }
-
-  Future<bool> _saveBytesWeb(
-    Uint8List bytes,
-    String name, {
-    bool share = false,
-    String shareTitle = 'สรุปบิล Kidtang',
-  }) async {
-    if (share) {
-      return shareImageOnWeb(bytes, '$name.png', shareTitle);
-    }
-    return downloadImageOnWeb(bytes, '$name.png');
-  }
-
-  Future<void> _download({bool shareOnWeb = false}) async {
+  Future<void> _download() async {
     if (_saving) return;
     setState(() => _saving = true);
 
-    int saved = 0;
-    int failed = 0;
-    final ts = DateTime.now().millisecondsSinceEpoch;
-
-    Future<bool> saveBytes(Uint8List bytes, String name) {
-      if (kIsWeb) {
-        return _saveBytesWeb(
-          bytes,
-          name,
-          share: shareOnWeb,
-          shareTitle: 'สรุปบิล ${widget.bill.title}',
-        );
-      }
-      return _saveBytesNative(bytes, name);
-    }
-
-    // Snapshot data before async gap
     final bill = widget.bill;
     final calc = widget.calc;
     final allDebts = _allDebts;
-    final qrRecipients = _qrRecipients;
-    final selectedMemberId = _selectedMemberId;
     final mode = _mode;
+    final selectedMemberId = _selectedMemberId;
 
-    List<DebtTransaction> memberDebtsWithQr = [];
-    MemberSummary? memberSummary;
-    BillMember? selectedMember;
-    if (selectedMemberId != null) {
-      memberDebtsWithQr = allDebts
-          .where((d) =>
-              d.from.id == selectedMemberId &&
-              d.to.promptpay != null &&
-              d.to.promptpay!.isNotEmpty)
-          .toList();
-      final m = bill.members.firstWhere((m) => m.id == selectedMemberId);
-      selectedMember = m;
-      memberSummary = calc.memberSummaries.firstWhere(
-        (s) => s.member.id == selectedMemberId,
-        orElse: () => MemberSummary(member: m, total: 0, items: []),
-      );
-    }
+    Uint8List? pdfBytes;
+    String fileName = 'kidtang_summary';
 
     try {
+      final generator = BillPdfGenerator(
+        bill: bill,
+        calc: calc,
+        allDebts: allDebts,
+      );
+
       if (mode == _DownloadMode.fullBill) {
-        // 1. Full summary image
-        final summaryBytes = await _captureOffscreen(
-          BillFullSummaryImage(bill: bill, calc: calc, allDebts: allDebts),
-        );
-        if (summaryBytes != null) {
-          final ok = await saveBytes(summaryBytes, 'kidtang_summary_$ts');
-          ok ? saved++ : failed++;
-        } else {
-          failed++;
-        }
-
-        // 2. QR cards for each member with PromptPay
-        for (int i = 0; i < qrRecipients.length; i++) {
-          final r = qrRecipients[i];
-          final bytes = await _captureOffscreen(
-            BillQrCardImage(
-                bill: bill, toMember: r.member, amount: r.totalOwed),
-          );
-          if (bytes != null) {
-            final ok = await saveBytes(bytes, 'kidtang_qr_${i}_$ts');
-            ok ? saved++ : failed++;
-          } else {
-            failed++;
-          }
-        }
-      } else if (selectedMemberId != null &&
-          memberSummary != null &&
-          selectedMember != null) {
-        // Per-member mode
-        // 1. Member summary image (include all debts, not just those with QR)
-        final allMemberDebts =
-            allDebts.where((d) => d.from.id == selectedMemberId).toList();
-        final summaryBytes = await _captureOffscreen(
-          BillMemberSummaryImage(
-            bill: bill,
-            summary: memberSummary,
-            memberDebts: allMemberDebts,
-          ),
-        );
-        if (summaryBytes != null) {
-          final ok =
-              await saveBytes(summaryBytes, 'kidtang_member_summary_$ts');
-          ok ? saved++ : failed++;
-        } else {
-          failed++;
-        }
-
-        // 2. QR cards for each debt that has PromptPay
-        for (int i = 0; i < memberDebtsWithQr.length; i++) {
-          final debt = memberDebtsWithQr[i];
-          final bytes = await _captureOffscreen(
-            BillQrCardImage(
-              bill: bill,
-              toMember: debt.to,
-              amount: debt.amount,
-              fromName: selectedMember.name,
-            ),
-          );
-          if (bytes != null) {
-            final ok = await saveBytes(bytes, 'kidtang_qr_${i}_$ts');
-            ok ? saved++ : failed++;
-          } else {
-            failed++;
-          }
-        }
+        pdfBytes = await generator.generateFullBillPdf();
+        fileName = 'kidtang_${_sanitize(bill.title)}_summary';
+      } else if (selectedMemberId != null) {
+        final member =
+            bill.members.firstWhere((m) => m.id == selectedMemberId);
+        pdfBytes = await generator.generateMemberPdf(member);
+        fileName = 'kidtang_${_sanitize(bill.title)}_${_sanitize(member.name)}';
       }
     } catch (e) {
       debugPrint('[DownloadSummaryDialog._download]: $e');
-      failed++;
     } finally {
       if (mounted) setState(() => _saving = false);
     }
 
     if (!mounted) return;
 
-    // Capture ScaffoldMessenger before popping the sheet so the snackbar
-    // can still be shown after the sheet's context is disposed.
+    if (pdfBytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'เกิดข้อผิดพลาด กรุณาลองใหม่',
+            style: TextStyle(fontFamily: 'NotoSansThai'),
+          ),
+          backgroundColor: AppColors.red,
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(AppRadii.md))),
+        ),
+      );
+      return;
+    }
+
+    // Capture messenger before pop
     final messenger = ScaffoldMessenger.of(context);
     Navigator.of(context).pop();
+
+    bool success = false;
+    if (kIsWeb) {
+      success = downloadPdfOnWeb(pdfBytes, '$fileName.pdf');
+    } else {
+      success = await _savePdfNative(pdfBytes, '$fileName.pdf');
+    }
 
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          failed == 0
-              ? (kIsWeb && shareOnWeb
-                  ? 'แชร์รูปสำเร็จ 🎉'
-                  : 'บันทึก $saved รูปแล้ว 🎉')
-              : 'บันทึกสำเร็จ $saved รูป, ล้มเหลว $failed รูป',
+          success ? 'ดาวน์โหลด PDF สำเร็จ 🎉' : 'เกิดข้อผิดพลาด กรุณาลองใหม่',
           style: const TextStyle(fontFamily: 'NotoSansThai'),
         ),
-        backgroundColor: failed == 0 ? AppColors.emerald500 : AppColors.red,
+        backgroundColor: success ? AppColors.emerald500 : AppColors.red,
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -310,6 +158,21 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
       ),
     );
   }
+
+  Future<bool> _savePdfNative(Uint8List bytes, String fileName) async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/$fileName');
+      await file.writeAsBytes(bytes);
+      return true;
+    } catch (e) {
+      debugPrint('[DownloadSummaryDialog._savePdfNative]: $e');
+      return false;
+    }
+  }
+
+  static String _sanitize(String s) =>
+      s.replaceAll(RegExp(r'[^\w\u0E00-\u0E7F]'), '_').toLowerCase();
 
   @override
   Widget build(BuildContext context) {
@@ -319,12 +182,10 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
 
     final qrRecipients = _qrRecipients;
 
-    // For member mode: count QR cards with PromptPay (for display only)
-    List<DebtTransaction> memberDebts = [];
+    // For member mode: count QR pages (debts with PromptPay)
+    int memberQrCount = 0;
     if (_selectedMemberId != null) {
-      memberDebts = _debtsForMember(_selectedMemberId!)
-          .where((d) => d.to.promptpay != null && d.to.promptpay!.isNotEmpty)
-          .toList();
+      memberQrCount = _debtsWithQrForMember(_selectedMemberId!).length;
     }
 
     return Container(
@@ -355,7 +216,7 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
 
               // Title
               Text(
-                'ดาวน์โหลดสรุปบิล',
+                'ดาวน์โหลดสรุปบิล (PDF)',
                 style: GoogleFonts.sarabun(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
@@ -366,7 +227,7 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
               ),
               const SizedBox(height: 4),
               Text(
-                'เลือกประเภทสรุปที่ต้องการบันทึก',
+                'เลือกประเภทสรุปที่ต้องการดาวน์โหลด',
                 style: GoogleFonts.sarabun(
                   fontSize: 13,
                   color: isDark
@@ -380,7 +241,7 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
               _ModeCard(
                 title: 'สรุปทั้งบิล',
                 subtitle:
-                    'รูปสรุปรวม + QR พร้อมเพย์ (${qrRecipients.length} QR)',
+                    'PDF สรุปรวม + QR พร้อมเพย์ (${qrRecipients.length} หน้า QR)',
                 icon: Icons.receipt_long_rounded,
                 selected: _mode == _DownloadMode.fullBill,
                 isDark: isDark,
@@ -389,7 +250,7 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
               const SizedBox(height: 8),
               _ModeCard(
                 title: 'สรุปรายบุคคล',
-                subtitle: 'รูปสรุปของคนที่เลือก + QR ของคนที่ต้องโอนให้',
+                subtitle: 'PDF สรุปของคนที่เลือก + QR ของคนที่ต้องโอนให้',
                 icon: Icons.person_rounded,
                 selected: _mode == _DownloadMode.memberSummary,
                 isDark: isDark,
@@ -475,112 +336,48 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
 
               const SizedBox(height: 20),
 
-              // Image count info
-              _ImageCountInfo(
+              // PDF page count info
+              _PdfPageInfo(
                 mode: _mode,
-                membersWithQrCount: qrRecipients.length,
-                memberDebtsWithQrCount: memberDebts.length,
+                qrRecipientsCount: qrRecipients.length,
+                memberQrCount: memberQrCount,
                 isDark: isDark,
               ),
               const SizedBox(height: 16),
 
-              // Download button — mobile: save to gallery
-              if (!kIsWeb)
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _saving ? null : _download,
-                    icon: _saving
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.download_rounded,
-                            size: 18, color: Colors.white),
-                    label: Text(
-                      _saving ? 'กำลังบันทึก...' : 'บันทึกรูปภาพ',
-                      style: GoogleFonts.sarabun(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
+              // Download button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _saving ? null : _download,
+                  icon: _saving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.picture_as_pdf_rounded,
+                          size: 18, color: Colors.white),
+                  label: Text(
+                    _saving ? 'กำลังสร้าง PDF...' : 'ดาวน์โหลด PDF',
+                    style: GoogleFonts.sarabun(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          _saving ? AppColors.neutral400 : AppColors.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.xl),
-                      ),
-                      elevation: 0,
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        _saving ? AppColors.neutral400 : AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.xl),
                     ),
+                    elevation: 0,
                   ),
                 ),
-
-              // Web buttons: Download + Share
-              if (kIsWeb) ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed:
-                        _saving ? null : () => _download(shareOnWeb: false),
-                    icon: _saving
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.download_rounded,
-                            size: 18, color: Colors.white),
-                    label: Text(
-                      _saving ? 'กำลังดาวน์โหลด...' : 'ดาวน์โหลดรูปภาพ',
-                      style: GoogleFonts.sarabun(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          _saving ? AppColors.neutral400 : AppColors.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.xl),
-                      ),
-                      elevation: 0,
-                    ),
-                  ),
-                ),
-                if (webShareSupported) ...[
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed:
-                          _saving ? null : () => _download(shareOnWeb: true),
-                      icon: const Icon(Icons.share_rounded, size: 18),
-                      label: Text(
-                        'แชร์รูปภาพ',
-                        style: GoogleFonts.sarabun(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: const BorderSide(color: AppColors.primary),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppRadii.xl),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
+              ),
             ],
           ),
         ),
@@ -694,29 +491,29 @@ class _ModeCard extends StatelessWidget {
   }
 }
 
-// ─── Image Count Info ─────────────────────────────────────────────────────────
-class _ImageCountInfo extends StatelessWidget {
+// ─── PDF Page Info ────────────────────────────────────────────────────────────
+class _PdfPageInfo extends StatelessWidget {
   final _DownloadMode mode;
-  final int membersWithQrCount;
-  final int memberDebtsWithQrCount;
+  final int qrRecipientsCount;
+  final int memberQrCount;
   final bool isDark;
 
-  const _ImageCountInfo({
+  const _PdfPageInfo({
     required this.mode,
-    required this.membersWithQrCount,
-    required this.memberDebtsWithQrCount,
+    required this.qrRecipientsCount,
+    required this.memberQrCount,
     required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
-    final int totalImages = mode == _DownloadMode.fullBill
-        ? 1 + membersWithQrCount
-        : 1 + memberDebtsWithQrCount;
+    final int totalPages = mode == _DownloadMode.fullBill
+        ? 1 + qrRecipientsCount
+        : 1 + memberQrCount;
 
     final String detail = mode == _DownloadMode.fullBill
-        ? '1 รูปสรุปรวม + $membersWithQrCount รูป QR พร้อมเพย์'
-        : '1 รูปสรุปส่วนตัว + $memberDebtsWithQrCount รูป QR พร้อมเพย์';
+        ? '1 หน้าสรุปรวม + $qrRecipientsCount หน้า QR พร้อมเพย์'
+        : '1 หน้าสรุปส่วนตัว + $memberQrCount หน้า QR พร้อมเพย์';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -727,7 +524,7 @@ class _ImageCountInfo extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.photo_library_rounded,
+          const Icon(Icons.picture_as_pdf_rounded,
               size: 16, color: AppColors.primary),
           const SizedBox(width: 8),
           Expanded(
@@ -735,7 +532,7 @@ class _ImageCountInfo extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'จะบันทึก $totalImages รูป',
+                  'PDF $totalPages หน้า',
                   style: GoogleFonts.sarabun(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
