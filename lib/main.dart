@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -28,6 +29,13 @@ import 'router.dart';
 void main() async {
   usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
+
+  // On web, Sarabun is preloaded via <link rel="stylesheet"> in index.html.
+  // Disable runtime fetching so google_fonts uses the already-loaded font
+  // instead of re-fetching it — this eliminates the FOUT (flash of alien text).
+  if (kIsWeb) {
+    GoogleFonts.config.allowRuntimeFetching = false;
+  }
 
   // On web, .env is never loaded — secrets are baked in via --dart-define at
   // build time (Netlify) or passed via --dart-define in run.sh (local web dev).

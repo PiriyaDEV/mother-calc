@@ -32,6 +32,13 @@
   <!-- Set GOOGLE_WEB_CLIENT_ID env var; for local dev add it to .env -->
   <meta name="google-signin-client_id" content="GOOGLE_WEB_CLIENT_ID_PLACEHOLDER">
 
+  <!-- Preload Sarabun font to prevent FOUT (flash of alien/unstyled text) -->
+  <!-- Browser starts downloading the font before Flutter bootstrap runs -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap">
+
   <title>Kidtang! - มาจ่ายเงินกัน</title>
   <link rel="manifest" href="manifest.json">
 
