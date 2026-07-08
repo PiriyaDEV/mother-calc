@@ -177,19 +177,6 @@ class GroupsStore extends ChangeNotifier {
         'status': 'pending',
       });
 
-      try {
-        final currentUser = _supabase.auth.currentUser;
-        await _repo.insertNotification({
-          'user_id': userId,
-          'type': 'group_invite',
-          'data': {
-            'group_id': groupId,
-            'inviter_id': currentUser?.id,
-          },
-          'read': false,
-        });
-      } catch (_) {}
-
       await loadGroupDetail(groupId);
       return null;
     } catch (e) {

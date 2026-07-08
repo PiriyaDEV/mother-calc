@@ -9,24 +9,20 @@ import 'settings_tile.dart';
 class SettingsSection extends StatelessWidget {
   final bool isDark;
   final bool isThai;
-  final int notifUnread;
   final VoidCallback onToggleDark;
   final VoidCallback onLanguageTap;
-  final VoidCallback onNotificationsTap;
 
   const SettingsSection({
     super.key,
     required this.isDark,
     required this.isThai,
-    required this.notifUnread,
     required this.onToggleDark,
     required this.onLanguageTap,
-    required this.onNotificationsTap,
   });
 
   @override
   Widget build(BuildContext context) {
-      final l = context.watch<LocaleProvider>();
+    final l = context.watch<LocaleProvider>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -94,49 +90,6 @@ class SettingsSection extends StatelessWidget {
                   ),
                 ),
                 onTap: onLanguageTap,
-              ),
-              Divider(
-                  height: 1,
-                  color: isDark
-                      ? AppColors.borderDark
-                      : AppColors.borderLight),
-              // Notifications
-              SettingsTile(
-                isDark: isDark,
-                icon: Icons.notifications_outlined,
-                iconColor: const Color(0xFFFF5C5C),
-                label: l.t('me_notifications'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (notifUnread > 0) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.red,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          notifUnread > 99 ? '99+' : '$notifUnread',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                    ],
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: isDark
-                          ? AppColors.textTertiaryDark
-                          : AppColors.textTertiaryLight,
-                    ),
-                  ],
-                ),
-                onTap: onNotificationsTap,
               ),
             ],
           ),

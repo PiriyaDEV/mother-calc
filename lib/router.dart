@@ -10,7 +10,6 @@ import 'package:kidtang_flutter/screens/friend/friends_screen.dart';
 import 'package:kidtang_flutter/screens/me/me_screen.dart';
 import 'package:kidtang_flutter/screens/bill/bill_detail_screen.dart';
 import 'package:kidtang_flutter/screens/group/group_detail_screen.dart';
-import 'package:kidtang_flutter/screens/friend/notifications_screen.dart';
 import 'package:kidtang_flutter/screens/shared/onboarding_screen.dart';
 import 'package:kidtang_flutter/screens/me/profile_screen.dart';
 import 'package:kidtang_flutter/screens/bill/create_bill_screen.dart';
@@ -155,10 +154,6 @@ class AppRouter {
             mode: 'edit',
             groupId: state.pathParameters['id'],
           ),
-        ),
-        GoRoute(
-          path: '/notifications',
-          builder: (context, state) => const NotificationsScreen(),
         ),
         GoRoute(
           path: '/profile',

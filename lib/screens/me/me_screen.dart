@@ -10,7 +10,6 @@ import 'package:provider/provider.dart';
 import 'package:kidtang_flutter/models/models.dart';
 import 'package:kidtang_flutter/providers/auth_provider.dart';
 import 'package:kidtang_flutter/providers/locale_provider.dart';
-import 'package:kidtang_flutter/providers/notifications_provider.dart';
 import 'package:kidtang_flutter/providers/theme_provider.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
@@ -307,8 +306,6 @@ class _MeScreenState extends State<MeScreen>
     final themeProvider = context.watch<ThemeProvider>();
     final locale = context.watch<LocaleProvider>();
     final l = locale;
-    final notifUnread =
-        context.select<NotificationsProvider, int>((p) => p.unreadCount);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -373,10 +370,8 @@ class _MeScreenState extends State<MeScreen>
         SettingsSection(
           isDark: isDark,
           isThai: locale.isThai,
-          notifUnread: notifUnread,
           onToggleDark: () => themeProvider.toggle(),
           onLanguageTap: _showLanguagePicker,
-          onNotificationsTap: () => context.push('/notifications'),
         ),
         const SizedBox(height: AppSpacing.xl),
 

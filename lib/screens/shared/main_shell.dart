@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/providers/auth_provider.dart';
-import 'package:kidtang_flutter/providers/notifications_provider.dart';
 import 'package:kidtang_flutter/stores/friends_store.dart';
 import 'package:kidtang_flutter/stores/groups_store.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -30,7 +29,6 @@ class _MainShellState extends State<MainShell> {
   void _loadData() {
     final auth = context.read<AuthProvider>();
     if (auth.profile != null) {
-      context.read<NotificationsProvider>().loadNotifications();
       context.read<FriendsStore>().loadFriends();
       context.read<GroupsStore>().loadGroups();
     }
@@ -46,9 +44,8 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    // context.select — only rebuilds the nav bar when the badge counts change,
-    // not on every notification list or friends list mutation.
-    final notifCount = context.select<NotificationsProvider, int>((p) => p.unreadCount);
+    // context.select — only rebuilds the nav bar when the badge count changes,
+    // not on every friends list mutation.
     final friendCount = context.select<FriendsStore, int>((s) => s.pendingCount);
 
     return Scaffold(
@@ -63,7 +60,6 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: _FloatingNavBar(
         currentIndex: widget.child.currentIndex,
         isDark: isDark,
-        notifCount: notifCount,
         friendCount: friendCount,
         onTap: _onTap,
       ),
@@ -75,14 +71,12 @@ class _MainShellState extends State<MainShell> {
 class _FloatingNavBar extends StatelessWidget {
   final int currentIndex;
   final bool isDark;
-  final int notifCount;
   final int friendCount;
   final ValueChanged<int> onTap;
 
   const _FloatingNavBar({
     required this.currentIndex,
     required this.isDark,
-    required this.notifCount,
     required this.friendCount,
     required this.onTap,
   });
@@ -95,7 +89,7 @@ class _FloatingNavBar extends StatelessWidget {
       _NavDef(icon: Icons.receipt_long_outlined, activeIcon: Icons.receipt_long_rounded, label: l.t('nav_bills')),
       _NavDef(icon: Icons.group_outlined, activeIcon: Icons.group_rounded, label: l.t('nav_groups')),
       _NavDef(icon: Icons.people_outline_rounded, activeIcon: Icons.people_rounded, label: l.t('nav_friends'), badge: friendCount),
-      _NavDef(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: l.t('nav_me'), badge: notifCount),
+      _NavDef(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: l.t('nav_me')),
     ];
 
     return SafeArea(

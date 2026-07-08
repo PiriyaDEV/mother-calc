@@ -97,10 +97,6 @@ class GroupsRepository {
     await _supabase.from('group_members').insert(fields);
   }
 
-  Future<void> insertNotification(Map<String, dynamic> fields) async {
-    await _supabase.from('notifications').insert(fields);
-  }
-
   Future<void> deleteMembership(String memberRowId) async {
     await _supabase.from('group_members').delete().eq('id', memberRowId);
   }

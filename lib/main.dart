@@ -21,7 +21,6 @@ import 'providers/theme_provider.dart';
 import 'stores/bills_store.dart';
 import 'stores/friends_store.dart';
 import 'stores/groups_store.dart';
-import 'providers/notifications_provider.dart';
 import 'providers/locale_provider.dart';
 import 'theme/app_theme.dart';
 import 'router.dart';
@@ -113,7 +112,6 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => BillsStore()),
         ChangeNotifierProvider(create: (_) => FriendsStore()),
-        ChangeNotifierProvider(create: (_) => NotificationsProvider()),
         ChangeNotifierProvider(create: (_) => GroupsStore()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ],
