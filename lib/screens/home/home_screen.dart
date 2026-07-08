@@ -212,9 +212,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   const SizedBox(width: AppSpacing.md),
                                   Expanded(
-                                    child: QuickActionTile(
-                                      icon: Icons.people_rounded,
-                                      label: l.t('home_nav_friends'),
+                                     child: QuickActionTile(
+                                       icon: Icons.handshake_rounded,
+                                       label: l.t('home_nav_friends'),
                                       sublabel: l.t('home_nav_friends_sub'),
                                       color: AppColors.accentAqua,
                                       bgColor: isDark

@@ -88,7 +88,7 @@ class _FloatingNavBar extends StatelessWidget {
       _NavDef(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: l.t('nav_home')),
       _NavDef(icon: Icons.receipt_long_outlined, activeIcon: Icons.receipt_long_rounded, label: l.t('nav_bills')),
       _NavDef(icon: Icons.group_outlined, activeIcon: Icons.group_rounded, label: l.t('nav_groups')),
-      _NavDef(icon: Icons.people_outline_rounded, activeIcon: Icons.people_rounded, label: l.t('nav_friends'), badge: friendCount),
+      _NavDef(icon: Icons.handshake_outlined, activeIcon: Icons.handshake_rounded, label: l.t('nav_friends'), badge: friendCount),
       _NavDef(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: l.t('nav_me')),
     ];
 

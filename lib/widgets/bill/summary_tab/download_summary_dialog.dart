@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -44,16 +45,9 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
   String? _selectedMemberId;
   bool _saving = false;
 
-  // Keys for RepaintBoundary capture
-  final GlobalKey _fullSummaryKey = GlobalKey();
-  final List<GlobalKey> _qrKeys = [];
-  final GlobalKey _memberSummaryKey = GlobalKey();
-  final List<GlobalKey> _memberQrKeys = [];
-
   @override
   void initState() {
     super.initState();
-    // Pre-select first member
     if (widget.bill.members.isNotEmpty) {
       _selectedMemberId = widget.bill.members.first.id;
     }
@@ -63,7 +57,6 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
       simplifyDebts(widget.calc.memberSummaries, widget.bill.members, null);
 
   /// Members that have PromptPay AND are owed money by at least one other member.
-  /// These are the people whose QR codes need to be shared.
   List<({BillMember member, double totalOwed})> get _qrRecipients {
     final allDebts = _allDebts;
     final result = <({BillMember member, double totalOwed})>[];
@@ -83,27 +76,58 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
     return _allDebts.where((d) => d.from.id == memberId).toList();
   }
 
-  MemberSummary _summaryForMember(String memberId) {
-    final member = widget.bill.members.firstWhere((m) => m.id == memberId);
-    return widget.calc.memberSummaries.firstWhere(
-      (s) => s.member.id == memberId,
-      orElse: () => MemberSummary(member: member, total: 0, items: []),
-    );
-  }
+  /// Renders [child] into an off-screen Overlay entry, waits for it to paint,
+  /// captures it as PNG bytes, then removes the entry.
+  /// This is the only reliable way to capture widgets on Flutter web because
+  /// Offstage widgets are not composited into a layer.
+  Future<Uint8List?> _captureOffscreen(Widget child) async {
+    final overlayState = Overlay.of(context);
+    final key = GlobalKey();
 
-  Future<Uint8List?> _captureWidget(GlobalKey key) async {
+    final completer = Completer<Uint8List?>();
+
+    final entry = OverlayEntry(
+      builder: (_) => Positioned(
+        left: -9999,
+        top: -9999,
+        child: Material(
+          type: MaterialType.transparency,
+          child: RepaintBoundary(
+            key: key,
+            child: child,
+          ),
+        ),
+      ),
+    );
+
+    overlayState.insert(entry);
+
+    // Wait 3 frames for layout + paint + compositing
+    await Future.delayed(Duration.zero);
+    await Future.delayed(Duration.zero);
+    await Future.delayed(Duration.zero);
+
     try {
       final boundary =
           key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) return null;
-      final image = await boundary.toImage(pixelRatio: 3.0);
-      final byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
-      return byteData?.buffer.asUint8List();
+      if (boundary == null) {
+        debugPrint(
+            '[DownloadSummaryDialog._captureOffscreen]: boundary is null');
+        completer.complete(null);
+      } else {
+        final image = await boundary.toImage(pixelRatio: 3.0);
+        final byteData =
+            await image.toByteData(format: ui.ImageByteFormat.png);
+        completer.complete(byteData?.buffer.asUint8List());
+      }
     } catch (e) {
-      debugPrint('[DownloadSummaryDialog._captureWidget]: $e');
-      return null;
+      debugPrint('[DownloadSummaryDialog._captureOffscreen]: $e');
+      completer.complete(null);
+    } finally {
+      entry.remove();
     }
+
+    return completer.future;
   }
 
   Future<bool> _saveBytesNative(Uint8List bytes, String name) async {
@@ -115,8 +139,12 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
     return result['isSuccess'] == true || result['filePath'] != null;
   }
 
-  Future<bool> _saveBytesWeb(Uint8List bytes, String name,
-      {bool share = false, String shareTitle = 'สรุปบิล Kidtang'}) async {
+  Future<bool> _saveBytesWeb(
+    Uint8List bytes,
+    String name, {
+    bool share = false,
+    String shareTitle = 'สรุปบิล Kidtang',
+  }) async {
     if (share) {
       return shareImageOnWeb(bytes, '$name.png', shareTitle);
     }
@@ -133,16 +161,48 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
 
     Future<bool> saveBytes(Uint8List bytes, String name) {
       if (kIsWeb) {
-        return _saveBytesWeb(bytes, name,
-            share: shareOnWeb, shareTitle: 'สรุปบิล ${widget.bill.title}');
+        return _saveBytesWeb(
+          bytes,
+          name,
+          share: shareOnWeb,
+          shareTitle: 'สรุปบิล ${widget.bill.title}',
+        );
       }
       return _saveBytesNative(bytes, name);
     }
 
+    // Snapshot data before async gap
+    final bill = widget.bill;
+    final calc = widget.calc;
+    final allDebts = _allDebts;
+    final qrRecipients = _qrRecipients;
+    final selectedMemberId = _selectedMemberId;
+    final mode = _mode;
+
+    List<DebtTransaction> memberDebtsWithQr = [];
+    MemberSummary? memberSummary;
+    BillMember? selectedMember;
+    if (selectedMemberId != null) {
+      memberDebtsWithQr = allDebts
+          .where((d) =>
+              d.from.id == selectedMemberId &&
+              d.to.promptpay != null &&
+              d.to.promptpay!.isNotEmpty)
+          .toList();
+      final m = bill.members.firstWhere((m) => m.id == selectedMemberId);
+      selectedMember = m;
+      memberSummary = calc.memberSummaries.firstWhere(
+        (s) => s.member.id == selectedMemberId,
+        orElse: () => MemberSummary(member: m, total: 0, items: []),
+      );
+    }
+
     try {
-      if (_mode == _DownloadMode.fullBill) {
+      if (mode == _DownloadMode.fullBill) {
         // 1. Full summary image
-        final summaryBytes = await _captureWidget(_fullSummaryKey);
+        final summaryBytes = await _captureOffscreen(
+          BillFullSummaryImage(bill: bill, calc: calc, allDebts: allDebts),
+        );
         if (summaryBytes != null) {
           final ok = await saveBytes(summaryBytes, 'kidtang_summary_$ts');
           ok ? saved++ : failed++;
@@ -150,9 +210,13 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
           failed++;
         }
 
-        // 2. QR cards for each member with PromptPay (web: download each separately)
-        for (int i = 0; i < _qrKeys.length; i++) {
-          final bytes = await _captureWidget(_qrKeys[i]);
+        // 2. QR cards for each member with PromptPay
+        for (int i = 0; i < qrRecipients.length; i++) {
+          final r = qrRecipients[i];
+          final bytes = await _captureOffscreen(
+            BillQrCardImage(
+                bill: bill, toMember: r.member, amount: r.totalOwed),
+          );
           if (bytes != null) {
             final ok = await saveBytes(bytes, 'kidtang_qr_${i}_$ts');
             ok ? saved++ : failed++;
@@ -160,20 +224,39 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
             failed++;
           }
         }
-      } else {
+      } else if (selectedMemberId != null &&
+          memberSummary != null &&
+          selectedMember != null) {
         // Per-member mode
-        // 1. Member summary image
-        final summaryBytes = await _captureWidget(_memberSummaryKey);
+        // 1. Member summary image (include all debts, not just those with QR)
+        final allMemberDebts =
+            allDebts.where((d) => d.from.id == selectedMemberId).toList();
+        final summaryBytes = await _captureOffscreen(
+          BillMemberSummaryImage(
+            bill: bill,
+            summary: memberSummary,
+            memberDebts: allMemberDebts,
+          ),
+        );
         if (summaryBytes != null) {
-          final ok = await saveBytes(summaryBytes, 'kidtang_member_summary_$ts');
+          final ok =
+              await saveBytes(summaryBytes, 'kidtang_member_summary_$ts');
           ok ? saved++ : failed++;
         } else {
           failed++;
         }
 
         // 2. QR cards for each debt that has PromptPay
-        for (int i = 0; i < _memberQrKeys.length; i++) {
-          final bytes = await _captureWidget(_memberQrKeys[i]);
+        for (int i = 0; i < memberDebtsWithQr.length; i++) {
+          final debt = memberDebtsWithQr[i];
+          final bytes = await _captureOffscreen(
+            BillQrCardImage(
+              bill: bill,
+              toMember: debt.to,
+              amount: debt.amount,
+              fromName: selectedMember.name,
+            ),
+          );
           if (bytes != null) {
             final ok = await saveBytes(bytes, 'kidtang_qr_${i}_$ts');
             ok ? saved++ : failed++;
@@ -202,8 +285,7 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
               : 'บันทึกสำเร็จ $saved รูป, ล้มเหลว $failed รูป',
           style: const TextStyle(fontFamily: 'NotoSansThai'),
         ),
-        backgroundColor:
-            failed == 0 ? AppColors.emerald500 : AppColors.red,
+        backgroundColor: failed == 0 ? AppColors.emerald500 : AppColors.red,
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -216,28 +298,16 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bill = widget.bill;
-    final calc = widget.calc;
     final members = bill.members;
 
-    // Rebuild QR key lists based on current mode
     final qrRecipients = _qrRecipients;
 
-    // For full bill mode: one QR per member that is owed money and has PromptPay
-    while (_qrKeys.length < qrRecipients.length) {
-      _qrKeys.add(GlobalKey());
-    }
-
-    // For member mode: one QR per debt that has PromptPay
+    // For member mode: count QR cards with PromptPay (for display only)
     List<DebtTransaction> memberDebts = [];
-    MemberSummary? memberSummary;
     if (_selectedMemberId != null) {
       memberDebts = _debtsForMember(_selectedMemberId!)
           .where((d) => d.to.promptpay != null && d.to.promptpay!.isNotEmpty)
           .toList();
-      memberSummary = _summaryForMember(_selectedMemberId!);
-    }
-    while (_memberQrKeys.length < memberDebts.length) {
-      _memberQrKeys.add(GlobalKey());
     }
 
     return Container(
@@ -258,7 +328,8 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    color:
+                        isDark ? AppColors.borderDark : AppColors.borderLight,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -330,8 +401,7 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
                     final isSelected = m.id == _selectedMemberId;
                     final color = colorFromHex(m.color);
                     return GestureDetector(
-                      onTap: () =>
-                          setState(() => _selectedMemberId = m.id),
+                      onTap: () => setState(() => _selectedMemberId = m.id),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
                         padding: const EdgeInsets.symmetric(
@@ -342,8 +412,7 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
                               : (isDark
                                   ? AppColors.surfaceDark
                                   : AppColors.bgSubtle),
-                          borderRadius:
-                              BorderRadius.circular(AppRadii.xl),
+                          borderRadius: BorderRadius.circular(AppRadii.xl),
                           border: Border.all(
                             color: isSelected
                                 ? color
@@ -389,64 +458,6 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
 
               const SizedBox(height: 20),
 
-              // Preview section (off-screen render targets)
-              // We use Offstage so widgets are laid out but not visible
-              if (_mode == _DownloadMode.fullBill) ...[
-                Offstage(
-                  child: RepaintBoundary(
-                    key: _fullSummaryKey,
-                    child: BillFullSummaryImage(
-                      bill: bill,
-                      calc: calc,
-                      allDebts: _allDebts,
-                    ),
-                  ),
-                ),
-                ...List.generate(qrRecipients.length, (i) {
-                  final r = qrRecipients[i];
-                  return Offstage(
-                    child: RepaintBoundary(
-                      key: _qrKeys[i],
-                      child: BillQrCardImage(
-                        bill: bill,
-                        toMember: r.member,
-                        amount: r.totalOwed,
-                      ),
-                    ),
-                  );
-                }),
-              ] else if (_mode == _DownloadMode.memberSummary &&
-                  _selectedMemberId != null &&
-                  memberSummary != null) ...[
-                Offstage(
-                  child: RepaintBoundary(
-                    key: _memberSummaryKey,
-                    child: BillMemberSummaryImage(
-                      bill: bill,
-                      summary: memberSummary,
-                      memberDebts: _debtsForMember(_selectedMemberId!),
-                    ),
-                  ),
-                ),
-                ...List.generate(memberDebts.length, (i) {
-                  final debt = memberDebts[i];
-                  final selectedMember = members.firstWhere(
-                      (m) => m.id == _selectedMemberId,
-                      orElse: () => members.first);
-                  return Offstage(
-                    child: RepaintBoundary(
-                      key: _memberQrKeys[i],
-                      child: BillQrCardImage(
-                        bill: bill,
-                        toMember: debt.to,
-                        amount: debt.amount,
-                        fromName: selectedMember.name,
-                      ),
-                    ),
-                  );
-                }),
-              ],
-
               // Image count info
               _ImageCountInfo(
                 mode: _mode,
@@ -456,7 +467,7 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
               ),
               const SizedBox(height: 16),
 
-              // Download button — mobile: save to gallery, web: download file or share
+              // Download button — mobile: save to gallery
               if (!kIsWeb)
                 SizedBox(
                   width: double.infinity,
@@ -490,12 +501,14 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
                     ),
                   ),
                 ),
-              // Web buttons: Download + Share (if Web Share API available)
+
+              // Web buttons: Download + Share
               if (kIsWeb) ...[
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: _saving ? null : () => _download(shareOnWeb: false),
+                    onPressed:
+                        _saving ? null : () => _download(shareOnWeb: false),
                     icon: _saving
                         ? const SizedBox(
                             width: 16,
@@ -529,7 +542,8 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: _saving ? null : () => _download(shareOnWeb: true),
+                      onPressed:
+                          _saving ? null : () => _download(shareOnWeb: true),
                       icon: const Icon(Icons.share_rounded, size: 18),
                       label: Text(
                         'แชร์รูปภาพ',
@@ -602,9 +616,7 @@ class _ModeCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: selected
                     ? AppColors.primary.withValues(alpha: 0.12)
-                    : (isDark
-                        ? AppColors.borderDark
-                        : AppColors.borderLight),
+                    : (isDark ? AppColors.borderDark : AppColors.borderLight),
                 borderRadius: BorderRadius.circular(AppRadii.sm),
               ),
               child: Icon(
@@ -694,8 +706,7 @@ class _ImageCountInfo extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(
-            color: AppColors.primary.withValues(alpha: 0.2)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
