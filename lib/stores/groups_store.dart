@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -255,11 +257,110 @@ class GroupsStore extends ChangeNotifier {
     }
   }
 
+  // ── Realtime ──────────────────────────────────────────────
+
+  RealtimeChannel? _groupsChannel;
+  RealtimeChannel? _membersChannel;
+  Timer? _realtimeGroupsDebounce;
+  final Map<String, Timer> _realtimeGroupDebounce = {};
+
+  /// Subscribe to Supabase Realtime so group invites and membership changes
+  /// (accept/decline/remove) are reflected without a manual refresh.
+  void subscribeRealtime() {
+    _unsubscribeRealtime();
+
+    // groups table — INSERT/UPDATE/DELETE on any group the user belongs to
+    _groupsChannel = _supabase
+        .channel('groups_store_groups')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'groups',
+          callback: (_) => _scheduleReloadGroups(),
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'groups',
+          callback: (payload) {
+            final id = payload.newRecord['id'] as String?;
+            if (id != null) _scheduleReloadGroupDetail(id);
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.delete,
+          schema: 'public',
+          table: 'groups',
+          callback: (payload) {
+            final id = payload.oldRecord['id'] as String?;
+            if (id != null) {
+              _byId.remove(id);
+              notifyListeners();
+            }
+          },
+        )
+        .subscribe();
+
+    // group_members — any membership change (invite sent/accepted/declined)
+    _membersChannel = _supabase
+        .channel('groups_store_members')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'group_members',
+          callback: (payload) {
+            final groupId = (payload.newRecord['group_id'] ??
+                payload.oldRecord['group_id']) as String?;
+            if (groupId != null) {
+              // If we already have this group, reload its detail.
+              // If we don't (new invite), reload the full groups list.
+              if (_byId.containsKey(groupId)) {
+                _scheduleReloadGroupDetail(groupId);
+              } else {
+                _scheduleReloadGroups();
+              }
+            }
+          },
+        )
+        .subscribe();
+  }
+
+  void _unsubscribeRealtime() {
+    _groupsChannel?.unsubscribe();
+    _membersChannel?.unsubscribe();
+    _groupsChannel = null;
+    _membersChannel = null;
+    _realtimeGroupsDebounce?.cancel();
+    _realtimeGroupsDebounce = null;
+    for (final t in _realtimeGroupDebounce.values) {
+      t.cancel();
+    }
+    _realtimeGroupDebounce.clear();
+  }
+
+  void _scheduleReloadGroups() {
+    _realtimeGroupsDebounce?.cancel();
+    _realtimeGroupsDebounce = Timer(const Duration(milliseconds: 400), () {
+      loadGroups(force: true);
+      loadGroupsCount(force: true);
+    });
+  }
+
+  void _scheduleReloadGroupDetail(String groupId) {
+    _realtimeGroupDebounce[groupId]?.cancel();
+    _realtimeGroupDebounce[groupId] =
+        Timer(const Duration(milliseconds: 400), () {
+      _realtimeGroupDebounce.remove(groupId);
+      loadGroupDetail(groupId);
+    });
+  }
+
   void clear() {
     _byId = {};
     _hasLoaded = false;
     _error = null;
     _groupsCount = null;
+    _unsubscribeRealtime();
     notifyListeners();
   }
 }

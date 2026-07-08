@@ -507,7 +507,22 @@ class BillsStore extends ChangeNotifier {
         if (promptpay != null) 'promptpay': promptpay,
         'is_external': userId == null,
       });
-      final member = BillMember.fromJson(data);
+      // Attach profile data (avatar_url) in-memory — insertMemberRaw returns
+      // only the raw bill_members row without the profiles join.
+      Map<String, dynamic>? profileData;
+      if (userId != null) {
+        profileData = await _repo.fetchProfile(userId);
+      }
+      final member = BillMember.fromJson({
+        ...data,
+        if (profileData != null)
+          'profile': {
+            'id': userId,
+            'username': profileData['username'],
+            'display_name': profileData['display_name'],
+            'avatar_url': profileData['avatar_url'],
+          },
+      });
       final current = _byId[billId];
       if (current == null) return;
       _byId[billId] = current.copyWith(members: [...current.members, member]);

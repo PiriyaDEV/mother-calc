@@ -164,6 +164,7 @@ class _KidtangAppState extends State<KidtangApp> {
       localeProvider: context.read<LocaleProvider>(),
       groupsStore: context.read<GroupsStore>(),
       billsStore: context.read<BillsStore>(),
+      friendsStore: context.read<FriendsStore>(),
     );
     _router = AppRouter.router(authProvider);
   }

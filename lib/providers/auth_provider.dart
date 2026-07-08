@@ -7,6 +7,7 @@ import 'package:kidtang_flutter/services/profile_repository.dart';
 import 'package:kidtang_flutter/services/push_notification_service.dart';
 import 'package:kidtang_flutter/services/social_auth_service.dart';
 import 'package:kidtang_flutter/stores/bills_store.dart';
+import 'package:kidtang_flutter/stores/friends_store.dart';
 import 'package:kidtang_flutter/stores/groups_store.dart';
 import 'locale_provider.dart';
 
@@ -19,6 +20,7 @@ class AuthProvider extends ChangeNotifier {
   LocaleProvider? _localeProvider;
   GroupsStore? _groupsStore;
   BillsStore? _billsStore;
+  FriendsStore? _friendsStore;
 
   User? _user;
   Profile? _profile;
@@ -64,10 +66,12 @@ class AuthProvider extends ChangeNotifier {
     required LocaleProvider localeProvider,
     required GroupsStore groupsStore,
     required BillsStore billsStore,
+    required FriendsStore friendsStore,
   }) {
     _localeProvider = localeProvider;
     _groupsStore = groupsStore;
     _billsStore = billsStore;
+    _friendsStore = friendsStore;
     if (_profile != null) _syncSiblings(_profile!);
   }
 
@@ -191,6 +195,8 @@ class AuthProvider extends ChangeNotifier {
       }
       if (_profile != null) _syncSiblings(_profile!);
       _billsStore?.subscribeRealtime();
+      _friendsStore?.subscribeRealtime();
+      _groupsStore?.subscribeRealtime();
       notifyListeners();
       PushNotificationService.saveToken();
     } on PostgrestException catch (e) {
@@ -267,6 +273,7 @@ class AuthProvider extends ChangeNotifier {
     _profile = null;
     _groupsStore?.clear();
     _billsStore?.clear();
+    _friendsStore?.clear();
     notifyListeners();
   }
 

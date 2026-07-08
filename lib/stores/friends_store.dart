@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kidtang_flutter/models/models.dart';
@@ -39,8 +41,17 @@ class FriendsStore extends ChangeNotifier {
   void _invalidateCache() {
     final myId = _myId;
 
-    final newFriends =
-        _byId.values.where((f) => f.status == 'accepted').toList();
+    // Deduplicate by the other user's ID — guards against two rows for the
+    // same pair (e.g. both users sent each other a request before accepting).
+    final seen = <String>{};
+    final newFriends = _byId.values
+        .where((f) => f.status == 'accepted')
+        .where((f) {
+          final otherId =
+              f.requesterId == myId ? f.addresseeId : f.requesterId;
+          return seen.add(otherId);
+        })
+        .toList();
     if (!listEquals(_cachedFriends, newFriends)) {
       _cachedFriends = newFriends;
     }
@@ -119,6 +130,8 @@ class FriendsStore extends ChangeNotifier {
     notifyListeners();
     try {
       await _repo.updateStatus(rowId, 'accepted');
+      // Re-fetch to flush any duplicate rows (e.g. both users sent requests).
+      await loadFriends(force: true);
       return null;
     } catch (e) {
       _byId[rowId] = prev;
@@ -166,11 +179,46 @@ class FriendsStore extends ChangeNotifier {
     }
   }
 
+  // ── Realtime ──────────────────────────────────────────────
+
+  RealtimeChannel? _friendsChannel;
+  Timer? _realtimeDebounce;
+
+  /// Subscribe to Supabase Realtime so incoming friend requests and
+  /// status changes (accept/decline) are reflected without a manual refresh.
+  void subscribeRealtime() {
+    _unsubscribeRealtime();
+    _friendsChannel = _supabase
+        .channel('friends_store_friends')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'friends',
+          callback: (_) => _scheduleReload(),
+        )
+        .subscribe();
+  }
+
+  void _unsubscribeRealtime() {
+    _friendsChannel?.unsubscribe();
+    _friendsChannel = null;
+    _realtimeDebounce?.cancel();
+    _realtimeDebounce = null;
+  }
+
+  void _scheduleReload() {
+    _realtimeDebounce?.cancel();
+    _realtimeDebounce = Timer(const Duration(milliseconds: 400), () {
+      loadFriends(force: true);
+    });
+  }
+
   void clear() {
     _byId = {};
     _hasLoaded = false;
     _error = null;
     _invalidateCache();
+    _unsubscribeRealtime();
     notifyListeners();
   }
 }
