@@ -119,8 +119,8 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.xl),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -133,7 +133,7 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
                 Expanded(
                   child: Text(
                     isEdit ? l.t('member_form_edit_title') : l.t('member_form_add_title'),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: isDark
@@ -165,7 +165,7 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
                   if (!isEdit && availableGroupMembers.isNotEmpty) ...[
                     Text(
                       l.t('member_form_add_from_group'),
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: isDark
@@ -203,7 +203,7 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
                               color: isDark
                                   ? AppColors.borderDark
                                   : AppColors.neutral100,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(AppRadii.xl),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -216,7 +216,7 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
                                 const SizedBox(width: 6),
                                 Text(
                                   gm.displayName as String? ?? gm.name as String,
-                                  style: GoogleFonts.notoSansThai(
+                                  style: GoogleFonts.sarabun(
                                     fontSize: 12,
                                     color: isDark
                                         ? AppColors.textPrimaryDark
@@ -237,7 +237,7 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
                     const SizedBox(height: 16),
                     Text(
                       l.t('member_form_or_new'),
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: isDark
@@ -265,7 +265,7 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
                   // Color picker
                   Text(
                     l.t('member_form_color_label'),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: isDark
@@ -296,7 +296,7 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
                           ),
                           child: isSelected
                               ? const Icon(Icons.check_rounded,
-                                  color: Colors.white, size: 16)
+                                  color: AppColors.surface, size: 16)
                               : null,
                         ),
                       );
@@ -314,7 +314,7 @@ class _MemberFormSheetState extends State<MemberFormSheet> {
                           )
                         : Text(
                             isEdit ? l.t('member_form_save') : l.t('member_form_add_btn'),
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                                 fontSize: 15, fontWeight: FontWeight.w600),
                           ),
                   ),

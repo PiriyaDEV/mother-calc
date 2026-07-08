@@ -36,7 +36,7 @@ class SecuritySection extends StatelessWidget {
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
+            color: isDark ? AppColors.surfaceDark : AppColors.surface,
             borderRadius: BorderRadius.circular(AppRadii.lg),
             border: Border.all(
               color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -51,7 +51,7 @@ class SecuritySection extends StatelessWidget {
                     Expanded(
                       child: Text(
                         l.t('me_change_password'),
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: isDark
@@ -123,10 +123,10 @@ class SecuritySection extends StatelessWidget {
                           child: Center(
                             child: Text(
                               saving ? l.t('me_saving') : l.t('common_save'),
-                              style: GoogleFonts.notoSansThai(
+                              style: GoogleFonts.sarabun(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: AppColors.surface,
                               ),
                             ),
                           ),

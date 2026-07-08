@@ -176,7 +176,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           ),
           title: Text(
             titleText,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 17,
               fontWeight: FontWeight.w600,
               color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
@@ -218,7 +218,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                         height: 48,
                         decoration: BoxDecoration(
                           color: isDark ? AppColors.bgDark : AppColors.neutral100,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadii.md),
                           border: Border.all(
                             color: _showEmojiPicker
                                 ? AppColors.primary
@@ -291,7 +291,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                           color: selected
                               ? AppColors.primary.withValues(alpha: 0.12)
                               : (isDark ? AppColors.surfaceDark : AppColors.neutral100),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(AppRadii.xl),
                           border: Border.all(
                             color: selected
                                 ? AppColors.primary.withValues(alpha: 0.4)
@@ -300,7 +300,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                         ),
                         child: Text(
                           '#$tag',
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 12,
                             fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
                             color: selected
@@ -335,9 +335,9 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                         height: 40,
                         decoration: BoxDecoration(
                           color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(AppRadii.md),
                         ),
-                        child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                        child: const Icon(Icons.add_rounded, color: AppColors.surface, size: 20),
                       ),
                     ),
                   ],
@@ -356,7 +356,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                         backgroundColor: AppColors.primary,
                         disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.4),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
                       ),
                       child: _loading
                           ? const SizedBox(
@@ -366,10 +366,10 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                             )
                           : Text(
                               submitLabel,
-                              style: GoogleFonts.notoSansThai(
+                              style: GoogleFonts.sarabun(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: AppColors.surface,
                               ),
                             ),
                     );

@@ -42,8 +42,8 @@ class ItemsPerMemberGrid extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                color: isDark ? AppColors.surfaceDark : AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadii.sm),
                 border: Border.all(
                   color:
                       isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -65,7 +65,7 @@ class ItemsPerMemberGrid extends StatelessWidget {
                       children: [
                         Text(
                           mt.member.name,
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: isDark
@@ -76,7 +76,7 @@ class ItemsPerMemberGrid extends StatelessWidget {
                         ),
                         Text(
                           '${mt.itemCount} รายการ',
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 10,
                             color: isDark
                                 ? AppColors.textTertiaryDark

@@ -97,7 +97,7 @@ class _FloatingNavBar extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(AppRadii.full),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(
@@ -106,22 +106,14 @@ class _FloatingNavBar extends StatelessWidget {
                 color: isDark
                     ? AppColors.surfaceDark.withValues(alpha: 0.94)
                     : Colors.white.withValues(alpha: 0.92),
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(AppRadii.full),
                 border: Border.all(
                   color: isDark
                       ? Colors.white.withValues(alpha: 0.08)
                       : Colors.black.withValues(alpha: 0.06),
                   width: 1,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark
-                        ? Colors.black.withValues(alpha: 0.4)
-                        : Colors.black.withValues(alpha: 0.12),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+                boxShadow: const [AppShadows.card],
               ),
               child: Row(
                 children: items.asMap().entries.map((entry) {
@@ -219,7 +211,7 @@ class _NavItemState extends State<_NavItem> {
                               ? AppColors.primary
                               : (widget.isDark
                                   ? AppColors.textTertiaryDark
-                                  : const Color(0xFF9CA3AF)),
+                                  : AppColors.textTertiaryLight),
                         ),
                       ),
                       if (widget.item.badge > 0)
@@ -239,7 +231,7 @@ class _NavItemState extends State<_NavItem> {
                             child: Text(
                               widget.item.badge > 99 ? '99+' : '${widget.item.badge}',
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppColors.surface,
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -253,14 +245,14 @@ class _NavItemState extends State<_NavItem> {
                 const SizedBox(height: 2),
                 AnimatedDefaultTextStyle(
                   duration: const Duration(milliseconds: 200),
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 10,
                     fontWeight: widget.isActive ? FontWeight.w700 : FontWeight.normal,
                     color: widget.isActive
                         ? AppColors.primary
                         : (widget.isDark
                             ? AppColors.textTertiaryDark
-                            : const Color(0xFF9CA3AF)),
+                            : AppColors.textTertiaryLight),
                   ),
                   child: Text(widget.item.label),
                 ),

@@ -70,8 +70,8 @@ class SkeletonBox extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final scope = _ShimmerScope.of(context);
 
-    final baseColor = isDark ? const Color(0xFF26314F) : const Color(0xFFE9EEF6);
-    final highlightColor = isDark ? const Color(0xFF3A4F70) : const Color(0xFFF5F8FC);
+    final baseColor = isDark ? AppColors.borderDark : AppColors.borderLight;
+    final highlightColor = isDark ? AppColors.textTertiaryDark : AppColors.bgSubtle;
 
     if (scope == null) {
       // Fallback: no shimmer scope, just a static box
@@ -152,7 +152,7 @@ class BillCardSkeleton extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -204,7 +204,7 @@ class GroupCardSkeleton extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -243,7 +243,7 @@ class FriendRowSkeleton extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -282,7 +282,7 @@ class CurrencyCardSkeleton extends StatelessWidget {
       height: 116,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -323,7 +323,7 @@ class StatCardSkeleton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.md),
       ),
       child: const Column(
@@ -355,7 +355,7 @@ class QuickActionTileSkeleton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -418,24 +418,8 @@ class HomeScreenSkeleton extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF2D5BFF),
-                      Color(0xFF1A3FCC),
-                      Color(0xFF0B1E3D),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    stops: [0.0, 0.55, 1.0],
-                  ),
-                  borderRadius: BorderRadius.circular(AppRadii.lg),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF2D5BFF).withValues(alpha: 0.40),
-                      blurRadius: 32,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(AppRadii.card),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -446,7 +430,7 @@ class HomeScreenSkeleton extends StatelessWidget {
                       height: 13,
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(AppRadii.sm),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -456,7 +440,7 @@ class HomeScreenSkeleton extends StatelessWidget {
                       height: 38,
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(AppRadii.sm),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -499,7 +483,7 @@ class HomeScreenSkeleton extends StatelessWidget {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.surfaceDark : Colors.white,
+                      color: isDark ? AppColors.surfaceDark : AppColors.surface,
                       borderRadius: BorderRadius.circular(AppRadii.sm),
                     ),
                   ),
@@ -655,7 +639,7 @@ class NotificationCardSkeleton extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -692,7 +676,7 @@ class NotificationCardSkeleton extends StatelessWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppRadii.md),
                   ),
                 ),
               ),
@@ -702,7 +686,7 @@ class NotificationCardSkeleton extends StatelessWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppRadii.md),
                   ),
                 ),
               ),
@@ -823,7 +807,7 @@ class _MemberRowSkeleton extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -860,7 +844,7 @@ class _ItemRowSkeleton extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -979,7 +963,7 @@ class _GroupBillRowSkeleton extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -1024,7 +1008,7 @@ class MeScreenSkeleton extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-              color: isDark ? AppColors.surfaceDark : Colors.white,
+              color: isDark ? AppColors.surfaceDark : AppColors.surface,
               child: const Column(
                 children: [
                   SkeletonCircle(size: 80),
@@ -1048,7 +1032,7 @@ class MeScreenSkeleton extends StatelessWidget {
                   const SizedBox(height: 10),
                   Container(
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.surfaceDark : Colors.white,
+                      color: isDark ? AppColors.surfaceDark : AppColors.surface,
                       borderRadius: BorderRadius.circular(AppRadii.lg),
                       border: Border.all(
                         color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -1094,7 +1078,7 @@ class MeScreenSkeleton extends StatelessWidget {
                   const SizedBox(height: 10),
                   Container(
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.surfaceDark : Colors.white,
+                      color: isDark ? AppColors.surfaceDark : AppColors.surface,
                       borderRadius: BorderRadius.circular(AppRadii.lg),
                       border: Border.all(
                         color: isDark ? AppColors.borderDark : AppColors.borderLight,

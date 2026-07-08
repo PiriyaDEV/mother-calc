@@ -24,27 +24,19 @@ class SharedGroupCard extends StatelessWidget {
     final pendingCount = group.members.where((m) => m.isPending).length;
 
     return Material(
-      color: isDark ? AppColors.surfaceDark : Colors.white,
-      borderRadius: BorderRadius.circular(AppRadii.md),
+      color: isDark ? AppColors.surfaceDark : AppColors.surface,
+      borderRadius: BorderRadius.circular(AppRadii.lg),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadii.md),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadii.md),
+            borderRadius: BorderRadius.circular(AppRadii.lg),
             border: Border.all(
               color: isDark ? AppColors.borderDark : AppColors.neutral100,
             ),
-            boxShadow: isDark
-                ? null
-                : [
-                    BoxShadow(
-                      color: const Color(0xFF2D5BFF).withValues(alpha: 0.06),
-                      blurRadius: 20,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
+            boxShadow: isDark ? null : const [AppShadows.card],
           ),
           child: Row(
             children: [
@@ -53,17 +45,10 @@ class SharedGroupCard extends StatelessWidget {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primaryBlue.withValues(alpha: 0.14),
-                      AppColors.accentSky.withValues(alpha: 0.08),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(AppRadii.md),
+                  color: AppColors.primaryLight,
+                  shape: BoxShape.circle,
                   border: Border.all(
-                    color: AppColors.primaryBlue.withValues(alpha: 0.12),
+                    color: AppColors.primaryBlue.withValues(alpha: 0.15),
                   ),
                 ),
                 child: Center(
@@ -82,7 +67,7 @@ class SharedGroupCard extends StatelessWidget {
                   children: [
                     Text(
                       group.name,
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: isDark
@@ -97,7 +82,7 @@ class SharedGroupCard extends StatelessWidget {
                       children: [
                         Text(
                           l.t('unit_people').replaceFirst('{count}', '${acceptedMembers.length}'),
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 12,
                             color: isDark
                                 ? AppColors.neutral400Dark
@@ -117,7 +102,7 @@ class SharedGroupCard extends StatelessWidget {
                             child: Text(
                               l.t('group_pending_badge').replaceFirst(
                                   '{count}', '$pendingCount'),
-                              style: GoogleFonts.notoSansThai(
+                              style: GoogleFonts.sarabun(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.amberText,

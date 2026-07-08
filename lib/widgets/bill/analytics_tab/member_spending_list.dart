@@ -70,7 +70,7 @@ class MemberSpendingList extends StatelessWidget {
                       Expanded(
                         child: Text(
                           mt.member.name,
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                             color: isDark
@@ -82,7 +82,7 @@ class MemberSpendingList extends StatelessWidget {
                       ),
                       Text(
                         '${formatNumber(mt.total)} บาท',
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: color,
@@ -94,11 +94,11 @@ class MemberSpendingList extends StatelessWidget {
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: color.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(AppRadii.xs),
                         ),
                         child: Text(
                           '$billPct%',
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                             color: color,
@@ -111,7 +111,7 @@ class MemberSpendingList extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(left: 36),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(AppRadii.xs),
                       child: Stack(
                         children: [
                           Container(
@@ -124,9 +124,9 @@ class MemberSpendingList extends StatelessWidget {
                             widthFactor: pct.clamp(0.0, 1.0),
                             child: Container(
                               height: 8,
-                              decoration: BoxDecoration(
+                                decoration: BoxDecoration(
                                 color: color,
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(AppRadii.xs),
                               ),
                             ),
                           ),

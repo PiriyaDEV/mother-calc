@@ -29,8 +29,8 @@ class GroupDetailEmptyState extends StatelessWidget {
           height: 56,
           decoration: BoxDecoration(
             color: isDark
-                ? const Color(0xFF374151)
-                : const Color(0xFFF3F4F6),
+                ? AppColors.textSecondaryLight
+                : AppColors.bgSubtle,
             borderRadius: BorderRadius.circular(AppRadii.lg),
           ),
           child: Icon(
@@ -44,7 +44,7 @@ class GroupDetailEmptyState extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         Text(
           label,
-          style: GoogleFonts.notoSansThai(
+          style: GoogleFonts.sarabun(
             fontSize: 14,
             fontWeight: FontWeight.w500,
             color: isDark
@@ -56,7 +56,7 @@ class GroupDetailEmptyState extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             sub!,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 12,
               color: isDark
                   ? AppColors.textTertiaryDark

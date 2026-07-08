@@ -83,7 +83,7 @@ class _AppConfirmDialog extends StatelessWidget {
         ? (isDark ? AppColors.redDark : AppColors.red)
         : (isDark ? AppColors.primaryBlueDark : AppColors.primaryBlue);
     final confirmBg = danger
-        ? (isDark ? const Color(0xFF2A1A1A) : AppColors.redFaint)
+        ? (isDark ? AppColors.red.withValues(alpha: 0.15) : AppColors.redFaint)
         : (isDark ? AppColors.accentIceDark : AppColors.accentIce);
 
     // Icon colors
@@ -94,7 +94,7 @@ class _AppConfirmDialog extends StatelessWidget {
           ? (isDark ? AppColors.redDark : AppColors.red)
           : (isDark ? AppColors.primaryBlueDark : AppColors.primaryBlue);
       iconBg = danger
-          ? (isDark ? const Color(0xFF2A1A1A) : AppColors.redFaint)
+          ? (isDark ? AppColors.red.withValues(alpha: 0.15) : AppColors.redFaint)
           : (isDark ? AppColors.accentIceDark : AppColors.accentIce);
     }
 
@@ -128,7 +128,7 @@ class _AppConfirmDialog extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: GoogleFonts.anuphan(
+              style: GoogleFonts.sarabun(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: titleColor,
@@ -141,7 +141,7 @@ class _AppConfirmDialog extends StatelessWidget {
             Text(
               body,
               textAlign: TextAlign.center,
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 14,
                 color: bodyColor,
                 height: 1.5,
@@ -210,7 +210,7 @@ class _StackedActions extends StatelessWidget {
             ),
             child: Text(
               confirmLabel,
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: confirmColor,
@@ -234,7 +234,7 @@ class _StackedActions extends StatelessWidget {
             ),
             child: Text(
               cancelLabel,
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: cancelColor,
@@ -280,7 +280,7 @@ class _InlineActions extends StatelessWidget {
             ),
             child: Text(
               cancelLabel,
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: cancelColor,
@@ -304,7 +304,7 @@ class _InlineActions extends StatelessWidget {
             ),
             child: Text(
               confirmLabel,
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: confirmColor,

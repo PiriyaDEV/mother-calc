@@ -25,16 +25,16 @@ class EmptyFriendsState extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF),
+              color: AppColors.primaryLight,
               borderRadius: BorderRadius.circular(AppRadii.lg),
             ),
             child: const Icon(Icons.people_outline_rounded,
-                size: 28, color: Color(0xFF286BFE)),
+                size: 28, color: AppColors.primaryBlue),
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
             l.t('friends_empty_title'),
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: isDark
@@ -45,7 +45,7 @@ class EmptyFriendsState extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             l.t('friends_empty_sub'),
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 12,
               color: isDark
                   ? AppColors.textTertiaryDark
@@ -65,10 +65,10 @@ class EmptyFriendsState extends StatelessWidget {
               ),
               child: Text(
                 l.t('friends_add_first'),
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: AppColors.surface,
                 ),
               ),
             ),

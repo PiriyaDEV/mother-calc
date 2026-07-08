@@ -105,8 +105,8 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.xl),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -115,7 +115,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             child: Text(
               l.t('group_manage_members'),
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: isDark
@@ -131,20 +131,14 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadii.md),
             ),
             child: TabBar(
               controller: _tabCtrl,
               indicator: BoxDecoration(
-                color: isDark ? AppColors.borderDark : Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
+                color: isDark ? AppColors.borderDark : AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadii.sm),
+                boxShadow: const [AppShadows.subtle],
               ),
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
@@ -152,9 +146,9 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
               unselectedLabelColor: isDark
                   ? AppColors.textTertiaryDark
                   : AppColors.neutral600,
-              labelStyle: GoogleFonts.notoSansThai(
+              labelStyle: GoogleFonts.sarabun(
                   fontSize: 13, fontWeight: FontWeight.w600),
-              unselectedLabelStyle: GoogleFonts.notoSansThai(fontSize: 13),
+              unselectedLabelStyle: GoogleFonts.sarabun(fontSize: 13),
               tabs: [
                 Tab(text: l.t('group_invite_friend')),
                 Tab(text: l.t('group_add_external')),
@@ -183,7 +177,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
           padding: const EdgeInsets.all(32),
           child: Text(
             context.read<LocaleProvider>().t('group_no_friends_to_invite'),
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 14,
               color: isDark
                   ? AppColors.textSecondaryDark
@@ -211,7 +205,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: isDark ? AppColors.surfaceDark : AppColors.neutral50,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadii.md),
               border: Border.all(
                 color: isDark
                     ? AppColors.borderDark
@@ -233,7 +227,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
                     children: [
                       Text(
                         name,
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: isDark
@@ -244,7 +238,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
                       if (profile.username != null)
                         Text(
                           '@${profile.username}',
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 12,
                             color: isDark
                                 ? AppColors.textTertiaryDark
@@ -286,7 +280,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
         children: [
           Text(
             l.t('group_external_member_desc'),
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 13,
               color: isDark
                   ? AppColors.textTertiaryDark
@@ -301,7 +295,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
                   controller: _externalNameCtrl,
                   decoration: InputDecoration(
                     hintText: l.t('member_name_hint'),
-                    hintStyle: GoogleFonts.notoSansThai(fontSize: 13),
+                    hintStyle: GoogleFonts.sarabun(fontSize: 13),
                   ),
                   onSubmitted: (_) => _addExternal(),
                 ),
@@ -323,7 +317,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
                       )
                      : Text(
                         l.t('common_add'),
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                             fontSize: 14, fontWeight: FontWeight.w600),
                       ),
               ),
@@ -333,7 +327,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
             const SizedBox(height: 6),
             Text(
               _externalError!,
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                   fontSize: 12, color: AppColors.red),
             ),
           ],
@@ -341,7 +335,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
             const SizedBox(height: 6),
             Text(
               _externalSuccess!,
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                   fontSize: 12, color: AppColors.emerald),
             ),
           ],

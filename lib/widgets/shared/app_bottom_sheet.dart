@@ -1,38 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 
-/// Shared bottom sheet helper.
+/// AppPopup — Clubhouse-style centered modal dialog.
 ///
-/// Flik principle: all bottom sheets share the same visual language —
-/// consistent drag handle, top radius, background color, and padding.
-/// This eliminates the inconsistent `showModalBottomSheet` calls scattered
-/// across the codebase.
+/// Replaces the old bottom-sheet pattern with a clean centered popup:
+/// white surface, 20px radius, title bar with × close button.
 ///
 /// Usage:
 /// ```dart
-/// AppBottomSheet.show(
+/// AppPopup.show(
 ///   context,
-///   child: MySheetContent(),
+///   title: 'Add Item',
+///   child: MyContent(),
 /// );
 ///
 /// // Scrollable / tall content:
-/// AppBottomSheet.showScrollable(
+/// AppPopup.showScrollable(
 ///   context,
+///   title: 'Members',
 ///   builder: (context, scrollController) => MyScrollableContent(
 ///     controller: scrollController,
 ///   ),
 /// );
 /// ```
-class AppBottomSheet {
-  AppBottomSheet._();
+///
+/// Backward-compat alias: AppBottomSheet = AppPopup
+class AppPopup {
+  AppPopup._();
 
-  /// Show a fixed-height bottom sheet with a drag handle.
+  /// Show a centered popup dialog.
   static Future<T?> show<T>(
     BuildContext context, {
     required Widget child,
+    String? title,
     bool isDismissible = true,
-    bool enableDrag = true,
-    double? height,
     EdgeInsetsGeometry contentPadding = const EdgeInsets.fromLTRB(
       AppSpacing.lg,
       0,
@@ -41,56 +42,61 @@ class AppBottomSheet {
     ),
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return showModalBottomSheet<T>(
+    return showDialog<T>(
       context: context,
-      isDismissible: isDismissible,
-      enableDrag: enableDrag,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _AppBottomSheetContainer(
+      barrierDismissible: isDismissible,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (ctx) => _AppPopupContainer(
         isDark: isDark,
-        height: height,
+        title: title,
         contentPadding: contentPadding,
         child: child,
       ),
     );
   }
 
-  /// Show a draggable scrollable bottom sheet — ideal for long lists.
+  /// Show a scrollable centered popup dialog — ideal for long lists.
   static Future<T?> showScrollable<T>(
     BuildContext context, {
     required Widget Function(BuildContext context, ScrollController scrollController) builder,
+    String? title,
     bool isDismissible = true,
-    double initialChildSize = 0.6,
-    double minChildSize = 0.3,
-    double maxChildSize = 0.92,
+    double maxHeightFraction = 0.85,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return showModalBottomSheet<T>(
+    return showDialog<T>(
       context: context,
-      isDismissible: isDismissible,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: initialChildSize,
-        minChildSize: minChildSize,
-        maxChildSize: maxChildSize,
-        expand: false,
-        builder: (ctx2, scrollController) => _AppBottomSheetContainer(
+      barrierDismissible: isDismissible,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (ctx) {
+        final scrollController = ScrollController();
+        return _AppPopupContainer(
           isDark: isDark,
-          child: builder(ctx2, scrollController),
-        ),
-      ),
+          title: title,
+          maxHeightFraction: maxHeightFraction,
+          contentPadding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
+          child: builder(ctx, scrollController),
+        );
+      },
     );
   }
 }
 
-/// The visual container for all bottom sheets.
-class _AppBottomSheetContainer extends StatelessWidget {
-  const _AppBottomSheetContainer({
+/// Backward-compat alias — existing callers of AppBottomSheet still work.
+typedef AppBottomSheet = AppPopup;
+
+/// The visual container for all popups.
+class _AppPopupContainer extends StatelessWidget {
+  const _AppPopupContainer({
     required this.isDark,
     required this.child,
-    this.height,
+    this.title,
+    this.maxHeightFraction = 0.85,
     this.contentPadding = const EdgeInsets.fromLTRB(
       AppSpacing.lg,
       0,
@@ -101,57 +107,98 @@ class _AppBottomSheetContainer extends StatelessWidget {
 
   final bool isDark;
   final Widget child;
-  final double? height;
+  final String? title;
+  final double maxHeightFraction;
   final EdgeInsetsGeometry contentPadding;
 
   @override
   Widget build(BuildContext context) {
-    final bg = isDark ? AppColors.surfaceDark : Colors.white;
-    final handleColor = isDark
-        ? Colors.white.withValues(alpha: 0.15)
-        : Colors.black.withValues(alpha: 0.12);
+    final bg = isDark ? AppColors.surfaceDark : AppColors.surfaceWhite;
+    final maxHeight = MediaQuery.of(context).size.height * maxHeightFraction;
 
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppRadii.sheet),
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+      child: Container(
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(AppRadii.dialog),
+          boxShadow: isDark ? AppColors.shadowCardDark : AppColors.shadowFloat,
         ),
-      ),
-      child: Column(
-        mainAxisSize: height == null ? MainAxisSize.min : MainAxisSize.max,
-        children: [
-          // Drag handle
-          Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.md),
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: handleColor,
-                borderRadius: BorderRadius.circular(AppRadii.full),
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Header bar ──
+            _PopupHeader(isDark: isDark, title: title),
 
-          // Content
-          if (height != null)
-            Expanded(
+            // ── Content ──
+            Flexible(
               child: Padding(
                 padding: contentPadding,
                 child: child,
               ),
-            )
-          else
-            Padding(
-              padding: contentPadding,
-              child: child,
             ),
 
-          // Safe area bottom padding
-          SizedBox(height: MediaQuery.of(context).padding.bottom),
+            // Safe area bottom padding
+            SizedBox(height: MediaQuery.of(context).padding.bottom),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PopupHeader extends StatelessWidget {
+  const _PopupHeader({required this.isDark, this.title});
+
+  final bool isDark;
+  final String? title;
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDark
+        ? AppColors.textPrimaryDark
+        : AppColors.textPrimaryLight;
+    final iconColor = isDark
+        ? AppColors.textTertiaryDark
+        : AppColors.textTertiaryLight;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.lg, AppSpacing.sm, AppSpacing.sm),
+      child: Row(
+        children: [
+          if (title != null)
+            Expanded(
+              child: Text(
+                title!,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+              ),
+            )
+          else
+            const Spacer(),
+          // Close button
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.borderDark
+                    : AppColors.bgLight,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.close_rounded, size: 18, color: iconColor),
+            ),
+          ),
         ],
       ),
     );

@@ -45,7 +45,7 @@ class StackedAvatars extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.neutral400,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 1.5),
+                  border: Border.all(color: AppColors.surface, width: 1.5),
                 ),
                 child: Center(
                   child: Text(
@@ -53,7 +53,7 @@ class StackedAvatars extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.surface,
                     ),
                   ),
                 ),

@@ -32,19 +32,15 @@ class HeroCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.blue400, AppColors.blue500],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             l.t('hero_grand_total'),
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 13,
               color: Colors.white.withValues(alpha: 0.8),
             ),
@@ -56,10 +52,10 @@ class HeroCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   '${formatNumber(calc.total)} ${settings.currency}',
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppColors.surface,
                   ),
                 ),
               ),
@@ -70,7 +66,7 @@ class HeroCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               l.t('hero_service_charge').replaceAll('{pct}', settings.serviceCharge.toStringAsFixed(0)),
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 11,
                 color: Colors.white.withValues(alpha: 0.7),
               ),
@@ -80,7 +76,7 @@ class HeroCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               l.t('hero_vat').replaceAll('{pct}', settings.vat.toStringAsFixed(0)),
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 11,
                 color: Colors.white.withValues(alpha: 0.7),
               ),
@@ -95,24 +91,24 @@ class HeroCard extends StatelessWidget {
               children: [
                 Text(
                   l.t('summary_payment_status'),
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
                 Text(
                   '$paidCount/$memberCount คน',
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    color: AppColors.surface,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(AppRadii.xs),
               child: LinearProgressIndicator(
                 value: memberCount > 0 ? paidCount / memberCount : 0,
                 backgroundColor: Colors.white.withValues(alpha: 0.2),
@@ -125,14 +121,14 @@ class HeroCard extends StatelessWidget {
               Row(
                 children: [
                   const Icon(Icons.check_circle_rounded,
-                      color: Colors.white, size: 16),
+                      color: AppColors.surface, size: 16),
                   const SizedBox(width: 6),
                   Text(
                     l.t('summary_all_paid'),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: AppColors.surface,
                     ),
                   ),
                 ],

@@ -37,12 +37,12 @@ class PendingRequestsCard extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         Container(
           decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
+            color: isDark ? AppColors.surfaceDark : AppColors.surface,
             borderRadius: BorderRadius.circular(AppRadii.lg),
             border: Border.all(
               color: isDark
                   ? AppColors.borderDark
-                  : const Color(0xFFDBEAFE),
+                  : AppColors.primaryLight,
             ),
           ),
           child: Column(
@@ -103,8 +103,8 @@ class _RequestTile extends StatelessWidget {
                 RoundedAvatar(
                   name: name,
                   avatarUrl: profile?.avatarUrl,
-                  size: 40,
-                  radius: 16,
+                  size: 44,
+                  radius: AppRadii.full,
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
@@ -113,7 +113,7 @@ class _RequestTile extends StatelessWidget {
                     children: [
                       Text(
                         name,
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: isDark
@@ -124,7 +124,7 @@ class _RequestTile extends StatelessWidget {
                       if (username != null)
                         Text(
                           '@$username',
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 12,
                             color: isDark
                                 ? AppColors.textTertiaryDark
@@ -141,12 +141,12 @@ class _RequestTile extends StatelessWidget {
                     height: 32,
                     decoration: BoxDecoration(
                       color: isResponding
-                          ? const Color(0xFF9CA3AF)
-                          : const Color(0xFF286BFE),
-                      borderRadius: BorderRadius.circular(AppRadii.md),
+                          ? AppColors.textTertiaryLight
+                          : AppColors.primaryBlue,
+                      borderRadius: BorderRadius.circular(AppRadii.full),
                     ),
                     child: const Icon(Icons.check_rounded,
-                        color: Colors.white, size: 16),
+                        color: AppColors.surface, size: 16),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -157,15 +157,15 @@ class _RequestTile extends StatelessWidget {
                     height: 32,
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFF374151)
+                          ? AppColors.borderDark
                           : AppColors.borderLight,
-                      borderRadius: BorderRadius.circular(AppRadii.md),
+                      borderRadius: BorderRadius.circular(AppRadii.full),
                     ),
                     child: Icon(
                       Icons.close_rounded,
                       color: isDark
                           ? AppColors.textTertiaryDark
-                          : const Color(0xFF6B7280),
+                          : AppColors.textTertiaryLight,
                       size: 16,
                     ),
                   ),

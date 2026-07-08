@@ -79,7 +79,7 @@ class ItemsTab extends StatelessWidget {
             icon: const Icon(Icons.add_rounded, size: 18),
             label: Text(
               l.t('items_tab_add'),
-              style: GoogleFonts.notoSansThai(fontSize: 14),
+              style: GoogleFonts.sarabun(fontSize: 14),
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.primary,
@@ -87,7 +87,7 @@ class ItemsTab extends StatelessWidget {
                   color: isDark ? AppColors.borderDark : AppColors.borderLight),
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(AppRadii.md)),
             ),
           ),
         );

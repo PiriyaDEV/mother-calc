@@ -26,12 +26,8 @@ class BiggestSpenderCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.amber50, AppColors.orange50],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.amberFaint,
+        borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(color: AppColors.amberBorder),
       ),
       child: Row(
@@ -41,7 +37,7 @@ class BiggestSpenderCard extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               color: AppColors.amber500.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadii.sm),
             ),
             child: const Center(
               child: Text('🏆', style: TextStyle(fontSize: 22)),
@@ -54,7 +50,7 @@ class BiggestSpenderCard extends StatelessWidget {
               children: [
                 Text(
                   l.t('analytics_biggest_spender'),
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: AppColors.amber600,
@@ -72,18 +68,18 @@ class BiggestSpenderCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       payer.member.name,
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF111827),
+                        color: AppColors.textPrimaryLight,
                       ),
                     ),
                   ],
                 ),
                 Text(
                   '${payer.itemCount} รายการ',
-                  style: GoogleFonts.notoSansThai(
-                      fontSize: 11, color: const Color(0xFF6B7280)),
+                  style: GoogleFonts.sarabun(
+                      fontSize: 11, color: AppColors.textSecondaryLight),
                 ),
               ],
             ),
@@ -93,7 +89,7 @@ class BiggestSpenderCard extends StatelessWidget {
             children: [
               Text(
                 '${formatNumber(payer.total)} บาท',
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.amber600,
@@ -104,11 +100,11 @@ class BiggestSpenderCard extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: AppColors.amber500.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppRadii.xs),
                 ),
                 child: Text(
                   '$pct% ของบิล',
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: AppColors.amber600,

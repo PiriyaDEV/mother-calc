@@ -33,7 +33,7 @@ class MemberSelector extends StatelessWidget {
       children: [
         Text(
           l.t('summary_view_of'),
-          style: GoogleFonts.notoSansThai(
+          style: GoogleFonts.sarabun(
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: isDark
@@ -65,8 +65,8 @@ class MemberSelector extends StatelessWidget {
                 borderColor = AppColors.emerald200;
               } else {
                 bgColor = isDark
-                    ? const Color(0xFF1F2937)
-                    : const Color(0xFFF3F4F6);
+                    ? AppColors.surfaceDark
+                    : AppColors.bgSubtle;
                 textColor = isDark
                     ? AppColors.textSecondaryDark
                     : AppColors.textSecondaryLight;
@@ -81,7 +81,7 @@ class MemberSelector extends StatelessWidget {
                       horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: bgColor,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(AppRadii.xl),
                     border: borderColor != null
                         ? Border.all(color: borderColor)
                         : null,
@@ -100,7 +100,7 @@ class MemberSelector extends StatelessWidget {
                       const SizedBox(width: 6),
                       Text(
                         m.name,
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: textColor,
@@ -115,11 +115,11 @@ class MemberSelector extends StatelessWidget {
                             color: isSelected
                                 ? Colors.white.withValues(alpha: 0.25)
                                 : AppColors.blue400.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(AppRadii.sm),
                           ),
                           child: Text(
                             l.t('member_selector_you'),
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                               color: isSelected

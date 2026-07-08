@@ -74,7 +74,7 @@ class GroupMembersTab extends StatelessWidget {
                 icon: const Icon(Icons.people_outline, size: 18),
                 label: Text(
                   l.t('group_manage_members'),
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                       fontSize: 14, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -98,7 +98,7 @@ class GroupMembersTab extends StatelessWidget {
                 children: [
                   Text(
                     l.t('group_pending_count').replaceFirst('{count}', '${pendingMembers.length}'),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.amberText,
@@ -136,7 +136,7 @@ class GroupMembersTab extends StatelessWidget {
                           const SizedBox(width: AppSpacing.sm),
                           Text(
                             name,
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                               fontSize: 13,
                               color: AppColors.amberText,
                             ),
@@ -176,7 +176,7 @@ class GroupMembersTab extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: AppSpacing.sm),
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceDark : Colors.white,
+              color: isDark ? AppColors.surfaceDark : AppColors.surface,
               borderRadius: BorderRadius.circular(AppRadii.md),
               border: Border.all(
                   color: isDark
@@ -200,7 +200,7 @@ class GroupMembersTab extends StatelessWidget {
                     children: [
                       Text(
                         name,
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: isDark
@@ -211,7 +211,7 @@ class GroupMembersTab extends StatelessWidget {
                       if (username != null)
                         Text(
                           '@$username',
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 12,
                             color: isDark
                                 ? AppColors.textTertiaryDark
@@ -238,7 +238,7 @@ class GroupMembersTab extends StatelessWidget {
                         : isOwner
                             ? l.t('group_owner_label')
                             : l.t('group_member_label'),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: m.isExternal

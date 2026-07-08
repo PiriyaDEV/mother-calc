@@ -25,7 +25,7 @@ class LanguageDialog extends StatelessWidget {
       child: Container(
         constraints: const BoxConstraints(maxWidth: 360),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
+          color: isDark ? AppColors.surfaceDark : AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadii.lg),
         ),
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
@@ -34,7 +34,7 @@ class LanguageDialog extends StatelessWidget {
           children: [
             Text(
               l.t('me_language_select'),
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: isDark
@@ -113,7 +113,7 @@ class LangOption extends StatelessWidget {
                 children: [
                   Text(
                     name,
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: isDark
@@ -123,7 +123,7 @@ class LangOption extends StatelessWidget {
                   ),
                   Text(
                     subtitle,
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 12,
                       color: isDark
                           ? AppColors.textTertiaryDark

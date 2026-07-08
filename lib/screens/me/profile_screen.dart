@@ -49,10 +49,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(context.read<LocaleProvider>().t('profile_save_success'), style: GoogleFonts.notoSansThai()),
+            content: Text(context.read<LocaleProvider>().t('profile_save_success'), style: GoogleFonts.sarabun()),
             backgroundColor: AppColors.emerald,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
           ),
         );
       }
@@ -60,10 +60,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(l.t('profile_error'), style: GoogleFonts.notoSansThai()),
+            content: Text(l.t('profile_error'), style: GoogleFonts.sarabun()),
             backgroundColor: AppColors.red,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
           ),
         );
       }
@@ -98,14 +98,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             }
           },
         ),
-        title: Text(l.t('profile_edit_title'), style: GoogleFonts.notoSansThai(fontWeight: FontWeight.w600)),
+        title: Text(l.t('profile_edit_title'), style: GoogleFonts.sarabun(fontWeight: FontWeight.w600)),
         elevation: 0,
         actions: [
           TextButton(
             onPressed: _loading ? null : _save,
             child: Text(
               l.t('profile_save_btn'),
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
               ),
@@ -136,11 +136,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: AppColors.primary,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isDark ? AppColors.bgDark : Colors.white,
+                        color: isDark ? AppColors.bgDark : AppColors.surface,
                         width: 2,
                       ),
                     ),
-                    child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 14),
+                    child: const Icon(Icons.camera_alt_rounded, color: AppColors.surface, size: 14),
                   ),
                 ),
               ],
@@ -187,7 +187,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             child: Text(
               auth.user?.email ?? '',
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 14,
                 color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
               ),
@@ -206,7 +206,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   )
                 : Text(
                     l.t('profile_save_changes'),
-                    style: GoogleFonts.notoSansThai(fontSize: 15, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.sarabun(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
           ),
         ],
@@ -225,7 +225,7 @@ class _FormLabel extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(
       label,
-      style: GoogleFonts.notoSansThai(
+      style: GoogleFonts.sarabun(
         fontSize: 13,
         fontWeight: FontWeight.w600,
         color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,

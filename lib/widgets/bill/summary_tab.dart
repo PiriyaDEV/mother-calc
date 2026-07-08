@@ -92,7 +92,7 @@ class _SummaryTabState extends State<SummaryTab> {
             const SizedBox(height: 12),
             Text(
               l.t('summary_add_members_first'),
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 15,
                 color: isDark
                     ? AppColors.textSecondaryDark

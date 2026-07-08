@@ -82,7 +82,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               children: [
                 Text(
                   l.t('onboarding_welcome'),
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: isDark
@@ -93,7 +93,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 const SizedBox(height: 8),
                 Text(
                   l.t('onboarding_setup_profile'),
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 15,
                     color: isDark
                         ? AppColors.textSecondaryDark
@@ -107,7 +107,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 TextFormField(
                   controller: _displayNameCtrl,
                   textInputAction: TextInputAction.next,
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     color: isDark
                         ? AppColors.textPrimaryDark
                         : AppColors.textPrimaryLight,
@@ -124,7 +124,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   controller: _usernameCtrl,
                   textInputAction: TextInputAction.next,
                   autocorrect: false,
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     color: isDark
                         ? AppColors.textPrimaryDark
                         : AppColors.textPrimaryLight,
@@ -155,7 +155,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   onFieldSubmitted: (_) => _submit(),
                   maxLength: 10,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     color: isDark
                         ? AppColors.textPrimaryDark
                         : AppColors.textPrimaryLight,
@@ -175,11 +175,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: AppColors.red.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
                     child: Text(
                       _error!,
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 13,
                         color: AppColors.red,
                       ),
@@ -197,7 +197,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(AppRadii.full),
                       ),
                     ),
                     child: _loading
@@ -206,12 +206,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.5,
-                              color: Colors.white,
+                              color: AppColors.surface,
                             ),
                           )
                         : Text(
                             l.t('onboarding_start'),
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
@@ -229,7 +229,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _label(bool isDark, String text) => Text(
         text,
-        style: GoogleFonts.notoSansThai(
+        style: GoogleFonts.sarabun(
           fontSize: 14,
           fontWeight: FontWeight.w600,
           color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
@@ -238,33 +238,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   InputDecoration _inputDecoration(bool isDark, String hint) => InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.notoSansThai(
+        hintStyle: GoogleFonts.sarabun(
           color:
               isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
         ),
         filled: true,
-        fillColor: isDark ? AppColors.surfaceDark : Colors.white,
+        fillColor: isDark ? AppColors.surfaceDark : AppColors.surface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           borderSide: BorderSide(
               color: isDark ? AppColors.borderDark : AppColors.borderLight),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           borderSide: BorderSide(
               color: isDark ? AppColors.borderDark : AppColors.borderLight),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           borderSide:
               const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           borderSide: const BorderSide(color: AppColors.red),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           borderSide: const BorderSide(color: AppColors.red, width: 1.5),
         ),
         contentPadding:

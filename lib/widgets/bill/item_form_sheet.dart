@@ -185,8 +185,8 @@ class _ItemFormSheetState extends State<ItemFormSheet> {
         maxHeight: MediaQuery.of(context).size.height * 0.9,
       ),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.xl),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -264,7 +264,7 @@ class _ItemFormSheetState extends State<ItemFormSheet> {
                       l.t('item_form_per_person')
                           .replaceFirst('{amount}', formatNumber(perPerson))
                           .replaceFirst('{count}', '$selectedCount'),
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 12,
                         color: isDark
                             ? AppColors.textTertiaryDark
@@ -293,7 +293,7 @@ class _ItemFormSheetState extends State<ItemFormSheet> {
                           )
                         : Text(
                             isEdit ? l.t('item_form_save') : l.t('item_form_add_btn'),
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                                 fontSize: 15, fontWeight: FontWeight.w600),
                           ),
                   ),
@@ -332,7 +332,7 @@ class _ItemFormHeader extends StatelessWidget {
           Expanded(
             child: Text(
               isEdit ? l.t('item_form_edit_title') : l.t('item_form_add_title'),
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: isDark
@@ -371,7 +371,7 @@ class _SplitModeToggle extends StatelessWidget {
       children: [
         Text(
           l.t('item_form_split_method'),
-          style: GoogleFonts.notoSansThai(
+          style: GoogleFonts.sarabun(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: isDark
@@ -421,11 +421,11 @@ class _ToggleChip extends StatelessWidget {
           color: selected
               ? AppColors.primary
               : (isDark ? AppColors.borderDark : AppColors.neutral100),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppRadii.xl),
         ),
         child: Text(
           label,
-          style: GoogleFonts.notoSansThai(
+          style: GoogleFonts.sarabun(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: selected
@@ -469,7 +469,7 @@ class _MemberPickerList extends StatelessWidget {
       children: [
         Text(
           l.t('item_form_members_label'),
-          style: GoogleFonts.notoSansThai(
+          style: GoogleFonts.sarabun(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: isDark
@@ -491,7 +491,7 @@ class _MemberPickerList extends StatelessWidget {
                 color: isSelected
                     ? AppColors.primary.withValues(alpha: 0.08)
                     : (isDark ? AppColors.surfaceDark : AppColors.neutral50),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadii.md),
                 border: Border.all(
                   color: isSelected
                       ? AppColors.primary.withValues(alpha: 0.4)
@@ -511,7 +511,7 @@ class _MemberPickerList extends StatelessWidget {
                   Expanded(
                     child: Text(
                       m.name,
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         color: isDark
@@ -535,12 +535,12 @@ class _MemberPickerList extends StatelessWidget {
                         decoration: InputDecoration(
                           hintText: l.t('item_form_weight_hint'),
                           hintStyle:
-                              GoogleFonts.notoSansThai(fontSize: 11),
+                              GoogleFonts.sarabun(fontSize: 11),
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 6),
                           isDense: true,
                         ),
-                        style: GoogleFonts.notoSansThai(fontSize: 13),
+                        style: GoogleFonts.sarabun(fontSize: 13),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -598,12 +598,12 @@ class _UnequalValidationBanner extends StatelessWidget {
         color: isValid
             ? AppColors.emerald.withValues(alpha: 0.1)
             : AppColors.amber.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadii.sm),
       ),
       child: Text(
         isValid
             ? l.t('item_form_weight_total').replaceAll('{total}', totalWeight.toString()) : l.t('item_form_weight_incomplete'),
-        style: GoogleFonts.notoSansThai(
+        style: GoogleFonts.sarabun(
           fontSize: 12,
           color: isValid ? AppColors.emerald : AppColors.amber,
         ),
@@ -633,7 +633,7 @@ class _PaidByPicker extends StatelessWidget {
       children: [
         Text(
           l.t('item_form_paid_by'),
-          style: GoogleFonts.notoSansThai(
+          style: GoogleFonts.sarabun(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: isDark
@@ -659,11 +659,11 @@ class _PaidByPicker extends StatelessWidget {
                         : (isDark
                             ? AppColors.borderDark
                             : AppColors.neutral100),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(AppRadii.xl),
                   ),
                   child: Text(
                     m.name,
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 12,
                       color: isSelected
                           ? Colors.white

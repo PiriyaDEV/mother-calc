@@ -33,11 +33,11 @@ class TopItemsCard extends StatelessWidget {
           final sharedCount = item.splitWeights.keys.length;
 
           const barColors = [
-            Color(0xFF4366f4),
-            Color(0xFF7C3AED),
-            Color(0xFFEC4899),
-            Color(0xFF10B981),
-            Color(0xFFF59E0B),
+            AppColors.primary,
+            AppColors.accent,
+            AppColors.emerald500,
+            AppColors.amber500,
+            AppColors.primaryHover,
           ];
           final barColor = barColors[rank % barColors.length];
 
@@ -61,7 +61,7 @@ class TopItemsCard extends StatelessWidget {
                                       style: TextStyle(fontSize: 16))
                                   : Text(
                                       '${rank + 1}.',
-                                      style: GoogleFonts.notoSansThai(
+                                      style: GoogleFonts.sarabun(
                                         fontSize: 13,
                                         fontWeight: FontWeight.bold,
                                         color: isDark
@@ -74,7 +74,7 @@ class TopItemsCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         item.name,
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: isDark
@@ -87,7 +87,7 @@ class TopItemsCard extends StatelessWidget {
                     ),
                     Text(
                       '${formatNumber(item.price)} บาท',
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: barColor,
@@ -98,13 +98,12 @@ class TopItemsCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: (isDark ? Colors.white : Colors.black)
-                            .withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(8),
+                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                        borderRadius: BorderRadius.circular(AppRadii.xs),
                       ),
                       child: Text(
                         '$sharedCount คน',
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 10,
                           color: isDark
                               ? AppColors.textTertiaryDark
@@ -118,27 +117,22 @@ class TopItemsCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(left: 36),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(AppRadii.xs),
                     child: Stack(
                       children: [
                         Container(
                           height: 8,
                           color: isDark
-                              ? const Color(0xFF374151)
-                              : const Color(0xFFE5E7EB),
+                              ? AppColors.borderDark
+                              : AppColors.neutral100,
                         ),
                         FractionallySizedBox(
                           widthFactor: pct.clamp(0.0, 1.0),
                           child: Container(
                             height: 8,
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  barColor,
-                                  barColor.withValues(alpha: 0.7)
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(6),
+                              color: barColor,
+                              borderRadius: BorderRadius.circular(AppRadii.xs),
                             ),
                           ),
                         ),

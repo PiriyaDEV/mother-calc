@@ -20,9 +20,7 @@ class MoveToGroupSheet extends StatefulWidget {
   static Future<bool> show(BuildContext context, {required Bill bill}) async {
     final result = await AppBottomSheet.showScrollable<bool>(
       context,
-      initialChildSize: 0.55,
-      minChildSize: 0.35,
-      maxChildSize: 0.85,
+      maxHeightFraction: 0.85,
       builder: (ctx, scrollController) => MoveToGroupSheet(bill: bill),
     );
     return result == true;

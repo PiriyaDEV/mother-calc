@@ -72,7 +72,7 @@ class AppEmptyState extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: GoogleFonts.anuphan(
+            style: GoogleFonts.sarabun(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: titleColor,
@@ -86,7 +86,7 @@ class AppEmptyState extends StatelessWidget {
             Text(
               body!,
               textAlign: TextAlign.center,
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 14,
                 color: bodyColor,
                 height: 1.5,
@@ -130,7 +130,7 @@ class _EmptyStateCtaState extends State<_EmptyStateCta> {
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) => setState(() => _pressed = false),
       onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
+        child: AnimatedScale(
         scale: _pressed ? AppMotion.pressScaleButton : 1.0,
         duration: AppMotion.press,
         curve: AppMotion.standard,
@@ -140,26 +140,17 @@ class _EmptyStateCtaState extends State<_EmptyStateCta> {
             vertical: AppSpacing.md,
           ),
           decoration: BoxDecoration(
-            gradient: widget.isDark
-                ? AppGradients.primaryButtonDark
-                : AppGradients.primaryButtonLight,
+            color: widget.isDark
+                ? AppColors.primaryBlueDark
+                : AppColors.primary,
             borderRadius: BorderRadius.circular(AppRadii.full),
-            boxShadow: widget.isDark
-                ? null
-                : [
-                    BoxShadow(
-                      color: AppColors.primaryBlue.withValues(alpha: 0.28),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
           ),
           child: Text(
             widget.label,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: AppColors.surface,
             ),
           ),
         ),

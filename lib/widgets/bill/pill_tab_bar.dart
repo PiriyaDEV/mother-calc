@@ -20,20 +20,14 @@ class PillTabBar extends StatelessWidget {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadii.md),
       ),
       child: TabBar(
         controller: controller,
         indicator: BoxDecoration(
-          color: isDark ? AppColors.borderDark : Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
+          color: isDark ? AppColors.borderDark : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          boxShadow: const [AppShadows.subtle],
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
@@ -41,8 +35,8 @@ class PillTabBar extends StatelessWidget {
         unselectedLabelColor:
             isDark ? AppColors.textTertiaryDark : AppColors.neutral600,
         labelStyle:
-            GoogleFonts.notoSansThai(fontSize: 12, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.notoSansThai(fontSize: 12),
+            GoogleFonts.sarabun(fontSize: 12, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: GoogleFonts.sarabun(fontSize: 12),
         tabs: tabs.map((t) => Tab(child: _TabLabel(label: t.label, count: t.count))).toList(),
       ),
     );
@@ -77,11 +71,11 @@ class _TabLabel extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadii.md),
             ),
             child: Text(
               '$count',
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
                 color: AppColors.primary,

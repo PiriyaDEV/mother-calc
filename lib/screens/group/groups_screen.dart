@@ -58,7 +58,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       children: [
                         Text(
                           l.t('groups_title'),
-                          style: GoogleFonts.anuphan(
+                          style: GoogleFonts.sarabun(
                             fontSize: 26,
                             fontWeight: FontWeight.w700,
                             color: isDark
@@ -72,7 +72,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                           Text(
                             l.t('unit_groups').replaceFirst(
                                 '{count}', '${provider.groups.length}'),
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                               fontSize: 13,
                               color: isDark
                                   ? AppColors.neutral400Dark
@@ -174,19 +174,11 @@ class _CreateButtonState extends State<_CreateButton> {
                 ? AppGradients.primaryButtonDark
                 : AppGradients.primaryButtonLight,
             borderRadius: BorderRadius.circular(AppRadii.md),
-            boxShadow: isDark
-                ? null
-                : [
-                    BoxShadow(
-                      color: AppColors.primaryBlue.withValues(alpha: 0.35),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
+            boxShadow: isDark ? null : const [AppShadows.card],
           ),
           child: const Icon(
             Icons.add_rounded,
-            color: Colors.white,
+            color: AppColors.surface,
             size: 24,
           ),
         ),

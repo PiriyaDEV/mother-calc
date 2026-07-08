@@ -21,7 +21,7 @@ class SectionHeaderWidget extends StatelessWidget {
       children: [
         Text(
           label.toUpperCase(),
-          style: GoogleFonts.notoSansThai(
+          style: GoogleFonts.sarabun(
             fontSize: 11,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.8,
@@ -38,7 +38,7 @@ class SectionHeaderWidget extends StatelessWidget {
             ),
             child: Text(
               '$trailingCount',
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: AppColors.primary,

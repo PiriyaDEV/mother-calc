@@ -23,7 +23,7 @@ class EmojiPickerGrid extends StatelessWidget {
       constraints: const BoxConstraints(maxHeight: 192),
       decoration: BoxDecoration(
         color: isDark ? AppColors.bgDark : AppColors.neutral50,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
@@ -41,7 +41,7 @@ class EmojiPickerGrid extends StatelessWidget {
                 height: 36,
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.borderDark : AppColors.neutral100,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadii.sm),
                 ),
                 child: const Center(
                   child: Text('✕',
@@ -60,7 +60,7 @@ class EmojiPickerGrid extends StatelessWidget {
                     color: isSelected
                         ? AppColors.primary.withValues(alpha: 0.15)
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadii.sm),
                     border: isSelected
                         ? Border.all(color: AppColors.primary, width: 2)
                         : null,

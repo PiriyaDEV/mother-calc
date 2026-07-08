@@ -46,8 +46,8 @@ class ItemTile extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            color: isDark ? AppColors.surfaceDark : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadii.md),
             border: Border.all(
                 color: isDark ? AppColors.borderDark : AppColors.borderLight),
           ),
@@ -59,7 +59,7 @@ class ItemTile extends StatelessWidget {
                   Expanded(
                     child: Text(
                       item.name,
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: isDark
@@ -74,11 +74,11 @@ class ItemTile extends StatelessWidget {
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: AppColors.amber.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(AppRadii.sm),
                       ),
                       child: Text(
                         l.t('item_tile_unequal'),
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 10,
                           color: AppColors.amber,
                           fontWeight: FontWeight.w600,
@@ -89,7 +89,7 @@ class ItemTile extends StatelessWidget {
                   ],
                   Text(
                     formatNumber(item.price),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: isDark
@@ -119,7 +119,7 @@ class ItemTile extends StatelessWidget {
                       child: Text(
                         '${assignedMembers.length} คน'
                         '${!item.isUnequalSplit && assignedMembers.isNotEmpty ? ' · ฿${formatNumber(item.price / assignedMembers.length)}/คน' : ''}',
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 11,
                           color: isDark
                               ? AppColors.textTertiaryDark
@@ -130,7 +130,7 @@ class ItemTile extends StatelessWidget {
                     if (paidByMember != null) ...[
                       Text(
                         l.t('item_tile_paid_by'),
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 10,
                           color: isDark
                               ? AppColors.textTertiaryDark

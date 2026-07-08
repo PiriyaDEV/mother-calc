@@ -33,14 +33,14 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
   late List<BillItem> _topItems;
 
   static const _chartColors = [
-    Color(0xFF4366f4),
-    Color(0xFFA855F7),
-    Color(0xFF10B981),
-    Color(0xFFF59E0B),
-    Color(0xFFEF4444),
-    Color(0xFF06B6D4),
-    Color(0xFFEC4899),
-    Color(0xFF84CC16),
+    AppColors.primaryBlue,
+    AppColors.accent,
+    AppColors.emerald,
+    AppColors.amber,
+    AppColors.red,
+    AppColors.accent,
+    AppColors.accent,
+    AppColors.emerald,
   ];
 
   @override
@@ -129,25 +129,19 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
           padding: const EdgeInsets.all(AppSpacing.xl),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF4366f4), Color(0xFF7C3AED)],
+              colors: [AppColors.primaryBlue, AppColors.primaryBlue],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(AppRadii.xl),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF4366f4).withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            boxShadow: const [AppShadows.card],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 l.t('analytics_group_total'),
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 13,
                   color: Colors.white.withValues(alpha: 0.8),
                 ),
@@ -155,10 +149,10 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
               const SizedBox(height: 4),
               Text(
                 '฿${formatNumber(total)}',
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.surface,
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -185,7 +179,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
           padding:
               const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
+            color: isDark ? AppColors.surfaceDark : AppColors.surface,
             borderRadius: BorderRadius.circular(AppRadii.lg),
             border: Border.all(
                 color: isDark
@@ -199,7 +193,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
                 height: 42,
                 decoration: BoxDecoration(
                   color:
-                      const Color(0xFF10B981).withValues(alpha: 0.1),
+                      AppColors.emerald.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadii.md),
                 ),
                 child: const Center(
@@ -210,7 +204,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
               Expanded(
                 child: Text(
                   l.t('analytics_avg_per_bill'),
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 14,
                     color: isDark
                         ? AppColors.textSecondaryDark
@@ -220,10 +214,10 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
               ),
               Text(
                 '฿${formatNumber(avgPerBill)}',
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF10B981),
+                  color: AppColors.emerald,
                 ),
               ),
             ],
@@ -266,25 +260,18 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(
             color: isDark ? AppColors.borderDark : AppColors.borderLight),
-        boxShadow: isDark
-            ? null
-            : [
-                BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2))
-              ],
+        boxShadow: isDark ? null : const [AppShadows.subtle],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             l.t('analytics_compare_bills'),
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: isDark
@@ -305,8 +292,8 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
                       final bill = displayBills[group.x];
                       return BarTooltipItem(
                         '${bill.emoji ?? '🧾'} ${bill.title}\n฿${formatNumber(rod.toY)}',
-                        GoogleFonts.notoSansThai(
-                          color: Colors.white,
+                        GoogleFonts.sarabun(
+                          color: AppColors.surface,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -342,7 +329,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
                         if (value == 0) return const SizedBox.shrink();
                         return Text(
                           formatNumber(value, decimals: 0),
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 9,
                             color: isDark
                                 ? AppColors.textTertiaryDark
@@ -363,8 +350,8 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
                   horizontalInterval: maxVal / 4,
                   getDrawingHorizontalLine: (value) => FlLine(
                     color: isDark
-                        ? const Color(0xFF374151)
-                        : const Color(0xFFE5E7EB),
+                        ? AppColors.textSecondaryLight
+                        : AppColors.borderLight,
                     strokeWidth: 1,
                     dashArray: [4, 4],
                   ),
@@ -388,7 +375,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(
             color: isDark ? AppColors.borderDark : AppColors.borderLight),
@@ -406,7 +393,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
         children: [
           Text(
             l.t('analytics_top_items'),
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: isDark
@@ -420,11 +407,11 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
             final item = entry.value;
             final pct = maxPrice > 0 ? item.price / maxPrice : 0.0;
             const colors = [
-              Color(0xFF4366f4),
-              Color(0xFF7C3AED),
-              Color(0xFFEC4899),
-              Color(0xFF10B981),
-              Color(0xFFF59E0B),
+              AppColors.primaryBlue,
+              AppColors.primaryBlue,
+              AppColors.accent,
+              AppColors.emerald,
+              AppColors.amber,
             ];
             final color = colors[idx % colors.length];
             return Padding(
@@ -452,7 +439,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
                       Expanded(
                         child: Text(
                           item.name,
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                             color: isDark
@@ -464,7 +451,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
                       ),
                       Text(
                         '฿${formatNumber(item.price)}',
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: color,
@@ -476,14 +463,14 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
                   Padding(
                     padding: const EdgeInsets.only(left: 32),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(AppRadii.sm),
                       child: Stack(
                         children: [
                           Container(
                               height: 7,
                               color: isDark
-                                  ? const Color(0xFF374151)
-                                  : const Color(0xFFE5E7EB)),
+                                  ? AppColors.textSecondaryLight
+                                  : AppColors.borderLight),
                           FractionallySizedBox(
                             widthFactor: pct.clamp(0.0, 1.0),
                             child: Container(
@@ -493,7 +480,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
                                   color,
                                   color.withValues(alpha: 0.6)
                                 ]),
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(AppRadii.sm),
                               ),
                             ),
                           ),
@@ -533,10 +520,10 @@ class _HeroStatPill extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: AppColors.surface,
             ),
           ),
         ],

@@ -38,8 +38,8 @@ class AllMembersSection extends StatelessWidget {
       final l = context.watch<LocaleProvider>();
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(
             color: isDark ? AppColors.borderDark : AppColors.borderLight),
       ),
@@ -54,7 +54,7 @@ class AllMembersSection extends StatelessWidget {
                 children: [
                   Text(
                     l.t('summary_all_members'),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: isDark
@@ -87,7 +87,7 @@ class AllMembersSection extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                 child: Text(
                   l.t('summary_who_owes_whom'),
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: isDark
@@ -115,7 +115,7 @@ class AllMembersSection extends StatelessWidget {
                             const EdgeInsets.symmetric(horizontal: 4),
                         child: Text(
                           debt.from.name,
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 12,
                             color: isDark
                                 ? AppColors.textSecondaryDark
@@ -142,7 +142,7 @@ class AllMembersSection extends StatelessWidget {
                             const EdgeInsets.symmetric(horizontal: 4),
                         child: Text(
                           debt.to.name,
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 12,
                             color: isDark
                                 ? AppColors.textSecondaryDark
@@ -153,7 +153,7 @@ class AllMembersSection extends StatelessWidget {
                       const Spacer(),
                       Text(
                         '${formatNumber(debt.amount)} ${bill.settings.currency}',
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: isPaid
@@ -198,9 +198,9 @@ class AllMembersSection extends StatelessWidget {
                   color: isPaid
                       ? AppColors.emerald50
                       : (isDark
-                          ? const Color(0xFF1F2937)
-                          : const Color(0xFFF9FAFB)),
-                  borderRadius: BorderRadius.circular(12),
+                          ? AppColors.surfaceDark
+                          : AppColors.bgLight),
+                  borderRadius: BorderRadius.circular(AppRadii.sm),
                   border: Border.all(
                     color: isPaid
                         ? AppColors.emerald100
@@ -227,7 +227,7 @@ class AllMembersSection extends StatelessWidget {
                                 children: [
                                   Text(
                                     member.name,
-                                    style: GoogleFonts.notoSansThai(
+                                    style: GoogleFonts.sarabun(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                       color: isDark
@@ -242,9 +242,9 @@ class AllMembersSection extends StatelessWidget {
                                   ],
                                   if (isMe) ...[
                                     const SizedBox(width: 4),
-                                    _SmallBadge(
+                                     _SmallBadge(
                                         label: l.t('common_you'),
-                                        color: AppColors.blue400,
+                                        color: AppColors.primary,
                                         isDark: isDark),
                                   ],
                                   if (isPaid) ...[
@@ -259,7 +259,7 @@ class AllMembersSection extends StatelessWidget {
                               if (hasPromptPay)
                                 Text(
                                   l.t('all_members_promptpay').replaceAll('{pp}', member.promptpay ?? ''),
-                                  style: GoogleFonts.notoSansThai(
+                                  style: GoogleFonts.sarabun(
                                     fontSize: 11,
                                     color: isDark
                                         ? AppColors.textTertiaryDark
@@ -271,7 +271,7 @@ class AllMembersSection extends StatelessWidget {
                         ),
                         Text(
                           '${formatNumber(summary.total)} ${bill.settings.currency}',
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: isPaid
@@ -294,7 +294,7 @@ class AllMembersSection extends StatelessWidget {
                                 Expanded(
                                   child: Text(
                                     '├ ${itemShare.item.name}',
-                                    style: GoogleFonts.notoSansThai(
+                                    style: GoogleFonts.sarabun(
                                       fontSize: 11,
                                       color: isDark
                                           ? AppColors.textTertiaryDark
@@ -304,7 +304,7 @@ class AllMembersSection extends StatelessWidget {
                                 ),
                                 Text(
                                   formatNumber(itemShare.amount),
-                                  style: GoogleFonts.notoSansThai(
+                                  style: GoogleFonts.sarabun(
                                     fontSize: 11,
                                     color: isDark
                                         ? AppColors.textTertiaryDark
@@ -343,9 +343,9 @@ class AllMembersSection extends StatelessWidget {
                               color: isPaid
                                   ? AppColors.emerald500
                                   : (isDark
-                                      ? const Color(0xFF374151)
-                                      : const Color(0xFFF3F4F6)),
-                              borderRadius: BorderRadius.circular(20),
+                                      ? AppColors.borderDark
+                                      : AppColors.borderLight),
+                              borderRadius: BorderRadius.circular(AppRadii.full),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -372,7 +372,7 @@ class AllMembersSection extends StatelessWidget {
                                       : (requiresSlip
                                           ? l.t('summary_upload_slip')
                                           : l.t('summary_mark_paid')),
-                                  style: GoogleFonts.notoSansThai(
+                                  style: GoogleFonts.sarabun(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: isPaid
@@ -420,13 +420,13 @@ class _SmallBadge extends StatelessWidget {
         color: c != null
             ? c.withValues(alpha: 0.12)
             : (isDark
-                ? const Color(0xFF374151)
-                : const Color(0xFFF3F4F6)),
-        borderRadius: BorderRadius.circular(5),
+                ? AppColors.borderDark
+                : AppColors.borderLight),
+        borderRadius: BorderRadius.circular(AppRadii.xs),
       ),
       child: Text(
         label,
-        style: GoogleFonts.notoSansThai(
+        style: GoogleFonts.sarabun(
           fontSize: 10,
           fontWeight: FontWeight.w600,
           color: c ??

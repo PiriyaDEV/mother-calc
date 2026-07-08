@@ -19,38 +19,38 @@ class StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-      final l = context.watch<LocaleProvider>();
+    final l = context.watch<LocaleProvider>();
     return Row(
       children: [
         Expanded(
-          child: _GradientStatCard(
+          child: _StatCard(
             emoji: '🧾',
             value: itemCount.toString(),
             label: l.t('analytics_items_label'),
-            gradientColors: const [Color(0xFFEFF6FF), Color(0xFFEEF2FF)],
-            borderColor: const Color(0xFFBFDBFE),
-            valueColor: const Color(0xFF4366f4),
+            bgColor: AppColors.primaryLight,
+            borderColor: AppColors.borderLight,
+            valueColor: AppColors.primary,
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: _GradientStatCard(
+          child: _StatCard(
             emoji: '👥',
             value: memberCount.toString(),
             label: l.t('analytics_members_label'),
-            gradientColors: const [Color(0xFFFAF5FF), Color(0xFFF5F3FF)],
-            borderColor: const Color(0xFFE9D5FF),
-            valueColor: const Color(0xFFA855F7),
+            bgColor: AppColors.primaryLight,
+            borderColor: AppColors.borderLight,
+            valueColor: AppColors.accent,
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: _GradientStatCard(
+          child: _StatCard(
             emoji: '💰',
             value: formatNumber(avgPerPerson, decimals: 0),
             label: l.t('analytics_avg_per_person_short'),
-            gradientColors: const [Color(0xFFECFDF5), Color(0xFFF0FDFA)],
-            borderColor: const Color(0xFFA7F3D0),
+            bgColor: AppColors.primaryLight,
+            borderColor: AppColors.borderLight,
             valueColor: AppColors.emerald500,
           ),
         ),
@@ -59,19 +59,19 @@ class StatsRow extends StatelessWidget {
   }
 }
 
-class _GradientStatCard extends StatelessWidget {
+class _StatCard extends StatelessWidget {
   final String emoji;
   final String value;
   final String label;
-  final List<Color> gradientColors;
+  final Color bgColor;
   final Color borderColor;
   final Color valueColor;
 
-  const _GradientStatCard({
+  const _StatCard({
     required this.emoji,
     required this.value,
     required this.label,
-    required this.gradientColors,
+    required this.bgColor,
     required this.borderColor,
     required this.valueColor,
   });
@@ -81,12 +81,8 @@ class _GradientStatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradientColors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(color: borderColor),
       ),
       child: Column(
@@ -96,7 +92,7 @@ class _GradientStatCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             value,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: valueColor,
@@ -104,9 +100,9 @@ class _GradientStatCard extends StatelessWidget {
           ),
           Text(
             label,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 11,
-              color: const Color(0xFF6B7280),
+              color: AppColors.textSecondaryLight,
             ),
           ),
         ],

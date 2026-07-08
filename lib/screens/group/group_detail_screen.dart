@@ -99,7 +99,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
           ),
           body: Center(
             child: Text(l.t('groups_not_found'),
-                style: GoogleFonts.notoSansThai(fontSize: 16)),
+                style: GoogleFonts.sarabun(fontSize: 16)),
           ),
         ),
       );
@@ -152,7 +152,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                       children: [
                         Text(
                           group.name,
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: isDark
@@ -165,7 +165,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                             group.description!.isNotEmpty)
                           Text(
                             group.description!,
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                               fontSize: 11,
                               color: isDark
                                   ? AppColors.neutral400Dark

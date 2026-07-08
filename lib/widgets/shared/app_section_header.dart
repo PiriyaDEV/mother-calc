@@ -51,7 +51,7 @@ class AppSectionHeader extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: GoogleFonts.anuphan(
+              style: GoogleFonts.sarabun(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: textColor,
@@ -77,7 +77,7 @@ class AppSectionHeader extends StatelessWidget {
                 ),
                 child: Text(
                   seeAllLabel,
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: primaryColor,

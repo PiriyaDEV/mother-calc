@@ -43,7 +43,7 @@ class SettingsTile extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                   color: isDark

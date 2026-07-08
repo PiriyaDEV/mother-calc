@@ -115,7 +115,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerPr
           body: Center(
             child: Text(
               l.t('bill_not_found'),
-              style: GoogleFonts.notoSansThai(fontSize: 16),
+              style: GoogleFonts.sarabun(fontSize: 16),
             ),
           ),
         ),
@@ -256,7 +256,7 @@ class _BillAppBarTitle extends StatelessWidget {
               Flexible(
                 child: Text(
                   bill.title,
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppColors.neutral900Dark : AppColors.neutral900,
@@ -282,7 +282,7 @@ class _BillAppBarTitle extends StatelessWidget {
                       const SizedBox(width: AppSpacing.xxs),
                       Text(
                         l.t('bill_closed_badge'),
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: AppColors.emerald,
@@ -468,7 +468,7 @@ class _ActionChipState extends State<_ActionChip> {
               const SizedBox(width: AppSpacing.xxs + 2),
               Text(
                 widget.label,
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: widget.textColor,
@@ -517,7 +517,7 @@ class _StatusBanner extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Text(
             isCompleted ? context.watch<LocaleProvider>().t('bill_status_banner_completed') : context.watch<LocaleProvider>().t('bill_status_banner_pending'),
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 13,
               fontWeight: FontWeight.w500,
               color: color,

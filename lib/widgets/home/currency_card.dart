@@ -24,20 +24,12 @@ class CurrencyCard extends StatelessWidget {
       width: 140,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.neutral100,
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
-        boxShadow: isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+        boxShadow: isDark ? null : const [AppShadows.subtle],
       ),
       child: Stack(
         clipBehavior: Clip.none,
@@ -58,12 +50,12 @@ class CurrencyCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(AppRadii.sm),
+                  color: AppColors.accentIce,
+                  borderRadius: BorderRadius.circular(AppRadii.full),
                 ),
                 child: Text(
                   code,
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primaryBlue,
@@ -73,7 +65,7 @@ class CurrencyCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 '฿$rateStr',
-                style: GoogleFonts.anuphan(
+                style: GoogleFonts.sarabun(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: isDark
@@ -83,7 +75,7 @@ class CurrencyCard extends StatelessWidget {
               ),
               Text(
                 name,
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 10,
                   color: isDark
                       ? AppColors.neutral400Dark

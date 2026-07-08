@@ -25,7 +25,7 @@ class ToggleCard extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.neutral50,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(
           color: enabled
               ? AppColors.primary.withValues(alpha: 0.4)
@@ -40,7 +40,7 @@ class ToggleCard extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: isDark

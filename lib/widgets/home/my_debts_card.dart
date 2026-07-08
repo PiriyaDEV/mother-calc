@@ -90,22 +90,12 @@ class MyDebtsCard extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
+          color: isDark ? AppColors.surfaceDark : AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadii.lg),
           border: Border.all(
-            color: isDark
-                ? AppColors.amber.withValues(alpha: 0.35)
-                : AppColors.amber.withValues(alpha: 0.5),
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
           ),
-          boxShadow: isDark
-              ? null
-              : [
-                  BoxShadow(
-                    color: AppColors.amber.withValues(alpha: 0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+          boxShadow: isDark ? null : const [AppShadows.card],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,9 +113,9 @@ class MyDebtsCard extends StatelessWidget {
                   Container(
                     width: 32,
                     height: 32,
-                    decoration: BoxDecoration(
-                      color: AppColors.amber.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(AppRadii.sm),
+                    decoration: const BoxDecoration(
+                      color: AppColors.amberFaint,
+                      shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.account_balance_wallet_rounded,
@@ -140,7 +130,7 @@ class MyDebtsCard extends StatelessWidget {
                       children: [
                         Text(
                           l.t('home_my_debts_title'),
-                          style: GoogleFonts.anuphan(
+                          style: GoogleFonts.sarabun(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: isDark
@@ -151,7 +141,7 @@ class MyDebtsCard extends StatelessWidget {
                         Text(
                           l.t('home_my_debts_subtitle')
                               .replaceFirst('{count}', '${debts.length}'),
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 11,
                             color: isDark
                                 ? AppColors.textTertiaryDark
@@ -167,7 +157,7 @@ class MyDebtsCard extends StatelessWidget {
                     children: totalByCurrency.entries.map((e) {
                       return Text(
                         formatCurrency(e.value, e.key),
-                        style: GoogleFonts.anuphan(
+                        style: GoogleFonts.sarabun(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: AppColors.amber,
@@ -235,7 +225,7 @@ class _DebtRowTile extends StatelessWidget {
                 children: [
                   Text(
                     debt.billTitle,
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: isDark
@@ -247,7 +237,7 @@ class _DebtRowTile extends StatelessWidget {
                   Text(
                     l.t('home_my_debts_owe_to')
                         .replaceFirst('{name}', debt.creditorName),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 11,
                       color: isDark
                           ? AppColors.textTertiaryDark
@@ -260,7 +250,7 @@ class _DebtRowTile extends StatelessWidget {
             // Amount
             Text(
               formatCurrency(debt.amount, debt.currency),
-              style: GoogleFonts.anuphan(
+              style: GoogleFonts.sarabun(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: isDark

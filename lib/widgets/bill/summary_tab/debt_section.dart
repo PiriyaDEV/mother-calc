@@ -52,7 +52,7 @@ class DebtSection extends StatelessWidget {
       children: [
         Text(
           title,
-          style: GoogleFonts.notoSansThai(
+          style: GoogleFonts.sarabun(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: isDark
@@ -67,7 +67,7 @@ class DebtSection extends StatelessWidget {
                 horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: AppColors.emerald50,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadii.md),
               border: Border.all(color: AppColors.emerald200),
             ),
             child: Row(
@@ -79,7 +79,7 @@ class DebtSection extends StatelessWidget {
                   isMe
                       ? l.t('summary_no_debt_me')
                       : '${selectedMember.name} ไม่ต้องโอนให้ใคร',
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 13,
                     color: AppColors.emerald700,
                     fontWeight: FontWeight.w500,
@@ -163,7 +163,7 @@ class _DebtCardState extends State<_DebtCard> {
           duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+              borderRadius: BorderRadius.circular(AppRadii.md)),
         ),
       );
     } catch (e) {
@@ -174,7 +174,7 @@ class _DebtCardState extends State<_DebtCard> {
           backgroundColor: AppColors.red,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+              borderRadius: BorderRadius.circular(AppRadii.md)),
         ),
       );
     } finally {
@@ -203,8 +203,8 @@ class _DebtCardState extends State<_DebtCard> {
       decoration: BoxDecoration(
         color: isPaid
             ? AppColors.emerald50
-            : (isDark ? AppColors.surfaceDark : Colors.white),
-        borderRadius: BorderRadius.circular(16),
+            : (isDark ? AppColors.surfaceDark : AppColors.surface),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(
           color: isPaid
               ? AppColors.emerald200
@@ -244,7 +244,7 @@ class _DebtCardState extends State<_DebtCard> {
                     children: [
                       Text(
                         debt.to.name,
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: isDark
@@ -255,7 +255,7 @@ class _DebtCardState extends State<_DebtCard> {
                       if (hasPromptPay)
                         Text(
                           l.t('debt_promptpay').replaceAll('{pp}', debt.to.promptpay ?? ''),
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 11,
                             color: isDark
                                 ? AppColors.textTertiaryDark
@@ -270,7 +270,7 @@ class _DebtCardState extends State<_DebtCard> {
                   children: [
                     Text(
                       formatNumber(debt.amount),
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                         color: isPaid
@@ -284,7 +284,7 @@ class _DebtCardState extends State<_DebtCard> {
                     ),
                     Text(
                       currency,
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 11,
                         color: isDark
                             ? AppColors.textTertiaryDark
@@ -303,9 +303,9 @@ class _DebtCardState extends State<_DebtCard> {
                         color: isQrExpanded
                             ? AppColors.blue400.withValues(alpha: 0.1)
                             : (isDark
-                                ? const Color(0xFF374151)
-                                : const Color(0xFFF3F4F6)),
-                        borderRadius: BorderRadius.circular(8),
+                                ? AppColors.textSecondaryLight
+                                : AppColors.bgSubtle),
+                        borderRadius: BorderRadius.circular(AppRadii.sm),
                       ),
                       child: Icon(
                         Icons.qr_code_rounded,
@@ -335,7 +335,7 @@ class _DebtCardState extends State<_DebtCard> {
                   RepaintBoundary(
                     key: _qrKey,
                     child: Container(
-                      color: Colors.white,
+                      color: AppColors.surface,
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -343,10 +343,10 @@ class _DebtCardState extends State<_DebtCard> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(AppRadii.md),
                               border: Border.all(
-                                  color: const Color(0xFFE5E7EB)),
+                                  color: AppColors.borderLight),
                             ),
                             child: CachedNetworkImage(
                               imageUrl:
@@ -367,25 +367,25 @@ class _DebtCardState extends State<_DebtCard> {
                                 height: 180,
                                 child: Icon(Icons.qr_code_2_rounded,
                                     size: 48,
-                                    color: Color(0xFF9CA3AF)),
+                                    color: AppColors.textTertiaryLight),
                               ),
                             ),
                           ),
                           const SizedBox(height: 10),
                           Text(
                             l.t('debt_scan_qr').replaceAll('{name}', debt.to.name),
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF111827),
+                              color: AppColors.textPrimaryLight,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             debt.to.promptpay!,
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                               fontSize: 12,
-                              color: const Color(0xFF6B7280),
+                              color: AppColors.textTertiaryLight,
                             ),
                           ),
                           const SizedBox(height: 14),
@@ -393,8 +393,8 @@ class _DebtCardState extends State<_DebtCard> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF0F4FF),
-                              borderRadius: BorderRadius.circular(8),
+                              color: AppColors.primaryLight,
+                              borderRadius: BorderRadius.circular(AppRadii.sm),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -407,7 +407,7 @@ class _DebtCardState extends State<_DebtCard> {
                                 const SizedBox(width: 6),
                                 Text(
                                   'Kidtang',
-                                  style: GoogleFonts.notoSansThai(
+                                  style: GoogleFonts.sarabun(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.primary,
@@ -431,7 +431,7 @@ class _DebtCardState extends State<_DebtCard> {
                           color: _savingQr
                               ? AppColors.neutral400
                               : AppColors.primary,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(AppRadii.xl),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -452,10 +452,10 @@ class _DebtCardState extends State<_DebtCard> {
                               _savingQr
                                   ? l.t('summary_saving_qr')
                                   : l.t('summary_save_qr'),
-                              style: GoogleFonts.notoSansThai(
+                              style: GoogleFonts.sarabun(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: AppColors.surface,
                               ),
                             ),
                           ],
@@ -489,7 +489,7 @@ class _DebtCardState extends State<_DebtCard> {
                   const SizedBox(width: 6),
                   Text(
                     isPaid ? l.t('summary_paid_label') : l.t('summary_not_paid_label'),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 13,
                       color: isPaid
                           ? AppColors.emerald600
@@ -520,10 +520,10 @@ class _DebtCardState extends State<_DebtCard> {
                         decoration: BoxDecoration(
                           color: isPaid
                               ? (isDark
-                                  ? const Color(0xFF374151)
-                                  : const Color(0xFFF3F4F6))
+                                  ? AppColors.textSecondaryLight
+                                  : AppColors.bgSubtle)
                               : AppColors.emerald500,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(AppRadii.xl),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -542,7 +542,7 @@ class _DebtCardState extends State<_DebtCard> {
                             const SizedBox(width: 4),
                             Text(
                               isPaid ? l.t('common_cancel') : l.t('summary_upload_slip'),
-                              style: GoogleFonts.notoSansThai(
+                              style: GoogleFonts.sarabun(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: isPaid

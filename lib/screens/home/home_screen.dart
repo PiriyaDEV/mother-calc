@@ -145,7 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               Expanded(
                                 child: Text(
                                   l.t('home_greeting').replaceAll('{name}', firstName),
-                                  style: GoogleFonts.anuphan(
+                                  style: GoogleFonts.sarabun(
                                     fontSize: 22,
                                     fontWeight: FontWeight.w700,
                                     color: isDark
@@ -203,10 +203,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                       icon: Icons.group_rounded,
                                       label: l.t('home_nav_groups'),
                                       sublabel: l.t('home_nav_groups_sub'),
-                                      color: const Color(0xFF7B5CF6),
+                                      color: AppColors.accent,
                                       bgColor: isDark
-                                          ? const Color(0xFF1E1A3A)
-                                          : const Color(0xFFEDE9FE),
+                                          ? AppColors.primaryBlue.withValues(alpha: 0.25)
+                                          : AppColors.primaryLight,
                                       onTap: () => context.go('/groups'),
                                     ),
                                   ),
@@ -218,8 +218,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       sublabel: l.t('home_nav_friends_sub'),
                                       color: AppColors.accentAqua,
                                       bgColor: isDark
-                                          ? const Color(0xFF0D2A28)
-                                          : const Color(0xFFE0FAF7),
+                                          ? AppColors.emerald.withValues(alpha: 0.15)
+                                          : AppColors.emerald.withValues(alpha: 0.08),
                                       onTap: () => context.go('/friends'),
                                     ),
                                   ),
@@ -253,7 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               : (_ratesTime.isNotEmpty
                                                   ? ' · $_ratesTime'
                                                   : '')),
-                                      style: GoogleFonts.anuphan(
+                                      style: GoogleFonts.sarabun(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,
                                         color: isDark
@@ -397,15 +397,7 @@ class _WalletIconButton extends StatelessWidget {
             ? AppColors.surfaceDark
             : Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(AppRadii.md),
-        boxShadow: isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: AppColors.primaryBlue.withValues(alpha: 0.10),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+        boxShadow: isDark ? null : const [AppShadows.card],
       ),
       child: Icon(
         Icons.account_balance_wallet_outlined,
@@ -457,15 +449,7 @@ class _RefreshButtonState extends State<_RefreshButton> {
                 ? AppColors.surfaceDark
                 : Colors.white.withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(AppRadii.xs),
-            boxShadow: widget.isDark
-                ? null
-                : [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+            boxShadow: widget.isDark ? null : const [AppShadows.subtle],
           ),
           child: widget.loading
               ? const Padding(

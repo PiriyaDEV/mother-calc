@@ -46,7 +46,7 @@ class LineWebReturnScreen extends StatelessWidget {
                   Text(
                     l.t('login_line_return_success'),
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
@@ -56,7 +56,7 @@ class LineWebReturnScreen extends StatelessWidget {
                   Text(
                     '${l.t('login_line_return_body')}${l.t('login_line_return_close')}',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 15,
                       height: 1.5,
                       color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,

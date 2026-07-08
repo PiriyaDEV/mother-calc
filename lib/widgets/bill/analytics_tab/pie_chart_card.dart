@@ -47,10 +47,10 @@ class _PieChartCardState extends State<PieChartCard> {
         value: mt.total,
         title: pct >= 8 ? '${pct.toStringAsFixed(0)}%' : '',
         radius: isTouched ? 90 : 75,
-        titleStyle: GoogleFonts.notoSansThai(
+        titleStyle: GoogleFonts.sarabun(
           fontSize: 11,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: AppColors.surface,
         ),
         titlePositionPercentageOffset: 0.6,
       );
@@ -110,7 +110,7 @@ class _PieChartCardState extends State<PieChartCard> {
                   const SizedBox(width: 5),
                   Text(
                     mt.member.name,
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 12,
                       color: widget.isDark
                           ? AppColors.textSecondaryDark

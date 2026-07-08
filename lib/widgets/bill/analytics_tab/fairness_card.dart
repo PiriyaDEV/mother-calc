@@ -42,8 +42,8 @@ class FairnessCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(
             color: isDark ? AppColors.borderDark : AppColors.borderLight),
       ),
@@ -56,7 +56,7 @@ class FairnessCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 l.t('analytics_fairness'),
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: isDark
@@ -70,7 +70,7 @@ class FairnessCard extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: fairnessColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadii.sm),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -80,7 +80,7 @@ class FairnessCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       ratioText,
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: fairnessColor,
@@ -139,7 +139,7 @@ class FairnessCard extends StatelessWidget {
             children: [
               Text(
                 l.t('analytics_avg_per_person'),
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 13,
                   color: isDark
                       ? AppColors.textSecondaryDark
@@ -148,7 +148,7 @@ class FairnessCard extends StatelessWidget {
               ),
               Text(
                 '${formatNumber(avgPerPerson)} บาท',
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: AppColors.primary,
@@ -189,17 +189,17 @@ class FairnessPersonCol extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 11,
               color: isDark
                   ? AppColors.textTertiaryDark
-                  : const Color(0xFF9CA3AF),
+                  : AppColors.textTertiaryLight,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             name,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: isDark
@@ -209,7 +209,7 @@ class FairnessPersonCol extends StatelessWidget {
           ),
           Text(
             '${formatNumber(amount)} บาท',
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 13,
               fontWeight: FontWeight.w700,
               color: color,

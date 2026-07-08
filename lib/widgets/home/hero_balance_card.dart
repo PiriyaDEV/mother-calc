@@ -8,12 +8,16 @@ import 'package:kidtang_flutter/stores/groups_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
 
+/// Clubhouse-style hero card: clean white surface, large number,
+/// subtle blue accent border, no heavy gradients.
 class HeroBalanceCard extends StatelessWidget {
   const HeroBalanceCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-      final l = context.watch<LocaleProvider>();
+    final l = context.watch<LocaleProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Selector2<BillsStore, GroupsStore, (BillAggregateStats?, int, bool)>(
       selector: (_, billsStore, groupsStore) => (
         billsStore.stats,
@@ -27,108 +31,106 @@ class HeroBalanceCard extends StatelessWidget {
         final totalBills = stats?.totalCount ?? 0;
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            0,
+          ),
           child: Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.xl),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFF2D5BFF),
-                  Color(0xFF1A3FCC),
-                  Color(0xFF0B1E3D)
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                stops: [0.0, 0.55, 1.0],
-              ),
+              color: isDark ? AppColors.surfaceDark : AppColors.surface,
               borderRadius: BorderRadius.circular(AppRadii.lg),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF2D5BFF).withValues(alpha: 0.40),
-                  blurRadius: 32,
-                  offset: const Offset(0, 12),
-                ),
-              ],
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              ),
+              boxShadow: isDark
+                  ? null
+                  : [AppShadows.card],
             ),
-            child: Stack(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Decorative circles
-                Positioned(
-                  right: -24,
-                  top: -32,
-                  child: Container(
-                    width: 130,
-                    height: 130,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.06),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: 30,
-                  bottom: -50,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.04),
-                    ),
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                // Label row
+                Row(
                   children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Text(
                       l.t('home_stats_title'),
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.65),
-                        fontWeight: FontWeight.w400,
+                        fontWeight: FontWeight.w500,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                        letterSpacing: 0.2,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    if (dataLoading)
-                      const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    else
-                      Text(
-                        '฿${formatNumber(grandTotal)}',
-                        style: GoogleFonts.anuphan(
-                          fontSize: 38,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: -1,
-                          height: 1.1,
-                        ),
-                      ),
-                    const SizedBox(height: 20),
-                    if (!dataLoading)
-                      Row(
-                        children: [
-                          HeroPill(
-                            label: '$groupsCount กลุ่ม',
-                            icon: Icons.people_rounded,
-                          ),
-                          const SizedBox(width: 8),
-                          HeroPill(
-                            label: '$totalBills บิล',
-                            icon: Icons.receipt_rounded,
-                          ),
-                          const SizedBox(width: 8),
-                          HeroPill(
-                            label: '$totalItems รายการ',
-                            icon: Icons.list_rounded,
-                          ),
-                        ],
-                      ),
                   ],
                 ),
+
+                const SizedBox(height: AppSpacing.md),
+
+                // Big number
+                if (dataLoading)
+                  Container(
+                    width: 140,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.borderDark
+                          : AppColors.bgSubtle,
+                      borderRadius: BorderRadius.circular(AppRadii.sm),
+                    ),
+                  )
+                else
+                  Text(
+                    '฿${formatNumber(grandTotal)}',
+                    style: GoogleFonts.sarabun(
+                      fontSize: 36,
+                      fontWeight: FontWeight.w700,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimaryLight,
+                      letterSpacing: -1,
+                      height: 1.1,
+                    ),
+                  ),
+
+                const SizedBox(height: AppSpacing.lg),
+
+                // Stats row — pill chips
+                if (!dataLoading)
+                  Row(
+                    children: [
+                      _StatChip(
+                        icon: Icons.people_outline_rounded,
+                        label: '$groupsCount กลุ่ม',
+                        isDark: isDark,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      _StatChip(
+                        icon: Icons.receipt_long_outlined,
+                        label: '$totalBills บิล',
+                        isDark: isDark,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      _StatChip(
+                        icon: Icons.format_list_bulleted_rounded,
+                        label: '$totalItems รายการ',
+                        isDark: isDark,
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -138,6 +140,57 @@ class HeroBalanceCard extends StatelessWidget {
   }
 }
 
+class _StatChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isDark;
+
+  const _StatChip({
+    required this.icon,
+    required this.label,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm + 2,
+        vertical: AppSpacing.xs + 2,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.bgDark : AppColors.bgSubtle,
+        borderRadius: BorderRadius.circular(AppRadii.full),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 12,
+            color: AppColors.primary,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: GoogleFonts.sarabun(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Keep HeroPill for backward compat (used elsewhere)
 class HeroPill extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -146,28 +199,7 @@ class HeroPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(AppRadii.full),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: Colors.white.withValues(alpha: 0.9)),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: GoogleFonts.notoSansThai(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.9),
-            ),
-          ),
-        ],
-      ),
-    );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return _StatChip(icon: icon, label: label, isDark: isDark);
   }
 }

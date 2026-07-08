@@ -445,7 +445,7 @@ class _SignOutButtonState extends State<_SignOutButton> {
               const SizedBox(width: AppSpacing.sm),
               Text(
                 widget.label,
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.red,

@@ -82,7 +82,7 @@ class _BillsScreenState extends State<BillsScreen>
                       children: [
                         Text(
                           l.t('bills_title'),
-                          style: GoogleFonts.anuphan(
+                          style: GoogleFonts.sarabun(
                             fontSize: 26,
                             fontWeight: FontWeight.w700,
                             color: isDark
@@ -95,7 +95,7 @@ class _BillsScreenState extends State<BillsScreen>
                           const SizedBox(height: AppSpacing.xxs),
                           Text(
                             '$allBillsCount ${l.t('nav_bills')}',
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                               fontSize: 13,
                               color: isDark
                                   ? AppColors.neutral400Dark
@@ -134,15 +134,9 @@ class _BillsScreenState extends State<BillsScreen>
                 child: TabBar(
                   controller: _tabController,
                   indicator: BoxDecoration(
-                    color: isDark ? AppColors.bgDark : Colors.white,
+                    color: isDark ? AppColors.bgDark : AppColors.surface,
                     borderRadius: BorderRadius.circular(AppRadii.sm),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    boxShadow: const [AppShadows.subtle],
                   ),
                   indicatorSize: TabBarIndicatorSize.tab,
                   dividerColor: Colors.transparent,
@@ -153,11 +147,11 @@ class _BillsScreenState extends State<BillsScreen>
                   unselectedLabelColor: isDark
                       ? AppColors.neutral400Dark
                       : AppColors.neutral400,
-                  labelStyle: GoogleFonts.notoSansThai(
+                  labelStyle: GoogleFonts.sarabun(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
-                  unselectedLabelStyle: GoogleFonts.notoSansThai(
+                  unselectedLabelStyle: GoogleFonts.sarabun(
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
                   ),
@@ -248,19 +242,11 @@ class _CreateButtonState extends State<_CreateButton> {
                 ? AppGradients.primaryButtonDark
                 : AppGradients.primaryButtonLight,
             borderRadius: BorderRadius.circular(AppRadii.md),
-            boxShadow: isDark
-                ? null
-                : [
-                    BoxShadow(
-                      color: AppColors.primaryBlue.withValues(alpha: 0.35),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
+            boxShadow: isDark ? null : const [AppShadows.card],
           ),
           child: const Icon(
             Icons.add_rounded,
-            color: Colors.white,
+            color: AppColors.surface,
             size: 24,
           ),
         ),
@@ -484,7 +470,7 @@ class _SectionHeaderWidget extends StatelessWidget {
                 const SizedBox(width: AppSpacing.xs),
                 Text(
                   item.label,
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: item.isGroup
@@ -510,7 +496,7 @@ class _SectionHeaderWidget extends StatelessWidget {
                   ),
                   child: Text(
                     '${item.count}',
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: item.isGroup

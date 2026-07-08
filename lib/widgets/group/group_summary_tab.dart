@@ -92,7 +92,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
               padding: const EdgeInsets.all(AppSpacing.xl),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF4366f4), Color(0xFF6b8aff)],
+                  colors: [AppColors.primaryBlue, AppColors.accent],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -103,7 +103,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
                 children: [
                   Text(
                     l.t('analytics_group_total'),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 13,
                       color: Colors.white.withValues(alpha: 0.8),
                     ),
@@ -111,16 +111,16 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
                   const SizedBox(height: 6),
                   Text(
                     '${formatNumber(_totalAmount)} ${l.t('common_baht')}',
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.surface,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     l.t('unit_bills').replaceFirst('{count}', '${widget.bills.length}'),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 12,
                       color: Colors.white.withValues(alpha: 0.7),
                     ),
@@ -160,9 +160,9 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
                           height: 36,
                           decoration: BoxDecoration(
                             color: widget.isDark
-                                ? const Color(0xFF374151)
-                                : const Color(0xFFF3F4F6),
-                            borderRadius: BorderRadius.circular(10),
+                                ? AppColors.textSecondaryLight
+                                : AppColors.bgSubtle,
+                            borderRadius: BorderRadius.circular(AppRadii.md),
                           ),
                           child: Center(
                             child: Text(
@@ -178,7 +178,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
                             children: [
                               Text(
                                 bill.title,
-                                style: GoogleFonts.notoSansThai(
+                                style: GoogleFonts.sarabun(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: widget.isDark
@@ -188,7 +188,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
                               ),
                               Text(
                                 '${l.t('unit_items').replaceFirst('{count}', '${bill.items.length}')} · ${l.t('unit_people').replaceFirst('{count}', '${bill.members.length}')}',
-                                style: GoogleFonts.notoSansThai(
+                                style: GoogleFonts.sarabun(
                                   fontSize: 12,
                                   color: widget.isDark
                                       ? AppColors.textTertiaryDark
@@ -200,7 +200,7 @@ class _GroupSummaryTabState extends State<GroupSummaryTab> {
                         ),
                         Text(
                           '${formatNumber(billTotal)} ${l.t('common_baht')}',
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: widget.isDark

@@ -12,7 +12,7 @@ class FormSectionLabel extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(
       label,
-      style: GoogleFonts.notoSansThai(
+      style: GoogleFonts.sarabun(
         fontSize: 13,
         fontWeight: FontWeight.w600,
         color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,

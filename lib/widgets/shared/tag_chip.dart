@@ -24,7 +24,7 @@ class TagChip extends StatelessWidget {
       ),
       child: Text(
         '#$tag',
-        style: GoogleFonts.notoSansThai(
+        style: GoogleFonts.sarabun(
           fontSize: fontSize,
           color: AppColors.primary,
           fontWeight: FontWeight.w500,

@@ -77,7 +77,7 @@ class _AddFriendPanelState extends State<AddFriendPanel> {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
+          color: isDark ? AppColors.surfaceDark : AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadii.lg),
           border: Border.all(
             color: isDark ? AppColors.borderDark : AppColors.neutral100,
@@ -91,7 +91,7 @@ class _AddFriendPanelState extends State<AddFriendPanel> {
                 Expanded(
                   child: Text(
                     l.t('friends_add_new'),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: isDark
@@ -122,10 +122,10 @@ class _AddFriendPanelState extends State<AddFriendPanel> {
                       TextField(
                         controller: _ctrl,
                         autofocus: true,
-                        style: GoogleFonts.notoSansThai(fontSize: 14),
+                        style: GoogleFonts.sarabun(fontSize: 14),
                         decoration: InputDecoration(
                           hintText: '@username',
-                          hintStyle: GoogleFonts.notoSansThai(
+                          hintStyle: GoogleFonts.sarabun(
                             fontSize: 14,
                             color: AppColors.neutral400,
                           ),
@@ -157,7 +157,7 @@ class _AddFriendPanelState extends State<AddFriendPanel> {
                             borderRadius:
                                 BorderRadius.circular(AppRadii.md),
                             borderSide: const BorderSide(
-                                color: Color(0xFF286BFE)),
+                                color: AppColors.primaryBlue),
                           ),
                         ),
                         onChanged: (v) {
@@ -176,7 +176,7 @@ class _AddFriendPanelState extends State<AddFriendPanel> {
                       const Padding(
                         padding: EdgeInsets.only(left: 10),
                         child: Icon(Icons.search_rounded,
-                            size: 16, color: Color(0xFF9CA3AF)),
+                            size: 16, color: AppColors.textTertiaryLight),
                       ),
                     ],
                   ),
@@ -204,10 +204,10 @@ class _AddFriendPanelState extends State<AddFriendPanel> {
                           )
                         : Text(
                             l.t('friends_send'),
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: AppColors.surface,
                             ),
                           ),
                   ),
@@ -220,14 +220,14 @@ class _AddFriendPanelState extends State<AddFriendPanel> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF2F2),
+                  color: AppColors.redFaint,
                   borderRadius: BorderRadius.circular(AppRadii.md),
                 ),
                 child: Text(
                   _error,
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 12,
-                    color: const Color(0xFFEF4444),
+                    color: AppColors.red,
                   ),
                 ),
               ),
@@ -238,20 +238,20 @@ class _AddFriendPanelState extends State<AddFriendPanel> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0FDF4),
+                  color: AppColors.emeraldLight,
                   borderRadius: BorderRadius.circular(AppRadii.md),
                 ),
                 child: Row(
                   children: [
                     const Icon(Icons.check_rounded,
-                        size: 14, color: Color(0xFF16A34A)),
+                        size: 14, color: AppColors.emerald),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         _success,
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 12,
-                          color: const Color(0xFF16A34A),
+                          color: AppColors.emerald,
                         ),
                       ),
                     ),

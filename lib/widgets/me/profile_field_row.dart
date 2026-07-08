@@ -47,7 +47,7 @@ class ProfileFieldRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.notoSansThai(
+                  style: GoogleFonts.sarabun(
                     fontSize: 12,
                     color: ThemeColors.textTertiary(isDark),
                   ),
@@ -94,7 +94,7 @@ class ProfileFieldRow extends StatelessWidget {
                             ),
                           )
                         : const Icon(Icons.check_rounded,
-                            color: Colors.white, size: 16),
+                            color: AppColors.surface, size: 16),
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -123,7 +123,7 @@ class ProfileFieldRow extends StatelessWidget {
           if (!isEditing)
             Text(
               value,
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 14,
                 color: valueColor ?? ThemeColors.textPrimary(isDark),
               ),
@@ -134,7 +134,7 @@ class ProfileFieldRow extends StatelessWidget {
                 if (prefix != null)
                   Text(
                     prefix!,
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 14,
                       color: ThemeColors.textTertiary(isDark),
                     ),
@@ -144,10 +144,10 @@ class ProfileFieldRow extends StatelessWidget {
                     controller: controller,
                     autofocus: true,
                     inputFormatters: inputFormatters,
-                    style: GoogleFonts.notoSansThai(fontSize: 14),
+                    style: GoogleFonts.sarabun(fontSize: 14),
                     decoration: InputDecoration(
                       hintText: hintText,
-                      hintStyle: GoogleFonts.notoSansThai(
+                      hintStyle: GoogleFonts.sarabun(
                         fontSize: 14,
                         color: AppColors.textTertiaryLight,
                       ),

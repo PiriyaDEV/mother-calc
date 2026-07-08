@@ -70,7 +70,7 @@ class RoundedAvatar extends StatelessWidget {
         child: Text(
           _initial,
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.surface,
             fontSize: size * 0.38,
             fontWeight: FontWeight.bold,
           ),

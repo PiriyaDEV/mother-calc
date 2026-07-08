@@ -24,7 +24,7 @@ class BillCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
+          color: isDark ? AppColors.surfaceDark : AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadii.lg),
           boxShadow: isDark ? null : AppColors.shadowCard,
         ),
@@ -39,9 +39,9 @@ class BillCard extends StatelessWidget {
                   height: 44,
                   decoration: BoxDecoration(
                     color: isDark
-                        ? AppColors.borderDark
-                        : AppColors.borderLight,
-                    borderRadius: BorderRadius.circular(AppRadii.md),
+                        ? AppColors.primaryBlue.withValues(alpha: 0.15)
+                        : AppColors.primaryLight,
+                    shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: Text(
@@ -57,7 +57,7 @@ class BillCard extends StatelessWidget {
                     children: [
                       Text(
                         bill.title,
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: isDark
@@ -70,7 +70,7 @@ class BillCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         formatDate(bill.updatedAt ?? bill.createdAt),
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 12,
                           color: isDark
                               ? AppColors.textTertiaryDark
@@ -85,7 +85,7 @@ class BillCard extends StatelessWidget {
                   children: [
                     Text(
                       formatNumber(calc.total),
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: isDark
@@ -95,7 +95,7 @@ class BillCard extends StatelessWidget {
                     ),
                     Text(
                       currency,
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 11,
                         color: isDark
                             ? AppColors.textTertiaryDark
@@ -125,7 +125,7 @@ class BillCard extends StatelessWidget {
                   const SizedBox(width: AppSpacing.sm),
                   Text(
                     '${bill.members.length} คน',
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 12,
                       color: isDark
                           ? AppColors.textTertiaryDark
@@ -203,7 +203,7 @@ class _BillStatusBadge extends StatelessWidget {
           const SizedBox(width: AppSpacing.xs),
           Text(
             label,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 11,
               fontWeight: FontWeight.w500,
               color: textColor,

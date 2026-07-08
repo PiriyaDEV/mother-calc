@@ -51,10 +51,10 @@ class _TouchablePieChartState extends State<TouchablePieChart> {
         value: billTotal,
         title: pct >= 10 ? '${pct.toStringAsFixed(0)}%' : '',
         radius: isTouched ? 90 : 75,
-        titleStyle: GoogleFonts.notoSansThai(
+        titleStyle: GoogleFonts.sarabun(
           fontSize: 11,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: AppColors.surface,
         ),
         titlePositionPercentageOffset: 0.6,
       );
@@ -64,26 +64,18 @@ class _TouchablePieChartState extends State<TouchablePieChart> {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
+          color: isDark ? AppColors.surfaceDark : AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadii.lg),
           border: Border.all(
               color: isDark ? AppColors.borderDark : AppColors.borderLight),
-          boxShadow: isDark
-              ? null
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  )
-                ],
+          boxShadow: isDark ? null : const [AppShadows.subtle],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               l.t('analytics_pie_chart_per_bill'),
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: isDark
@@ -140,13 +132,13 @@ class _TouchablePieChartState extends State<TouchablePieChart> {
                       height: 12,
                       decoration: BoxDecoration(
                           color: color,
-                          borderRadius: BorderRadius.circular(3)),
+                          borderRadius: BorderRadius.circular(AppRadii.xs)),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         '${bill.emoji ?? '🧾'} ${bill.title}',
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 12,
                           color: isDark
                               ? AppColors.textSecondaryDark
@@ -157,7 +149,7 @@ class _TouchablePieChartState extends State<TouchablePieChart> {
                     ),
                     Text(
                       '$pct%',
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: color,
@@ -166,7 +158,7 @@ class _TouchablePieChartState extends State<TouchablePieChart> {
                     const SizedBox(width: 8),
                     Text(
                       '฿${formatNumber(billTotal)}',
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 12,
                         color: isDark
                             ? AppColors.textTertiaryDark

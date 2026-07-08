@@ -36,7 +36,7 @@ class AppErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final iconBg = isDark
-        ? const Color(0xFF2A1A1A)
+        ? AppColors.red.withValues(alpha: 0.15)
         : AppColors.redFaint;
     final iconColor = isDark ? AppColors.redDark : AppColors.red;
     final textColor =
@@ -69,7 +69,7 @@ class AppErrorState extends StatelessWidget {
           Text(
             'เกิดข้อผิดพลาด',
             textAlign: TextAlign.center,
-            style: GoogleFonts.anuphan(
+            style: GoogleFonts.sarabun(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: textColor,
@@ -82,7 +82,7 @@ class AppErrorState extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 14,
               color: bodyColor,
               height: 1.5,
@@ -155,7 +155,7 @@ class _RetryButtonState extends State<_RetryButton> {
               const SizedBox(width: AppSpacing.sm),
               Text(
                 widget.label,
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: textColor,

@@ -31,7 +31,7 @@ class EmptyStateWidget extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             Text(
               title,
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
@@ -43,7 +43,7 @@ class EmptyStateWidget extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 240),
               child: Text(
                 subtitle,
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 14,
                   color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                   height: 1.5,
@@ -68,10 +68,10 @@ class EmptyStateWidget extends StatelessWidget {
                   ),
                   child: Text(
                     ctaLabel!,
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: AppColors.surface,
                     ),
                   ),
                 ),

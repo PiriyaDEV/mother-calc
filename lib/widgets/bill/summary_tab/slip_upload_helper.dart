@@ -29,15 +29,15 @@ Future<void> pickSlipAndMarkPaid(
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          color: isDark ? AppColors.surfaceDark : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadii.xl),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               l.t('slip_upload_title'),
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: isDark
@@ -48,7 +48,7 @@ Future<void> pickSlipAndMarkPaid(
             const SizedBox(height: 8),
             Text(
               l.t('slip_upload_sub'),
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 13,
                 color: isDark
                     ? AppColors.textSecondaryDark
@@ -59,27 +59,27 @@ Future<void> pickSlipAndMarkPaid(
             const SizedBox(height: 16),
             ListTile(
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(AppRadii.md)),
               tileColor: isDark
-                  ? const Color(0xFF1F2937)
-                  : const Color(0xFFF9FAFB),
+                  ? AppColors.surfaceDark
+                  : AppColors.bgSubtle,
               leading: const Icon(Icons.photo_library_outlined,
                   color: AppColors.blue400),
               title: Text(l.t('slip_from_gallery'),
-                  style: GoogleFonts.notoSansThai(fontSize: 14)),
+                  style: GoogleFonts.sarabun(fontSize: 14)),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             const SizedBox(height: 8),
             ListTile(
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(AppRadii.md)),
               tileColor: isDark
-                  ? const Color(0xFF1F2937)
-                  : const Color(0xFFF9FAFB),
+                  ? AppColors.surfaceDark
+                  : AppColors.bgSubtle,
               leading: const Icon(Icons.camera_alt_outlined,
                   color: AppColors.blue400),
               title: Text(l.t('slip_take_photo'),
-                  style: GoogleFonts.notoSansThai(fontSize: 14)),
+                  style: GoogleFonts.sarabun(fontSize: 14)),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
           ],
@@ -103,19 +103,19 @@ Future<void> pickSlipAndMarkPaid(
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surface,
       shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.xl)),
       title: Text(
         l.t('slip_confirm_title'),
-        style: GoogleFonts.notoSansThai(
+        style: GoogleFonts.sarabun(
             fontSize: 16, fontWeight: FontWeight.bold),
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadii.md),
             child: kIsWeb
                 ? Image.network(
                     image.path,
@@ -133,7 +133,7 @@ Future<void> pickSlipAndMarkPaid(
           const SizedBox(height: 12),
           Text(
             l.t('slip_confirm_msg'),
-            style: GoogleFonts.notoSansThai(fontSize: 13),
+            style: GoogleFonts.sarabun(fontSize: 13),
             textAlign: TextAlign.center,
           ),
         ],
@@ -141,14 +141,14 @@ Future<void> pickSlipAndMarkPaid(
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: Text(l.t('slip_cancel'), style: GoogleFonts.notoSansThai()),
+          child: Text(l.t('slip_cancel'), style: GoogleFonts.sarabun()),
         ),
         FilledButton(
           style: FilledButton.styleFrom(
               backgroundColor: AppColors.emerald500),
           onPressed: () => Navigator.pop(ctx, true),
           child: Text(l.t('slip_confirm_btn'),
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                   fontWeight: FontWeight.w600)),
         ),
       ],

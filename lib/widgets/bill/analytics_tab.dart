@@ -52,13 +52,8 @@ class AnalyticsTab extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary.withValues(alpha: 0.12),
-                    AppColors.primaryLight.withValues(alpha: 0.08),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(24),
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(AppRadii.md),
               ),
               child: const Center(
                 child: Text('📊', style: TextStyle(fontSize: 36)),
@@ -67,7 +62,7 @@ class AnalyticsTab extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               l.t('analytics_add_first'),
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: isDark
@@ -78,7 +73,7 @@ class AnalyticsTab extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               l.t('analytics_no_data'),
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 13,
                 color: isDark
                     ? AppColors.textTertiaryDark

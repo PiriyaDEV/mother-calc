@@ -58,7 +58,7 @@ class BillStatusPill extends StatelessWidget {
           const SizedBox(width: AppSpacing.xs),
           Text(
             label,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 11,
               fontWeight: FontWeight.w500,
               color: textColor,

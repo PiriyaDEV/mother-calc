@@ -30,7 +30,7 @@ class SettingsSection extends StatelessWidget {
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
+            color: isDark ? AppColors.surfaceDark : AppColors.surface,
             borderRadius: BorderRadius.circular(AppRadii.lg),
             border: Border.all(
               color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -45,8 +45,8 @@ class SettingsSection extends StatelessWidget {
                     ? Icons.dark_mode_rounded
                     : Icons.light_mode_rounded,
                 iconColor: isDark
-                    ? const Color(0xFF7C83FD)
-                    : const Color(0xFFFFB23E),
+                    ? AppColors.accent
+                    : AppColors.amber,
                 label: l.t('me_dark_mode'),
                 trailing: Switch(
                   value: isDark,
@@ -67,7 +67,7 @@ class SettingsSection extends StatelessWidget {
               SettingsTile(
                 isDark: isDark,
                 icon: Icons.language_rounded,
-                iconColor: const Color(0xFF34C77B),
+                iconColor: AppColors.emerald,
                 label: l.t('language'),
                 trailing: Container(
                   padding: const EdgeInsets.symmetric(
@@ -80,7 +80,7 @@ class SettingsSection extends StatelessWidget {
                   ),
                   child: Text(
                     isThai ? l.t('me_language_thai') : 'EN',
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: isDark

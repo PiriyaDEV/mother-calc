@@ -20,8 +20,8 @@ class BillSummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(
             color: isDark ? AppColors.borderDark : AppColors.borderLight),
       ),
@@ -54,7 +54,7 @@ class BillSummaryCard extends StatelessWidget {
             children: [
               Text(
                 l.t('summary_grand_total'),
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                   color: isDark
@@ -64,7 +64,7 @@ class BillSummaryCard extends StatelessWidget {
               ),
               Text(
                 '${formatNumber(calc.total)} $currency',
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.primary,
@@ -101,7 +101,7 @@ class _SummaryRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 13,
               color: isDark
                   ? AppColors.textSecondaryDark
@@ -110,7 +110,7 @@ class _SummaryRow extends StatelessWidget {
           ),
           Text(
             '${isDiscount ? '-' : ''}${formatNumber(value.abs())} $currency',
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 13,
               color: isDiscount
                   ? AppColors.emerald

@@ -22,7 +22,7 @@ class SharedBillCard extends StatelessWidget {
     final isPending = bill.isPendingPayment;
 
     return Material(
-      color: isDark ? AppColors.surfaceDark : Colors.white,
+      color: isDark ? AppColors.surfaceDark : AppColors.surface,
       borderRadius: BorderRadius.circular(AppRadii.md),
       child: InkWell(
         onTap: onTap,
@@ -32,17 +32,9 @@ class SharedBillCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadii.md),
             border: Border.all(
-              color: isDark ? AppColors.borderDark : AppColors.neutral100,
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
             ),
-            boxShadow: isDark
-                ? null
-                : [
-                    BoxShadow(
-                      color: const Color(0xFF2D5BFF).withValues(alpha: 0.06),
-                      blurRadius: 20,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
+            boxShadow: isDark ? null : const [AppShadows.subtle],
           ),
           child: Row(
             children: [
@@ -52,7 +44,7 @@ class SharedBillCard extends StatelessWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.accentIceDark : AppColors.accentIce,
-                  borderRadius: BorderRadius.circular(AppRadii.md),
+                  shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: Text(
@@ -70,7 +62,7 @@ class SharedBillCard extends StatelessWidget {
                   children: [
                     Text(
                       bill.title,
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: isDark
@@ -86,7 +78,7 @@ class SharedBillCard extends StatelessWidget {
                         // Date
                         Text(
                           formatDate(bill.updatedAt ?? bill.createdAt),
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 11,
                             color: isDark
                                 ? AppColors.neutral400Dark
@@ -122,7 +114,7 @@ class SharedBillCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             l.t('unit_people').replaceFirst('{count}', '${bill.members.length}'),
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                               fontSize: 11,
                               color: isDark
                                   ? AppColors.neutral400Dark
@@ -143,7 +135,7 @@ class SharedBillCard extends StatelessWidget {
                 children: [
                   Text(
                     formatCurrency(total, bill.settings.currency),
-                    style: GoogleFonts.anuphan(
+                    style: GoogleFonts.sarabun(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: isDark
@@ -229,7 +221,7 @@ class _StatusBadge extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 10,
               fontWeight: FontWeight.w600,
               color: textColor,

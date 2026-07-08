@@ -26,14 +26,14 @@ Future<bool> showConfirmDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg)),
       title: Text(
         title,
-        style: GoogleFonts.notoSansThai(
+        style: GoogleFonts.sarabun(
           fontWeight: FontWeight.bold,
           color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
         ),
       ),
       content: Text(
         description,
-        style: GoogleFonts.notoSansThai(
+        style: GoogleFonts.sarabun(
           color: isDark
               ? AppColors.textSecondaryDark
               : AppColors.textSecondaryLight,
@@ -44,7 +44,7 @@ Future<bool> showConfirmDialog(
           onPressed: () => Navigator.pop(ctx, false),
           child: Text(
             resolvedCancelLabel,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               color: isDark
                   ? AppColors.textSecondaryDark
                   : AppColors.textSecondaryLight,
@@ -55,7 +55,7 @@ Future<bool> showConfirmDialog(
           onPressed: () => Navigator.pop(ctx, true),
           child: Text(
             confirmLabel,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontWeight: FontWeight.w600,
               color: danger ? AppColors.red : AppColors.primary,
             ),

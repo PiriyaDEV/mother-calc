@@ -32,13 +32,7 @@ class GroupTabBar extends StatelessWidget {
         indicator: BoxDecoration(
           color: isDark ? AppColors.borderDark : Colors.white,
           borderRadius: BorderRadius.circular(AppRadii.md),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
+          boxShadow: const [AppShadows.subtle],
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
@@ -46,11 +40,11 @@ class GroupTabBar extends StatelessWidget {
         labelColor: AppColors.primary,
         unselectedLabelColor:
             isDark ? AppColors.textTertiaryDark : AppColors.neutral600,
-        labelStyle: GoogleFonts.notoSansThai(
+        labelStyle: GoogleFonts.sarabun(
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
-        unselectedLabelStyle: GoogleFonts.notoSansThai(
+        unselectedLabelStyle: GoogleFonts.sarabun(
           fontSize: 12,
           fontWeight: FontWeight.normal,
         ),
@@ -93,7 +87,7 @@ class _CountTab extends StatelessWidget {
             ),
             child: Text(
               '$count',
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),

@@ -32,8 +32,8 @@ class SelectedMemberCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(
             color: isDark ? AppColors.borderDark : AppColors.borderLight),
       ),
@@ -58,7 +58,7 @@ class SelectedMemberCard extends StatelessWidget {
                         children: [
                           Text(
                             member.name,
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: isDark
@@ -73,13 +73,13 @@ class SelectedMemberCard extends StatelessWidget {
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? const Color(0xFF374151)
-                                    : const Color(0xFFF3F4F6),
-                                borderRadius: BorderRadius.circular(6),
+                                    ? AppColors.borderDark
+                                    : AppColors.borderLight,
+                                borderRadius: BorderRadius.circular(AppRadii.xs),
                               ),
                               child: Text(
                                 l.t('selected_member_external'),
-                                style: GoogleFonts.notoSansThai(
+                                style: GoogleFonts.sarabun(
                                   fontSize: 10,
                                   color: isDark
                                       ? AppColors.textTertiaryDark
@@ -94,16 +94,15 @@ class SelectedMemberCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color:
-                                    AppColors.blue400.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(6),
+                                color: AppColors.primaryLight,
+                                borderRadius: BorderRadius.circular(AppRadii.xs),
                               ),
                               child: Text(
                                 l.t('selected_member_you'),
-                                style: GoogleFonts.notoSansThai(
+                                style: GoogleFonts.sarabun(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.blue400,
+                                  color: AppColors.primary,
                                 ),
                               ),
                             ),
@@ -115,7 +114,7 @@ class SelectedMemberCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           l.t('selected_member_promptpay').replaceAll('{pp}', member.promptpay ?? ''),
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 12,
                             color: isDark
                                 ? AppColors.textTertiaryDark
@@ -131,7 +130,7 @@ class SelectedMemberCard extends StatelessWidget {
                   children: [
                     Text(
                       formatNumber(summary.total),
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: isDark
@@ -141,7 +140,7 @@ class SelectedMemberCard extends StatelessWidget {
                     ),
                     Text(
                       l.t('selected_member_share_title').replaceAll('{emoji}', emoji).replaceAll('{name}', isMe ? l.t('selected_member_share_me') : member.name),
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 11,
                         color: isDark
                             ? AppColors.textTertiaryDark
@@ -163,7 +162,7 @@ class SelectedMemberCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
               child: Text(
                 l.t('selected_member_items_ordered'),
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: isDark
@@ -180,7 +179,7 @@ class SelectedMemberCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           itemShare.item.name,
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 13,
                             color: isDark
                                 ? AppColors.textSecondaryDark
@@ -190,7 +189,7 @@ class SelectedMemberCard extends StatelessWidget {
                       ),
                       Text(
                         '${formatNumber(itemShare.amount)} $currency',
-                        style: GoogleFonts.notoSansThai(
+                        style: GoogleFonts.sarabun(
                           fontSize: 13,
                           color: isDark
                               ? AppColors.textSecondaryDark
@@ -211,7 +210,7 @@ class SelectedMemberCard extends StatelessWidget {
                 children: [
                   Text(
                     l.t('selected_member_total_with_tax'),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: isDark
@@ -221,10 +220,10 @@ class SelectedMemberCard extends StatelessWidget {
                   ),
                   Text(
                     '${formatNumber(summary.total)} $currency',
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.blue400,
+                       color: AppColors.primary,
                     ),
                   ),
                 ],

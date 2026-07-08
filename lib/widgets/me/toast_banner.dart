@@ -51,7 +51,7 @@ class ToastBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(message,
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                     fontSize: 13, color: textColor)),
           ),
           if (onDismiss != null)

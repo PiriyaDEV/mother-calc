@@ -6,6 +6,7 @@ import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'profile_avatar.dart';
 import 'toast_banner.dart';
+// AppGradients removed — profile header now uses plain background (Clubhouse style)
 
 class ProfileHeader extends StatelessWidget {
   final bool isDark;
@@ -29,7 +30,7 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Column(
         children: [
@@ -47,56 +48,46 @@ class ProfileHeader extends StatelessWidget {
             ),
             const SizedBox(height: 8),
           ],
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: isDark
-                  ? AppGradients.primaryButtonDark
-                  : AppGradients.primaryButtonLight,
-              borderRadius: BorderRadius.circular(AppRadii.lg),
-              boxShadow: AppColors.shadowFloat,
-            ),
-            child: Row(
-              children: [
-                ProfileAvatar(
-                  profile: profile,
-                  size: 72,
-                  uploading: uploading,
-                  onPickAvatar: onPickAvatar,
+          // Clubhouse-style: centered avatar above name
+          Column(
+            children: [
+              const SizedBox(height: AppSpacing.md),
+              ProfileAvatar(
+                profile: profile,
+                size: 80,
+                uploading: uploading,
+                onPickAvatar: onPickAvatar,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                profile?.displayName ??
+                    profile?.username ??
+                    context.read<LocaleProvider>().t('notifications_user_fallback'),
+                style: GoogleFonts.sarabun(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        profile?.displayName ??
-                            profile?.username ??
-                            context.read<LocaleProvider>().t('notifications_user_fallback'),
-                        style: GoogleFonts.notoSansThai(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      if (profile?.username != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          '@${profile!.username}',
-                          style: GoogleFonts.notoSansThai(
-                            fontSize: 13,
-                            color:
-                                Colors.white.withValues(alpha: 0.75),
-                          ),
-                        ),
-                      ],
-                    ],
+                textAlign: TextAlign.center,
+              ),
+              if (profile?.username != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  '@${profile!.username}',
+                  style: GoogleFonts.sarabun(
+                    fontSize: 13,
+                    color: isDark
+                        ? AppColors.textTertiaryDark
+                        : AppColors.textTertiaryLight,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ],
-            ),
+              const SizedBox(height: AppSpacing.lg),
+            ],
           ),
-          const SizedBox(height: 4),
         ],
       ),
     );

@@ -32,7 +32,7 @@ class FriendRow extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: AppSpacing.sm),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
+          color: isDark ? AppColors.surfaceDark : AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadii.lg),
           border: Border.all(
             color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -43,8 +43,8 @@ class FriendRow extends StatelessWidget {
             RoundedAvatar(
               name: name,
               avatarUrl: profile?.avatarUrl,
-              size: 40,
-              radius: 16,
+              size: 44,
+              radius: AppRadii.full,
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
@@ -53,7 +53,7 @@ class FriendRow extends StatelessWidget {
                 children: [
                   Text(
                     name,
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: isDark
@@ -64,7 +64,7 @@ class FriendRow extends StatelessWidget {
                   if (username != null)
                     Text(
                       '@$username',
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 12,
                         color: isDark
                             ? AppColors.textTertiaryDark
@@ -79,21 +79,21 @@ class FriendRow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
               decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4),
-                borderRadius: BorderRadius.circular(AppRadii.sm),
+                color: AppColors.emeraldLight,
+                borderRadius: BorderRadius.circular(AppRadii.full),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.person_outline_rounded,
-                      size: 12, color: Color(0xFF16A34A)),
+                      size: 12, color: AppColors.emerald),
                   const SizedBox(width: 4),
                   Text(
                     l.t('friends_tab_label'),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF16A34A),
+                      color: AppColors.emerald,
                     ),
                   ),
                 ],

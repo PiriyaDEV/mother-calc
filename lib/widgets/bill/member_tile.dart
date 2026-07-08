@@ -58,10 +58,10 @@ class MemberTile extends StatelessWidget {
                 ),
         child: Container(
           margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            color: isDark ? AppColors.surfaceDark : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadii.md),
             border: Border.all(
                 color: isDark ? AppColors.borderDark : AppColors.borderLight),
           ),
@@ -84,7 +84,7 @@ class MemberTile extends StatelessWidget {
                           child: Text(
                             member.name,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: isDark
@@ -98,7 +98,7 @@ class MemberTile extends StatelessWidget {
                     ),
                     Text(
                       '${summary.items.length} รายการ',
-                      style: GoogleFonts.notoSansThai(
+                      style: GoogleFonts.sarabun(
                         fontSize: 12,
                         color: isDark
                             ? AppColors.textTertiaryDark
@@ -113,7 +113,7 @@ class MemberTile extends StatelessWidget {
                 children: [
                   Text(
                     formatNumber(summary.total),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: isDark
@@ -123,7 +123,7 @@ class MemberTile extends StatelessWidget {
                   ),
                   Text(
                     currency,
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                       fontSize: 11,
                       color: isDark
                           ? AppColors.textTertiaryDark
@@ -191,11 +191,11 @@ class MemberTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppRadii.xl),
         ),
         child: Text(
           label,
-          style: GoogleFonts.notoSansThai(
+          style: GoogleFonts.sarabun(
             fontSize: 10,
             fontWeight: FontWeight.w500,
             color: color,

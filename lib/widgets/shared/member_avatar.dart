@@ -74,7 +74,7 @@ class MemberAvatar extends StatelessWidget {
         height: size + 4,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 2),
+          border: Border.all(color: AppColors.surface, width: 2),
         ),
         child: ClipOval(child: avatar),
       );
@@ -95,7 +95,7 @@ class MemberAvatar extends StatelessWidget {
         child: Text(
           _initials,
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.surface,
             fontSize: fontSize,
             fontWeight: FontWeight.bold,
           ),
@@ -150,7 +150,7 @@ class MemberAvatarStack extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.neutral100,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+                  border: Border.all(color: AppColors.surface, width: 2),
                 ),
                 child: Center(
                   child: Text(

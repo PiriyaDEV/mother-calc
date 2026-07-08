@@ -26,10 +26,10 @@ class _PasswordFieldState extends State<PasswordField> {
     return TextField(
       controller: widget.controller,
       obscureText: _obscure,
-      style: GoogleFonts.notoSansThai(fontSize: 14),
+      style: GoogleFonts.sarabun(fontSize: 14),
       decoration: InputDecoration(
         hintText: widget.hint,
-        hintStyle: GoogleFonts.notoSansThai(
+        hintStyle: GoogleFonts.sarabun(
           fontSize: 14,
           color: AppColors.textTertiaryLight,
         ),

@@ -38,7 +38,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
     setState(() => _respondingId = null);
     if (err != null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(err, style: GoogleFonts.notoSansThai()),
+        content: Text(err, style: GoogleFonts.sarabun()),
         backgroundColor: AppColors.red,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -55,7 +55,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
     setState(() => _respondingId = null);
     if (err != null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(err, style: GoogleFonts.notoSansThai()),
+        content: Text(err, style: GoogleFonts.sarabun()),
         backgroundColor: AppColors.red,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -112,7 +112,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       children: [
                         Text(
                           l.t('friends_tab_label'),
-                          style: GoogleFonts.anuphan(
+                          style: GoogleFonts.sarabun(
                             fontSize: 26,
                             fontWeight: FontWeight.w700,
                             color: isDark
@@ -126,7 +126,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                           requests.isNotEmpty
                               ? '${friends.length} เพื่อน · ${requests.length} คำขอใหม่'
                               : '${friends.length} เพื่อน',
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 13,
                             color: isDark
                                 ? AppColors.neutral400Dark
@@ -307,7 +307,7 @@ class _AddFriendButtonState extends State<_AddFriendButton> {
               const SizedBox(width: AppSpacing.sm),
               Text(
                 widget.label,
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: widget.active

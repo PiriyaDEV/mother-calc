@@ -27,7 +27,7 @@ class ProfileAvatar extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 3),
+            border: Border.all(color: AppColors.surface, width: 3),
             boxShadow: AppColors.shadowFloat,
           ),
           child: _avatar(),
@@ -42,7 +42,7 @@ class ProfileAvatar extends StatelessWidget {
                 width: 26,
                 height: 26,
                 decoration: const BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.surface,
                   shape: BoxShape.circle,
                   boxShadow: AppColors.shadowSubtle,
                 ),

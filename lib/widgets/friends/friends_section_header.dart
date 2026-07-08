@@ -19,7 +19,7 @@ class FriendsSectionHeader extends StatelessWidget {
       children: [
         Text(
           title,
-          style: GoogleFonts.notoSansThai(
+          style: GoogleFonts.sarabun(
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: isDark
@@ -33,14 +33,14 @@ class FriendsSectionHeader extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
           decoration: BoxDecoration(
             color: AppColors.primaryBlue,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppRadii.xl),
           ),
           child: Text(
             '$count',
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 10,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: AppColors.surface,
             ),
           ),
         ),

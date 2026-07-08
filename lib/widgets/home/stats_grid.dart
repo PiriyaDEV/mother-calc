@@ -46,10 +46,10 @@ class StatsGrid extends StatelessWidget {
                 icon: Icons.receipt_long_rounded,
                 label: l.t('stats_total_bills'),
                 value: l.t('unit_bills').replaceFirst('{count}', '${stats.totalCount}'),
-                accentColor: const Color(0xFF7B5CF6),
+                accentColor: AppColors.violet,
                 bgColor: isDark
-                    ? const Color(0xFF1E1A3A)
-                    : const Color(0xFFEDE9FE),
+                    ? AppColors.violet.withValues(alpha: 0.15)
+                    : AppColors.violetFaint,
               ),
               StatCard(
                 icon: Icons.format_list_bulleted_rounded,
@@ -99,37 +99,32 @@ class StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.md),
-        boxShadow: isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: const Color(0xFF2D5BFF).withValues(alpha: 0.07),
-                  blurRadius: 20,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+        boxShadow: isDark ? null : const [AppShadows.subtle],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
+              Container(
             width: 36,
             height: 36,
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(AppRadii.sm),
+              shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 20, color: accentColor),
+            child: Icon(icon, size: 18, color: accentColor),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 value,
-                style: GoogleFonts.anuphan(
+                style: GoogleFonts.sarabun(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: accentColor,
@@ -139,7 +134,7 @@ class StatCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 label,
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 11,
                   color: isDark
                       ? AppColors.neutral400Dark

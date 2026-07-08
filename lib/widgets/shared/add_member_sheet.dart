@@ -203,8 +203,8 @@ class _AddMemberSheetState extends State<AddMemberSheet>
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.xl),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -214,7 +214,7 @@ class _AddMemberSheetState extends State<AddMemberSheet>
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             child: Text(
               l.t('add_member_title'),
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: isDark
@@ -230,20 +230,14 @@ class _AddMemberSheetState extends State<AddMemberSheet>
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: isDark ? AppColors.surfaceDark : AppColors.neutral100,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadii.md),
             ),
             child: TabBar(
               controller: _tabCtrl,
               indicator: BoxDecoration(
                 color: isDark ? AppColors.borderDark : Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(AppRadii.sm),
+                boxShadow: const [AppShadows.subtle],
               ),
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
@@ -251,9 +245,9 @@ class _AddMemberSheetState extends State<AddMemberSheet>
               unselectedLabelColor: isDark
                   ? AppColors.textTertiaryDark
                   : AppColors.neutral600,
-              labelStyle: GoogleFonts.notoSansThai(
+              labelStyle: GoogleFonts.sarabun(
                   fontSize: 13, fontWeight: FontWeight.w600),
-              unselectedLabelStyle: GoogleFonts.notoSansThai(fontSize: 13),
+              unselectedLabelStyle: GoogleFonts.sarabun(fontSize: 13),
               tabs: [
                 Tab(text: l.t('add_member_tab_friends')),
                 Tab(text: l.t('add_member_tab_outsider')),
@@ -285,7 +279,7 @@ class _AddMemberSheetState extends State<AddMemberSheet>
           padding: const EdgeInsets.all(32),
           child: Text(
             l.t('add_member_no_friends'),
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 14,
               color: isDark
                   ? AppColors.textSecondaryDark
@@ -304,7 +298,7 @@ class _AddMemberSheetState extends State<AddMemberSheet>
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
             child: Text(
               _friendError!,
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                   fontSize: 12, color: AppColors.red),
             ),
           ),
@@ -328,7 +322,7 @@ class _AddMemberSheetState extends State<AddMemberSheet>
                     color: isDark
                         ? AppColors.surfaceDark
                         : AppColors.neutral50,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppRadii.md),
                     border: Border.all(
                       color: isDark
                           ? AppColors.borderDark
@@ -350,7 +344,7 @@ class _AddMemberSheetState extends State<AddMemberSheet>
                           children: [
                             Text(
                               name,
-                              style: GoogleFonts.notoSansThai(
+                              style: GoogleFonts.sarabun(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: isDark
@@ -361,7 +355,7 @@ class _AddMemberSheetState extends State<AddMemberSheet>
                             if (profile.username != null)
                               Text(
                                 '@${profile.username}',
-                                style: GoogleFonts.notoSansThai(
+                                style: GoogleFonts.sarabun(
                                   fontSize: 12,
                                   color: isDark
                                       ? AppColors.textTertiaryDark
@@ -407,7 +401,7 @@ class _AddMemberSheetState extends State<AddMemberSheet>
         children: [
           Text(
             l.t('add_member_outsider_desc'),
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 13,
               color: isDark
                   ? AppColors.textTertiaryDark
@@ -420,7 +414,7 @@ class _AddMemberSheetState extends State<AddMemberSheet>
             controller: _nameCtrl,
             decoration: InputDecoration(
               hintText: l.t('member_form_name_hint'),
-              hintStyle: GoogleFonts.notoSansThai(fontSize: 13),
+              hintStyle: GoogleFonts.sarabun(fontSize: 13),
             ),
           ),
           const SizedBox(height: 12),
@@ -430,14 +424,14 @@ class _AddMemberSheetState extends State<AddMemberSheet>
             keyboardType: TextInputType.phone,
             decoration: InputDecoration(
               hintText: l.t('member_form_promptpay_hint'),
-              hintStyle: GoogleFonts.notoSansThai(fontSize: 13),
+              hintStyle: GoogleFonts.sarabun(fontSize: 13),
             ),
           ),
           const SizedBox(height: 16),
           // Color picker
           Text(
             l.t('member_form_color_label'),
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: isDark
@@ -467,7 +461,7 @@ class _AddMemberSheetState extends State<AddMemberSheet>
                   ),
                   child: isSelected
                       ? const Icon(Icons.check_rounded,
-                          color: Colors.white, size: 16)
+                          color: AppColors.surface, size: 16)
                       : null,
                 ),
               );
@@ -478,7 +472,7 @@ class _AddMemberSheetState extends State<AddMemberSheet>
           if (_outsiderError != null) ...[
             Text(
               _outsiderError!,
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                   fontSize: 12, color: AppColors.red),
             ),
             const SizedBox(height: 8),
@@ -486,7 +480,7 @@ class _AddMemberSheetState extends State<AddMemberSheet>
           if (_outsiderSuccess != null) ...[
             Text(
               _outsiderSuccess!,
-              style: GoogleFonts.notoSansThai(
+              style: GoogleFonts.sarabun(
                   fontSize: 12, color: AppColors.emerald),
             ),
             const SizedBox(height: 8),
@@ -502,7 +496,7 @@ class _AddMemberSheetState extends State<AddMemberSheet>
                   )
                 : Text(
                     l.t('member_form_add_btn'),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                         fontSize: 15, fontWeight: FontWeight.w600),
                   ),
           ),

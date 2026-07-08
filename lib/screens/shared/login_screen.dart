@@ -96,8 +96,8 @@ class _LoginScreenState extends State<LoginScreen>
   //         child: Container(
   //           padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
   //           decoration: BoxDecoration(
-  //             color: isDark ? AppColors.surfaceDark : Colors.white,
-  //             borderRadius: BorderRadius.circular(20),
+  //             color: isDark ? AppColors.surfaceDark : AppColors.surface,
+  //             borderRadius: BorderRadius.circular(AppRadii.xl),
   //           ),
   //           child: Column(
   //             mainAxisSize: MainAxisSize.min,
@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen>
   //             children: [
   //               Text(
   //                 l.t('login_install_prompt'),
-  //                 style: GoogleFonts.notoSansThai(
+  //                 style: GoogleFonts.sarabun(
   //                   fontSize: 17,
   //                   fontWeight: FontWeight.bold,
   //                   color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
@@ -114,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen>
   //               const SizedBox(height: 4),
   //               Text(
   //                 l.t('login_install_sub'),
-  //                 style: GoogleFonts.notoSansThai(
+  //                 style: GoogleFonts.sarabun(
   //                   fontSize: 13,
   //                   color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
   //                 ),
@@ -149,12 +149,12 @@ class _LoginScreenState extends State<LoginScreen>
   //                     padding: const EdgeInsets.symmetric(vertical: 14),
   //                     backgroundColor: AppColors.primaryBlue.withValues(alpha: isDark ? 0.16 : 0.08),
   //                     shape: RoundedRectangleBorder(
-  //                       borderRadius: BorderRadius.circular(12),
+  //                       borderRadius: BorderRadius.circular(AppRadii.md),
   //                     ),
   //                   ),
   //                   child: Text(
   //                     l.t('login_got_it'),
-  //                     style: GoogleFonts.notoSansThai(
+  //                     style: GoogleFonts.sarabun(
   //                       fontWeight: FontWeight.w600,
   //                       color: AppColors.primaryBlue,
   //                     ),
@@ -240,17 +240,11 @@ class _LoginScreenState extends State<LoginScreen>
                           width: 96,
                           height: 96,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(28),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withValues(alpha: 0.3),
-                                blurRadius: 32,
-                                offset: const Offset(0, 12),
-                              ),
-                            ],
+                            borderRadius: BorderRadius.circular(AppRadii.full),
+                            boxShadow: const [AppShadows.card],
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(28),
+                            borderRadius: BorderRadius.circular(AppRadii.full),
                             child: Image.asset(
                               'assets/images/logo.png',
                               width: 96,
@@ -264,7 +258,7 @@ class _LoginScreenState extends State<LoginScreen>
                         // App name
                         Text(
                           'Kidtang',
-                          style: GoogleFonts.anuphan(
+                          style: GoogleFonts.sarabun(
                             fontSize: 32,
                             fontWeight: FontWeight.w700,
                             color: isDark
@@ -276,7 +270,7 @@ class _LoginScreenState extends State<LoginScreen>
                         const SizedBox(height: AppSpacing.xs),
                         Text(
                           l.t('login_tagline'),
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 15,
                             color: isDark
                                 ? AppColors.neutral400Dark
@@ -357,7 +351,7 @@ class _LoginScreenState extends State<LoginScreen>
                             label: l.t('login_with_google'),
                             labelColor: isDark
                                 ? Colors.white
-                                : const Color(0xFF111827),
+                                : AppColors.textPrimaryLight,
                             border: Border.all(
                               color: isDark
                                   ? AppColors.borderDark
@@ -382,7 +376,7 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                             child: Text(
                               _error!,
-                              style: GoogleFonts.notoSansThai(
+                              style: GoogleFonts.sarabun(
                                   fontSize: 13, color: AppColors.red),
                               textAlign: TextAlign.center,
                             ),
@@ -394,16 +388,16 @@ class _LoginScreenState extends State<LoginScreen>
                         //   const SizedBox(height: 20),
                         //   Material(
                         //     color: Colors.transparent,
-                        //     borderRadius: BorderRadius.circular(16),
+                        //     borderRadius: BorderRadius.circular(AppRadii.lg),
                         //     child: InkWell(
                         //       onTap: _showIosInstallInstructions,
-                        //       borderRadius: BorderRadius.circular(16),
+                        //       borderRadius: BorderRadius.circular(AppRadii.lg),
                         //       child: Container(
                         //         width: double.infinity,
                         //         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         //         decoration: BoxDecoration(
                         //           color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.16 : 0.08),
-                        //           borderRadius: BorderRadius.circular(16),
+                        //           borderRadius: BorderRadius.circular(AppRadii.lg),
                         //           border: Border.all(
                         //             color: AppColors.primaryBlue.withValues(alpha: 0.18),
                         //           ),
@@ -415,12 +409,12 @@ class _LoginScreenState extends State<LoginScreen>
                         //               height: 34,
                         //               decoration: BoxDecoration(
                         //                 color: AppColors.primaryBlue,
-                        //                 borderRadius: BorderRadius.circular(10),
+                        //                 borderRadius: BorderRadius.circular(AppRadii.md),
                         //               ),
                         //               child: const Icon(
                         //                 Icons.ios_share,
                         //                 size: 17,
-                        //                 color: Colors.white,
+                        //                 color: AppColors.surface,
                         //               ),
                         //             ),
                         //             const SizedBox(width: 12),
@@ -430,7 +424,7 @@ class _LoginScreenState extends State<LoginScreen>
                         //                 children: [
                         //                   Text(
                         //                     'บันทึกไปที่หน้าจอหลัก',
-                        //                     style: GoogleFonts.notoSansThai(
+                        //                     style: GoogleFonts.sarabun(
                         //                       fontSize: 13,
                         //                       fontWeight: FontWeight.w600,
                         //                       color: isDark
@@ -441,7 +435,7 @@ class _LoginScreenState extends State<LoginScreen>
                         //                   const SizedBox(height: 2),
                         //                   Text(
                         //                     'แตะเพื่อดูวิธี Add to Home Screen',
-                        //                     style: GoogleFonts.notoSansThai(
+                        //                     style: GoogleFonts.sarabun(
                         //                       fontSize: 11,
                         //                       color: isDark
                         //                           ? AppColors.textSecondaryDark
@@ -479,7 +473,7 @@ class _LoginScreenState extends State<LoginScreen>
                         const SizedBox(height: 40),
                         Text(
                           l.t('login_first_time'),
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 12,
                             color: isDark
                                 ? AppColors.textTertiaryDark
@@ -526,11 +520,11 @@ class _LoginScreenState extends State<LoginScreen>
 //           alignment: Alignment.center,
 //           decoration: BoxDecoration(
 //             color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.18 : 0.1),
-//             borderRadius: BorderRadius.circular(8),
+//             borderRadius: BorderRadius.circular(AppRadii.sm),
 //           ),
 //           child: Text(
 //             '$number',
-//             style: GoogleFonts.notoSansThai(
+//             style: GoogleFonts.sarabun(
 //               fontSize: 13,
 //               fontWeight: FontWeight.w700,
 //               color: AppColors.primaryBlue,
@@ -543,7 +537,7 @@ class _LoginScreenState extends State<LoginScreen>
 //             padding: const EdgeInsets.only(top: 4),
 //             child: Text(
 //               text,
-//               style: GoogleFonts.notoSansThai(
+//               style: GoogleFonts.sarabun(
 //                 fontSize: 14,
 //                 color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
 //               ),
@@ -590,25 +584,17 @@ class _FeaturePill extends StatelessWidget {
         color: isDark
             ? AppColors.surfaceDark
             : Colors.white.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadii.xl),
         border: Border.all(
           color: isDark
               ? AppColors.borderDark
               : AppColors.neutral100,
         ),
-        boxShadow: isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+        boxShadow: isDark ? null : const [AppShadows.subtle],
       ),
       child: Text(
         label,
-        style: GoogleFonts.notoSansThai(
+        style: GoogleFonts.sarabun(
           fontSize: 12,
           fontWeight: FontWeight.w500,
           color: isDark
@@ -648,13 +634,13 @@ class _SocialButton extends StatelessWidget {
       height: 56,
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.full),
         child: Ink(
           decoration: BoxDecoration(
             color: isDisabled
                 ? (backgroundColor ?? Colors.grey).withValues(alpha: 0.5)
                 : backgroundColor,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadii.full),
             border: border,
             boxShadow: border == null
                 ? [
@@ -668,7 +654,7 @@ class _SocialButton extends StatelessWidget {
           ),
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadii.full),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: isLoading
@@ -689,7 +675,7 @@ class _SocialButton extends StatelessWidget {
                         const SizedBox(width: 12),
                         Text(
                           label,
-                          style: GoogleFonts.notoSansThai(
+                          style: GoogleFonts.sarabun(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: labelColor,

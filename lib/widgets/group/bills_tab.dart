@@ -45,7 +45,7 @@ class GroupBillsTab extends StatelessWidget {
                   icon: const Icon(Icons.add_rounded, size: 18),
                   label: Text(
                     l.t('group_bills_create_new'),
-                    style: GoogleFonts.notoSansThai(
+                    style: GoogleFonts.sarabun(
                         fontSize: 14, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -59,12 +59,12 @@ class GroupBillsTab extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(AppSpacing.xl),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.surfaceDark : Colors.white,
+                      color: isDark ? AppColors.surfaceDark : AppColors.surface,
                       borderRadius: BorderRadius.circular(AppRadii.lg),
                       border: Border.all(
                         color: isDark
                             ? AppColors.borderDark
-                            : const Color(0xFFE5E7EB),
+                            : AppColors.borderLight,
                         style: BorderStyle.solid,
                       ),
                     ),
@@ -74,7 +74,7 @@ class GroupBillsTab extends StatelessWidget {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
+                            color: AppColors.primaryLight,
                             borderRadius:
                                 BorderRadius.circular(AppRadii.md),
                           ),
@@ -88,7 +88,7 @@ class GroupBillsTab extends StatelessWidget {
                             children: [
                               Text(
                                 l.t('group_bills_create_first'),
-                                style: GoogleFonts.notoSansThai(
+                                style: GoogleFonts.sarabun(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: isDark
@@ -98,7 +98,7 @@ class GroupBillsTab extends StatelessWidget {
                               ),
                               Text(
                                 l.t('group_bills_start'),
-                                style: GoogleFonts.notoSansThai(
+                                style: GoogleFonts.sarabun(
                                   fontSize: 12,
                                   color: isDark
                                       ? AppColors.textTertiaryDark
@@ -117,7 +117,7 @@ class GroupBillsTab extends StatelessWidget {
                                 Radius.circular(AppRadii.sm)),
                           ),
                           child: const Icon(Icons.add_rounded,
-                              color: Colors.white, size: 18),
+                              color: AppColors.surface, size: 18),
                         ),
                       ],
                     ),

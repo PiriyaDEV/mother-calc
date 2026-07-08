@@ -26,8 +26,8 @@ class BillBreakdownCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? AppColors.surfaceDark : AppColors.bgLight,
+        borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(
             color: isDark ? AppColors.borderDark : AppColors.borderLight),
       ),
@@ -36,7 +36,7 @@ class BillBreakdownCard extends StatelessWidget {
         children: [
           Text(
             l.t('breakdown_title'),
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: isDark
@@ -89,7 +89,7 @@ class BillBreakdownCard extends StatelessWidget {
             children: [
               Text(
                 l.t('breakdown_total'),
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                   color: isDark
@@ -99,10 +99,10 @@ class BillBreakdownCard extends StatelessWidget {
               ),
               Text(
                 '฿${formatNumber(calc.total)}',
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.blue400,
+                  color: AppColors.primary,
                 ),
               ),
             ],
@@ -137,7 +137,7 @@ class _BreakdownRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 13,
               color: isDark
                   ? AppColors.textSecondaryDark
@@ -146,7 +146,7 @@ class _BreakdownRow extends StatelessWidget {
           ),
           Text(
             '฿${formatNumber(value.abs())}',
-            style: GoogleFonts.notoSansThai(
+            style: GoogleFonts.sarabun(
               fontSize: 13,
               color: isDiscount
                   ? AppColors.emerald600

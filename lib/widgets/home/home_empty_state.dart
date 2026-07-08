@@ -18,31 +18,22 @@ class HomeEmptyState extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.surfaceDark
-                : Colors.white.withValues(alpha: 0.9),
+            color: isDark ? AppColors.surfaceDark : AppColors.surface,
             borderRadius: BorderRadius.circular(AppRadii.lg),
-            boxShadow: isDark
-                ? null
-                : [
-                    BoxShadow(
-                      color: const Color(0xFF2D5BFF).withValues(alpha: 0.08),
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+            border: Border.all(
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+            boxShadow: isDark ? null : const [AppShadows.card],
           ),
           child: Column(
             children: [
               Container(
                 width: 72,
                 height: 72,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.accentIceDark
-                      : AppColors.accentIce,
-                  borderRadius: BorderRadius.circular(AppRadii.lg),
-                ),
+                  decoration: const BoxDecoration(
+                    color: AppColors.accentIce,
+                    shape: BoxShape.circle,
+                  ),
                 child: const Icon(
                   Icons.receipt_long_outlined,
                   size: 32,
@@ -52,7 +43,7 @@ class HomeEmptyState extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 l.t('home_no_bills'),
-                style: GoogleFonts.anuphan(
+                style: GoogleFonts.sarabun(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: isDark
@@ -63,7 +54,7 @@ class HomeEmptyState extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 l.t('home_empty_sub'),
-                style: GoogleFonts.notoSansThai(
+                style: GoogleFonts.sarabun(
                   fontSize: 13,
                   color: isDark
                       ? AppColors.neutral600Dark
@@ -80,25 +71,16 @@ class HomeEmptyState extends StatelessWidget {
                       child: Container(
                         height: 48,
                         decoration: BoxDecoration(
-                          gradient: AppGradients.primaryButtonLight,
-                          borderRadius:
-                              BorderRadius.circular(AppRadii.full),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primaryBlue
-                                  .withValues(alpha: 0.30),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(AppRadii.full),
                         ),
                         child: Center(
                            child: Text(
                              l.t('bills_create'),
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: AppColors.surface,
                             ),
                           ),
                         ),
@@ -114,19 +96,18 @@ class HomeEmptyState extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: isDark
                               ? AppColors.surfaceDark
-                              : Colors.white,
-                          borderRadius:
-                              BorderRadius.circular(AppRadii.full),
+                              : AppColors.surface,
+                          borderRadius: BorderRadius.circular(AppRadii.full),
                           border: Border.all(
                             color: isDark
                                 ? AppColors.borderDark
-                                : AppColors.neutral100,
+                                : AppColors.borderLight,
                           ),
                         ),
                         child: Center(
                            child: Text(
                              l.t('home_create_group'),
-                            style: GoogleFonts.notoSansThai(
+                            style: GoogleFonts.sarabun(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: isDark
