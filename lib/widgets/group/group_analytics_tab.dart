@@ -148,7 +148,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
               ),
               const SizedBox(height: 4),
               Text(
-                '฿${formatNumber(total)}',
+                '${formatNumber(total)} บาท',
                 style: GoogleFonts.sarabun(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -213,7 +213,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
                 ),
               ),
               Text(
-                '฿${formatNumber(avgPerBill)}',
+                '${formatNumber(avgPerBill)} บาท',
                 style: GoogleFonts.sarabun(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -291,7 +291,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       final bill = displayBills[group.x];
                       return BarTooltipItem(
-                        '${bill.emoji ?? '🧾'} ${bill.title}\n฿${formatNumber(rod.toY)}',
+                        '${bill.emoji ?? '🧾'} ${bill.title}\n${formatNumber(rod.toY)} บาท',
                         GoogleFonts.sarabun(
                           color: AppColors.surface,
                           fontSize: 11,
@@ -450,7 +450,7 @@ class _GroupAnalyticsTabState extends State<GroupAnalyticsTab> {
                         ),
                       ),
                       Text(
-                        '฿${formatNumber(item.price)}',
+                        '${formatNumber(item.price)} บาท',
                         style: GoogleFonts.sarabun(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,

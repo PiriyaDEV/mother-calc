@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kidtang_flutter/models/models.dart';
 import 'package:kidtang_flutter/stores/bills_store.dart';
+import 'package:kidtang_flutter/stores/friends_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/banner_ad_widget.dart';
 import 'package:kidtang_flutter/widgets/shared/skeleton_loader.dart';
@@ -316,6 +318,13 @@ class _BillListState extends State<_BillList> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final l = context.watch<LocaleProvider>();
     final bills = widget.view.items;
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final friendUserIds = context
+        .read<FriendsStore>()
+        .friends
+        .map((f) =>
+            f.requesterId == currentUserId ? f.addresseeId : f.requesterId)
+        .toSet();
 
     if (bills.isEmpty) {
       return Center(
@@ -404,6 +413,8 @@ class _BillListState extends State<_BillList> {
             child: SharedBillCard(
               bill: bill,
               onTap: () => context.push('/bills/${bill.id}'),
+              currentUserId: currentUserId,
+              friendUserIds: friendUserIds,
             ),
           );
         },

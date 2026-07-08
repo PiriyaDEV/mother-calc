@@ -118,7 +118,7 @@ class ItemTile extends StatelessWidget {
                     Expanded(
                       child: Text(
                         '${assignedMembers.length} คน'
-                        '${!item.isUnequalSplit && assignedMembers.isNotEmpty ? ' · ฿${formatNumber(item.price / assignedMembers.length)}/คน' : ''}',
+                        '${!item.isUnequalSplit && assignedMembers.isNotEmpty ? ' · ${formatNumber(item.price / assignedMembers.length)} บาท/คน' : ''}',
                         style: GoogleFonts.sarabun(
                           fontSize: 11,
                           color: isDark

@@ -98,7 +98,7 @@ class BillBreakdownCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '฿${formatNumber(calc.total)}',
+                '${formatNumber(calc.total)} บาท',
                 style: GoogleFonts.sarabun(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -145,7 +145,7 @@ class _BreakdownRow extends StatelessWidget {
             ),
           ),
           Text(
-            '฿${formatNumber(value.abs())}',
+            '${formatNumber(value.abs())} บาท',
             style: GoogleFonts.sarabun(
               fontSize: 13,
               color: isDiscount

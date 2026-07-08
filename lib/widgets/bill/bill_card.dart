@@ -10,14 +10,35 @@ import 'package:kidtang_flutter/widgets/shared/member_avatar.dart';
 class BillCard extends StatelessWidget {
   final Bill bill;
   final VoidCallback onTap;
+  final String? currentUserId;
+  final Set<String> friendUserIds;
 
-  const BillCard({super.key, required this.bill, required this.onTap});
+  const BillCard({
+    super.key,
+    required this.bill,
+    required this.onTap,
+    this.currentUserId,
+    this.friendUserIds = const {},
+  });
+
+  List<BillMember> get _sortedMembers {
+    if (currentUserId == null && friendUserIds.isEmpty) return bill.members;
+    return [...bill.members]..sort((a, b) {
+        int rank(BillMember m) {
+          if (m.userId != null && m.userId == currentUserId) return 0;
+          if (m.userId != null && friendUserIds.contains(m.userId)) return 1;
+          return 2;
+        }
+        return rank(a).compareTo(rank(b));
+      });
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final calc = calculateBill(bill);
     final currency = bill.settings.currency;
+    final members = _sortedMembers;
 
     return GestureDetector(
       onTap: onTap,
@@ -106,13 +127,13 @@ class BillCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (bill.members.isNotEmpty) ...[
+            if (members.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   // Member avatars
                   MemberAvatarStack(
-                    members: bill.members
+                    members: members
                         .map((m) => (
                               name: m.name,
                               color: colorFromHex(m.color),

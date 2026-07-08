@@ -3,7 +3,9 @@ import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kidtang_flutter/models/models.dart';
+import 'package:kidtang_flutter/stores/friends_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/widgets/shared/shared_bill_card.dart';
 
@@ -29,7 +31,14 @@ class GroupBillsTab extends StatelessWidget {
   // rows up front.
   @override
   Widget build(BuildContext context) {
-      final l = context.watch<LocaleProvider>();
+    final l = context.watch<LocaleProvider>();
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final friendUserIds = context
+        .read<FriendsStore>()
+        .friends
+        .map((f) =>
+            f.requesterId == currentUserId ? f.addresseeId : f.requesterId)
+        .toSet();
     return ListView.builder(
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: 1 + bills.length,
@@ -134,6 +143,8 @@ class GroupBillsTab extends StatelessWidget {
             child: SharedBillCard(
               bill: bill,
               onTap: () => context.push('/bills/${bill.id}'),
+              currentUserId: currentUserId,
+              friendUserIds: friendUserIds,
             ),
           ),
         );

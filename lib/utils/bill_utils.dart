@@ -16,6 +16,9 @@ String formatNumber(double value, {int decimals = 2}) {
 }
 
 String formatCurrency(double value, String currency) {
+  if (currency == 'THB') {
+    return '${formatNumber(value)} บาท';
+  }
   return '${formatNumber(value)} $currency';
 }
 

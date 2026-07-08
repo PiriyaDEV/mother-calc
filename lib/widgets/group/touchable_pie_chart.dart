@@ -157,7 +157,7 @@ class _TouchablePieChartState extends State<TouchablePieChart> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '฿${formatNumber(billTotal)}',
+                      '${formatNumber(billTotal)} บาท',
                       style: GoogleFonts.sarabun(
                         fontSize: 12,
                         color: isDark

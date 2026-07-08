@@ -10,8 +10,28 @@ import 'package:kidtang_flutter/widgets/shared/member_avatar.dart';
 class SharedBillCard extends StatelessWidget {
   final Bill bill;
   final VoidCallback onTap;
+  final String? currentUserId;
+  final Set<String> friendUserIds;
 
-  const SharedBillCard({super.key, required this.bill, required this.onTap});
+  const SharedBillCard({
+    super.key,
+    required this.bill,
+    required this.onTap,
+    this.currentUserId,
+    this.friendUserIds = const {},
+  });
+
+  List<BillMember> get _sortedMembers {
+    if (currentUserId == null && friendUserIds.isEmpty) return bill.members;
+    return [...bill.members]..sort((a, b) {
+        int rank(BillMember m) {
+          if (m.userId != null && m.userId == currentUserId) return 0;
+          if (m.userId != null && friendUserIds.contains(m.userId)) return 1;
+          return 2;
+        }
+        return rank(a).compareTo(rank(b));
+      });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +40,7 @@ class SharedBillCard extends StatelessWidget {
     final total = bill.total;
     final isCompleted = bill.isCompleted;
     final isPending = bill.isPendingPayment;
+    final members = _sortedMembers;
 
     return Material(
       color: isDark ? AppColors.surfaceDark : AppColors.surface,
@@ -86,7 +107,7 @@ class SharedBillCard extends StatelessWidget {
                           ),
                         ),
                         // Member count
-                        if (bill.members.isNotEmpty) ...[
+                        if (members.isNotEmpty) ...[
                           const SizedBox(width: 8),
                           Container(
                             width: 3,
@@ -100,7 +121,7 @@ class SharedBillCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           MemberAvatarStack(
-                            members: bill.members
+                            members: members
                                 .take(3)
                                 .map((m) => (
                                       name: m.name,

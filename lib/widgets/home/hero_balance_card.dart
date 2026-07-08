@@ -94,7 +94,7 @@ class HeroBalanceCard extends StatelessWidget {
                   )
                 else
                   Text(
-                    '฿${formatNumber(grandTotal)}',
+                    '${formatNumber(grandTotal)} บาท',
                     style: GoogleFonts.sarabun(
                       fontSize: 36,
                       fontWeight: FontWeight.w700,

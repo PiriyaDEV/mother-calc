@@ -37,7 +37,7 @@ class StatsGrid extends StatelessWidget {
               StatCard(
                 icon: Icons.trending_up_rounded,
                 label: l.t('stats_avg_per_bill_short'),
-                value: '฿${formatNumber(grandTotal / stats.totalCount)}',
+                value: '${formatNumber(grandTotal / stats.totalCount)} บาท',
                 accentColor: AppColors.primaryBlue,
                 bgColor:
                     isDark ? AppColors.accentIceDark : AppColors.accentIce,
@@ -63,7 +63,7 @@ class StatsGrid extends StatelessWidget {
               StatCard(
                 icon: Icons.star_rounded,
                 label: l.t('stats_biggest_bill'),
-                value: '฿${formatNumber(biggestBillTotal)}',
+                value: '${formatNumber(biggestBillTotal)} บาท',
                 accentColor: AppColors.emerald,
                 bgColor: isDark
                     ? AppColors.emerald.withValues(alpha: 0.12)

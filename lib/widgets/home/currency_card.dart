@@ -64,7 +64,7 @@ class CurrencyCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                '฿$rateStr',
+                '$rateStr บาท',
                 style: GoogleFonts.sarabun(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
