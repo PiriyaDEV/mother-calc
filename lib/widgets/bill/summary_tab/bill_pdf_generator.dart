@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:kidtang_flutter/models/models.dart';
@@ -110,12 +111,18 @@ class BillPdfGenerator {
       String promptpay, double amount) async {
     try {
       final amountStr = amount.toStringAsFixed(2);
-      final uri = Uri.parse('/promptpay-qr/$promptpay/$amountStr.png');
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      // Use absolute URL — relative paths don't work with http package on Flutter web
+      final base = Uri.base;
+      final origin = '${base.scheme}://${base.host}${base.hasPort ? ':${base.port}' : ''}';
+      final uri = Uri.parse('$origin/promptpay-qr/$promptpay/$amountStr.png');
+      final response = await http.get(uri).timeout(const Duration(seconds: 8));
       if (response.statusCode == 200) {
         return pw.MemoryImage(response.bodyBytes);
       }
-    } catch (_) {}
+      debugPrint('[BillPdfGenerator._fetchQrImage]: status ${response.statusCode} for $uri');
+    } catch (e) {
+      debugPrint('[BillPdfGenerator._fetchQrImage]: $e');
+    }
     return null;
   }
 
