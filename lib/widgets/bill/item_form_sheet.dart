@@ -34,7 +34,7 @@ class _ItemFormSheetState extends State<ItemFormSheet> {
   final _priceCtrl = TextEditingController();
   bool _loading = false;
   bool _isUnequalSplit = false;
-  String? _paidBy;
+  String? _paidBy; // required — defaults to first member (self)
 
   // member id → selected (equal split) or weight (unequal split)
   late Map<String, bool> _selected;
@@ -70,6 +70,10 @@ class _ItemFormSheetState extends State<ItemFormSheet> {
       _weightCtrls = {
         for (final m in widget.members) m.id: TextEditingController(),
       };
+      // Default paidBy to the first member (current user)
+      if (widget.members.isNotEmpty) {
+        _paidBy = widget.members.first.id;
+      }
     }
   }
 
@@ -135,7 +139,7 @@ class _ItemFormSheetState extends State<ItemFormSheet> {
           customShares: customShares.isEmpty ? null : customShares,
           clearCustomShares: customShares.isEmpty,
           paidBy: _paidBy,
-          clearPaidBy: _paidBy == null,
+          clearPaidBy: false,
         );
       } else {
         await widget.billsStore.addItem(
@@ -642,32 +646,6 @@ class _PaidByPicker extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            GestureDetector(
-              onTap: () => onChanged(null),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: paidBy == null
-                      ? AppColors.primary
-                      : (isDark
-                          ? AppColors.borderDark
-                          : AppColors.neutral100),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  l.t('item_form_paid_by_none'),
-                  style: GoogleFonts.notoSansThai(
-                    fontSize: 12,
-                    color: paidBy == null
-                        ? Colors.white
-                        : (isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight),
-                  ),
-                ),
-              ),
-            ),
             ...members.map((m) {
               final isSelected = paidBy == m.id;
               return GestureDetector(

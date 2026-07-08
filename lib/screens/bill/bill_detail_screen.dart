@@ -148,7 +148,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerPr
                   SliverAppBar(
                     pinned: true,
                     expandedHeight: 0,
-                    backgroundColor: Colors.transparent,
+                    backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
                     leading: IconButton(
                       icon: const Icon(Icons.arrow_back_ios_rounded),
                       onPressed: () {
