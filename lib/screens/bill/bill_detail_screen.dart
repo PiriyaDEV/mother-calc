@@ -149,7 +149,11 @@ class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerPr
                     pinned: true,
                     expandedHeight: 0,
                     backgroundColor: Colors.transparent,
-                    forceMaterialTransparency: true,
+                    flexibleSpace: Container(
+                      decoration: BoxDecoration(
+                        gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+                      ),
+                    ),
                     leading: IconButton(
                       icon: const Icon(Icons.arrow_back_ios_rounded),
                       onPressed: () {

@@ -318,23 +318,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
 
                       // ── My debts summary ─────────────────────────
-                      SliverToBoxAdapter(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppSectionHeader(
-                              title: l.t('home_my_debts_title'),
-                              padding: const EdgeInsets.fromLTRB(
-                                AppSpacing.lg,
-                                AppSpacing.xxl,
-                                AppSpacing.lg,
-                                AppSpacing.md,
-                              ),
-                            ),
-                            const MyDebtsCard(),
-                          ],
-                        ),
-                      ),
+                      // Section header is rendered inside MyDebtsCard
+                      // so it only appears when there are actual debts.
+                      const SliverToBoxAdapter(child: MyDebtsCard()),
 
                       // ── Stats / loading ──────────────────────────
                       if (dataLoading)

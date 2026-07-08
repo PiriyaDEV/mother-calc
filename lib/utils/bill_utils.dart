@@ -142,8 +142,9 @@ BillCalculation calculateBill(Bill bill) {
 List<DebtTransaction> simplifyDebts(
   List<MemberSummary> summaries,
   List<BillMember> members,
-  String? excludeMemberId,
-) {
+  String? excludeMemberId, {
+  String? ownerUserId,
+}) {
   if (summaries.isEmpty || members.isEmpty) return [];
 
   // net[memberId] = how much they are owed (positive) or owe (negative)
@@ -170,12 +171,15 @@ List<DebtTransaction> simplifyDebts(
       }
     }
   } else {
-    // No paidBy — assume first non-external member paid everything.
-    // Everyone else owes them their share.
-    final payer = members.firstWhere(
-      (m) => !m.isExternal,
-      orElse: () => members.first,
-    );
+    // No paidBy — assume the bill owner paid everything (fallback: first
+    // non-external member). Everyone else owes them their share.
+    final payer = (ownerUserId != null
+            ? members.where((m) => m.userId == ownerUserId).firstOrNull
+            : null) ??
+        members.firstWhere(
+          (m) => !m.isExternal,
+          orElse: () => members.first,
+        );
     for (final summary in summaries) {
       if (summary.member.id == payer.id) continue;
       if (summary.total <= 0) continue;

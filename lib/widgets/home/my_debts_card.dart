@@ -7,6 +7,7 @@ import 'package:kidtang_flutter/providers/locale_provider.dart';
 import 'package:kidtang_flutter/stores/bills_store.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
+import 'package:kidtang_flutter/widgets/shared/app_section_header.dart';
 
 /// Aggregated debt row: how much the current user owes to one creditor.
 class _DebtRow {
@@ -29,8 +30,25 @@ class _DebtRow {
 
 /// Shows a summary of all unpaid debts the current user owes across all
 /// pending_payment bills that are loaded in [BillsStore].
-class MyDebtsCard extends StatelessWidget {
+/// Includes its own section header so it renders nothing at all when empty.
+class MyDebtsCard extends StatefulWidget {
   const MyDebtsCard({super.key});
+
+  @override
+  State<MyDebtsCard> createState() => _MyDebtsCardState();
+}
+
+class _MyDebtsCardState extends State<MyDebtsCard> {
+  @override
+  void initState() {
+    super.initState();
+    // Ensure pending_payment bills are loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<BillsStore>().loadInitialPage('pending_payment');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,24 +58,34 @@ class MyDebtsCard extends StatelessWidget {
 
     // Collect all pending_payment bills from the store
     final billsStore = context.watch<BillsStore>();
-    final pendingBills = billsStore.viewFor('pending_payment').items;
+    final pendingView = billsStore.viewFor('pending_payment');
 
-    if (currentUserId == null || pendingBills.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    // Still loading — don't hide yet, wait for data
+    if (currentUserId == null) return const SizedBox.shrink();
+    if (pendingView.loadingInitial) return const SizedBox.shrink();
+    if (!pendingView.loaded) return const SizedBox.shrink();
+
+    final pendingBills = pendingView.items;
+    if (pendingBills.isEmpty) return const SizedBox.shrink();
 
     // Compute debts: for each pending bill, run calculateBill and find
     // DebtTransactions where the current user is the debtor (from).
     final debts = <_DebtRow>[];
     for (final bill in pendingBills) {
       // Find the BillMember that corresponds to the current user
-      final myMember = bill.members.where((m) => m.userId == currentUserId).firstOrNull;
+      final myMember =
+          bill.members.where((m) => m.userId == currentUserId).firstOrNull;
       if (myMember == null) continue;
       // Skip if already marked paid
       if (bill.paidMemberIds.contains(myMember.id)) continue;
 
       final calc = calculateBill(bill);
-      final transactions = simplifyDebts(calc.memberSummaries, bill.members, null);
+      final transactions = simplifyDebts(
+        calc.memberSummaries,
+        bill.members,
+        null,
+        ownerUserId: bill.ownerId,
+      );
       for (final tx in transactions) {
         if (tx.from.id == myMember.id && tx.amount > 0.005) {
           debts.add(_DebtRow(
@@ -74,119 +102,135 @@ class MyDebtsCard extends StatelessWidget {
 
     if (debts.isEmpty) return const SizedBox.shrink();
 
-    // Group by creditor name + currency for a compact summary
+    // Group by currency for a compact total summary
     final Map<String, double> totalByCurrency = {};
     for (final d in debts) {
-      final key = d.currency;
-      totalByCurrency[key] = (totalByCurrency[key] ?? 0) + d.amount;
+      totalByCurrency[d.currency] =
+          (totalByCurrency[d.currency] ?? 0) + d.amount;
     }
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        0,
-        AppSpacing.lg,
-        0,
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadii.lg),
-          border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Section header (only shown when there are debts) ────
+        AppSectionHeader(
+          title: l.t('home_my_debts_title'),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.xxl,
+            AppSpacing.lg,
+            AppSpacing.md,
           ),
-          boxShadow: isDark ? null : const [AppShadows.card],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Header ──────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.sm,
+
+        // ── Card ────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            0,
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceDark : AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
               ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: const BoxDecoration(
-                      color: AppColors.amberFaint,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.account_balance_wallet_rounded,
-                      size: 16,
-                      color: AppColors.amber,
-                    ),
+              boxShadow: isDark ? null : const [AppShadows.card],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Card header ──────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.sm,
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l.t('home_my_debts_title'),
-                          style: GoogleFonts.sarabun(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? AppColors.neutral900Dark
-                                : AppColors.neutral900,
-                          ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: const BoxDecoration(
+                          color: AppColors.amberFaint,
+                          shape: BoxShape.circle,
                         ),
-                        Text(
-                          l.t('home_my_debts_subtitle')
-                              .replaceFirst('{count}', '${debts.length}'),
-                          style: GoogleFonts.sarabun(
-                            fontSize: 11,
-                            color: isDark
-                                ? AppColors.textTertiaryDark
-                                : AppColors.textTertiaryLight,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Total summary badge
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: totalByCurrency.entries.map((e) {
-                      return Text(
-                        formatCurrency(e.value, e.key),
-                        style: GoogleFonts.sarabun(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                        child: const Icon(
+                          Icons.account_balance_wallet_rounded,
+                          size: 16,
                           color: AppColors.amber,
                         ),
-                      );
-                    }).toList(),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l.t('home_my_debts_title'),
+                              style: GoogleFonts.sarabun(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: isDark
+                                    ? AppColors.neutral900Dark
+                                    : AppColors.neutral900,
+                              ),
+                            ),
+                            Text(
+                              l
+                                  .t('home_my_debts_subtitle')
+                                  .replaceFirst('{count}', '${debts.length}'),
+                              style: GoogleFonts.sarabun(
+                                fontSize: 11,
+                                color: isDark
+                                    ? AppColors.textTertiaryDark
+                                    : AppColors.textTertiaryLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Total summary badge
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: totalByCurrency.entries.map((e) {
+                          return Text(
+                            formatCurrency(e.value, e.key),
+                            style: GoogleFonts.sarabun(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.amber,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
 
-            // ── Divider ──────────────────────────────────────────
-            Divider(
-              height: 1,
-              thickness: 1,
-              color: isDark
-                  ? AppColors.borderDark
-                  : AppColors.borderLight,
-            ),
+                // ── Divider ──────────────────────────────────────
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                ),
 
-            // ── Debt rows ────────────────────────────────────────
-            ...debts.map((d) => _DebtRowTile(
-                  debt: d,
-                  isDark: isDark,
-                  onTap: () => context.push('/bills/${d.billId}'),
-                )),
-          ],
+                // ── Debt rows ────────────────────────────────────
+                ...debts.map((d) => _DebtRowTile(
+                      debt: d,
+                      isDark: isDark,
+                      onTap: () => context.push('/bills/${d.billId}'),
+                    )),
+              ],
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -235,7 +279,8 @@ class _DebtRowTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                    l.t('home_my_debts_owe_to')
+                    l
+                        .t('home_my_debts_owe_to')
                         .replaceFirst('{name}', debt.creditorName),
                     style: GoogleFonts.sarabun(
                       fontSize: 11,
@@ -253,9 +298,7 @@ class _DebtRowTile extends StatelessWidget {
               style: GoogleFonts.sarabun(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: isDark
-                    ? AppColors.amber
-                    : AppColors.amberText,
+                color: isDark ? AppColors.amber : AppColors.amberText,
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
