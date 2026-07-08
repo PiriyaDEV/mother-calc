@@ -107,10 +107,46 @@ class _SummaryTabState extends State<SummaryTab> {
 
     final paidCount = bill.paidMemberIds.length;
     final allPaid = paidCount == members.length && members.isNotEmpty;
+    final isPendingPayment = bill.isPendingPayment;
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // Download button — only shown when bill is pending_payment
+        if (isPendingPayment) ...[
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => showDownloadSummaryDialog(
+                context: context,
+                bill: bill,
+                calc: calc,
+              ),
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: Text(
+                'ดาวน์โหลดสรุปบิล',
+                style: GoogleFonts.sarabun(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: BorderSide(
+                  color: isDark
+                      ? AppColors.primary.withValues(alpha: 0.6)
+                      : AppColors.primary,
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.xl),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+
         HeroCard(
           calc: calc,
           bill: bill,
