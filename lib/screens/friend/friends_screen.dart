@@ -216,10 +216,15 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
                           // ── Friend rows (index 1..N) ──
                           final f = friends[index - 1] as Friend;
-                          return FriendRow(
-                            friend: f,
-                            isDark: isDark,
-                            onRemove: () => _handleRemove(f),
+                          // RepaintBoundary isolates each row so that
+                          // scrolling or updating one row doesn't repaint
+                          // the entire list.
+                          return RepaintBoundary(
+                            child: FriendRow(
+                              friend: f,
+                              isDark: isDark,
+                              onRemove: () => _handleRemove(f),
+                            ),
                           );
                         },
                       ),

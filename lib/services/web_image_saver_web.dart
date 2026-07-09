@@ -1,5 +1,6 @@
 // Web implementation — downloads PNG bytes via a temporary <a> element,
 // or shares via the Web Share API (navigator.share) on iOS PWA / mobile browsers.
+import 'dart:convert';
 import 'dart:js_interop';
 import 'package:flutter/foundation.dart';
 
@@ -78,28 +79,5 @@ bool get webShareSupported {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-String _bytesToBase64(List<int> bytes) {
-  // dart:convert base64 encode
-  const chars =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  final buf = StringBuffer();
-  int i = 0;
-  while (i < bytes.length) {
-    final b0 = bytes[i++];
-    final b1 = i < bytes.length ? bytes[i++] : 0;
-    final b2 = i < bytes.length ? bytes[i++] : 0;
-    buf.write(chars[(b0 >> 2) & 0x3F]);
-    buf.write(chars[((b0 << 4) | (b1 >> 4)) & 0x3F]);
-    buf.write(chars[((b1 << 2) | (b2 >> 6)) & 0x3F]);
-    buf.write(chars[b2 & 0x3F]);
-  }
-  final result = buf.toString();
-  // Add padding
-  final pad = bytes.length % 3;
-  if (pad == 1) {
-    return '${result.substring(0, result.length - 2)}==';
-  } else if (pad == 2) {
-    return '${result.substring(0, result.length - 1)}=';
-  }
-  return result;
-}
+/// Encodes bytes to base64 using dart:convert (correct and efficient).
+String _bytesToBase64(List<int> bytes) => base64Encode(bytes);

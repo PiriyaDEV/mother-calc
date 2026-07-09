@@ -23,6 +23,63 @@ class GroupDetailScreen extends StatefulWidget {
   State<GroupDetailScreen> createState() => _GroupDetailScreenState();
 }
 
+// ── Lazy tab body ─────────────────────────────────────────────
+// Defers building the child until the tab is first selected.
+// Once built, the child is kept alive so it is not rebuilt on
+// every tab switch.
+class _LazyTabBody extends StatefulWidget {
+  final TabController tabController;
+  final int tabIndex;
+  final Widget child;
+
+  const _LazyTabBody({
+    required this.tabController,
+    required this.tabIndex,
+    required this.child,
+  });
+
+  @override
+  State<_LazyTabBody> createState() => _LazyTabBodyState();
+}
+
+class _LazyTabBodyState extends State<_LazyTabBody>
+    with AutomaticKeepAliveClientMixin {
+  bool _built = false;
+
+  @override
+  bool get wantKeepAlive => _built;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.tabController.index == widget.tabIndex) {
+      _built = true;
+    } else {
+      widget.tabController.addListener(_onTabChanged);
+    }
+  }
+
+  void _onTabChanged() {
+    if (!_built && widget.tabController.index == widget.tabIndex) {
+      setState(() => _built = true);
+      widget.tabController.removeListener(_onTabChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.tabController.removeListener(_onTabChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    if (!_built) return const SizedBox.shrink();
+    return widget.child;
+  }
+}
+
 class _GroupDetailScreenState extends State<GroupDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
@@ -224,30 +281,45 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
               controller: _tabController,
               physics: const NeverScrollableScrollPhysics(),
               children: [
-                // Tab 0: Members
-                GroupMembersTab(
-                  group: group,
-                  acceptedMembers: acceptedMembers,
-                  pendingMembers: pendingMembers,
-                  isDark: isDark,
-                  currentUserId: currentUserId,
-                  friendUserIds: friendUserIds,
+                // Each tab is wrapped in _LazyTabBody so it is only built
+                // the first time the user navigates to it.  The default tab
+                // is index 1 (Bills), so tabs 0, 2, and 3 are deferred.
+                _LazyTabBody(
+                  tabController: _tabController,
+                  tabIndex: 0,
+                  child: GroupMembersTab(
+                    group: group,
+                    acceptedMembers: acceptedMembers,
+                    pendingMembers: pendingMembers,
+                    isDark: isDark,
+                    currentUserId: currentUserId,
+                    friendUserIds: friendUserIds,
+                  ),
                 ),
-                // Tab 1: Bills
-                GroupBillsTab(
-                  group: group,
-                  bills: bills,
-                  isDark: isDark,
+                _LazyTabBody(
+                  tabController: _tabController,
+                  tabIndex: 1,
+                  child: GroupBillsTab(
+                    group: group,
+                    bills: bills,
+                    isDark: isDark,
+                  ),
                 ),
-                // Tab 2: Summary — Stateful, owns _expandedBillId
-                GroupSummaryTab(
-                  bills: bills,
-                  isDark: isDark,
+                _LazyTabBody(
+                  tabController: _tabController,
+                  tabIndex: 2,
+                  child: GroupSummaryTab(
+                    bills: bills,
+                    isDark: isDark,
+                  ),
                 ),
-                // Tab 3: Analytics — Stateful, caches derived data
-                GroupAnalyticsTab(
-                  bills: bills,
-                  isDark: isDark,
+                _LazyTabBody(
+                  tabController: _tabController,
+                  tabIndex: 3,
+                  child: GroupAnalyticsTab(
+                    bills: bills,
+                    isDark: isDark,
+                  ),
                 ),
               ],
             ),

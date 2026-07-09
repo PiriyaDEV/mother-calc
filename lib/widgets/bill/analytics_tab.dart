@@ -106,44 +106,56 @@ class AnalyticsTab extends StatelessWidget {
             .toList();
     final maxItemPrice = topItems.isNotEmpty ? topItems.first.price : 1.0;
 
+    // Wrap each heavy analytics card in RepaintBoundary so that
+    // animating one card does not repaint the others.
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         // ── Stats Row ──────────────────────────────────────────
-        StatsRow(
-          itemCount: items.length,
-          memberCount: members.length,
-          avgPerPerson: avgPerPerson,
+        RepaintBoundary(
+          child: StatsRow(
+            itemCount: items.length,
+            memberCount: members.length,
+            avgPerPerson: avgPerPerson,
+          ),
         ),
         const SizedBox(height: 16),
 
         // ── Pie Chart - Member Spending ────────────────────────
-        PieChartCard(
-          memberTotals: memberTotals,
-          total: calc.total,
-          isDark: isDark,
+        RepaintBoundary(
+          child: PieChartCard(
+            memberTotals: memberTotals,
+            total: calc.total,
+            isDark: isDark,
+          ),
         ),
         const SizedBox(height: 12),
 
         // ── Biggest Spender ────────────────────────────────────
         if (biggestPayer != null) ...[
-          BiggestSpenderCard(payer: biggestPayer, total: calc.total),
+          RepaintBoundary(
+            child: BiggestSpenderCard(payer: biggestPayer, total: calc.total),
+          ),
           const SizedBox(height: 12),
         ],
 
         // ── Member Spending Bars ───────────────────────────────
-        MemberSpendingList(
-          memberTotals: memberTotals,
-          billTotal: calc.total,
-          isDark: isDark,
+        RepaintBoundary(
+          child: MemberSpendingList(
+            memberTotals: memberTotals,
+            billTotal: calc.total,
+            isDark: isDark,
+          ),
         ),
         const SizedBox(height: 12),
 
         // ── Top Items Bar Chart ────────────────────────────────
-        TopItemsCard(
-          topItems: topItems,
-          maxItemPrice: maxItemPrice,
-          isDark: isDark,
+        RepaintBoundary(
+          child: TopItemsCard(
+            topItems: topItems,
+            maxItemPrice: maxItemPrice,
+            isDark: isDark,
+          ),
         ),
         const SizedBox(height: 12),
 
@@ -151,19 +163,23 @@ class AnalyticsTab extends StatelessWidget {
         if (memberTotals.length >= 2 &&
             biggestPayer != null &&
             smallestPayer != null) ...[
-          FairnessCard(
-            biggestPayer: biggestPayer,
-            smallestPayer: smallestPayer,
-            avgPerPerson: avgPerPerson,
-            isDark: isDark,
+          RepaintBoundary(
+            child: FairnessCard(
+              biggestPayer: biggestPayer,
+              smallestPayer: smallestPayer,
+              avgPerPerson: avgPerPerson,
+              isDark: isDark,
+            ),
           ),
           const SizedBox(height: 12),
         ],
 
         // ── Items Per Member ───────────────────────────────────
-        ItemsPerMemberGrid(
-          memberTotals: memberTotals,
-          isDark: isDark,
+        RepaintBoundary(
+          child: ItemsPerMemberGrid(
+            memberTotals: memberTotals,
+            isDark: isDark,
+          ),
         ),
         const SizedBox(height: 24),
       ],

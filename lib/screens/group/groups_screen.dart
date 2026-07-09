@@ -125,10 +125,14 @@ class _GroupsScreenState extends State<GroupsScreen> {
                                   const SizedBox(height: AppSpacing.sm + 2),
                               itemBuilder: (context, index) {
                                 final group = provider.groups[index];
-                                return SharedGroupCard(
-                                  group: group,
-                                  onTap: () =>
-                                      context.push('/groups/${group.id}'),
+                                // RepaintBoundary isolates each card so
+                                // scrolling doesn't repaint the whole list.
+                                return RepaintBoundary(
+                                  child: SharedGroupCard(
+                                    group: group,
+                                    onTap: () =>
+                                        context.push('/groups/${group.id}'),
+                                  ),
                                 );
                               },
                             ),

@@ -228,22 +228,42 @@ class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerPr
                           controller: _tabController,
                           physics: const NeverScrollableScrollPhysics(),
                           children: [
-                            MembersTab(
-                              bill: bill,
-                              billsStore: billsStore,
-                              calc: calc,
-                              readOnly: !isDraft,
-                              currentUserId: currentUserId,
-                              friendUserIds: friendUserIds,
+                            // Each tab is wrapped in _LazyTabBody so it is only
+                            // built the first time the user navigates to it.
+                            // This prevents AnalyticsTab (PieChart + sorts) and
+                            // SummaryTab from being constructed on screen open.
+                            _LazyTabBody(
+                              tabController: _tabController,
+                              tabIndex: 0,
+                              child: MembersTab(
+                                bill: bill,
+                                billsStore: billsStore,
+                                calc: calc,
+                                readOnly: !isDraft,
+                                currentUserId: currentUserId,
+                                friendUserIds: friendUserIds,
+                              ),
                             ),
-                            ItemsTab(
-                              bill: bill,
-                              billsStore: billsStore,
-                              calc: calc,
-                              readOnly: !isDraft,
+                            _LazyTabBody(
+                              tabController: _tabController,
+                              tabIndex: 1,
+                              child: ItemsTab(
+                                bill: bill,
+                                billsStore: billsStore,
+                                calc: calc,
+                                readOnly: !isDraft,
+                              ),
                             ),
-                            SummaryTab(bill: bill, billsStore: billsStore, calc: calc),
-                            AnalyticsTab(bill: bill, billsStore: billsStore, calc: calc),
+                            _LazyTabBody(
+                              tabController: _tabController,
+                              tabIndex: 2,
+                              child: SummaryTab(bill: bill, billsStore: billsStore, calc: calc),
+                            ),
+                            _LazyTabBody(
+                              tabController: _tabController,
+                              tabIndex: 3,
+                              child: AnalyticsTab(bill: bill, billsStore: billsStore, calc: calc),
+                            ),
                           ],
                         ),
                       ),
@@ -677,6 +697,65 @@ class _ActionChipState extends State<_ActionChip> {
         ),
       ),
     );
+  }
+}
+
+// ── Lazy tab body ─────────────────────────────────────────────
+// Defers building the child until the tab is first selected.
+// Once built, the child is kept alive so it is not rebuilt on
+// every tab switch (AutomaticKeepAliveClientMixin equivalent
+// without requiring the child to implement it).
+class _LazyTabBody extends StatefulWidget {
+  final TabController tabController;
+  final int tabIndex;
+  final Widget child;
+
+  const _LazyTabBody({
+    required this.tabController,
+    required this.tabIndex,
+    required this.child,
+  });
+
+  @override
+  State<_LazyTabBody> createState() => _LazyTabBodyState();
+}
+
+class _LazyTabBodyState extends State<_LazyTabBody>
+    with AutomaticKeepAliveClientMixin {
+  bool _built = false;
+
+  @override
+  bool get wantKeepAlive => _built;
+
+  @override
+  void initState() {
+    super.initState();
+    // Build immediately if this is the initially selected tab.
+    if (widget.tabController.index == widget.tabIndex) {
+      _built = true;
+    } else {
+      widget.tabController.addListener(_onTabChanged);
+    }
+  }
+
+  void _onTabChanged() {
+    if (!_built && widget.tabController.index == widget.tabIndex) {
+      setState(() => _built = true);
+      widget.tabController.removeListener(_onTabChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.tabController.removeListener(_onTabChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // required by AutomaticKeepAliveClientMixin
+    if (!_built) return const SizedBox.shrink();
+    return widget.child;
   }
 }
 

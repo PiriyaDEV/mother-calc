@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,7 +8,6 @@ import 'package:kidtang_flutter/services/web_image_saver.dart';
 import 'package:kidtang_flutter/theme/app_theme.dart';
 import 'package:kidtang_flutter/utils/bill_utils.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 
 import 'bill_pdf_generator.dart';
 
@@ -106,17 +107,18 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
         final member =
             bill.members.firstWhere((m) => m.id == selectedMemberId);
         pdfBytes = await generator.generateMemberPdf(member);
-        fileName = 'kidtang_${_sanitize(bill.title)}_${_sanitize(member.name)}';
+        fileName =
+            'kidtang_${_sanitize(bill.title)}_${_sanitize(member.name)}';
       }
     } catch (e) {
       debugPrint('[DownloadSummaryDialog._download]: $e');
-    } finally {
-      if (mounted) setState(() => _saving = false);
     }
 
     if (!mounted) return;
 
+    // PDF generation failed — show error and re-enable button
     if (pdfBytes == null) {
+      setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -133,16 +135,20 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
       return;
     }
 
-    // Capture messenger before pop
+    // Capture messenger before pop (context may be invalid after pop)
     final messenger = ScaffoldMessenger.of(context);
-    Navigator.of(context).pop();
 
+    // Trigger the actual download / file save
     bool success = false;
     if (kIsWeb) {
       success = downloadPdfOnWeb(pdfBytes, '$fileName.pdf');
     } else {
       success = await _savePdfNative(pdfBytes, '$fileName.pdf');
     }
+
+    if (!mounted) return;
+    setState(() => _saving = false);
+    Navigator.of(context).pop();
 
     messenger.showSnackBar(
       SnackBar(
@@ -159,6 +165,8 @@ class _DownloadSummarySheetState extends State<_DownloadSummarySheet> {
     );
   }
 
+  /// Saves PDF bytes to the app documents directory on mobile/desktop.
+  /// Never called on web (guarded by kIsWeb above).
   Future<bool> _savePdfNative(Uint8List bytes, String fileName) async {
     try {
       final dir = await getApplicationDocumentsDirectory();

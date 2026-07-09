@@ -56,7 +56,7 @@ class MemberSelector extends StatelessWidget {
               Color? borderColor;
 
               if (isSelected) {
-                bgColor = AppColors.blue400;
+                bgColor = AppColors.blue500;
                 textColor = Colors.white;
                 borderColor = null;
               } else if (isPaid) {

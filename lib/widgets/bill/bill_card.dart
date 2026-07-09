@@ -8,6 +8,32 @@ import 'package:kidtang_flutter/utils/bill_utils.dart';
 import 'package:kidtang_flutter/widgets/shared/emoji_text.dart';
 import 'package:kidtang_flutter/widgets/shared/member_avatar.dart';
 
+/// Wraps [BillCard] in a [RepaintBoundary] so that scrolling the list
+/// does not trigger a repaint of every card — only the ones that change.
+class BillCardBoundary extends StatelessWidget {
+  final Bill bill;
+  final String? currentUserId;
+  final VoidCallback? onTap;
+
+  const BillCardBoundary({
+    super.key,
+    required this.bill,
+    this.currentUserId,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: BillCard(
+        bill: bill,
+        currentUserId: currentUserId,
+        onTap: onTap ?? () {},
+      ),
+    );
+  }
+}
+
 class BillCard extends StatelessWidget {
   final Bill bill;
   final VoidCallback onTap;

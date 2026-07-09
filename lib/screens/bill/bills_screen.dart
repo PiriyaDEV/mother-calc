@@ -424,13 +424,17 @@ class _BillListState extends State<_BillList> {
             return _SectionHeaderWidget(item: item, isDark: isDark);
           }
           final bill = (item as _BillEntry).bill;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm + 2),
-            child: SharedBillCard(
-              bill: bill,
-              onTap: () => context.push('/bills/${bill.id}'),
-              currentUserId: currentUserId,
-              friendUserIds: friendUserIds,
+          // RepaintBoundary isolates each card so scrolling only repaints
+          // the cards that are actually changing, not the entire list.
+          return RepaintBoundary(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm + 2),
+              child: SharedBillCard(
+                bill: bill,
+                onTap: () => context.push('/bills/${bill.id}'),
+                currentUserId: currentUserId,
+                friendUserIds: friendUserIds,
+              ),
             ),
           );
         },

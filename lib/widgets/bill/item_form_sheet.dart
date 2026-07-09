@@ -489,12 +489,12 @@ class _MemberPickerList extends StatelessWidget {
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppColors.primary.withValues(alpha: 0.08)
+                    ? AppColors.primary.withValues(alpha: 0.15)
                     : (isDark ? AppColors.surfaceDark : AppColors.neutral50),
                 borderRadius: BorderRadius.circular(AppRadii.md),
                 border: Border.all(
                   color: isSelected
-                      ? AppColors.primary.withValues(alpha: 0.4)
+                      ? AppColors.primary.withValues(alpha: 0.7)
                       : (isDark
                           ? AppColors.borderDark
                           : AppColors.borderLight),

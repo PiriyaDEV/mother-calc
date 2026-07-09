@@ -32,13 +32,17 @@ class RecentBillsList extends StatelessWidget {
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 final bill = recentBills[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: SharedBillCard(
-                    bill: bill,
-                    onTap: () => context.push('/bills/${bill.id}'),
-                    currentUserId: currentUserId,
-                    friendUserIds: friendUserIds,
+                // RepaintBoundary isolates each card's repaint layer so
+                // scrolling the home screen doesn't repaint every card.
+                return RepaintBoundary(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: SharedBillCard(
+                      bill: bill,
+                      onTap: () => context.push('/bills/${bill.id}'),
+                      currentUserId: currentUserId,
+                      friendUserIds: friendUserIds,
+                    ),
                   ),
                 );
               },

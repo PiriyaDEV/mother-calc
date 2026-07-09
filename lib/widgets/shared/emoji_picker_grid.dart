@@ -66,18 +66,24 @@ class _EmojiPickerGridState extends State<EmojiPickerGrid> {
             borderRadius: BorderRadius.circular(AppRadii.md),
             border: Border.all(color: borderColor),
           ),
-          child: SingleChildScrollView(
+          // GridView.builder renders only visible cells instead of building
+          // all ~100+ emoji children at once with Wrap.
+          // +2 items: index 0 = clear button, last = custom (+) button.
+          child: GridView.builder(
             padding: const EdgeInsets.all(8),
-            child: Wrap(
-              spacing: 4,
-              runSpacing: 4,
-              children: [
-                // ── Clear button ──────────────────────────────────────
-                GestureDetector(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              mainAxisSpacing: 4,
+              crossAxisSpacing: 4,
+              childAspectRatio: 1,
+            ),
+            itemCount: kEmojiPresets.length + 2,
+            itemBuilder: (context, index) {
+              // ── Clear button (index 0) ──────────────────────────────
+              if (index == 0) {
+                return GestureDetector(
                   onTap: widget.onClear,
                   child: Container(
-                    width: 36,
-                    height: 36,
                     decoration: BoxDecoration(
                       color: isDark
                           ? AppColors.borderDark
@@ -89,45 +95,19 @@ class _EmojiPickerGridState extends State<EmojiPickerGrid> {
                           style: TextStyle(fontSize: 14, color: Colors.grey)),
                     ),
                   ),
-                ),
-
-                // ── Preset emojis ─────────────────────────────────────
-                ...kEmojiPresets.map((e) {
-                  final isSelected = widget.selected == e;
-                  return GestureDetector(
-                    onTap: () => widget.onSelect(e),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.primary.withValues(alpha: 0.15)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(AppRadii.sm),
-                        border: isSelected
-                            ? Border.all(color: AppColors.primary, width: 2)
-                            : null,
-                      ),
-                      child: Center(
-                        child: EmojiText(e, fontSize: 18),
-                      ),
-                    ),
-                  );
-                }),
-
-                // ── Custom emoji (+) button ───────────────────────────
-                GestureDetector(
+                );
+              }
+              // ── Custom emoji (+) button (last index) ────────────────
+              if (index == kEmojiPresets.length + 1) {
+                return GestureDetector(
                   onTap: () {
                     setState(() {
                       _showCustomInput = true;
                       _controller.clear();
                     });
-                    // Delay focus so the widget is built first
                     Future.microtask(() => _focusNode.requestFocus());
                   },
                   child: Container(
-                    width: 36,
-                    height: 36,
                     decoration: BoxDecoration(
                       color: _showCustomInput
                           ? AppColors.primary.withValues(alpha: 0.12)
@@ -153,9 +133,29 @@ class _EmojiPickerGridState extends State<EmojiPickerGrid> {
                       ),
                     ),
                   ),
+                );
+              }
+              // ── Preset emoji (index 1 … length) ────────────────────
+              final e = kEmojiPresets[index - 1];
+              final isSelected = widget.selected == e;
+              return GestureDetector(
+                onTap: () => widget.onSelect(e),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary.withValues(alpha: 0.15)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppRadii.sm),
+                    border: isSelected
+                        ? Border.all(color: AppColors.primary, width: 2)
+                        : null,
+                  ),
+                  child: Center(
+                    child: EmojiText(e, fontSize: 18),
+                  ),
                 ),
-              ],
-            ),
+              );
+            },
           ),
         ),
 

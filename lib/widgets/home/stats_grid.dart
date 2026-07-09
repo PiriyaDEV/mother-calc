@@ -33,43 +33,55 @@ class StatsGrid extends StatelessWidget {
               crossAxisSpacing: 12,
               childAspectRatio: 1.55,
             ),
-            delegate: SliverChildListDelegate([
-              StatCard(
-                icon: Icons.trending_up_rounded,
-                label: l.t('stats_avg_per_bill_short'),
-                value: '${formatNumber(grandTotal / stats.totalCount)} บาท',
-                accentColor: AppColors.primaryBlue,
-                bgColor:
-                    isDark ? AppColors.accentIceDark : AppColors.accentIce,
-              ),
-              StatCard(
-                icon: Icons.receipt_long_rounded,
-                label: l.t('stats_total_bills'),
-                value: l.t('unit_bills').replaceFirst('{count}', '${stats.totalCount}'),
-                accentColor: AppColors.violet,
-                bgColor: isDark
-                    ? AppColors.violet.withValues(alpha: 0.15)
-                    : AppColors.violetFaint,
-              ),
-              StatCard(
-                icon: Icons.format_list_bulleted_rounded,
-                label: l.t('stats_total_items'),
-                value: l.t('unit_items').replaceFirst('{count}', '$totalItems'),
-                accentColor: AppColors.amber,
-                bgColor: isDark
-                    ? AppColors.amber.withValues(alpha: 0.12)
-                    : AppColors.amberFaint,
-              ),
-              StatCard(
-                icon: Icons.star_rounded,
-                label: l.t('stats_biggest_bill'),
-                value: '${formatNumber(biggestBillTotal)} บาท',
-                accentColor: AppColors.emerald,
-                bgColor: isDark
-                    ? AppColors.emerald.withValues(alpha: 0.12)
-                    : AppColors.greenFaint,
-              ),
-            ]),
+            // SliverChildBuilderDelegate builds each card lazily (on demand)
+            // instead of constructing all 4 at once with SliverChildListDelegate.
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                switch (index) {
+                  case 0:
+                    return StatCard(
+                      icon: Icons.trending_up_rounded,
+                      label: l.t('stats_avg_per_bill_short'),
+                      value: '${formatNumber(grandTotal / stats.totalCount)} บาท',
+                      accentColor: AppColors.primaryBlue,
+                      bgColor: isDark ? AppColors.accentIceDark : AppColors.accentIce,
+                    );
+                  case 1:
+                    return StatCard(
+                      icon: Icons.receipt_long_rounded,
+                      label: l.t('stats_total_bills'),
+                      value: l.t('unit_bills').replaceFirst('{count}', '${stats.totalCount}'),
+                      accentColor: AppColors.violet,
+                      bgColor: isDark
+                          ? AppColors.violet.withValues(alpha: 0.15)
+                          : AppColors.violetFaint,
+                    );
+                  case 2:
+                    return StatCard(
+                      icon: Icons.format_list_bulleted_rounded,
+                      label: l.t('stats_total_items'),
+                      value: l.t('unit_items').replaceFirst('{count}', '$totalItems'),
+                      accentColor: AppColors.amber,
+                      bgColor: isDark
+                          ? AppColors.amber.withValues(alpha: 0.12)
+                          : AppColors.amberFaint,
+                    );
+                  case 3:
+                    return StatCard(
+                      icon: Icons.star_rounded,
+                      label: l.t('stats_biggest_bill'),
+                      value: '${formatNumber(biggestBillTotal)} บาท',
+                      accentColor: AppColors.emerald,
+                      bgColor: isDark
+                          ? AppColors.emerald.withValues(alpha: 0.12)
+                          : AppColors.greenFaint,
+                    );
+                  default:
+                    return const SizedBox.shrink();
+                }
+              },
+              childCount: 4,
+            ),
           ),
         );
       },

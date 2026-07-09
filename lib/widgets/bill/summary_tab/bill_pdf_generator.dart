@@ -105,21 +105,37 @@ class BillPdfGenerator {
     return result;
   }
 
-  /// Fetches QR code PNG from the Netlify proxy `/promptpay-qr/<number>/<amount>.png`.
-  /// Returns null if the fetch fails (QR section will be omitted).
+  /// Fetches QR code PNG from the PromptPay QR API.
+  ///
+  /// On web: uses the Netlify proxy `/promptpay-qr/<number>/<amount>.png`
+  /// (relative to the app's origin, resolved via Uri.base which is web-only).
+  ///
+  /// On mobile/desktop: calls the public PromptPay QR API directly at
+  /// `https://promptpay.io/<number>/<amount>.png`.
+  ///
+  /// Returns null if the fetch fails (QR section will be omitted gracefully).
   Future<pw.ImageProvider?> _fetchQrImage(
       String promptpay, double amount) async {
     try {
       final amountStr = amount.toStringAsFixed(2);
-      // Use absolute URL — relative paths don't work with http package on Flutter web
-      final base = Uri.base;
-      final origin = '${base.scheme}://${base.host}${base.hasPort ? ':${base.port}' : ''}';
-      final uri = Uri.parse('$origin/promptpay-qr/$promptpay/$amountStr.png');
+      Uri uri;
+      if (kIsWeb) {
+        // Uri.base is only available on web — gives the browser's current URL
+        final base = Uri.base;
+        final origin =
+            '${base.scheme}://${base.host}${base.hasPort ? ':${base.port}' : ''}';
+        uri = Uri.parse('$origin/promptpay-qr/$promptpay/$amountStr.png');
+      } else {
+        // On mobile/desktop, call the public PromptPay QR API directly
+        uri = Uri.parse(
+            'https://promptpay.io/$promptpay/$amountStr.png');
+      }
       final response = await http.get(uri).timeout(const Duration(seconds: 8));
       if (response.statusCode == 200) {
         return pw.MemoryImage(response.bodyBytes);
       }
-      debugPrint('[BillPdfGenerator._fetchQrImage]: status ${response.statusCode} for $uri');
+      debugPrint(
+          '[BillPdfGenerator._fetchQrImage]: status ${response.statusCode} for $uri');
     } catch (e) {
       debugPrint('[BillPdfGenerator._fetchQrImage]: $e');
     }
