@@ -116,6 +116,7 @@
   "bills_empty_pending_sub": "Closed bills awaiting payment will appear here",
   "bills_group_fallback": "Group",
   "bills_section_standalone": "Solo Bills",
+  "bills_section_shared": "Bills I'm In",
   "bills_tab_completed": "Completed",
   "bills_tab_draft": "Draft",
   "bills_tab_pending": "Pending",

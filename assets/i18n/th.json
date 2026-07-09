@@ -116,6 +116,7 @@
   "bills_empty_pending_sub": "บิลที่ปิดแล้วและรอชำระเงินจะปรากฏที่นี่",
   "bills_group_fallback": "กลุ่ม",
   "bills_section_standalone": "บิลเดี่ยว",
+  "bills_section_shared": "บิลที่ฉันอยู่ด้วย",
   "bills_tab_completed": "เสร็จแล้ว",
   "bills_tab_draft": "ดราฟ",
   "bills_tab_pending": "รอจ่าย",

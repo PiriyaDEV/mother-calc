@@ -338,7 +338,12 @@ class _BillListState extends State<_BillList> {
       );
     }
 
-    final standaloneBills = bills.where((b) => b.groupId == null).toList();
+    final myBills = bills
+        .where((b) => b.groupId == null && b.ownerId == currentUserId)
+        .toList();
+    final sharedBills = bills
+        .where((b) => b.groupId == null && b.ownerId != currentUserId)
+        .toList();
     final groupBills = bills.where((b) => b.groupId != null).toList();
 
     final Map<String, List<Bill>> byGroup = {};
@@ -348,11 +353,21 @@ class _BillListState extends State<_BillList> {
 
     final List<_ListItem> items = [];
 
-    if (standaloneBills.isNotEmpty) {
+    if (myBills.isNotEmpty) {
       items.add(_SectionHeader(
           label: l.t('bills_section_standalone'),
-          count: standaloneBills.length));
-      for (final b in standaloneBills) {
+          count: myBills.length));
+      for (final b in myBills) {
+        items.add(_BillEntry(bill: b));
+      }
+    }
+
+    if (sharedBills.isNotEmpty) {
+      items.add(_SectionHeader(
+          label: l.t('bills_section_shared'),
+          count: sharedBills.length,
+          isShared: true));
+      for (final b in sharedBills) {
         items.add(_BillEntry(bill: b));
       }
     }
@@ -430,8 +445,13 @@ class _SectionHeader extends _ListItem {
   final String label;
   final int count;
   final bool isGroup;
-  _SectionHeader(
-      {required this.label, required this.count, this.isGroup = false});
+  final bool isShared;
+  _SectionHeader({
+    required this.label,
+    required this.count,
+    this.isGroup = false,
+    this.isShared = false,
+  });
 }
 
 class _BillEntry extends _ListItem {
@@ -461,7 +481,9 @@ class _SectionHeaderWidget extends StatelessWidget {
             decoration: BoxDecoration(
               color: item.isGroup
                   ? AppColors.primaryBlue.withValues(alpha: 0.10)
-                  : (isDark ? AppColors.surfaceDark : AppColors.neutral100),
+                  : item.isShared
+                      ? AppColors.emerald.withValues(alpha: 0.10)
+                      : (isDark ? AppColors.surfaceDark : AppColors.neutral100),
               borderRadius: BorderRadius.circular(AppRadii.full),
             ),
             child: Row(
@@ -470,13 +492,17 @@ class _SectionHeaderWidget extends StatelessWidget {
                 Icon(
                   item.isGroup
                       ? Icons.group_rounded
-                      : Icons.receipt_outlined,
+                      : item.isShared
+                          ? Icons.people_outline_rounded
+                          : Icons.receipt_outlined,
                   size: 13,
                   color: item.isGroup
                       ? AppColors.primaryBlue
-                      : (isDark
-                          ? AppColors.neutral400Dark
-                          : AppColors.neutral400),
+                      : item.isShared
+                          ? AppColors.emerald
+                          : (isDark
+                              ? AppColors.neutral400Dark
+                              : AppColors.neutral400),
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
@@ -486,9 +512,11 @@ class _SectionHeaderWidget extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     color: item.isGroup
                         ? AppColors.primaryBlue
-                        : (isDark
-                            ? AppColors.neutral600Dark
-                            : AppColors.neutral600),
+                        : item.isShared
+                            ? AppColors.emerald
+                            : (isDark
+                                ? AppColors.neutral600Dark
+                                : AppColors.neutral600),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -500,9 +528,11 @@ class _SectionHeaderWidget extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: item.isGroup
                         ? AppColors.primaryBlue.withValues(alpha: 0.15)
-                        : (isDark
-                            ? AppColors.borderDark
-                            : AppColors.neutral100),
+                        : item.isShared
+                            ? AppColors.emerald.withValues(alpha: 0.15)
+                            : (isDark
+                                ? AppColors.borderDark
+                                : AppColors.neutral100),
                     borderRadius: BorderRadius.circular(AppRadii.full),
                   ),
                   child: Text(
@@ -512,9 +542,11 @@ class _SectionHeaderWidget extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       color: item.isGroup
                           ? AppColors.primaryBlue
-                          : (isDark
-                              ? AppColors.neutral400Dark
-                              : AppColors.neutral600),
+                          : item.isShared
+                              ? AppColors.emerald
+                              : (isDark
+                                  ? AppColors.neutral400Dark
+                                  : AppColors.neutral600),
                     ),
                   ),
                 ),
