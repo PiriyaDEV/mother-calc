@@ -159,6 +159,7 @@ class _ManageMembersSheetState extends State<ManageMembersSheet>
           Expanded(
             child: TabBarView(
               controller: _tabCtrl,
+              physics: const NeverScrollableScrollPhysics(),
               children: [
                 _buildFriendsTab(isDark, availableFriends),
                 _buildExternalTab(isDark),

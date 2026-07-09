@@ -28,6 +28,26 @@ class BillDetailScreen extends StatefulWidget {
 class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _loading = true;
+  bool _refreshing = false;
+
+  Future<void> _onRefresh() async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    try {
+      final bp = context.read<BillsStore>();
+      await bp.ensureLoaded(widget.billId);
+      // Force re-fetch by removing from cache and reloading
+      final bill = bp.getById(widget.billId);
+      if (bill != null) {
+        final groupId = bill.groupId;
+        if (groupId != null && mounted) {
+          await context.read<GroupsStore>().loadGroupDetail(groupId);
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
 
   // Cache the last bill + its calculation to avoid recomputing on every rebuild.
   Bill? _lastBill;
@@ -143,87 +163,92 @@ class _BillDetailScreenState extends State<BillDetailScreen> with SingleTickerPr
         body: Column(
           children: [
             Expanded(
-              child: NestedScrollView(
-                headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                  SliverAppBar(
-                    pinned: true,
-                    expandedHeight: 0,
-                    backgroundColor: Colors.transparent,
-                    flexibleSpace: Container(
-                      decoration: BoxDecoration(
-                        gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+              child: RefreshIndicator(
+                onRefresh: _onRefresh,
+                color: AppColors.primary,
+                notificationPredicate: (notification) => notification.depth == 2,
+                child: NestedScrollView(
+                  headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                    SliverAppBar(
+                      pinned: true,
+                      expandedHeight: 0,
+                      backgroundColor: Colors.transparent,
+                      flexibleSpace: Container(
+                        decoration: BoxDecoration(
+                          gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+                        ),
                       ),
-                    ),
-                    leading: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_rounded),
-                      onPressed: () {
-                        if (context.canPop()) {
-                          context.pop();
-                        } else {
-                          context.go('/bills');
-                        }
-                      },
-                    ),
-                    title: _BillAppBarTitle(
-                      bill: bill,
-                      isDark: isDark,
-                      isDraft: isDraft,
-                    ),
-                    actions: [
-                      _BillStatusActions(
+                      leading: IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_rounded),
+                        onPressed: () {
+                          if (context.canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/bills');
+                          }
+                        },
+                      ),
+                      title: _BillAppBarTitle(
                         bill: bill,
-                        billsStore: billsStore,
                         isDark: isDark,
                         isDraft: isDraft,
-                        isPendingPayment: isPendingPayment,
-                        isOwner: isOwner,
-                        tabController: _tabController,
-                        onEditBill: () => context.push('/bills/${bill.id}/edit'),
                       ),
-                    ],
-                    bottom: PreferredSize(
-                      preferredSize: const Size.fromHeight(56),
-                      child: PillTabBar(
-                        controller: _tabController,
-                        tabs: [
-                          CountTab(label: l.t('bill_tab_members'), count: members.length),
-                          CountTab(label: l.t('bill_tab_items'), count: items.length),
-                          CountTab(label: l.t('bill_tab_summary'), count: 0),
-                          CountTab(label: l.t('bill_tab_analytics'), count: 0),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-                body: Column(
-                  children: [
-                    // Status banner
-                    if (!isDraft) _StatusBanner(isCompleted: isCompleted, isDark: isDark),
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: [
-                          MembersTab(
-                            bill: bill,
-                            billsStore: billsStore,
-                            calc: calc,
-                            readOnly: !isDraft,
-                            currentUserId: currentUserId,
-                            friendUserIds: friendUserIds,
-                          ),
-                          ItemsTab(
-                            bill: bill,
-                            billsStore: billsStore,
-                            calc: calc,
-                            readOnly: !isDraft,
-                          ),
-                          SummaryTab(bill: bill, billsStore: billsStore, calc: calc),
-                          AnalyticsTab(bill: bill, billsStore: billsStore, calc: calc),
-                        ],
+                      actions: [
+                        _BillStatusActions(
+                          bill: bill,
+                          billsStore: billsStore,
+                          isDark: isDark,
+                          isDraft: isDraft,
+                          isPendingPayment: isPendingPayment,
+                          isOwner: isOwner,
+                          tabController: _tabController,
+                          onEditBill: () => context.push('/bills/${bill.id}/edit'),
+                        ),
+                      ],
+                      bottom: PreferredSize(
+                        preferredSize: const Size.fromHeight(56),
+                        child: PillTabBar(
+                          controller: _tabController,
+                          tabs: [
+                            CountTab(label: l.t('bill_tab_members'), count: members.length),
+                            CountTab(label: l.t('bill_tab_items'), count: items.length),
+                            CountTab(label: l.t('bill_tab_summary'), count: 0),
+                            CountTab(label: l.t('bill_tab_analytics'), count: 0),
+                          ],
+                        ),
                       ),
                     ),
                   ],
+                  body: Column(
+                    children: [
+                      // Status banner
+                      if (!isDraft) _StatusBanner(isCompleted: isCompleted, isDark: isDark),
+                      Expanded(
+                        child: TabBarView(
+                          controller: _tabController,
+                          physics: const NeverScrollableScrollPhysics(),
+                          children: [
+                            MembersTab(
+                              bill: bill,
+                              billsStore: billsStore,
+                              calc: calc,
+                              readOnly: !isDraft,
+                              currentUserId: currentUserId,
+                              friendUserIds: friendUserIds,
+                            ),
+                            ItemsTab(
+                              bill: bill,
+                              billsStore: billsStore,
+                              calc: calc,
+                              readOnly: !isDraft,
+                            ),
+                            SummaryTab(bill: bill, billsStore: billsStore, calc: calc),
+                            AnalyticsTab(bill: bill, billsStore: billsStore, calc: calc),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

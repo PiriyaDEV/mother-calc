@@ -907,8 +907,18 @@ class BillsStore extends ChangeNotifier {
         final bill = await _repo.fetchById(billId);
         _byId[billId] = bill;
         if (prevStatus != null && prevStatus != bill.status) {
+          // Bill changed status — move it between page buckets.
           _removeFromPage(prevStatus, billId);
           _insertIntoPage(bill.status, billId);
+        } else if (prevStatus == null) {
+          // Bill was not in the local cache yet (e.g. a friend just added the
+          // current user as a member via bill_members INSERT). Insert it into
+          // the correct page so it appears in the Bills screen immediately.
+          final isInAnyPage =
+              _pagesByStatus.values.any((p) => p.ids.contains(billId));
+          if (!isInAnyPage && _pagesByStatus[bill.status]?.loaded == true) {
+            _insertIntoPage(bill.status, billId);
+          }
         }
         _invalidateGroupCache(bill.groupId);
         notifyListeners();

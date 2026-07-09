@@ -177,6 +177,7 @@ class _BillsScreenState extends State<BillsScreen>
                   ? const BillsListSkeleton()
                   : TabBarView(
                       controller: _tabController,
+                      physics: const NeverScrollableScrollPhysics(),
                       children: [
                         _BillList(
                           status: 'draft',

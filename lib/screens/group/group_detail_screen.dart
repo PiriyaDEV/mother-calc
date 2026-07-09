@@ -27,6 +27,13 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
+  Future<void> _onRefresh() async {
+    await Future.wait([
+      context.read<GroupsStore>().loadGroupDetail(widget.groupId),
+      context.read<BillsStore>().loadForGroup(widget.groupId),
+    ]);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +56,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-      final l = context.watch<LocaleProvider>();
+    final l = context.watch<LocaleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // context.select — only rebuilds when THIS group's data changes.
@@ -113,7 +120,13 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
     // Build friend user-id set for member sorting (O(1) lookup)
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
-    final friendUserIds = context.read<FriendsStore>().friends.map((f) => f.requesterId == currentUserId ? f.addresseeId : f.requesterId).toSet();
+    final friendUserIds = context
+        .read<FriendsStore>()
+        .friends
+        .map((f) => f.requesterId == currentUserId
+            ? f.addresseeId
+            : f.requesterId)
+        .toSet();
 
     return Container(
       decoration: BoxDecoration(
@@ -124,113 +137,120 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
       child: Scaffold(
         backgroundColor: Colors.transparent,
         bottomNavigationBar: const BannerAdWidget(),
-        body: NestedScrollView(
-          headerSliverBuilder: (context, _) => [
-            SliverAppBar(
-              pinned: true,
-              expandedHeight: 0,
-              backgroundColor: Colors.transparent,
-              flexibleSpace: Container(
-                decoration: BoxDecoration(
-                  gradient: isDark ? AppGradients.backgroundDark : AppGradients.backgroundLight,
+        body: RefreshIndicator(
+          onRefresh: _onRefresh,
+          color: AppColors.primary,
+          notificationPredicate: (notification) => notification.depth == 2,
+          child: NestedScrollView(
+            headerSliverBuilder: (context, _) => [
+              SliverAppBar(
+                pinned: true,
+                expandedHeight: 0,
+                backgroundColor: Colors.transparent,
+                flexibleSpace: Container(
+                  decoration: BoxDecoration(
+                    gradient: isDark
+                        ? AppGradients.backgroundDark
+                        : AppGradients.backgroundLight,
+                  ),
                 ),
-              ),
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_rounded),
-                onPressed: () {
-                  if (context.canPop()) {
-                    context.pop();
-                  } else {
-                    context.go('/groups');
-                  }
-                },
-              ),
-              title: Row(
-                children: [
-                  EmojiText(group.emoji ?? '👥', fontSize: 20),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          group.name,
-                          style: GoogleFonts.sarabun(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? AppColors.neutral900Dark
-                                : AppColors.neutral900,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (group.description != null &&
-                            group.description!.isNotEmpty)
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_rounded),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/groups');
+                    }
+                  },
+                ),
+                title: Row(
+                  children: [
+                    EmojiText(group.emoji ?? '👥', fontSize: 20),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
                           Text(
-                            group.description!,
+                            group.name,
                             style: GoogleFonts.sarabun(
-                              fontSize: 11,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
                               color: isDark
-                                  ? AppColors.neutral400Dark
-                                  : AppColors.neutral400,
+                                  ? AppColors.neutral900Dark
+                                  : AppColors.neutral900,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
-                      ],
+                          if (group.description != null &&
+                              group.description!.isNotEmpty)
+                            Text(
+                              group.description!,
+                              style: GoogleFonts.sarabun(
+                                fontSize: 11,
+                                color: isDark
+                                    ? AppColors.neutral400Dark
+                                    : AppColors.neutral400,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
                     ),
+                  ],
+                ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.settings_outlined),
+                    onPressed: () =>
+                        context.push('/groups/${group.id}/edit'),
                   ),
+                  const SizedBox(width: 4),
                 ],
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.settings_outlined),
-                  onPressed: () =>
-                      context.push('/groups/${group.id}/edit'),
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(56),
+                  child: GroupTabBar(
+                    controller: _tabController,
+                    isDark: isDark,
+                    acceptedCount: acceptedMembers.length,
+                    billsCount: bills.length,
+                  ),
                 ),
-                const SizedBox(width: 4),
-              ],
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(56),
-                child: GroupTabBar(
-                  controller: _tabController,
-                  isDark: isDark,
-                  acceptedCount: acceptedMembers.length,
-                  billsCount: bills.length,
-                ),
-              ),
-            ),
-          ],
-          body: TabBarView(
-            controller: _tabController,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              // Tab 0: Members
-              GroupMembersTab(
-                group: group,
-                acceptedMembers: acceptedMembers,
-                pendingMembers: pendingMembers,
-                isDark: isDark,
-                currentUserId: currentUserId,
-                friendUserIds: friendUserIds,
-              ),
-              // Tab 1: Bills
-              GroupBillsTab(
-                group: group,
-                bills: bills,
-                isDark: isDark,
-              ),
-              // Tab 2: Summary — Stateful, owns _expandedBillId
-              GroupSummaryTab(
-                bills: bills,
-                isDark: isDark,
-              ),
-              // Tab 3: Analytics — Stateful, caches derived data
-              GroupAnalyticsTab(
-                bills: bills,
-                isDark: isDark,
               ),
             ],
+            body: TabBarView(
+              controller: _tabController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                // Tab 0: Members
+                GroupMembersTab(
+                  group: group,
+                  acceptedMembers: acceptedMembers,
+                  pendingMembers: pendingMembers,
+                  isDark: isDark,
+                  currentUserId: currentUserId,
+                  friendUserIds: friendUserIds,
+                ),
+                // Tab 1: Bills
+                GroupBillsTab(
+                  group: group,
+                  bills: bills,
+                  isDark: isDark,
+                ),
+                // Tab 2: Summary — Stateful, owns _expandedBillId
+                GroupSummaryTab(
+                  bills: bills,
+                  isDark: isDark,
+                ),
+                // Tab 3: Analytics — Stateful, caches derived data
+                GroupAnalyticsTab(
+                  bills: bills,
+                  isDark: isDark,
+                ),
+              ],
+            ),
           ),
         ),
       ),

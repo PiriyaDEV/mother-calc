@@ -258,6 +258,7 @@ class _AddMemberSheetState extends State<AddMemberSheet>
           Expanded(
             child: TabBarView(
               controller: _tabCtrl,
+              physics: const NeverScrollableScrollPhysics(),
               children: [
                 _buildFriendsTab(isDark, availableFriends, l),
                 _buildOutsiderTab(isDark, l),
