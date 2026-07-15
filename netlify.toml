@@ -1,0 +1,14 @@
+# Netlify configuration — Kidtang v3 (Next.js)
+# The Next.js runtime plugin handles SSR, API routes, middleware and image
+# optimization automatically; do not hardcode a publish dir for it.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  # Next.js 15 requires Node >= 18; match the repo's .nvmrc (22).
+  NODE_VERSION = "22"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
