@@ -1,0 +1,10 @@
+{
+  // Enable Deno language server only for the Edge Functions folder.
+  // This silences false-positive TypeScript errors for Deno globals (Deno, esm.sh imports, etc.)
+  // while leaving the Flutter/Dart workspace unaffected.
+  "deno.enablePaths": ["supabase/functions"],
+  "deno.unstable": false,
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  }
+}

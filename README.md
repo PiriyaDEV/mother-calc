@@ -1,172 +1,62 @@
-# Kidtang - Bill Splitting App
+# กิดตัง · Kidtang v3 (Web)
 
-แอปแบ่งค่าใช้จ่ายง่ายๆ กับเพื่อน · Built with Flutter + Supabase
+Thai bill-splitting app — Next.js 15 rebuild. See [FEATURES.md](FEATURES.md) for the full spec.
 
----
+## Tech stack
+
+Next.js 15 (App Router) · TypeScript · Tailwind CSS v4 · shadcn/ui (Radix) · Magic UI
+(in-repo) · Motion · Supabase (Postgres + Auth + Realtime) · next-intl (th/en) ·
+Zustand · React Hook Form + Zod · Recharts · qrcode · @react-pdf/renderer ·
+html-to-image · Web Push (VAPID).
 
 ## Requirements
 
-| Tool | Version |
-|------|---------|
-| Flutter | 3.29.4+ |
-| Dart | 3.7.2+ |
-| Xcode | 26.4.1+ (for iOS) |
-| CocoaPods | 1.16.2+ |
-| iOS Deployment Target | 13.0+ |
+- **Node.js ≥ 20** (Next.js 15 requires it; see `.nvmrc`). Node 16 will not build.
+  ```bash
+  nvm use        # picks up .nvmrc (22)
+  ```
 
----
-
-## Setup
+## Getting started
 
 ```bash
-# 1. Install Flutter dependencies
-flutter pub get
-
-# 2. Install iOS CocoaPods
-cd ios && pod install && cd ..
+npm install
+cp .env.local .env.local   # already populated with the shared Supabase project
+npm run dev                # http://localhost:3000  → redirects to /th/login
 ```
 
-Make sure `.env` file exists at the project root (same level as `pubspec.yaml`):
+Scripts: `npm run dev` · `npm run build` · `npm run start` · `npm run typecheck`.
 
-```env
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-```
+## Environment
 
----
+`.env.local` holds the client + server keys (Supabase URL/anon key, LINE channel,
+VAPID). To enable everything, also set:
 
-## Running the App
+- `SUPABASE_SERVICE_ROLE_KEY` — required for the public share route and Web Push.
+- `VAPID_PRIVATE_KEY` — required to send Web Push.
+- `LINE_CHANNEL_SECRET` — already set; needed for the LINE OAuth token exchange.
 
-### ⚡ One-Command Run (Recommended)
-
-Does everything: kills Xcode, cleans, reinstalls pods, and runs on iPhone.
-
-```bash
-./run.sh
-```
-
-> **Why `--release` mode?** iOS 26 beta breaks Flutter's JIT engine used in debug/profile mode (white screen crash).
-> Release mode uses AOT compilation and works correctly.
-> See: https://github.com/flutter/flutter/issues/163984
-
----
-
-### Run on iPhone (Manual)
-
-```bash
-# Run on connected iPhone (auto-detect)
-flutter run -d ios
-
-# Run on specific device by ID (Piriya's iPhone) — release mode required on iOS 26
-flutter run --release -d 00008120-0010786C01EB401E
-```
-
-### Check Connected Devices
-
-```bash
-flutter devices
-```
-
-### Run on Other Platforms
-
-```bash
-# macOS
-flutter run -d macos
-
-# Chrome (Web)
-flutter run -d chrome
-```
-
----
-
-## Hot Reload / Restart (while app is running)
-
-| Key | Action |
-|-----|--------|
-| `r` | Hot Reload — apply changes instantly (keeps state) |
-| `R` | Hot Restart — full restart (resets state) |
-| `q` | Quit |
-| `d` | Detach (leave app running on device) |
-
----
-
-## Build Modes
-
-```bash
-# Debug (default) — must launch via flutter run on iOS 14+
-flutter run -d ios
-
-# Profile — performance testing, can launch from home screen
-flutter run --profile -d ios
-
-# Release — production build, can launch from home screen
-flutter run --release -d ios
-```
-
----
-
-## Useful Commands
-
-```bash
-# Clean build cache
-flutter clean
-
-# Re-fetch packages after clean
-flutter pub get
-
-# Re-install CocoaPods after clean
-cd ios && pod install && cd ..
-
-# Analyze code
-flutter analyze
-
-# Check Flutter environment
-flutter doctor
-```
-
----
-
-## Project Structure
+## Project structure
 
 ```
-lib/
-├── main.dart               # Entry point
-├── router.dart             # Navigation (GoRouter)
-├── models/                 # Data models
-├── providers/              # State management (Provider)
-│   ├── auth_provider.dart
-│   ├── bill_provider.dart
-│   └── theme_provider.dart
-├── screens/                # App screens
-│   ├── login_screen.dart
-│   ├── home_screen.dart
-│   ├── bills_screen.dart
-│   ├── groups_screen.dart
-│   ├── friends_screen.dart
-│   ├── me_screen.dart
-│   ├── bill_detail_screen.dart
-│   ├── group_detail_screen.dart
-│   ├── notifications_screen.dart
-│   └── profile_screen.dart
-├── services/               # API / Supabase services
-├── theme/                  # App theme & colors
-├── utils/                  # Helper utilities
-└── widgets/                # Reusable widgets
+src/
+  app/[locale]/            # i18n routes: (auth), (app), line-web-return
+  app/api/                 # auth/callback, line-auth, push
+  components/{ui,magic,shared,home,bill,group,friends,me}
+  lib/{supabase,utils}     # clients + bill engine (bill-utils), promptpay, format
+  repositories/            # server-side Supabase queries + row→type mappers
+  stores/                  # Zustand (bills/groups/friends)
+  i18n/  messages/         # next-intl (th default, en)
+  middleware.ts            # Supabase session + auth guard + i18n routing
+supabase/                  # existing schema.sql (v8) + migrations (reused)
 ```
 
----
+## Supabase notes
 
-## Bundle ID
-
-`com.kidtang.kidtangFlutter`
-
----
-
-## Tech Stack
-
-- **Flutter** — UI framework
-- **Supabase** — Backend (Auth + Database)
-- **GoRouter** — Navigation
-- **Provider** — State management
-- **Google Fonts** — NotoSansThai
-- **flutter_dotenv** — Environment config
+- The app targets the **existing schema** (`supabase/schema.sql`). Bill status uses
+  `draft | pending_payment | completed`; the UI maps these to draft/open/settled.
+- **Public share page** (`/bills/[id]/share`, no auth): it reads via the service-role
+  client (`createServiceClient`). Either set `SUPABASE_SERVICE_ROLE_KEY`, or add a
+  public-read RLS policy `allow_public_read_bill` on `bills`/`bill_members`/`bill_items`.
+- OAuth (Google/LINE) and Web Push are code-complete but require the provider
+  redirect URLs + keys configured in the Supabase/LINE consoles to fully exercise.
+```

@@ -1,51 +1,34 @@
-# # Flutter/Dart/Pub
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
 
-# iOS
-ios/Pods/
-ios/.symlinks/
+# next.js
+/.next/
+/out/
+/build
+next-env.d.ts
 
-# Android
-/android/app/debug
-/android/app/profile
-/android/app/release
-
-# IntelliJ / IDE
-*.iml
-*.ipr
-*.iws
-.idea/
-.vscode/
-
-# macOS
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-
-# Environment variables (never commit secrets)
+# env (never commit secrets)
 .env
 .env.local
 .env.*.local
 
-# Next.js legacy (this branch is Flutter only)
-.next/
-node_modules/
-out/
+# IDE
+.idea/
+*.iml
 
-# Misc
+# macOS
+.DS_Store
+
+# debug
 *.log
-coverage/
-app.*.symbols
-app.*.map.json
-migrate_working_dir/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
